@@ -1,0 +1,78 @@
+@import "../../../../../styles/_variables.scss";
+
+.cotizaciones-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  background: $color-gray-light;
+  border-radius: 8px;
+  margin: 2rem 0;
+
+  .empty-icon {
+    font-size: 4rem;
+    color: $text-secondary;
+    margin-bottom: 1.5rem;
+    opacity: 0.6;
+  }
+
+  h3 {
+    font-size: 1.5rem;
+    color: $text-dark;
+    margin: 0 0 0.5rem 0;
+    font-weight: 600;
+  }
+
+  p {
+    font-size: 1rem;
+    color: $text-secondary;
+    margin: 0 0 1.5rem 0;
+    max-width: 400px;
+  }
+
+  .btn-clear-filters {
+    background: $primary;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: darken($primary, 10%);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    &:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 3rem 1.5rem;
+
+    .empty-icon {
+      font-size: 3rem;
+    }
+
+    h3 {
+      font-size: 1.25rem;
+    }
+
+    p {
+      font-size: 0.9rem;
+    }
+
+    .btn-clear-filters {
+      padding: 0.65rem 1.25rem;
+      font-size: 0.9rem;
+    }
+  }
+}

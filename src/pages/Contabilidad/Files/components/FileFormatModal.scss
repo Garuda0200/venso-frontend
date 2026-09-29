@@ -1,0 +1,217 @@
+.file-format-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.file-format-modal {
+  background: #ffffff;
+  border-radius: 10px;
+  width: 95%;
+  max-width: 1480px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.file-format-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 2px 0 0;
+    font-size: 13px;
+    color: #666;
+  }
+
+  .voucher-reserva-meta {
+    margin-top: 6px;
+  }
+}
+
+.print-btn {
+  background: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.print-btn:hover {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+}
+
+.print-btn:active {
+  transform: scale(0.95);
+}
+
+.file-format-actions {
+  display: flex;
+  background: #fff;
+  align-items: center;
+  gap: 10px;
+}
+
+.file-format-body {
+  padding: 16px;
+  overflow: auto;
+}
+
+.file-format-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+
+  th,
+  td {
+    border: 1px solid #ccc;
+    padding: 5px 6px;
+    vertical-align: middle;
+  }
+
+  thead th {
+    background: #7e1b52;
+    color: #ffffff;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  thead .title-row th {
+    background: #6b1d45;
+    font-size: 15px;
+    letter-spacing: 0.08em;
+  }
+
+  thead .meta-row th,
+  thead .meta-row td {
+    background: #f6ecf1;
+    color: #3f2a34;
+  }
+
+  thead .meta-row th {
+    font-weight: 700;
+    text-align: left;
+  }
+
+  thead .meta-row td {
+    text-align: left;
+  }
+
+  thead .sub-header-row th {
+    background: #a63a72;
+  }
+
+  .ingresos-header,
+  .egresos-header {
+    text-align: center;
+  }
+
+  .date-cell,
+  .rate-cell {
+    text-align: center;
+  }
+
+  .money-cell {
+    text-align: right;
+    font-family: "Courier New", monospace;
+    white-space: nowrap;
+  }
+
+  .summary-row .label-cell,
+  .utilidad-row .label-cell {
+    font-weight: 700;
+    text-align: right;
+    background: #f4f4f4;
+  }
+
+  .summary-row {
+    background: #f7f2f5;
+    font-weight: 700;
+  }
+
+  .utilidad-row {
+    background: #e9ffe6;
+  }
+
+  .section-title-row td {
+    background: #fce4ec;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .billing-header-row td {
+    background: #f3e5f5;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  .billing-row:nth-child(even) {
+    background: #faf7fc;
+  }
+
+  .summary-note-row td {
+    background: #fffaf2;
+    color: #67563a;
+    font-size: 11px;
+  }
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .file-format-body,
+  .file-format-body * {
+    visibility: visible;
+  }
+
+  .file-format-body {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background: white;
+    padding: 0;
+  }
+
+  .file-format-header,
+  .file-format-actions {
+    display: none !important;
+  }
+
+  .file-format-modal-backdrop {
+    background: white !important;
+  }
+
+  table {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  @page {
+    size: landscape;
+    margin: 10mm;
+    content: attr(data-filecode);
+    font-size: 10px;
+    color: #444;
+  }
+}

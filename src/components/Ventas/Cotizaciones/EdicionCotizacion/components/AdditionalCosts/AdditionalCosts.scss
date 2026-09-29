@@ -1,0 +1,1429 @@
+// Variables
+@import "../../../../../../styles/_variables.scss";
+
+// ============================================================
+// AdditionalCosts — Final Premium Refinement
+// ============================================================
+
+.ac {
+  margin-bottom: 32px;
+  border-radius: 16px;
+  overflow: visible;
+  background: #fff;
+  border: 1px solid #edf2f7;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.07);
+    border-color: #e2e8f0;
+  }
+}
+
+// ── Header ──
+.ac__title {
+  padding: 16px 24px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+// ── Horizontal Layout for Inputs ──
+.ac__table {
+  display: flex;
+  background: #fff;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.ac__row {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 16px;
+  border-right: 1px solid #f1f5f9;
+  transition: all 0.2s;
+
+  &:last-child {
+    border-right: none;
+  }
+  &:hover {
+    background: #fbfcfd;
+  }
+}
+
+.ac__label {
+  font-weight: 700;
+  color: #94a3b8;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+// ── Segmented Control Style Inputs ──
+.ac__input-cell {
+  display: flex;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.2s;
+
+  &:focus-within {
+    border-color: var(--color-primary);
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(var(--color-primary-rgb), 0.1);
+  }
+}
+
+.ac__toggle-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: #f1f5f9;
+  color: #94a3b8;
+  font-weight: 800;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+  }
+  &--pct {
+    color: var(--color-primary);
+  }
+}
+
+.ac__input {
+  width: 70px;
+  padding: 8px 12px;
+  font-size: 15px;
+  border: none;
+  text-align: right;
+  font-weight: 700;
+  background: transparent;
+  color: #1e293b;
+  outline: none;
+}
+
+.ac__unit {
+  font-size: 11px;
+  font-weight: 800;
+  color: #cbd5e1;
+  padding-right: 12px;
+}
+
+.ac__value {
+  font-weight: 800;
+  color: var(--color-primary);
+  font-size: 16px;
+  margin-top: 4px;
+  background: var(--color-primary-light);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+// ── Summary / Totals ──
+.ac__summary {
+  padding: 0 24px 24px;
+  background: #fbfcfd;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ac__summary-breakdown {
+  display: grid;
+  gap: 12px;
+  background: linear-gradient(180deg, #fff 0%, #fbfcfd 100%);
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid #edf2f7;
+}
+
+.ac__summary-breakdown-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.45fr) repeat(
+      auto-fit,
+      minmax(150px, 1fr)
+    );
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #eef2f7;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.ac__summary-breakdown-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+
+  svg {
+    color: var(--color-primary);
+    font-size: 17px;
+  }
+}
+
+.ac__summary-breakdown-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+
+  svg {
+    flex: 0 0 auto;
+    color: var(--color-primary);
+    font-size: 17px;
+  }
+
+  .icon-child {
+    color: #f59e0b;
+  }
+
+  .icon-room {
+    color: var(--color-accent, #ff8c00);
+  }
+
+  strong {
+    color: #0f172a;
+    font-size: 14px;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+  }
+
+  small {
+    margin-left: auto;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  &--room {
+    border-left: 3px solid var(--color-accent, #ff8c00);
+    background: #fff7ed;
+  }
+}
+
+.ac__summary-calc-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 12px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  border: 1px solid #edf2f7;
+  border-radius: 10px;
+  background: #fff;
+  margin-top: 8px;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  span:last-child {
+    font-weight: 900;
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.ac__summary-calc {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.ac__summary-calc-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+
+  span {
+    color: #0f172a;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  small {
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+  }
+}
+
+.ac__summary-calc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+}
+
+.ac__summary-calc-card {
+  display: grid;
+  gap: 8px;
+  padding: 11px;
+  border: 1px solid #fed7aa;
+  border-left: 3px solid var(--color-accent, #ff8c00);
+  border-radius: 12px;
+  background: #fff7ed;
+}
+
+.ac__summary-calc-card-head,
+.ac__summary-calc-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ac__summary-calc-card-head {
+  color: #7c2d12;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+
+  svg {
+    color: var(--color-accent, #ff8c00);
+    font-size: 16px;
+  }
+
+  small {
+    margin-left: auto;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: #ffedd5;
+    color: #9a3412;
+    font-size: 9px;
+  }
+}
+
+.ac__summary-calc-line {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+
+  strong {
+    color: #0f172a;
+    font-size: 14px;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &--final {
+    margin-top: 2px;
+    padding-top: 8px;
+    border-top: 1px dashed #fdba74;
+    color: #7c2d12;
+
+    strong {
+      color: var(--color-primary);
+      font-size: 16px;
+    }
+  }
+
+  &--igv {
+    padding: 5px 7px;
+    border-radius: 8px;
+    background: #fff7ed;
+    color: #9a3412;
+
+    strong {
+      color: #9a3412;
+      font-size: 12px;
+    }
+  }
+}
+
+.ac__hotel-preview-title {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 0;
+  padding: 12px 24px;
+  background: linear-gradient(180deg, #02522f 0%, #036b3e 100%);
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border: none;
+  border-bottom: 2px solid #ff8c00;
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 4px 20px rgba(2, 82, 47, 0.35);
+
+  svg {
+    font-size: 20px;
+    color: var(--color-accent);
+  }
+
+  .ac__preview-filter-chips {
+    margin-left: auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    justify-content: flex-end;
+
+    .ac__cat-chip {
+      padding: 5px 12px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 20px;
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 10px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.22);
+        border-color: rgba(255, 255, 255, 0.45);
+      }
+
+      &.active {
+        background: var(--color-accent, #ffc107);
+        color: #000;
+        border-color: var(--color-accent, #ffc107);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+      }
+    }
+  }
+}
+
+.ac__hotel-preview {
+  background: #fff;
+  border-radius: 0 0 12px 12px;
+  border: 1px solid #edf2f7;
+  overflow: visible;
+}
+
+.ac__summary-row {
+  &--total {
+    margin-top: 12px;
+    padding: 24px 32px;
+    background: linear-gradient(135deg, #02522f 0%, #036b3e 100%);
+    color: white;
+    border-radius: 16px;
+    box-shadow: 0 12px 30px rgba(2, 82, 47, 0.25);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+
+    &::after {
+      content: "";
+      position: absolute;
+      top: -50%;
+      right: -20%;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(
+        circle,
+        rgba(255, 140, 0, 0.15) 0%,
+        transparent 70%
+      );
+      pointer-events: none;
+    }
+
+    .ac__summary-total-main {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 1;
+    }
+
+    .ac__summary-total-label {
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      opacity: 0.8;
+    }
+
+    .ac__summary-total-formula {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .ac__summary-total-pill {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(255, 255, 255, 0.12);
+      padding: 7px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      min-height: 38px;
+
+      svg {
+        font-size: 18px;
+      }
+      strong {
+        font-size: 16px;
+        font-weight: 900;
+      }
+      small {
+        font-size: 9px;
+        font-weight: 800;
+        opacity: 0.9;
+        text-transform: uppercase;
+      }
+
+      &--room {
+        border-left: 2px solid var(--color-accent, #ff8c00);
+        background: rgba(255, 140, 0, 0.15);
+      }
+    }
+  }
+}
+
+// ── Excel Table Modal Refinement ──
+.hpm-excel-preview--modal {
+  padding: 24px;
+  background: #f8fafc;
+
+  .excel-container-wrapper {
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+  }
+}
+
+// ============================================================
+// Theme pass: align with index.scss design tokens
+// ============================================================
+.ac {
+  border-radius: var(--radius-xl);
+  background: var(--color-bg-primary);
+  border-color: var(--color-border-light);
+  box-shadow: var(--shadow-lg);
+  font-family: var(--font-family-base);
+}
+
+.ac__title {
+  padding: 14px 22px;
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-darker),
+    var(--color-primary)
+  );
+  color: var(--color-text-white);
+}
+
+.ac__table {
+  background: var(--color-bg-primary);
+  border-bottom-color: var(--color-border-light);
+}
+
+.ac__row {
+  padding: 18px 16px;
+  border-right-color: var(--color-border-light);
+  transition: var(--transition-base);
+
+  &:hover {
+    background: var(--gray-100);
+  }
+}
+
+.ac__label {
+  color: var(--gray-600);
+}
+
+.ac__input-cell {
+  background: var(--gray-100);
+  border-color: var(--gray-300);
+  border-radius: var(--radius-lg);
+
+  &:focus-within {
+    background: var(--color-bg-primary);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 4px rgba(var(--color-primary-rgb), 0.1);
+  }
+}
+
+.ac__toggle-btn {
+  background: var(--gray-200);
+  color: var(--gray-600);
+
+  &:hover {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+  }
+
+  &--pct {
+    color: var(--color-primary);
+  }
+}
+
+.ac__input {
+  color: var(--color-text-primary);
+}
+
+.ac__unit {
+  color: var(--gray-500);
+}
+
+.ac__value {
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  font-variant-numeric: tabular-nums;
+}
+
+.ac__summary {
+  background: var(--gray-100);
+}
+
+.ac__summary-breakdown {
+  background: var(--color-bg-primary);
+  border-color: var(--color-border-light);
+  border-radius: var(--radius-xl);
+}
+
+.ac__summary-calc-row {
+  border-bottom-color: var(--color-border-light);
+}
+
+.ac__hotel-preview {
+  background: var(--color-bg-primary);
+  border-color: rgba(var(--color-primary-rgb), 0.16);
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+  box-shadow: var(--shadow-md);
+}
+
+.ac__hotel-preview-title {
+  padding: 11px 20px;
+  background: linear-gradient(
+    180deg,
+    var(--color-primary-darker),
+    var(--color-primary)
+  );
+  color: var(--color-text-white);
+  border-bottom: 2px solid var(--color-accent, #ff8c00);
+
+  svg {
+    color: var(--color-accent);
+  }
+}
+
+.ac__summary-row {
+  &--total {
+    padding: 22px 28px;
+    background: linear-gradient(
+      135deg,
+      var(--color-primary-darker),
+      var(--color-primary) 72%,
+      var(--color-primary-hover)
+    );
+    color: var(--color-text-white);
+    border-radius: var(--radius-xl);
+
+    &::after {
+      content: none;
+    }
+  }
+}
+
+.hpm-excel-preview--modal {
+  padding: 18px;
+  max-height: none;
+  overflow-x: auto;
+  overflow-y: visible;
+  background: var(--gray-100);
+
+  .excel-container-wrapper {
+    border-radius: var(--radius-lg);
+    border-color: var(--color-border);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .hpm-preview-html {
+    margin: 0 auto;
+    max-width: 100%;
+  }
+
+  .hpm-preview-prices,
+  .hpm-preview-price-header,
+  .hpm-preview-price-row {
+    min-width: 0;
+  }
+
+  .hpm-preview-price-cell,
+  .hpm-preview-room-header {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.ac__hotel-preview {
+  overflow: visible;
+
+  .hpm-summary,
+  .hpm-summary-block,
+  .hpm-excel-preview--modal {
+    overflow: visible;
+  }
+
+  .hpm-summary-block {
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+  }
+
+  .hpm-summary-title {
+    display: none;
+  }
+
+  .hpm-excel-preview {
+    max-height: none;
+    overflow-x: auto;
+    overflow-y: visible;
+  }
+
+  .hpm-excel-preview > div {
+    margin: 8px;
+  }
+}
+
+
+// ── Fees table ──
+.ac__table--fees {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border-light);
+  background:
+    linear-gradient(180deg, rgba(248, 250, 252, 0.96), #ffffff),
+    var(--color-bg-primary);
+}
+
+.ac__fee-group {
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.045);
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: rgba(var(--color-primary-rgb), 0.24);
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.07);
+  }
+}
+
+.ac__table--fees .ac__row {
+  flex: none;
+  display: grid;
+  grid-template-columns: minmax(128px, 1fr) minmax(150px, auto) minmax(88px, auto);
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+  border-right: 0;
+  border-bottom: 0;
+
+  &:hover {
+    background: transparent;
+  }
+}
+
+.ac__row-head {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.ac__table--fees .ac__label {
+  min-width: 0;
+  color: #334155;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.ac__table--fees .ac__input-cell {
+  justify-self: end;
+  min-width: 150px;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.ac__table--fees .ac__value {
+  justify-self: end;
+  min-width: 82px;
+  text-align: right;
+  border-radius: 10px;
+}
+
+@media (max-width: 760px) {
+  .ac__table {
+    flex-direction: column;
+  }
+
+  .ac__table--fees {
+    display: grid;
+    grid-template-columns: 1fr;
+    padding: 14px;
+  }
+
+  .ac__table--fees .ac__row {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .ac__row-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .ac__table--fees .ac__input-cell,
+  .ac__table--fees .ac__value {
+    justify-self: stretch;
+  }
+
+  .ac__row {
+    border-right: 0;
+    border-bottom: 1px solid var(--color-border-light);
+
+    &:last-child {
+      border-bottom: 0;
+    }
+  }
+
+  .ac__summary-total-formula {
+    flex-wrap: wrap;
+  }
+}
+
+// ── Hotel grouped pricing breakdown ──
+.ac__hotel-preview-heading {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+
+  span {
+    line-height: 1.1;
+  }
+
+}
+
+.ac__hotel-group-breakdown {
+  grid-column: 2 / -1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+
+.ac__hotel-group-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 140, 0, 0.24);
+  border-left: 4px solid var(--color-accent, #ff8c00);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fff7ed, #ffffff);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.04);
+}
+
+.ac__hotel-group-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  color: #7c2d12;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+
+  strong {
+    color: #0f172a;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+  }
+
+  span,
+  small {
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: #ffedd5;
+    color: #9a3412;
+  }
+}
+
+.ac__hotel-group-card-rooms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.ac__hotel-group-room {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border: 1px solid #fed7aa;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #7c2d12;
+  font-size: 11px;
+  font-weight: 800;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75);
+
+  strong {
+    color: var(--color-primary);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &--child {
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+    color: #166534;
+  }
+}
+
+.ac__summary-breakdown-item--room-total-label {
+  min-width: 172px;
+  justify-content: flex-start;
+  gap: 10px;
+  border-left-color: var(--color-primary, #02522f);
+  background: linear-gradient(180deg, #f0fdf4, #dcfce7);
+
+  strong,
+  small {
+    color: var(--color-primary, #02522f);
+  }
+
+  strong {
+    line-height: 1.15;
+  }
+
+  small {
+    margin-left: 0;
+    white-space: normal;
+    line-height: 1.15;
+  }
+}
+
+.ac__summary-breakdown-item--room-total {
+  min-width: 156px;
+  box-shadow: inset 0 0 0 1px rgba(255, 140, 0, 0.08);
+  background: linear-gradient(180deg, #fff7ed, #ffffff);
+}
+
+// ============================================================
+// AdditionalCosts visual polish: stacked fees + readable breakdown
+// ============================================================
+.ac__table--fees {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  align-items: stretch;
+  gap: 14px;
+  padding: 18px 22px;
+  overflow: visible;
+}
+
+.ac__table--fees .ac__fee-group {
+  min-width: 0;
+  padding: 16px;
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96)),
+    #ffffff;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+}
+
+.ac__table--fees .ac__row {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-content: start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.ac__table--fees .ac__row-head {
+  min-height: 30px;
+  padding-bottom: 2px;
+}
+
+.ac__table--fees .ac__label {
+  display: block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.ac__table--fees .ac__input-cell {
+  justify-self: stretch;
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  border-radius: 12px;
+}
+
+.ac__table--fees .ac__input {
+  min-width: 0;
+  text-align: center;
+}
+
+.ac__table--fees .ac__value {
+  justify-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+  width: 100%;
+  min-height: 34px;
+  padding: 7px 12px;
+  border: 1px solid rgba(var(--color-primary-rgb), 0.1);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #effaf4, #e3f3ec);
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.ac__summary-breakdown {
+  gap: 14px;
+  padding: 18px;
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96)),
+    #ffffff;
+}
+
+.ac__summary-breakdown-row {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #ffffff, #fbfdff);
+  box-shadow: inset 0 0 0 1px rgba(226, 232, 240, 0.72);
+}
+
+.ac__summary-breakdown-label {
+  flex: 0 0 128px;
+  min-height: 42px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #0f3b2a;
+}
+
+.ac__summary-breakdown-item {
+  flex: 1 1 180px;
+  min-width: 170px;
+  max-width: 280px;
+  min-height: 44px;
+  padding: 9px 12px;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+}
+
+.ac__summary-breakdown-item strong {
+  white-space: nowrap;
+}
+
+.ac__summary-breakdown-item small {
+  min-width: 0;
+  margin-left: 0;
+  overflow-wrap: anywhere;
+  text-align: right;
+  line-height: 1.2;
+}
+
+.ac__hotel-group-breakdown {
+  flex: 1 1 calc(100% - 148px);
+  grid-column: auto;
+  min-width: min(620px, 100%);
+  margin-left: 0;
+}
+
+.ac__hotel-group-card {
+  min-width: 0;
+  padding: 14px;
+  border-radius: 16px;
+}
+
+.ac__hotel-group-card-head {
+  gap: 9px;
+}
+
+.ac__hotel-group-room {
+  min-height: 34px;
+}
+
+.ac__summary-breakdown-item--room-total-label {
+  flex: 0 0 142px;
+  min-width: 142px;
+  max-width: 160px;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.ac__summary-breakdown-item--room-total {
+  flex: 0 1 210px;
+  min-width: 190px;
+}
+
+.ac__breakdown-item--child {
+  border-left: 3px solid #22c55e;
+  background: linear-gradient(180deg, #f0fdf4, #ffffff);
+}
+
+@media (max-width: 920px) {
+  .ac__summary-breakdown-label,
+  .ac__summary-breakdown-item,
+  .ac__summary-breakdown-item--room-total-label,
+  .ac__summary-breakdown-item--room-total,
+  .ac__hotel-group-breakdown {
+    flex: 1 1 100%;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .ac__summary-breakdown-item small {
+    text-align: left;
+  }
+}
+
+.ac__label-hint {
+  display: block;
+  margin-top: 3px;
+  color: #94a3b8;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: none;
+}
+
+.ac__row--fee-percent-only {
+  .ac__row-head {
+    text-align: center;
+  }
+}
+
+.ac__fee-select-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px;
+  border: 1px solid #bbf7d0;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.65);
+}
+
+.ac__fee-select {
+  min-width: 88px;
+  height: 36px;
+  border: 0;
+  border-radius: 10px;
+  padding: 0 32px 0 12px;
+  color: #065f46;
+  background: #ffffff;
+  font-weight: 900;
+  outline: none;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.ac__fee-custom-btn {
+  height: 36px;
+  border: 0;
+  border-radius: 10px;
+  padding: 0 12px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #047857 0%, #10b981 100%);
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(4, 120, 87, 0.18);
+  }
+}
+
+.ac__unit--fee {
+  padding-right: 6px;
+  color: #047857;
+}
+
+.ac__summary-subtotal-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 8px 0 0;
+  padding: 9px 12px;
+  border: 1px dashed rgba(2, 82, 47, 0.28);
+  border-radius: 12px;
+  background: rgba(236, 253, 245, 0.8);
+  color: #02522f;
+  font-size: 12px;
+  font-weight: 700;
+
+  strong {
+    font-size: 14px;
+    font-weight: 900;
+  }
+}
+
+// ============================================================
+// Pax pricing clarity: room-scoped national IGV + child prices
+// ============================================================
+.ac__national-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(22, 163, 74, 0.22);
+  border-radius: 12px;
+  background: #f7fdf9;
+  color: #166534;
+  font-size: 11px;
+  line-height: 1.45;
+
+  > div {
+    display: grid;
+    gap: 2px;
+  }
+
+  strong {
+    color: #14532d;
+    font-size: 11px;
+    font-weight: 900;
+  }
+
+  span {
+    color: #3f6250;
+    font-weight: 650;
+  }
+
+  > em {
+    flex: 0 0 auto;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: #dcfce7;
+    color: #166534;
+    font-size: 9px;
+    font-style: normal;
+    font-weight: 900;
+    white-space: nowrap;
+  }
+}
+
+.ac__national-badge,
+.ac__free-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-height: 19px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: 0.025em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ac__national-badge {
+  border: 1px solid #86efac;
+  background: #dcfce7;
+  color: #166534;
+}
+
+.ac__free-badge {
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.ac__hotel-group-room-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ac__hotel-group-room--national {
+  border-color: #86efac;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.ac__summary-breakdown-item--national {
+  border-color: #86efac;
+  border-left-color: #16a34a;
+  background: #f7fef9;
+}
+
+.ac__room-total-copy {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 2px;
+  min-width: 0;
+
+  strong,
+  small {
+    margin-left: 0;
+    text-align: left;
+  }
+}
+
+.ac__room-tax-note {
+  color: #15803d !important;
+  font-size: 9px !important;
+  font-weight: 800 !important;
+  line-height: 1.25;
+  text-transform: none !important;
+}
+
+.ac__summary-calc-card--national {
+  border-color: #86efac;
+  border-left-color: #16a34a;
+  background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 100%);
+
+  .ac__summary-calc-card-head {
+    color: #166534;
+
+    svg {
+      color: #16a34a;
+    }
+  }
+
+  .ac__summary-calc-line--final {
+    border-top-color: #86efac;
+    color: #166534;
+  }
+}
+
+.ac__summary-calc-card--free {
+  border-color: #bbf7d0;
+  border-left-color: #22c55e;
+  background: #f7fef9;
+}
+
+.ac__national-room-caption,
+.ac__child-room-caption {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: -2px;
+  padding: 5px 7px;
+  border-radius: 8px;
+  font-size: 9px;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.ac__national-room-caption {
+  background: rgba(220, 252, 231, 0.72);
+  color: #166534;
+}
+
+.ac__child-room-caption {
+  background: rgba(255, 247, 237, 0.82);
+  color: #9a3412;
+}
+
+@media (max-width: 640px) {
+  .ac__national-note {
+    align-items: flex-start;
+    flex-direction: column;
+
+    > em {
+      align-self: flex-start;
+    }
+  }
+
+  .ac__hotel-group-room {
+    width: 100%;
+    border-radius: 10px;
+  }
+}
+
+/* Fee porcentual manual: sin selector por múltiplos ni monto genérico. */
+.ac__input-cell--percentage {
+  min-width: 118px;
+  justify-content: center;
+}
+
+.ac__row--fee-percent-only {
+  justify-content: center;
+
+  .ac__input {
+    width: 82px;
+  }
+}
+
+.ac__input-help {
+  min-height: 15px;
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+}

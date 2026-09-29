@@ -1,0 +1,91 @@
+@import "../../../styles/_variables.scss";
+
+.smart-payment-method-select {
+  display: flex;
+  gap: $spacing-sm;
+  align-items: stretch;
+
+  select,
+  input {
+    flex: 1;
+    padding: $spacing-sm $spacing-md;
+    border: 1px solid $color-border;
+    border-radius: $border-radius-sm;
+    font-size: $font-size-md;
+    transition: $transition-fast;
+
+    &:focus {
+      outline: none;
+      border-color: $color-primary;
+      box-shadow: 0 0 0 2px rgba($color-primary, 0.1);
+    }
+
+    &.manual-input {
+      font-weight: 500;
+      color: $color-primary;
+    }
+  }
+
+  .btn-manual-mode,
+  .btn-select-mode {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+    padding: $spacing-sm $spacing-md;
+    background: $color-gray-lightest;
+    border: 1px solid $color-border;
+    border-radius: $border-radius-sm;
+    color: $color-gray-dark;
+    font-size: $font-size-sm;
+    font-weight: 500;
+    cursor: pointer;
+    transition: $transition-fast;
+    white-space: nowrap;
+
+    &:hover {
+      background: $color-gray-lighter;
+      border-color: $color-gray-medium;
+      color: $color-text-primary;
+    }
+
+    &:active {
+      transform: translateY(1px);
+    }
+
+    svg {
+      font-size: $font-size-sm;
+    }
+  }
+
+  .btn-manual-mode {
+    background: linear-gradient(
+      135deg,
+      $color-primary 0%,
+      darken($color-primary, 10%) 100%
+    );
+    color: $color-text-white;
+    border-color: $color-primary;
+
+    &:hover {
+      background: linear-gradient(
+        135deg,
+        darken($color-primary, 5%) 0%,
+        darken($color-primary, 15%) 100%
+      );
+      border-color: darken($color-primary, 5%);
+    }
+  }
+}
+
+// Responsive
+@media (max-width: 576px) {
+  .smart-payment-method-select {
+    flex-direction: column;
+
+    .btn-manual-mode,
+    .btn-select-mode {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+}

@@ -1,0 +1,226 @@
+@import "../../../styles/_variables.scss";
+
+.notification-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  min-width: 320px;
+  max-width: 480px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  z-index: 12000;
+  overflow: hidden;
+  animation: toastSlideIn 0.3s ease-out;
+  border-left: 4px solid #e2e8f0;
+
+  .toast-content {
+    display: flex;
+    align-items: flex-start;
+    padding: 16px;
+    gap: 12px;
+
+    .toast-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      font-size: 18px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .toast-message {
+      flex: 1;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      color: #374151;
+      word-wrap: break-word;
+    }
+
+    .toast-close {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border: none;
+      background: rgba(0, 0, 0, 0.05);
+      border-radius: 50%;
+      color: #6b7280;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 14px;
+      flex-shrink: 0;
+
+      &:hover {
+        background: rgba(0, 0, 0, 0.1);
+        color: #374151;
+        transform: scale(1.05);
+      }
+
+      &:active {
+        transform: scale(0.95);
+      }
+    }
+  }
+
+  .toast-progress {
+    position: relative;
+    height: 3px;
+    background: rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+
+    .toast-progress-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 100%;
+      background: currentColor;
+      transform: translateX(-100%);
+      animation: progressBar linear forwards;
+    }
+  }
+
+  // Variantes por tipo
+  &.toast-success {
+    border-left-color: #27ae60;
+
+    .toast-progress .toast-progress-bar {
+      background: #27ae60;
+    }
+  }
+
+  &.toast-error {
+    border-left-color: #dc3545;
+
+    .toast-progress .toast-progress-bar {
+      background: #dc3545;
+    }
+  }
+
+  &.toast-warning {
+    border-left-color: #f39c12;
+
+    .toast-progress .toast-progress-bar {
+      background: #f39c12;
+    }
+  }
+
+  &.toast-info {
+    border-left-color: #3498db;
+
+    .toast-progress .toast-progress-bar {
+      background: #3498db;
+    }
+  }
+
+  // Estado de salida
+  &.toast-exit {
+    animation: toastSlideOut 0.3s ease-in forwards;
+  }
+}
+
+// Contenedor para múltiples toasts
+.notification-toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 12000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+
+  .notification-toast {
+    position: relative;
+    top: auto;
+    right: auto;
+    pointer-events: all;
+  }
+}
+
+// Animaciones
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes toastSlideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%) scale(0.95);
+  }
+}
+
+@keyframes progressBar {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .notification-toast {
+    top: 16px;
+    right: 16px;
+    left: 16px;
+    width: auto;
+    min-width: auto;
+    max-width: none;
+
+    .toast-content {
+      padding: 14px;
+      gap: 10px;
+
+      .toast-message {
+        font-size: 0.85rem;
+      }
+    }
+  }
+
+  .notification-toast-container {
+    top: 16px;
+    right: 16px;
+    left: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .notification-toast {
+    .toast-content {
+      padding: 12px;
+
+      .toast-icon {
+        width: 20px;
+        height: 20px;
+        font-size: 16px;
+      }
+
+      .toast-close {
+        width: 20px;
+        height: 20px;
+        font-size: 12px;
+      }
+
+      .toast-message {
+        font-size: 0.8rem;
+      }
+    }
+  }
+}

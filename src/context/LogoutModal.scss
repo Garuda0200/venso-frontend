@@ -1,0 +1,433 @@
+// src/components/LogoutModal/LogoutModal.scss
+.logout-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
+  backdrop-filter: blur(4px);
+
+  .logout-modal-container {
+    position: relative;
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    min-width: 300px;
+    animation: modalAppear 0.3s ease-out;
+    z-index: 100000;
+
+    h3 {
+      margin: 0 0 20px 0;
+      color: #333;
+      font-size: 1.2rem;
+    }
+
+    .logout-modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+
+      .logout-btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.3s ease;
+
+        &.confirm {
+          background: #dc3545;
+          color: white;
+
+          &:hover {
+            background: darken(#dc3545, 10%);
+            transform: translateY(-2px);
+          }
+        }
+
+        &.cancel {
+          background: #6c757d;
+          color: white;
+
+          &:hover {
+            background: darken(#6c757d, 10%);
+            transform: translateY(-2px);
+          }
+        }
+      }
+    }
+  }
+}
+
+@keyframes modalAppear {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.logout-popover-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 99999;
+  background: transparent; // Allow clicking outside to close
+
+  .logout-popover-container {
+    position: absolute;
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    min-width: 240px;
+    z-index: 100000;
+    border: none;
+    opacity: 0;
+    transform: translateY(15px) scale(0.95);
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+
+    &.show {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    // Arrow pointer with gradient
+    .popover-arrow {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-bottom: 10px solid white;
+      filter: drop-shadow(0 -3px 3px rgba(0, 0, 0, 0.05));
+
+      // Arrow pointing from left to right (for collapsed sidebar)
+      &.arrow-left {
+        bottom: auto;
+        left: -10px;
+        top: 20px;
+        transform: none;
+        border-top: 10px solid transparent;
+        border-bottom: 10px solid transparent;
+        border-right: 10px solid white;
+        border-left: none;
+        filter: drop-shadow(-3px 0 3px rgba(0, 0, 0, 0.05));
+      }
+    }
+
+    h3 {
+      margin: 0 0 12px 0;
+      color: #1a1a1a;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .logout-popover-message {
+      color: #666;
+      font-size: 0.9rem;
+      margin-bottom: 15px;
+    }
+
+    .logout-popover-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 5px;
+
+      .logout-btn {
+        padding: 10px 18px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.25s ease;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+
+        &.confirm {
+          background: linear-gradient(135deg, #ff5252, #dc3545);
+          color: white;
+
+          &:hover {
+            background: linear-gradient(135deg, #ff3838, #c62232);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(220, 53, 69, 0.3);
+          }
+
+          &:active {
+            transform: translateY(0);
+          }
+        }
+
+        &.cancel {
+          background: #f8f9fa;
+          color: #212529;
+          border: 1px solid #e9ecef;
+
+          &:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
+          }
+
+          &:active {
+            transform: translateY(0);
+          }
+        }
+      }
+    }
+  }
+}
+
+@keyframes popoverAppear {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes popoverPulse {
+  0% {
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  }
+  50% {
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
+  }
+  100% {
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.logout-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999999; // Increased to an extremely high value to ensure it's above EVERYTHING
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease;
+  backdrop-filter: blur(3px); // Increased blur for better visual separation
+  background-color: rgba(0, 0, 0, 0.6); // Darker background for better opacity
+  pointer-events: all; // Capture all clicks to prevent interacting with elements behind
+
+  &.visible {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .logout-modal {
+    width: 280px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.35);
+    padding: 20px;
+    pointer-events: auto; // Enable interaction with the modal itself
+    z-index: 10000000; // Increased to ensure it's above backdrop and other elements
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform: translateY(-110%) scale(0.95);
+
+    &.show {
+      opacity: 1;
+      transform: translateY(-100%) scale(1);
+      animation: popoverPulse 1.5s ease-in-out 0.3s;
+    }
+
+    // When placed below the trigger (header)
+    &.placement-bottom {
+      transform: translateY(8px) scale(0.95);
+
+      &.show {
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .popover-arrow {
+      position: absolute;
+      top: 100%; // Position at the bottom of the popover
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 12px solid transparent;
+      border-right: 12px solid transparent;
+      border-top: 12px solid white;
+      filter: drop-shadow(0 8px 8px rgba(0, 0, 0, 0.1));
+
+      &.arrow-left {
+        top: 30px;
+        left: auto;
+        right: 100%;
+        transform: none;
+        border-top: 12px solid transparent;
+        border-bottom: 12px solid transparent;
+        border-right: 12px solid white;
+        border-left: none;
+        filter: drop-shadow(-8px 0 8px rgba(0, 0, 0, 0.1));
+      }
+
+      // Arrow pointing up (for header placement="bottom")
+      &.arrow-top {
+        top: -12px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-left: 12px solid transparent;
+        border-right: 12px solid transparent;
+        border-bottom: 12px solid white;
+        border-top: none;
+        filter: drop-shadow(0 -3px 3px rgba(0, 0, 0, 0.05));
+      }
+    }
+
+    .close-button {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: transparent;
+      border: none;
+      color: #777;
+      cursor: pointer;
+      font-size: 16px;
+      padding: 5px;
+      border-radius: 50%;
+      transition: all 0.2s;
+      z-index: 2; // Ensure button is above other content
+
+      &:hover {
+        color: #333;
+        background: #f1f1f1;
+        transform: rotate(90deg);
+      }
+    }
+
+    .modal-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+
+      .icon-container {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background-color: #f8f8f8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 15px;
+        animation: iconPulse 1.5s infinite alternate;
+
+        .logout-icon {
+          font-size: 28px;
+          color: #f27c22; // Primary orange color from your PDF generation
+        }
+      }
+
+      h3 {
+        margin: 0 0 10px;
+        font-size: 18px;
+        color: #333;
+        animation: fadeInUp 0.5s ease-out 0.1s both;
+      }
+
+      p {
+        margin: 0 0 20px;
+        color: #666;
+        font-size: 14px;
+        animation: fadeInUp 0.5s ease-out 0.2s both;
+      }
+
+      .button-container {
+        display: flex;
+        gap: 10px;
+        width: 100%;
+        animation: fadeInUp 0.5s ease-out 0.3s both;
+
+        button {
+          flex: 1;
+          padding: 10px;
+          border-radius: 6px;
+          border: none;
+          cursor: pointer;
+          font-weight: 600;
+          transition: all 0.3s;
+
+          &.cancel-button {
+            background-color: #f0f0f0;
+            color: #333;
+
+            &:hover {
+              background-color: #e0e0e0;
+              transform: translateY(-2px);
+            }
+
+            &:active {
+              transform: translateY(0);
+            }
+          }
+
+          &.confirm-button {
+            background-color: #f27c22; // Primary orange color
+            color: white;
+
+            &:hover {
+              background-color: #e06712;
+              transform: translateY(-2px);
+              box-shadow: 0 4px 10px rgba(242, 124, 34, 0.3);
+            }
+
+            &:active {
+              transform: translateY(0);
+              box-shadow: none;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+@keyframes iconPulse {
+  0% {
+    transform: scale(1);
+    background-color: #f8f8f8;
+  }
+  100% {
+    transform: scale(1.05);
+    background-color: #ffefdb;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

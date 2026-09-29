@@ -1,0 +1,356 @@
+/* Variables */
+$color-primary: #105c3c;
+$color-white: #ffffff;
+$color-gray-dark: #5a6b65;
+$color-shadow: rgba(0, 0, 0, 0.15);
+
+.MyTourContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  min-height: 100vh;
+  padding: 40px 20px 120px 20px;
+  box-sizing: border-box;
+  font-family: "Roboto", sans-serif;
+
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  .overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.15);
+    /* Slight darkening to make text pop */
+    z-index: 1;
+  }
+
+  .contentWrapper {
+    width: 100%;
+    max-width: 650px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 2;
+  }
+
+  .myTourHeader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 30px;
+    color: $color-white;
+
+    .headerTitleContainer {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      h1 {
+        font-size: 42px;
+        margin: 0;
+        font-weight: 800;
+        text-shadow:
+          0 4px 15px rgba(0, 0, 0, 0.8),
+          0 2px 5px rgba(0, 0, 0, 0.6);
+      }
+    }
+
+    .myTourIcon {
+      font-size: 42px;
+      filter: drop-shadow(0 4px 15px rgba(0, 0, 0, 0.8))
+        drop-shadow(0 2px 5px rgba(0, 0, 0, 0.6));
+    }
+
+    .headerSubtitle {
+      margin-top: 8px;
+      font-size: 14px;
+      letter-spacing: 4px;
+      font-weight: 600;
+      text-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.9),
+        0 1px 3px rgba(0, 0, 0, 0.8);
+    }
+  }
+
+  .myTourCard {
+    background: rgba(244, 247, 246, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 40px 50px;
+    border-radius: 20px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+    box-sizing: border-box;
+
+    .greenText {
+      font-size: 20px;
+      color: $color-primary;
+      margin: 0 0 10px 0;
+      font-weight: 700;
+    }
+
+    .exploreText {
+      font-size: 15px;
+      line-height: 1.6;
+      color: $color-gray-dark;
+      margin: 0 0 20px 0;
+    }
+
+    .voucherSection {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .itineraryDescription {
+      font-size: 14px;
+      font-weight: 600;
+      color: $color-gray-dark;
+      margin: 0;
+    }
+
+    .inputWithIcon {
+      position: relative;
+      width: 100%;
+    }
+
+    .iconLeft {
+      position: absolute;
+      left: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #889994;
+      font-size: 18px;
+    }
+
+    .voucherInput {
+      width: 100%;
+      padding: 16px 20px 16px 45px;
+      background-color: #f8faf9;
+      border: 1px solid #d3dcd9;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 500;
+      outline: none;
+      color: #333;
+      box-sizing: border-box;
+      transition: border-color 0.3s ease;
+
+      &::placeholder {
+        color: #a4b2ad;
+        font-weight: 500;
+      }
+
+      &:focus {
+        border-color: $color-primary;
+        box-shadow: 0 0 0 3px rgba(16, 92, 60, 0.1);
+      }
+    }
+
+    .itineraryButtonContainer {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 10px;
+    }
+
+    .itineraryButton {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 35px;
+      background-color: $color-primary;
+      border: none;
+      border-radius: 30px;
+      font-size: 16px;
+      font-weight: 600;
+      color: $color-white;
+      cursor: pointer;
+      transition:
+        background-color 0.3s ease,
+        transform 0.2s ease;
+
+      &:hover {
+        background-color: darken(#105c3c, 5%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(16, 92, 60, 0.3);
+      }
+
+      .arrowIcon {
+        font-size: 14px;
+      }
+    }
+  }
+
+  .footerContainer {
+    position: absolute;
+    bottom: 30px;
+    display: flex;
+    gap: 20px;
+    z-index: 2;
+
+    .footerPill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(5px);
+      padding: 8px 16px;
+      border-radius: 20px;
+      color: $color-white;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+
+      .pillIcon {
+        font-size: 14px;
+      }
+    }
+  }
+
+  .darkModePill {
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: none;
+    color: $color-white;
+    cursor: pointer;
+    z-index: 2;
+    transition: background 0.3s ease;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.6);
+    }
+
+    .moonIcon {
+      font-size: 18px;
+    }
+  }
+
+  /* --- RESPONSIVIDAD (Tablets y Móviles) --- */
+  @media (max-width: 991px) {
+    .contentWrapper {
+      max-width: 90%;
+    }
+
+    .myTourCard {
+      padding: 30px;
+    }
+
+    .myTourHeader {
+      .headerTitleContainer h1 {
+        font-size: 36px;
+      }
+
+      .myTourIcon {
+        font-size: 36px;
+      }
+
+      .headerSubtitle {
+        font-size: 12px;
+        letter-spacing: 2px;
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    .footerContainer {
+      flex-direction: column;
+      bottom: 20px;
+      gap: 10px;
+      align-items: center;
+
+      .footerPill {
+        padding: 6px 12px;
+        font-size: 10px;
+      }
+    }
+
+    .darkModePill {
+      bottom: 20px;
+      right: 20px;
+      width: 40px;
+      height: 40px;
+
+      .moonIcon {
+        font-size: 16px;
+      }
+    }
+
+    .myTourCard {
+      padding: 25px 20px;
+
+      .greenText {
+        font-size: 18px;
+      }
+
+      .exploreText {
+        font-size: 14px;
+      }
+
+      .voucherInput {
+        padding: 14px 15px 14px 40px;
+        font-size: 14px;
+      }
+
+      .itineraryButton {
+        width: 100%;
+        justify-content: center;
+        padding: 14px 20px;
+      }
+
+      .itineraryButtonContainer {
+        justify-content: center;
+      }
+    }
+  }
+
+  @media (max-width: 480px) {
+    .myTourHeader {
+      .headerTitleContainer h1 {
+        font-size: 30px;
+      }
+
+      .myTourIcon {
+        font-size: 30px;
+      }
+
+      .headerSubtitle {
+        font-size: 10px;
+        letter-spacing: 1px;
+        text-align: center;
+      }
+    }
+
+    .myTourCard {
+      padding: 20px 15px;
+      border-radius: 16px;
+
+      .greenText {
+        font-size: 16px;
+        text-align: center;
+      }
+
+      .exploreText {
+        font-size: 13px;
+        text-align: center;
+      }
+    }
+  }
+}

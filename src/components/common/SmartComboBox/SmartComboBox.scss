@@ -1,0 +1,202 @@
+@import "../../../styles/_variables.scss";
+
+.smart-combobox {
+  position: relative;
+  width: 100%;
+
+  .combobox-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    border: 1px solid #d0d0d0;
+    border-radius: 4px;
+    background: white;
+    transition: border-color 0.2s ease;
+
+    &:focus-within {
+      border-color: $color-brand-green;
+      box-shadow: 0 0 0 2px rgba(7, 123, 70, 0.1);
+    }
+
+    .combobox-input {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      outline: none;
+      font-size: 14px;
+      color: #333;
+      background: transparent;
+
+      &::placeholder {
+        color: #999;
+      }
+    }
+
+    .combobox-textarea {
+      resize: none;
+      overflow: hidden;
+      line-height: 1.4;
+      font-family: inherit;
+      min-height: 34px;
+    }
+
+    .combobox-actions {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      padding-right: 4px;
+
+      .clear-btn,
+      .dropdown-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        color: #666;
+        transition: all 0.2s ease;
+        border-radius: 3px;
+
+        &:hover {
+          background: rgba(0, 0, 0, 0.05);
+          color: #333;
+        }
+
+        svg.rotated {
+          transform: rotate(180deg);
+        }
+      }
+    }
+  }
+
+  .combobox-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    max-height: 300px;
+    background: white;
+    border: 1px solid #d0d0d0;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    overflow: hidden;
+
+    .dropdown-loading,
+    .dropdown-empty {
+      padding: 12px 16px;
+      text-align: center;
+      color: #666;
+      font-size: 13px;
+    }
+
+    .dropdown-more {
+      padding: 7px 12px;
+      border-top: 1px solid #eef2f7;
+      background: #f8fafc;
+      color: #64748b;
+      font-size: 11px;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .dropdown-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      max-height: 300px;
+      overflow-y: auto;
+
+      .dropdown-option {
+        padding: 10px 16px;
+        cursor: pointer;
+        font-size: 14px;
+        color: #333;
+        transition: background-color 0.15s ease;
+        border-bottom: 1px solid #f0f0f0;
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        &:hover,
+        &.highlighted {
+          background-color: #f8f9fa;
+        }
+
+        &.selected {
+          background-color: rgba(7, 123, 70, 0.1);
+          color: $color-brand-green;
+          font-weight: 500;
+        }
+      }
+    }
+  }
+}
+
+
+// El portal se usa en editores que viven dentro de tarjetas/scrolls con
+// overflow. Al renderizar en <body> no hereda el scope .smart-combobox, por
+// eso estas reglas replican el aspecto del dropdown sin depender del ancestro.
+.combobox-dropdown--portal {
+  box-sizing: border-box;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.18);
+  z-index: 20000;
+  overflow: hidden;
+
+  .dropdown-loading,
+  .dropdown-empty {
+    padding: 12px 16px;
+    text-align: center;
+    color: #64748b;
+    font-size: 13px;
+  }
+
+  .dropdown-more {
+    padding: 7px 12px;
+    border-top: 1px solid #eef2f7;
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  .dropdown-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: inherit;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+
+    .dropdown-option {
+      padding: 9px 14px;
+      cursor: pointer;
+      font-size: 13px;
+      color: #1e293b;
+      transition: background-color 0.15s ease;
+      border-bottom: 1px solid #f1f5f9;
+
+      &:last-child {
+        border-bottom: 0;
+      }
+
+      &:hover,
+      &.highlighted {
+        background: #f8fafc;
+      }
+
+      &.selected {
+        background: rgba(7, 123, 70, 0.1);
+        color: $color-brand-green;
+        font-weight: 700;
+      }
+    }
+  }
+}

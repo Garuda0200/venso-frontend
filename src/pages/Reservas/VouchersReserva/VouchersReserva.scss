@@ -1,0 +1,752 @@
+// ============================================
+// VOUCHERS RESERVA PAGE — Design System Tokens
+// ============================================
+
+.vouchers-reserva-page {
+  padding: var(--spacing-lg);
+  width: 100%;
+  overflow-x: clip;
+  min-height: 100%;
+  background: var(--color-bg-light);
+
+  &.vouchers-reserva-page--editor {
+    padding: 0;
+  }
+
+  // ── Page Header ──
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+
+    h1 {
+      font-size: var(--font-size-xl);
+      margin: 0;
+      color: var(--color-primary);
+      font-weight: 700;
+    }
+  }
+
+  // ── Filter Bar ──
+  .filters-container {
+    background: var(--color-bg-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-border-light);
+
+    .filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--spacing-sm);
+      align-items: flex-end;
+
+      .filter-group {
+        flex: 1;
+        min-width: 150px;
+
+        label {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          margin-bottom: 2px;
+          font-size: 11px;
+          color: var(--color-text-secondary);
+
+          svg {
+            font-size: 13px;
+            color: var(--color-primary);
+          }
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
+        }
+
+        input,
+        select {
+          width: 100%;
+          padding: 6px 10px;
+          border: 1px solid var(--color-border-input);
+          border-radius: var(--radius-md);
+          font-size: var(--font-size-sm);
+          background: var(--color-bg-primary);
+          color: var(--color-text-primary);
+          transition:
+            border-color 0.2s,
+            box-shadow 0.2s;
+
+          &:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px var(--color-primary-light);
+          }
+        }
+      }
+
+      .btn-clear {
+        height: 34px;
+        padding: 0 14px;
+        border-radius: var(--radius-md);
+        border: none;
+        font-weight: 600;
+        font-size: var(--font-size-xs);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: var(--gray-200);
+        color: var(--color-text-secondary);
+
+        svg {
+          font-size: 16px;
+        }
+
+        &:hover {
+          background: var(--gray-300);
+          color: var(--color-text-primary);
+        }
+      }
+    }
+
+    .view-controls {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: var(--spacing-xs);
+      gap: var(--spacing-xs);
+
+      .view-control-btn {
+        background: none;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        padding: 4px 10px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+        color: var(--color-text-secondary);
+        font-size: 11px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: var(--gray-100);
+        }
+
+        &.active {
+          background: var(--color-primary-light);
+          color: var(--color-primary);
+          border-color: var(--color-primary);
+        }
+      }
+    }
+  }
+
+  // ── Voucher Container ──
+  .vouchers-container {
+    .vouchers-count {
+      margin-bottom: var(--spacing-xs);
+      font-size: var(--font-size-xs);
+      color: var(--color-text-light);
+      font-weight: 500;
+    }
+
+    &.grid .vouchers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: var(--spacing-md);
+    }
+
+    &.list .vouchers-grid {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-sm);
+    }
+  }
+
+  // ── Year Accordion ──
+  .voucher-year-group {
+    background: var(--color-bg-primary);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-md) var(--spacing-base);
+    margin-bottom: var(--spacing-base);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-border-light);
+    transition: border-color 0.2s;
+
+    &.expanded {
+      border-color: rgba(var(--color-primary-rgb), 0.15);
+    }
+
+    .voucher-year-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      padding: var(--spacing-xs) 0;
+      user-select: none;
+
+      .year-header-left {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+
+        .year-icon {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          background: var(--color-primary-light);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: var(--color-primary);
+          font-size: 20px;
+        }
+
+        .year-title {
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-sm);
+
+          .year-text {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--gray-900);
+          }
+
+          .year-badge {
+            padding: 3px 10px;
+            border-radius: var(--radius-pill);
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+
+            &.current-year {
+              background: var(--color-primary);
+              color: var(--color-text-white);
+            }
+          }
+        }
+      }
+
+      .year-header-right {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+
+        .year-files-pill {
+          padding: 4px 12px;
+          background: var(--gray-100);
+          border-radius: var(--radius-pill);
+          border: 1px solid var(--color-border-light);
+          font-size: var(--font-size-xs);
+          color: var(--color-text-secondary);
+          font-weight: 500;
+        }
+
+        .year-toggle-btn {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          border: 1px solid var(--color-border-light);
+          background: var(--color-bg-primary);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          color: var(--color-text-light);
+          transition: all 0.2s;
+
+          &:hover {
+            background: var(--gray-100);
+            color: var(--color-primary);
+          }
+
+          svg {
+            font-size: 20px;
+          }
+        }
+      }
+    }
+
+    .voucher-year-body {
+      margin-top: var(--spacing-sm);
+      padding: var(--spacing-sm) 0;
+    }
+  }
+
+  // ── Month Accordion ──
+  .voucher-month-group {
+    background: var(--gray-100);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--spacing-sm);
+    border: 1px solid var(--color-border-light);
+    overflow: hidden;
+
+    .voucher-month-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--spacing-sm) var(--spacing-md);
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.2s;
+
+      &:hover {
+        background: var(--gray-200);
+      }
+
+      .month-header-left {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+
+        .month-icon {
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          background: var(--color-primary-light);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: var(--color-primary);
+          font-size: 16px;
+        }
+
+        .month-title {
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-sm);
+
+          .month-text {
+            font-size: var(--font-size-md);
+            font-weight: 600;
+            color: var(--color-primary-dark);
+          }
+
+          .month-badge {
+            padding: 2px 8px;
+            border-radius: var(--radius-pill);
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+
+            &.current-month {
+              background: var(--color-primary);
+              color: var(--color-text-white);
+            }
+          }
+        }
+      }
+
+      .month-header-right {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+
+        .month-files-pill {
+          padding: 3px 10px;
+          background: var(--color-bg-primary);
+          border-radius: var(--radius-pill);
+          border: 1px solid var(--color-border-light);
+          font-size: var(--font-size-xs);
+          color: var(--color-primary-dark);
+          font-weight: 500;
+        }
+
+        .month-toggle-btn {
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          border: 1px solid var(--color-border-light);
+          background: var(--color-bg-primary);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          color: var(--color-primary);
+          transition: all 0.2s;
+
+          &:hover {
+            background: var(--color-primary-light);
+          }
+
+          svg {
+            font-size: 18px;
+          }
+        }
+      }
+    }
+
+    &.expanded .vouchers-grid {
+      padding: var(--spacing-sm) var(--spacing-md) var(--spacing-md);
+    }
+  }
+
+  // ── Empty State ──
+  .no-vouchers {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    background: var(--color-bg-primary);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+
+    .no-data-icon {
+      font-size: 56px;
+      color: var(--gray-400);
+      margin-bottom: var(--spacing-base);
+    }
+
+    p {
+      color: var(--color-text-secondary);
+      font-size: var(--font-size-base);
+      margin: 0;
+    }
+  }
+
+  // ── Retry Button ──
+  .retry-button {
+    margin-top: var(--spacing-base);
+    padding: 10px 20px;
+    background: var(--color-primary);
+    color: var(--color-text-white);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+    transition: background 0.2s;
+
+    &:hover {
+      background: var(--color-primary-hover);
+    }
+  }
+
+  // ── Responsive ──
+  @media (max-width: 768px) {
+    padding: var(--spacing-base);
+
+    .filters-container form {
+      flex-direction: column;
+
+      .filter-group {
+        min-width: 100%;
+      }
+    }
+
+    .vouchers-container.grid .vouchers-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Compact sticky reservation voucher header
+// ─────────────────────────────────────────────────────────────────────────────
+.vouchers-reserva-page:not(.vouchers-reserva-page--editor) {
+  padding: 0 var(--spacing-lg) var(--spacing-lg);
+
+  .vouchers-reserva-sticky-top {
+    position: sticky;
+    top: 0;
+    z-index: 135;
+    margin: 0 calc(var(--spacing-lg) * -1) 12px;
+    padding: 8px var(--spacing-lg) 9px;
+    background: rgba(249, 252, 250, 0.96);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid #dce8e1;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.07);
+  }
+
+  .vouchers-reserva-sticky-top .page-header {
+    min-height: 42px;
+    margin: 0 0 7px;
+    gap: 14px;
+  }
+
+  .page-heading {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    &__icon {
+      width: 36px;
+      height: 36px;
+      flex: 0 0 36px;
+      display: grid;
+      place-items: center;
+      border-radius: 11px;
+      background: #eaf7f0;
+      color: var(--color-primary-dark);
+      border: 1px solid #d4ecdf;
+
+      svg {
+        font-size: 20px;
+      }
+    }
+
+    &__title-line {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+
+      h1 {
+        margin: 0;
+        color: var(--color-text-primary);
+        font-size: 18px;
+        line-height: 1.1;
+        letter-spacing: -0.35px;
+      }
+
+      > span {
+        min-width: 24px;
+        padding: 2px 7px;
+        border-radius: 999px;
+        background: #e7f1ec;
+        color: #476157;
+        font-size: 10px;
+        font-weight: 800;
+        text-align: center;
+      }
+    }
+
+    p {
+      margin: 3px 0 0;
+      color: #7b8b83;
+      font-size: 10px;
+      font-weight: 600;
+    }
+  }
+
+  .vouchers-reserva-sticky-top .view-controls {
+    display: inline-flex;
+    gap: 3px;
+    margin: 0;
+    padding: 3px;
+    border: 1px solid #dbe6e0;
+    border-radius: 9px;
+    background: #f5f9f7;
+
+    .view-control-btn {
+      min-height: 29px;
+      padding: 0 9px;
+      gap: 5px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: #617269;
+      font-size: 10px;
+      font-weight: 800;
+
+      svg {
+        font-size: 15px;
+      }
+
+      &.active {
+        background: var(--color-primary-dark);
+        color: #fff;
+        box-shadow: 0 3px 8px rgba(var(--color-primary-rgb), 0.14);
+      }
+    }
+  }
+
+  .vouchers-reserva-sticky-top .filters-container {
+    margin: 0;
+    padding: 5px;
+    border: 1px solid #dce6e1;
+    border-radius: 11px;
+    background: #f8fbf9;
+    box-shadow: none;
+
+    .filter-row {
+      display: grid;
+      grid-template-columns: minmax(190px, 1fr) minmax(150px, 0.65fr) minmax(210px, 1fr) auto;
+      gap: 6px;
+      align-items: end;
+    }
+
+    .filter-group {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+      gap: 7px;
+      height: 34px;
+      padding: 0 9px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: #fff;
+
+      > span {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        color: #6d7e75;
+        font-size: 9px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.035em;
+        white-space: nowrap;
+
+        svg {
+          color: var(--color-primary);
+          font-size: 14px;
+        }
+      }
+
+      input {
+        min-width: 0;
+        width: 100%;
+        height: 31px;
+        padding: 0;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        color: var(--color-text-primary);
+        font-size: 11px;
+      }
+
+      &:focus-within {
+        border-color: #83c5a3;
+        box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.07);
+      }
+    }
+
+    .btn-clear {
+      height: 34px;
+      margin: 0;
+      padding: 0 10px;
+      border: 1px solid #efd8d8;
+      border-radius: 8px;
+      background: #fffafa;
+      color: #a34343;
+      font-size: 10px;
+      font-weight: 800;
+      box-shadow: none;
+    }
+  }
+
+  @media (max-width: 840px) {
+    padding-inline: 10px;
+
+    .vouchers-reserva-sticky-top {
+      margin-inline: -10px;
+      padding-inline: 10px;
+    }
+
+    .vouchers-reserva-sticky-top .filters-container .filter-row {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .page-heading p,
+    .view-control-btn span {
+      display: none;
+    }
+
+    .page-heading__title-line h1 {
+      font-size: 16px;
+    }
+
+    .vouchers-reserva-sticky-top .filters-container .filter-row {
+      grid-template-columns: 1fr;
+    }
+
+    .vouchers-reserva-sticky-top .filters-container .btn-clear {
+      width: 100%;
+    }
+  }
+}
+
+// Keep the sticky toolbar attached to the MainLayout header and compact list groups.
+.vouchers-reserva-page:not(.vouchers-reserva-page--editor) {
+  .vouchers-reserva-sticky-top {
+    isolation: isolate;
+  }
+
+  .vouchers-container.list {
+    .vouchers-count {
+      margin: 2px 2px 8px;
+    }
+
+    .voucher-year-group {
+      margin-bottom: 10px;
+      padding: 9px 10px 10px;
+      border-radius: 13px;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.045);
+
+      .voucher-year-header {
+        min-height: 38px;
+        padding: 2px 3px;
+
+        .year-icon {
+          width: 31px;
+          height: 31px;
+          font-size: 17px;
+        }
+
+        .year-text {
+          font-size: 17px;
+        }
+      }
+
+      .voucher-year-body {
+        margin-top: 7px;
+        padding: 6px;
+        border-radius: 11px;
+      }
+    }
+
+    .voucher-month-group {
+      margin-bottom: 7px;
+      border-radius: 11px;
+
+      .voucher-month-header {
+        min-height: 36px;
+        padding: 5px 8px;
+
+        .month-icon {
+          width: 27px;
+          height: 27px;
+          font-size: 15px;
+        }
+
+        .month-text {
+          font-size: 12px;
+        }
+      }
+
+      .vouchers-grid {
+        gap: 8px;
+        padding-top: 7px;
+      }
+    }
+  }
+}
+
+.reservation-list-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid rgba(var(--color-primary-rgb), 0.16);
+  border-radius: 10px;
+  background: #f7fbf9;
+  color: #64766d;
+  font-size: 0.72rem;
+  white-space: nowrap;
+
+  strong {
+    color: var(--color-primary-dark);
+    font-size: 0.75rem;
+  }
+}

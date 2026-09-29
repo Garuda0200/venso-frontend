@@ -1,0 +1,1081 @@
+﻿// Variables: usar var(--xxx) de :root (index.scss). @import mantenido para funciones SCSS.
+@import "../../../../../../../styles/_variables";
+
+.room-selection-component {
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+
+    h3 {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0;
+      font-size: 1.2rem;
+      color: var(--color-primary-dark);
+    }
+
+    .back-btn {
+      padding: 8px 14px;
+      background: white;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      color: var(--color-text-secondary);
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        border-color: var(--color-primary);
+        color: var(--color-primary);
+      }
+    }
+  }
+
+  // ======================================
+  // Barra de estado de multiselección
+  // ======================================
+  .multiselect-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    background: white;
+    border-radius: 10px;
+    border: 2px solid var(--color-border-light);
+
+    .status-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      > svg {
+        font-size: 1.1rem;
+        color: var(--color-primary);
+      }
+
+      .capacity-text {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--color-text-secondary);
+
+        strong {
+          font-size: 1.05rem;
+          color: var(--color-primary-dark);
+        }
+      }
+
+      .rooms-count {
+        font-size: 0.8rem;
+        color: var(--color-text-secondary);
+        font-weight: 500;
+      }
+    }
+
+    .status-actions {
+      display: flex;
+      gap: 8px;
+
+      button {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        svg {
+          font-size: 0.75rem;
+        }
+      }
+
+      .clear-btn {
+        background: rgba($color-danger, 0.08);
+        border: 1px solid rgba($color-danger, 0.3);
+        color: var(--color-danger);
+
+        &:hover {
+          background: var(--color-danger);
+          color: white;
+        }
+      }
+
+      .confirm-btn {
+        background: rgba($color-success, 0.1);
+        border: 1px solid rgba($color-success, 0.3);
+        color: var(--color-success);
+
+        &.ready {
+          background: var(--color-success);
+          border-color: var(--color-success);
+          color: white;
+          animation: pulse-ready 1.5s ease infinite;
+
+          &:hover {
+            background: darken($color-success, 5%);
+          }
+        }
+      }
+    }
+
+    &.complete {
+      border-color: rgba($color-success, 0.3);
+      background: linear-gradient(135deg, rgba($color-success, 0.03), white);
+    }
+
+    &.incomplete {
+      border-color: rgba($color-warning, 0.3);
+      background: linear-gradient(135deg, rgba($color-warning, 0.03), white);
+    }
+  }
+
+  @keyframes pulse-ready {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 rgba($color-success, 0.3);
+    }
+    50% {
+      box-shadow: 0 0 0 6px rgba($color-success, 0);
+    }
+  }
+
+  // ======================================
+  // Panel de habitaciones seleccionadas
+  // ======================================
+  .selected-rooms-panel {
+    margin-bottom: 12px;
+    padding: 12px;
+    background: linear-gradient(
+      135deg,
+      rgba(var(--color-primary-rgb), 0.04),
+      rgba(var(--color-primary-rgb), 0.01)
+    );
+    border: 1px solid rgba(var(--color-primary-rgb), 0.15);
+    border-radius: 10px;
+
+    h4 {
+      margin: 0 0 10px;
+      font-size: 0.85rem;
+      color: var(--color-primary-dark);
+      font-weight: 700;
+    }
+
+    .selected-rooms-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .selected-room-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      background: white;
+      border: 1px solid rgba(var(--color-primary-rgb), 0.2);
+      border-radius: 8px;
+      font-size: 0.8rem;
+      transition: all 0.2s ease;
+
+      &:hover {
+        border-color: var(--color-primary);
+        box-shadow: 0 2px 6px rgba(var(--color-primary-rgb), 0.15);
+      }
+
+      .hotel-name {
+        font-weight: 700;
+        color: var(--color-primary-dark);
+        max-width: 120px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .room-type {
+        color: var(--color-text-secondary);
+        font-weight: 500;
+      }
+
+      .quantity-control {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        background: rgba(var(--color-primary-rgb), 0.08);
+        border-radius: 4px;
+        padding: 2px;
+
+        .qty-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 18px;
+          height: 18px;
+          padding: 0;
+          border: none;
+          border-radius: 3px;
+          cursor: pointer;
+          transition: all 0.15s ease;
+
+          svg {
+            font-size: 0.55rem;
+          }
+
+          &.minus {
+            background: rgba($color-danger, 0.15);
+            color: var(--color-danger);
+            &:hover:not(:disabled) {
+              background: var(--color-danger);
+              color: white;
+            }
+            &:disabled {
+              opacity: 0.4;
+              cursor: not-allowed;
+            }
+          }
+
+          &.plus {
+            background: rgba($color-success, 0.15);
+            color: var(--color-success);
+            &:hover {
+              background: var(--color-success);
+              color: white;
+            }
+          }
+        }
+
+        .qty-value {
+          min-width: 18px;
+          text-align: center;
+          font-weight: 700;
+          font-size: 0.75rem;
+          color: var(--color-primary-dark);
+        }
+      }
+
+      .capacity {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        padding: 2px 6px;
+        background: rgba($color-info, 0.1);
+        color: var(--color-info);
+        border-radius: 4px;
+        font-weight: 700;
+        font-size: 0.75rem;
+
+        svg {
+          font-size: 0.65rem;
+        }
+      }
+
+      .price {
+        color: var(--color-success);
+        font-weight: 700;
+      }
+
+      .remove-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        padding: 0;
+        background: rgba($color-danger, 0.1);
+        border: none;
+        border-radius: 50%;
+        color: var(--color-danger);
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        svg {
+          font-size: 0.65rem;
+        }
+
+        &:hover {
+          background: var(--color-danger);
+          color: white;
+        }
+      }
+    }
+  }
+
+  // Overlay del modal automático
+  .auto-suggest-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 12000;
+    padding: 20px;
+  }
+
+  .auto-suggest-modal {
+    background: white;
+    border-radius: 14px;
+    max-width: 500px;
+    width: 100%;
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      background: linear-gradient(
+        135deg,
+        var(--color-primary),
+        var(--color-primary-dark)
+      );
+      color: white;
+
+      h4 {
+        margin: 0;
+        font-size: 1rem;
+      }
+
+      .close-btn {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s ease;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.3);
+        }
+      }
+    }
+
+    .auto-toggle {
+      padding: 12px 20px;
+      background: #f8f9fa;
+      border-bottom: 1px solid var(--color-border-light);
+
+      label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--color-text-primary);
+
+        input {
+          width: 18px;
+          height: 18px;
+          cursor: pointer;
+        }
+      }
+    }
+
+    .options-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px;
+    }
+
+    .option-card {
+      background: white;
+      border: 2px solid var(--color-border-light);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      &:hover {
+        border-color: var(--color-primary-light);
+      }
+
+      &.selected {
+        border-color: var(--color-primary);
+        background: rgba(var(--color-primary-rgb), 0.04);
+        box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
+      }
+
+      .option-title {
+        margin-bottom: 10px;
+        font-size: 0.9rem;
+        color: var(--color-primary-dark);
+      }
+
+      .option-rooms {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 10px;
+      }
+
+      .room-chip {
+        display: inline-flex;
+        flex-direction: column;
+        padding: 6px 10px;
+        background: linear-gradient(135deg, #f0f7ff, #e8f4fd);
+        border: 1px solid rgba(var(--color-primary-rgb), 0.2);
+        border-radius: 8px;
+        font-size: 0.75rem;
+
+        span {
+          font-weight: 700;
+          color: var(--color-primary-dark);
+        }
+        small {
+          color: var(--color-text-secondary);
+          font-size: 0.7rem;
+        }
+      }
+
+      .option-footer {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        font-size: 0.75rem;
+        color: var(--color-text-secondary);
+      }
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      padding: 16px 20px;
+      border-top: 1px solid var(--color-border-light);
+      background: #f8f9fa;
+
+      button {
+        flex: 1;
+        padding: 12px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .secondary-btn {
+        background: white;
+        border: 1px solid var(--color-border);
+        color: var(--color-text-secondary);
+
+        &:hover {
+          border-color: var(--color-primary);
+          color: var(--color-primary);
+        }
+      }
+
+      .primary-btn {
+        background: var(--color-primary);
+        border: none;
+        color: white;
+
+        &:hover {
+          background: var(--color-primary-dark);
+        }
+      }
+    }
+  }
+
+  .rooms-container {
+    max-height: 500px;
+    overflow-y: auto;
+    padding: 4px;
+  }
+
+  .rooms-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .room-card {
+    background: white;
+    border: 2px solid var(--color-border-light);
+    border-radius: 12px;
+    padding: 14px;
+    transition: all 0.25s ease;
+
+    &:hover {
+      border-color: var(--color-primary-light);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    &.selected {
+      border-color: var(--color-primary);
+      background: linear-gradient(
+        135deg,
+        rgba(var(--color-primary-rgb), 0.04),
+        transparent
+      );
+      box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
+    }
+
+    .room-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+
+      .room-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        svg {
+          color: var(--color-primary);
+        }
+        span {
+          font-weight: 700;
+          color: var(--color-primary-dark);
+          font-size: 1rem;
+        }
+      }
+
+      .room-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        .capacity {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          padding: 4px 10px;
+          background: rgba($color-info, 0.1);
+          color: var(--color-info);
+          border-radius: 16px;
+          font-size: 0.8rem;
+          font-weight: 700;
+        }
+
+        .status {
+          padding: 4px 10px;
+          border-radius: 16px;
+          font-size: 0.75rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          background: rgba($color-border, 0.3);
+          color: var(--color-text-secondary);
+
+          &.available {
+            background: rgba($color-success, 0.1);
+            color: var(--color-success);
+          }
+        }
+      }
+    }
+
+    .room-description {
+      font-size: 0.85rem;
+      color: var(--color-text-secondary);
+      margin: 0 0 12px 0;
+      padding: 8px 10px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      border-left: 3px solid var(--color-primary-light);
+    }
+
+    .tariffs-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .tariff-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      background: linear-gradient(135deg, #f8f9fa, white);
+      border: 1px solid var(--color-border-light);
+      border-radius: 8px;
+
+      .tariff-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        color: var(--color-primary-dark);
+        font-size: 0.85rem;
+
+        .season {
+          padding: 2px 8px;
+          background: var(--color-warning);
+          color: white;
+          border-radius: 10px;
+          font-size: 0.7rem;
+          font-weight: 700;
+        }
+      }
+
+      .price-buttons {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      // Nuevo selector de cantidad con controles +/-
+      .quantity-selector {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border: 2px solid var(--color-border);
+        background: white;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+
+        .price-label {
+          font-size: 0.65rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          color: var(--color-text-secondary);
+        }
+
+        .price-value {
+          font-size: 0.85rem;
+          font-weight: 800;
+          color: var(--color-primary);
+          min-width: 60px;
+        }
+
+        .qty-controls {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          margin-left: auto;
+
+          .qty-btn {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: 2px solid var(--color-border);
+            background: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+
+            svg {
+              font-size: 0.7rem;
+              color: var(--color-text-secondary);
+            }
+
+            &:hover:not(:disabled) {
+              border-color: var(--color-primary);
+              background: rgba(var(--color-primary-rgb), 0.1);
+              svg {
+                color: var(--color-primary);
+              }
+            }
+
+            &:disabled {
+              opacity: 0.4;
+              cursor: not-allowed;
+            }
+
+            &.plus {
+              border-color: var(--color-success);
+              svg {
+                color: var(--color-success);
+              }
+              &:hover:not(:disabled) {
+                background: var(--color-success);
+                svg {
+                  color: white;
+                }
+              }
+            }
+
+            &.minus {
+              border-color: var(--color-danger);
+              svg {
+                color: var(--color-danger);
+              }
+              &:hover:not(:disabled) {
+                background: var(--color-danger);
+                svg {
+                  color: white;
+                }
+              }
+            }
+          }
+
+          .qty-value {
+            font-size: 1rem;
+            font-weight: 800;
+            min-width: 24px;
+            text-align: center;
+            color: var(--color-text-secondary);
+
+            &.active {
+              color: var(--color-primary);
+            }
+          }
+        }
+
+        // Cuando hay cantidad > 0
+        &:has(.qty-value.active) {
+          border-color: var(--color-primary);
+          background: rgba(var(--color-primary-rgb), 0.03);
+        }
+
+        &.compartido {
+          .price-value {
+            color: var(--color-info);
+          }
+          &:has(.qty-value.active) {
+            border-color: var(--color-info);
+            background: rgba($color-info, 0.03);
+          }
+        }
+
+        &.privado {
+          .price-value {
+            color: var(--color-warning);
+          }
+          &:has(.qty-value.active) {
+            border-color: var(--color-warning);
+            background: rgba($color-warning, 0.03);
+          }
+        }
+      }
+
+      .price-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 6px 12px;
+        border: 2px solid var(--color-border);
+        background: white;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-width: 75px;
+
+        .label {
+          font-size: 0.65rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
+        }
+
+        .value {
+          font-size: 0.85rem;
+          font-weight: 800;
+        }
+
+        &.compartido {
+          .label,
+          .value {
+            color: var(--color-info);
+          }
+          &:hover {
+            border-color: var(--color-info);
+            background: rgba($color-info, 0.05);
+          }
+          &.active {
+            background: var(--color-info);
+            border-color: var(--color-info);
+            .label,
+            .value {
+              color: white;
+            }
+          }
+        }
+
+        &.privado {
+          .label,
+          .value {
+            color: var(--color-warning);
+          }
+          &:hover {
+            border-color: var(--color-warning);
+            background: rgba($color-warning, 0.05);
+          }
+          &.active {
+            background: var(--color-warning);
+            border-color: var(--color-warning);
+            .label,
+            .value {
+              color: white;
+            }
+          }
+        }
+
+        &.unico {
+          min-width: 100px;
+          .label,
+          .value {
+            color: var(--color-success);
+          }
+          &:hover {
+            border-color: var(--color-success);
+            background: rgba($color-success, 0.05);
+          }
+          &.active,
+          &.added {
+            background: var(--color-success);
+            border-color: var(--color-success);
+            .label,
+            .value {
+              color: white;
+            }
+          }
+        }
+
+        // Estado agregado/seleccionado
+        &.added {
+          position: relative;
+          animation: addedPulse 0.3s ease;
+
+          svg {
+            color: white;
+            font-size: 0.8rem;
+          }
+
+          &.compartido {
+            background: var(--color-info);
+            border-color: var(--color-info);
+            .label,
+            .value {
+              color: white;
+            }
+          }
+
+          &.privado {
+            background: var(--color-warning);
+            border-color: var(--color-warning);
+            .label,
+            .value {
+              color: white;
+            }
+          }
+        }
+      }
+
+      @keyframes addedPulse {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+    }
+
+    // Tarifa seleccionada
+    .tariff-row.selected {
+      background: linear-gradient(
+        135deg,
+        rgba(var(--color-primary-rgb), 0.08),
+        rgba(var(--color-primary-rgb), 0.02)
+      );
+      border-color: rgba(var(--color-primary-rgb), 0.3);
+      box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.1);
+    }
+
+    .no-tariffs {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 16px;
+      background: rgba($color-danger, 0.05);
+      border: 1px dashed rgba($color-danger, 0.3);
+      border-radius: 8px;
+      color: var(--color-danger);
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+  }
+
+  // Distribución automática inline
+  .auto-distribution-inline {
+    background: linear-gradient(135deg, #f0f7ff, #e8f4fd);
+    border: 2px solid rgba(var(--color-primary-rgb), 0.2);
+    border-radius: 12px;
+    padding: 16px;
+
+    .inline-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+
+      h4 {
+        margin: 0;
+        font-size: 0.95rem;
+        color: var(--color-primary-dark);
+      }
+
+      .toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.8rem;
+        color: var(--color-text-secondary);
+        cursor: pointer;
+
+        input {
+          cursor: pointer;
+        }
+      }
+    }
+
+    .inline-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .option-chip {
+      display: inline-flex;
+      flex-direction: column;
+      padding: 8px 12px;
+      background: white;
+      border: 2px solid var(--color-border-light);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      strong {
+        font-size: 0.8rem;
+        color: var(--color-primary-dark);
+      }
+      span {
+        font-size: 0.7rem;
+        color: var(--color-text-secondary);
+      }
+
+      &:hover {
+        border-color: var(--color-primary);
+      }
+
+      &.selected {
+        border-color: var(--color-primary);
+        background: rgba(var(--color-primary-rgb), 0.08);
+      }
+    }
+
+    .apply-btn {
+      width: 100%;
+      padding: 10px;
+      background: var(--color-primary);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.2s ease;
+
+      &:hover {
+        background: var(--color-primary-dark);
+      }
+    }
+  }
+
+  .loading-state,
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: var(--color-text-secondary);
+
+    svg {
+      font-size: 2rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+
+    p {
+      margin: 0;
+      font-weight: 500;
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid var(--color-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 12px;
+    }
+  }
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .room-selection-component {
+    .rooms-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .tariff-row {
+      flex-direction: column;
+      gap: 10px;
+      align-items: flex-start;
+
+      .price-buttons {
+        width: 100%;
+        justify-content: flex-end;
+      }
+    }
+
+    .auto-suggest-modal {
+      max-width: 95%;
+      max-height: 90vh;
+    }
+  }
+}

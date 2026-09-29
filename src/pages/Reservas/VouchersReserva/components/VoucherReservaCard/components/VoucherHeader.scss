@@ -1,0 +1,107 @@
+// ============================================
+// VOUCHER HEADER — Design System Tokens
+// ============================================
+
+.voucher-header {
+  background: var(--gray-100);
+  padding: var(--spacing-md) var(--spacing-base);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border-light);
+
+  .voucher-id {
+    display: flex;
+    align-items: baseline;
+    gap: var(--spacing-sm);
+    min-width: 0;
+
+    .id-label {
+      color: var(--color-text-light);
+      font-size: var(--font-size-xs);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+
+    .id-value {
+      background: var(--color-primary-light);
+      color: var(--color-primary);
+      padding: 4px 10px;
+      border-radius: var(--radius-md);
+      font-weight: 700;
+      font-size: var(--font-size-sm);
+      letter-spacing: 0.3px;
+      border: 1px solid rgba(var(--color-primary-rgb), 0.2);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 260px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    align-items: flex-start;
+
+    .voucher-id .id-value {
+      max-width: 100%;
+      font-size: var(--font-size-xs);
+    }
+  }
+}
+
+// List-mode: compact header as inline strip
+.voucher-reserva-card.list .voucher-header {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-bottom: none;
+  min-width: 200px;
+  max-width: 220px;
+  flex-shrink: 0;
+
+  .voucher-id .id-value {
+    font-size: var(--font-size-xs);
+    max-width: 160px;
+  }
+}
+
+// Refined list identity cell
+.voucher-reserva-card.list .voucher-list-section--identity .voucher-header {
+  min-width: 0;
+  max-width: none;
+  min-height: 100%;
+  padding: 14px 15px;
+  align-items: center;
+  border: 0;
+  background: transparent;
+
+  .voucher-id {
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 7px;
+
+    .id-label {
+      color: var(--color-text-secondary);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.065em;
+    }
+
+    .id-value {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      padding: 7px 10px;
+      border-radius: 9px;
+      background: var(--color-primary-light);
+      color: var(--color-primary-dark);
+      border-color: rgba(var(--color-primary-rgb), 0.18);
+      font-size: 12px;
+      line-height: 1.2;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+    }
+  }
+}

@@ -1,0 +1,171 @@
+@import "../../../styles/_variables.scss";
+
+.form-section-v2 {
+  position: relative;
+  margin-bottom: 1.25rem;
+  padding: 1.25rem;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e9ecef;
+  transition: all 0.2s ease;
+
+  // Sombra sutil
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  // ============================================================
+  // VARIANTES DE COLOR (borde izquierdo distintivo)
+  // ============================================================
+
+  &.form-section-primary {
+    border-left: 4px solid $color-brand-green;
+
+    .section-icon {
+      color: $color-brand-green;
+    }
+  }
+
+  &.form-section-secondary {
+    border-left: 4px solid $color-brand-orange;
+
+    .section-icon {
+      color: $color-brand-orange;
+    }
+  }
+
+  &.form-section-tertiary {
+    border-left: 4px solid #36b9cc;
+
+    .section-icon {
+      color: #36b9cc;
+    }
+  }
+
+  &.form-section-success {
+    border-left: 4px solid #1cc88a;
+
+    .section-icon {
+      color: #1cc88a;
+    }
+  }
+
+  &.form-section-warning {
+    border-left: 4px solid #f6c23e;
+
+    .section-icon {
+      color: #f6c23e;
+    }
+  }
+
+  &.form-section-danger {
+    border-left: 4px solid #e74a3b;
+
+    .section-icon {
+      color: #e74a3b;
+    }
+  }
+
+  // ============================================================
+  // HEADER DE SECCIÓN
+  // ============================================================
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #f1f3f9;
+  }
+
+  .section-title-group {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+  }
+
+  .section-icon {
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba($color-brand-green, 0.1);
+  }
+
+  .section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #333333;
+    margin: 0;
+  }
+
+  .required-badge,
+  .optional-badge {
+    font-size: 0.625rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .required-badge {
+    background: #fce8e6;
+    color: #d93025;
+  }
+
+  .optional-badge {
+    background: #e8f5e9;
+    color: #1e8e3e;
+  }
+
+  .section-header-action {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  // ============================================================
+  // CONTENIDO
+  // ============================================================
+
+  .section-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  // ============================================================
+  // VERSIÓN COMPACTA
+  // ============================================================
+
+  &.compact {
+    padding: 1rem;
+    margin-bottom: 1rem;
+
+    .section-header {
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+    }
+
+    .section-title {
+      font-size: 0.9375rem;
+    }
+
+    .section-icon {
+      font-size: 1rem;
+      width: 28px;
+      height: 28px;
+    }
+
+    .section-content {
+      gap: 0.75rem;
+    }
+  }
+}

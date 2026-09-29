@@ -1,0 +1,32 @@
+.servicios-container .movilidad-form {
+  .movilidad-route-field {
+    padding: 14px;
+    background: linear-gradient(
+      135deg,
+      var(--color-primary-light),
+      rgba(255, 140, 0, 0.06)
+    );
+    border: 1px solid rgba(var(--color-primary-rgb), 0.16);
+    border-radius: 10px;
+  }
+
+  .route-variant-input .variant-field {
+    background: var(--color-bg-primary);
+    border-color: rgba(var(--color-primary-rgb), 0.25);
+    color: var(--color-primary);
+    font-weight: var(--font-weight-bold);
+    font-style: normal;
+  }
+
+  .route-quick-add {
+    margin-top: 10px;
+  }
+
+  .movilidad-variants-info {
+    border-left-color: var(--color-primary);
+
+    .combination-item {
+      background: var(--color-bg-primary);
+    }
+  }
+}

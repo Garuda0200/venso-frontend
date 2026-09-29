@@ -1,0 +1,497 @@
+// ============================================================
+// DESIGN TOKENS — CSS Custom Properties (Single Source of Truth)
+// ============================================================
+// Todos los componentes deben usar var(--xxx) en lugar de $scss-vars.
+// Las variables SCSS en _variables.scss se mantienen solo para
+// funciones SCSS (darken, lighten, rgba) y compatibilidad temporal.
+// ============================================================
+
+:root {
+  // ── Brand Colors ──
+  --color-primary: #ff007e;
+  --color-primary-light: rgba(255, 0, 126, 0.1);
+  --color-primary-dark: #d9006b;
+  --color-primary-darker: #ac0055;
+  --color-primary-hover: #e60071;
+  --color-primary-rgb: 255, 0, 126;
+
+  --color-secondary: #858796;
+  --color-secondary-light: rgba(133, 135, 150, 0.1);
+
+  --color-accent: #000000;
+  --color-accent-light: rgba(0, 0, 0, 0.1);
+  --color-accent-dark: #000000;
+
+  --color-tertiary: #ff4ca5;
+  --color-tertiary-light: #ff8fc8;
+  --color-tertiary-dark: #cc0065;
+  --color-tertiary-rgb: 255, 0, 126;
+
+  // ── Semantic Colors ──
+  --color-success: #1cc88a;
+  --color-success-light: rgba(28, 200, 138, 0.1);
+  --color-success-dark: #17a673;
+
+  --color-danger: #e74a3b;
+  --color-danger-light: rgba(231, 74, 59, 0.1);
+  --color-danger-dark: #c0392b;
+
+  --color-warning: #f6c23e;
+  --color-warning-light: rgba(246, 194, 62, 0.1);
+  --color-warning-dark: #dda20a;
+
+  --color-info: #36b9cc;
+  --color-info-light: rgba(54, 185, 204, 0.1);
+  --color-info-dark: #2a96a5;
+
+  // ── Gray Scale ──
+  --gray-100: #f8f9fc;
+  --gray-200: #eaecf4;
+  --gray-300: #dddfeb;
+  --gray-400: #d1d3e2;
+  --gray-500: #b7b9cc;
+  --gray-600: #858796;
+  --gray-700: #6e707e;
+  --gray-800: #5a5c69;
+  --gray-900: #3a3b45;
+
+  // ── Text Colors ──
+  --color-text-primary: #333333;
+  --color-text-secondary: #666666;
+  --color-text-light: #999999;
+  --color-text-muted: #444444;
+  --text-muted: var(--color-text-muted);
+  --color-text-white: #ffffff;
+  --color-text-dark: #5a5c69;
+
+  // ── Background Colors ──
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f8f9fa;
+  --color-bg-tertiary: #e9ecef;
+  --color-bg-light: #f8f9fc;
+  --color-bg-dark: #5a5c69;
+  --color-white: #ffffff;
+  --color-surface-raised: #ffffff;
+  --color-surface-soft: #fbf8fa;
+  --color-surface-accent: rgba(var(--color-primary-rgb), 0.06);
+  --color-row-hover: rgba(var(--color-primary-rgb), 0.055);
+  --color-row-selected: rgba(var(--color-primary-rgb), 0.095);
+  --color-brand-border: rgba(var(--color-primary-rgb), 0.22);
+
+  // ── Border Colors ──
+  --color-border: #dddfeb;
+  --color-border-light: #eaecf4;
+  --color-border-dark: #d1d3e2;
+  --color-border-input: #ddd;
+
+  // ── Border Radius ──
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-pill: 50px;
+
+  // ── Shadows ──
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.15);
+
+  // ── Spacing ──
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 0.75rem;
+  --spacing-base: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-xxl: 3rem;
+
+  // ── Font Sizes ──
+  --font-size-xs: 0.8125rem;
+  --font-size-sm: 0.875rem;
+  --font-size-md: 0.9375rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.1875rem;
+  --font-size-xl: 1.375rem;
+  --font-size-xxl: 1.625rem;
+
+  // ── Font Weights ──
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  // ── Font Family ──
+  --font-family-base:
+    "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-family-mono:
+    source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+
+  // ── Transitions ──
+  --transition-fast: all 0.15s ease-in-out;
+  --transition-base: all 0.2s ease-in-out;
+  --transition-slow: all 0.3s ease-in-out;
+
+  // ── Z-Index Scale ──
+  --z-dropdown: 1000;
+  --z-sticky: 1010;
+  --z-fixed: 1020;
+  --z-modal-backdrop: 1030;
+  --z-modal: 1040;
+  --z-popover: 1050;
+  --z-tooltip: 1060;
+  --z-snackbar: 9000;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-primary);
+}
+
+code {
+  font-family: var(--font-family-mono);
+}
+
+// ============================================================
+// LOADING STATES - sistema visual compartido
+// ============================================================
+:where(
+  .loading-container,
+  .pvm-loading,
+  .payment-request-manager.loading,
+  .circular-progress
+) {
+  > :where(.loading-spinner, .spinner, .spinner-circle) {
+    position: relative !important;
+    width: 58px !important;
+    height: 18px !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    animation: none !important;
+    margin: 0 0 var(--spacing-sm) !important;
+    overflow: visible !important;
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 5px;
+      left: 7px;
+      width: 8px;
+      height: 8px;
+      border: 0;
+      border-radius: 999px;
+      background: var(--color-primary);
+      box-shadow:
+        19px 0 0 rgba(var(--color-primary-rgb), 0.42),
+        38px 0 0 var(--color-accent);
+      animation: venso-loading-dots 1s ease-in-out infinite;
+    }
+
+    &::after {
+      content: "";
+      position: absolute;
+      inset: -9px -12px;
+      border-radius: 999px;
+      background:
+        radial-gradient(
+          circle at 20% 50%,
+          rgba(var(--color-primary-rgb), 0.1),
+          transparent 22%
+        ),
+        radial-gradient(
+          circle at 80% 50%,
+          rgba(0, 0, 0, 0.12),
+          transparent 24%
+        );
+      filter: blur(7px);
+      opacity: 0.8;
+      z-index: -1;
+      animation: venso-loading-glow 1.4s ease-in-out infinite;
+    }
+  }
+
+  p,
+  .loading-text {
+    margin: 0 !important;
+    color: var(--color-text-secondary) !important;
+    font-size: var(--font-size-sm) !important;
+    font-weight: var(--font-weight-bold) !important;
+    letter-spacing: 0 !important;
+  }
+}
+
+@keyframes venso-loading-dots {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.62;
+  }
+
+  40% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+@keyframes venso-loading-glow {
+  50% {
+    transform: scaleX(1.08);
+    opacity: 0.56;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COTIZACIONES EDITOR — FONT SIZE BOOST
+// Centraliza el incremento de legibilidad (+1-2px) para:
+// EdicionCotizacion, DaysEditor, SortableService,
+// AdditionalCosts y PeopleSelection.
+// ═══════════════════════════════════════════════════════════════
+
+.edicion-cotizacion-container {
+  font-size: 16px;
+
+  // -- EdicionCotizacion chrome --
+  .step-label {
+    font-size: 15px;
+  }
+  .itinerary-toolbar {
+    font-size: 15px;
+  }
+  .date-field label {
+    font-size: 14px;
+  }
+  .days-pill {
+    font-size: 16px;
+  }
+  .btn-import-export,
+  .btn-clear-itinerary {
+    font-size: 14px;
+  }
+
+  // -- DaysEditor (.de) --
+  .de__title {
+    font-size: 18px;
+  }
+  .de__count {
+    font-size: 13px;
+  }
+  .de__fx {
+    font-size: 14px;
+  }
+  .de__fx-label {
+    font-size: 13px;
+  }
+  .de__fx-input {
+    font-size: 14px;
+  }
+  .de__fx-btn {
+    font-size: 12px;
+  }
+  .de__fx-rate {
+    font-size: 13px;
+  }
+  .de__add-hotel,
+  .de__add-day {
+    font-size: 14px;
+  }
+  .de__table-header {
+    font-size: 13px;
+  }
+  .de__empty {
+    font-size: 15px;
+  }
+  .de__day-footer {
+    font-size: 15px;
+  }
+  .de__day-footer-pp {
+    font-size: 14px;
+  }
+  .de__day-footer-child {
+    font-size: 14px;
+  }
+  .de__day-footer-igv {
+    font-size: 12px;
+  }
+  .de__add-day-bottom {
+    font-size: 14px;
+  }
+  .de__totals-row {
+    font-size: 15px;
+  }
+  .de__totals-row--main {
+    font-size: 16px;
+  }
+  .de__totals-row--main .de__totals-value {
+    font-size: 18px;
+  }
+  .de__drag-overlay {
+    font-size: 15px;
+  }
+  .de__modal-header {
+    font-size: 18px;
+  }
+  .de__modal-desc {
+    font-size: 15px;
+  }
+  .de__modal-field label {
+    font-size: 14px;
+  }
+  .de__modal-btn {
+    font-size: 15px;
+  }
+
+  // Toolbar category buttons
+  .de .compact-category-btn {
+    font-size: 13px;
+  }
+  .de .category-button,
+  .de .category-btn {
+    font-size: 13px !important;
+  }
+
+  // Day topbar
+  .de__day-topbar .de__day-title {
+    font-size: 18px;
+  }
+
+  // -- SortableService (.sr) --
+  .sr {
+    font-size: 16px;
+  }
+  .sr__icon {
+    font-size: 18px;
+  }
+  .sr__name {
+    font-size: 15px;
+  }
+  .sr__bimodal {
+    font-size: 12px;
+  }
+  .sr__details {
+    font-size: 13px;
+  }
+  .sr__badge {
+    font-size: 12px;
+  }
+  .sr__pax-tag {
+    font-size: 13px;
+  }
+  .sr__price {
+    font-size: 15px;
+  }
+  .sr__igv {
+    font-size: 11px;
+  }
+  .sr__edit-input {
+    font-size: 14px;
+  }
+  .sr__total-value {
+    font-size: 15px;
+  }
+  .sr__ch-label {
+    font-size: 13px;
+  }
+  .sr__ch-btn {
+    font-size: 13px;
+  }
+  .sr__ch-input {
+    font-size: 13px;
+  }
+
+  // -- AdditionalCosts (.ac) --
+  .ac__title {
+    font-size: 18px;
+  }
+  .ac__label {
+    font-size: 16px;
+  }
+  .ac__input,
+  .ac__select {
+    font-size: 16px;
+  }
+  .ac__mode-select {
+    font-size: 15px;
+  }
+  .ac__row-value {
+    font-size: 16px;
+  }
+  .ac__total-label {
+    font-size: 16px;
+  }
+  .ac__total-value {
+    font-size: 20px;
+  }
+  .ac__hint {
+    font-size: 14px;
+  }
+
+  // -- PeopleSelection (.people-selection) --
+  .people-selection {
+    font-size: 16px;
+  }
+  .people-selection .person-type-label {
+    font-size: 16px;
+  }
+  .people-selection .person-count {
+    font-size: 16px;
+  }
+  .people-selection .person-name-input {
+    font-size: 15px;
+  }
+  .people-selection .description-label {
+    font-size: 15px;
+  }
+  .people-selection .person-detail {
+    font-size: 15px;
+  }
+  .people-selection .hint-text {
+    font-size: 14px;
+  }
+  .people-selection .summary-text {
+    font-size: 15px;
+  }
+}
+
+// ============================================================
+// VENSO LEGIBILITY BASELINE
+// Keeps operational screens readable without returning to the dense Magic UI.
+// ============================================================
+html {
+  font-size: 17px;
+}
+
+body {
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+:where(button, input, select, textarea) {
+  font-family: var(--font-family-base);
+}
+
+:where(
+  .cotizaciones-page,
+  .paq,
+  .vouchers-venta-page,
+  .vouchers-reserva-page,
+  .servicios-page,
+  .venso-dashboard-skin
+) {
+  --font-size-xs: 0.8125rem;
+  --font-size-sm: 0.875rem;
+  --font-size-md: 0.9375rem;
+  --font-size-base: 1rem;
+
+  :where(input, select, textarea, button) {
+    font-size: 0.875rem;
+  }
+}

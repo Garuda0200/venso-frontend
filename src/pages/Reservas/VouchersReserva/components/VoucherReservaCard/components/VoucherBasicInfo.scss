@@ -1,0 +1,278 @@
+// ============================================
+// VOUCHER BASIC INFO — Design System Tokens
+// ============================================
+
+.voucher-basic-info {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-bg-primary);
+  border-bottom: 1px solid var(--color-border-light);
+
+  &.compact {
+    padding: var(--spacing-sm);
+  }
+
+  .info-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+    &.dates-row {
+      grid-column: 1 / -1;
+      margin-bottom: 0;
+    }
+  }
+
+  .info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    padding: var(--spacing-sm);
+    background: var(--gray-100);
+    border-radius: var(--radius-md);
+    border-left: 2px solid transparent;
+    transition:
+      border-color 0.2s,
+      background 0.2s;
+
+    .info-icon {
+      font-size: 16px;
+      color: var(--color-primary);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .info-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+
+      .info-label {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--color-text-light);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+      }
+
+      .info-value {
+        font-size: var(--font-size-sm);
+        color: var(--color-text-primary);
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+
+    &:hover {
+      background: var(--color-primary-light);
+      border-left-color: var(--color-primary);
+    }
+
+    &.clickable {
+      cursor: pointer;
+      &:hover {
+        transform: translateX(2px);
+      }
+    }
+
+    // ── Passengers chip ──
+    &.passengers-item {
+      .passengers-icons {
+        display: flex;
+        gap: 4px;
+        margin-top: 2px;
+
+        .passenger-type {
+          display: flex;
+          align-items: center;
+          gap: 2px;
+          padding: 2px 6px;
+          border-radius: var(--radius-pill);
+          font-size: 11px;
+          font-weight: 700;
+
+          .passenger-icon {
+            font-size: 15px;
+          }
+          .passenger-count {
+            font-size: 11px;
+          }
+
+          &.adults {
+            background: var(--color-primary-light);
+            color: var(--color-primary);
+            .passenger-icon {
+              color: var(--color-primary);
+            }
+          }
+
+          &.children {
+            background: var(--color-accent-light);
+            color: var(--color-accent);
+            .passenger-icon {
+              color: var(--color-accent);
+            }
+          }
+        }
+      }
+    }
+
+    // ── Date range ──
+    &.dates-range {
+      grid-column: 1 / -1;
+
+      .dates-content {
+        gap: 4px;
+      }
+
+      .dates-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+
+        .date-badge {
+          padding: 3px 10px;
+          border-radius: var(--radius-pill);
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.3px;
+          white-space: nowrap;
+
+          &.start {
+            background: var(--color-primary-light);
+            color: var(--color-primary);
+            border: 1px solid rgba(var(--color-primary-rgb), 0.25);
+          }
+
+          &.end {
+            background: var(--color-info-light);
+            color: var(--color-info-dark);
+            border: 1px solid rgba(54, 185, 204, 0.25);
+          }
+        }
+
+        .date-arrow {
+          font-size: 14px;
+          color: var(--color-text-light);
+          font-weight: 700;
+        }
+      }
+    }
+  }
+}
+
+// ── List view ──
+.voucher-reserva-card.list .voucher-basic-info {
+  padding: var(--spacing-sm);
+
+  .info-row {
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-sm);
+    margin-bottom: 0;
+  }
+
+  .info-item {
+    padding: var(--spacing-xs);
+
+    .info-content {
+      .info-label {
+        font-size: 9px;
+      }
+      .info-value {
+        font-size: var(--font-size-xs);
+      }
+    }
+
+    &.dates-range .dates-wrapper {
+      gap: 4px;
+      .date-badge {
+        padding: 2px 6px;
+        font-size: 10px;
+      }
+      .date-arrow {
+        font-size: 12px;
+      }
+    }
+  }
+}
+
+// ── Responsive ──
+@media (max-width: 768px) {
+  .voucher-basic-info .info-row {
+    grid-template-columns: 1fr;
+  }
+
+  .voucher-basic-info .info-item.dates-range {
+    grid-column: 1;
+  }
+
+  .voucher-reserva-card.list .voucher-basic-info .info-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+// Refined list travel and passenger cell
+.voucher-reserva-card.list .voucher-list-section--travel .voucher-basic-info {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: center;
+  gap: 7px;
+  min-height: 100%;
+  padding: 11px;
+  border: 0;
+  background: transparent;
+
+  .info-row {
+    display: contents;
+  }
+
+  .info-item {
+    min-width: 0;
+    padding: 8px 9px;
+    align-items: center;
+    border: 1px solid #e8efeb;
+    border-left: 0;
+    border-radius: 9px;
+    background: #f8faf9;
+
+    &:hover {
+      border-color: rgba(var(--color-primary-rgb), 0.2);
+      background: #f0f8f4;
+      transform: none;
+    }
+
+    .info-content .info-label {
+      font-size: 8px;
+      letter-spacing: 0.055em;
+    }
+
+    .info-content .info-value {
+      font-size: 11px;
+    }
+
+    &.dates-range {
+      grid-column: 1 / -1;
+
+      .dates-wrapper {
+        gap: 5px;
+        flex-wrap: nowrap;
+
+        .date-badge {
+          min-width: 0;
+          padding: 3px 7px;
+          overflow: hidden;
+          font-size: 9px;
+          text-overflow: ellipsis;
+        }
+      }
+    }
+  }
+}

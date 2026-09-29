@@ -1,0 +1,1691 @@
+/* ============================================
+ PdfCotizacion.scss
+ 1) Páginas PDF en pantalla (preview) — SIN animaciones
+ 2) Botón / estadísticas UI
+ ============================================ */
+
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&family=Montserrat:wght@400;700&display=swap");
+
+/* ============================================
+ VARIABLES
+ ============================================ */
+:root {
+  --pdf-brand: #ff007e;
+  --pdf-brand-dark: #c80063;
+  --pdf-accent: #ff8c00;
+  --pdf-bg: #f5faf7;
+  --pdf-card: #ffffff;
+  --pdf-text: #1f2d2a;
+  --pdf-muted: #5b6a62;
+  --pdf-border: #e1efe8;
+  --pdf-radius: 14px;
+  --pdf-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
+  --pdf-shadow-sm: 0 6px 18px rgba(0, 0, 0, 0.06);
+  --pdf-ring: rgba(2, 82, 47, 0.25);
+}
+
+/* ============================================
+ CONTENEDOR DE PÁGINAS (preview)
+ ============================================ */
+
+.pdf-pages-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 12px 0;
+}
+
+/* ============================================
+ PÁGINA PDF GENÉRICA (wide 16:9)
+ Exporta con proporción 6000×3375, pero en página controlada.
+ ============================================ */
+
+.pdf-page {
+  width: 900px;
+  height: 506.25px; /* 900 × 9 / 16 */
+  position: relative;
+  overflow: hidden;
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+
+  /* Evita que el navegador renderice/pinte páginas fuera del viewport.
+     Mantiene el DOM pero ahorra tiempo de layout, paint y composición. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 506.25px;
+
+  /* ---- PORTADA ---- */
+  &.cover-page {
+    position: relative;
+    overflow: hidden;
+
+    &.cover-empty {
+      background: linear-gradient(135deg, #f0fdf4 0%, #e8f5e9 100%);
+      .cover-title { color: #ff007e; text-shadow: none; }
+    }
+
+    .cover-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center var(--cover-position-y, 50%);
+    }
+
+    .cover-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.55) 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .cover-logo {
+      width: 100px;
+      height: auto;
+      margin-top: 28px;
+      object-fit: contain;
+    }
+
+    .cover-title-block {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .cover-title {
+      font-family: "Poppins", sans-serif;
+      font-weight: 900;
+      font-size: 34px;
+      color: #fff;
+      text-align: center;
+      text-transform: uppercase;
+      line-height: 1.15;
+      padding: 0 60px;
+      text-shadow: 0 2px 14px rgba(0,0,0,0.6);
+    }
+
+    .cover-days-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,0.15);
+      border: 2px solid rgba(255,255,255,0.85);
+      border-radius: 8px;
+      padding: 7px 32px;
+      margin-bottom: 28px;
+      font-family: "Poppins", sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 1px;
+    }
+
+    .cover-days-sep {
+      color: rgba(255,255,255,0.5);
+      font-size: 20px;
+      font-weight: 300;
+      margin: 0 4px;
+    }
+  }
+
+  /* ---- PÁGINA DE IMAGEN COMPLETA ---- */
+  &.full-image-page {
+    background: #fff;
+
+    .full-bg {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+  }
+
+  /* ---- POR QUÉ ELEGIRNOS (page 2 overlay) ---- */
+  &.elegirnos-page {
+    position: relative;
+    overflow: hidden;
+    background: #141414;
+
+    .full-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Title text overlaid on the vacio image's built-in bright-green strip */
+    .elegirnos-title-bar {
+      position: absolute;
+      top: 6.5%;
+      left: 0;
+      width: 100%;
+      height: 4.5%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 60px;
+      z-index: 3;
+
+      .elegirnos-title-group {
+        font-family: "Poppins", sans-serif;
+        font-size: 16px;
+        color: #ff007e;
+        letter-spacing: 0.2px;
+
+        strong {
+          font-weight: 700;
+          font-style: italic;
+          color: #000000;
+        }
+      }
+    }
+
+    /* Right-side text panel — starts with gap below the title strip (~13%) */
+    .elegirnos-text-panel {
+      position: absolute;
+      left: 51%;
+      top: 13%;
+      width: 45.5%;
+      height: 56%;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .elegirnos-para {
+      font-family: "Poppins", sans-serif;
+      font-size: 13px;
+      color: #fff;
+      line-height: 1.75;
+      text-align: justify;
+      margin: 0;
+    }
+  }
+
+  /* ---- PÁGINA DE DÍA ---- */
+  &.day-page {
+    display: flex;
+    flex-direction: row;
+    background: #fff;
+
+    .day-left-panel {
+      width: 42%;
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+
+      .day-left-empty {
+        width: 100%;
+        height: 100%;
+        background: #e5e7eb;
+      }
+    }
+
+    .day-right-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 18px 22px 14px 18px;
+      overflow: hidden;
+    }
+
+    .day-header {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+
+    .day-badge {
+      background: #141414;
+      color: #fff;
+      padding: 3px 12px 6px;
+      text-align: center;
+      border-radius: 5px;
+      min-width: 50px;
+
+      .day-badge-label {
+        display: block;
+        font-family: "Poppins", sans-serif;
+        font-size: 7px;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        font-weight: 600;
+        color: rgba(255,255,255,0.75);
+      }
+
+      .day-badge-number {
+        display: block;
+        font-family: "Poppins", sans-serif;
+        font-size: 26px;
+        font-weight: 900;
+        line-height: 1;
+        color: #fff;
+      }
+    }
+
+    .day-title {
+      font-family: "Poppins", sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      color: #141414;
+      margin: 0 0 6px 0;
+      line-height: 1.2;
+    }
+
+    .day-desc {
+      font-family: "Montserrat", sans-serif;
+      font-size: 15px;
+      line-height: 1.58;
+      color: #374151;
+      margin-bottom: 8px;
+    }
+
+    .day-info-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      flex: 1;
+      overflow: hidden;
+    }
+  }
+
+  /* ---- OVERVIEW PAGE ---- */
+  &.overview-page {
+    display: flex;
+
+    .overview-left {
+      width: 38%;
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .overview-right {
+      flex: 1;
+      background: #141414;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 28px 34px 28px 26px;
+    }
+
+    .overview-title {
+      font-family: "Poppins", sans-serif;
+      font-size: 22px;
+      font-weight: 900;
+      color: #fff;
+      text-align: center;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+
+    .overview-grid {
+      display: grid;
+      grid-template-columns: 1fr 1px 1fr;
+      gap: 0 18px;
+      align-items: start;
+    }
+
+    .overview-divider {
+      background: rgba(255,255,255,0.25);
+      min-height: 140px;
+    }
+
+    .overview-col {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .overview-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .overview-num {
+      background: #2d6a4f;
+      border: 1.5px solid rgba(255,255,255,0.55);
+      border-radius: 5px;
+      min-width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Poppins", sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .overview-item-text {
+      font-family: "Montserrat", sans-serif;
+      font-size: 10px;
+      color: #d1fae5;
+      line-height: 1.4;
+      padding-top: 3px;
+    }
+  }
+
+  /* ---- PRICING PAGE ---- */
+  &.pricing-page {
+    position: relative;
+    background: #141414;
+
+    .full-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .pricing-overlay-left {
+      position: absolute;
+      left: 7%;
+      top: 4%;
+      width: 51%;
+      height: 88%;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      padding: 0;
+      color: #fff;
+    }
+
+    .pricing-mini-label {
+      font-family: "Poppins", sans-serif;
+      font-size: 12px;
+      color: rgba(255,255,255,0.7);
+      font-style: italic;
+    }
+
+    .pricing-big-title {
+      font-family: "Poppins", sans-serif;
+      font-size: 42px;
+      font-weight: 900;
+      color: #f5c518;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .pricing-category-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .pricing-category-box {
+      border: 0;
+      border-radius: 12px;
+      padding: 8px 11px;
+      margin-bottom: 0;
+      background: #ffffff;
+      color: #177342;
+      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.16);
+
+      .pricing-cat-label {
+        font-family: "Montserrat", sans-serif;
+        font-size: 10px;
+        color: #177342;
+        margin-bottom: 4px;
+        font-weight: 900;
+        line-height: 1.2;
+      }
+
+      .pricing-price-value {
+        font-family: "Poppins", sans-serif;
+        font-size: 21px;
+        font-weight: 900;
+        color: #177342;
+        display: block;
+        line-height: 1;
+      }
+
+      .pricing-price-label {
+        font-family: "Montserrat", sans-serif;
+        font-size: 8px;
+        color: #1f2937;
+        display: block;
+        font-weight: 700;
+        margin-top: 2px;
+      }
+
+      .pricing-room-prices {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+        gap: 6px;
+      }
+
+      .pricing-room-price {
+        min-width: 0;
+      }
+
+      .pricing-child-prices {
+        margin-top: 5px;
+        border-top: 1px solid rgba(23, 115, 66, 0.2);
+        padding-top: 4px;
+
+        .pricing-child-label {
+          font-family: "Montserrat", sans-serif;
+          font-size: 7px;
+          font-weight: 800;
+          color: #6b7280;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+          display: block;
+          margin-bottom: 3px;
+        }
+
+        .pricing-room-price--child {
+          .pricing-price-value {
+            font-size: 13px;
+            color: #4b5563;
+          }
+          .pricing-price-label {
+            color: #6b7280;
+          }
+        }
+      }
+    }
+
+    .pricing-external-services {
+      margin-top: 4px;
+      padding-top: 2px;
+      border-top: 0;
+      display: grid;
+      gap: 3px;
+
+      &--optional {
+        max-width: 560px;
+      }
+    }
+
+    .pricing-extra-title {
+      font-family: "Poppins", sans-serif;
+      font-size: 14px;
+      font-weight: 900;
+      color: #f5c518;
+      letter-spacing: 0;
+      line-height: 1.25;
+      text-transform: uppercase;
+    }
+
+    .pricing-extra-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      padding: 0 0 0 14px;
+      border-bottom: 0;
+      font-family: "Montserrat", sans-serif;
+      font-size: 10px;
+      font-weight: 900;
+      line-height: 1.18;
+      color: #ffffff;
+      position: relative;
+
+      &::before {
+        content: "•";
+        position: absolute;
+        left: 2px;
+        top: 0;
+        color: #ffffff;
+      }
+
+      span {
+        min-width: 0;
+        overflow: visible;
+        text-overflow: clip;
+      }
+
+      strong {
+        flex: 0 0 auto;
+        color: #ffffff;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+    }
+
+  }
+}
+
+.pdf-page.pdf-page--summary-portrait {
+  width: 900px;
+  height: 636px;
+}
+
+.pdf-summary-sheet {
+  margin-top: 10px;
+  padding: 0 8px;
+  height: calc(100% - 20px);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+
+  &__header {
+    min-height: 26px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+
+    h2 {
+      margin: 0;
+      color: #f6f2eb;
+      font-size: 16px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+  }
+
+  &__frame {
+    flex: 1;
+    min-height: 0;
+  }
+
+  &__scale {
+    width: 156.25%;
+    transform: scale(0.64);
+    transform-origin: top left;
+    margin: 0;
+  }
+
+  .hpm-excel-preview {
+    overflow: visible;
+  }
+}
+
+.pdf-hotel-filter-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pdf-hotel-filter-chips,
+.pdf-hotel-filter-actions .hpp-filter-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+
+  justify-content: flex-end;
+  flex: 1;
+}
+
+.pdf-hotel-cat-chip,
+.pdf-hotel-filter-actions .hpp-cat-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 1;
+  min-height: 24px;
+  padding: 4px 8px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition:
+    background 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  &.active {
+    background: #ffc107;
+    border-color: #ffc107;
+    box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
+    color: #000;
+    font-weight: 700;
+  }
+
+  .pdf-hotel-cat-chip__icon {
+    flex: 0 0 auto;
+    font-size: 12px;
+    line-height: 1;
+  }
+}
+
+/* ---- Bloques de lista (Incluye, No incluye, Recomendaciones, Tipo servicio) ---- */
+.list-block {
+  margin-bottom: 6px;
+
+  .list-block-header {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 2px;
+  }
+
+  .list-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    font-size: 8px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+
+  .list-block-title {
+    font-family: "Poppins", sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: #141414;
+  }
+
+  .list-block-items {
+    list-style: none;
+    padding: 0 0 0 4px;
+    margin: 0;
+
+    li {
+      font-size: 14px;
+      color: #374151;
+      line-height: 1.5;
+      padding-left: 10px;
+      position: relative;
+
+      &::before {
+        content: "•";
+        position: absolute;
+        left: 0;
+        color: #9ca3af;
+      }
+    }
+  }
+}
+
+/* Página de términos renderizada como HTML real */
+.pdf-page.tyc-reservation-page {
+  background: #0d583d !important;
+  color: #f8fff8;
+}
+
+.pdf-page.tyc-reservation-page * {
+  box-sizing: border-box;
+}
+
+/* ============================================
+ SUBIDA DE IMAGENES
+ ============================================ */
+
+/* wrapper completo */
+.day-images-wrapper {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+/* grid ocupa TODO el alto y ancho */
+.day-images-grid {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  gap: 0; // importante: sin líneas blancas
+}
+
+/* todas las imágenes – cada celda es relative para poder colocar degradados */
+.day-images-grid img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ============================================
+ DEGRADADOS ENTRE IMÁGENES (fronteras)
+ Cada img se envuelve en un contenedor relativo
+ para superponer gradientes CSS en los bordes
+ compartidos con su vecina.
+ ============================================ */
+.day-images-grid .img-cell {
+  position: relative;
+  overflow: hidden;
+}
+
+.day-images-grid .img-cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Degradado en el borde derecho (→ se funde con la imagen a su derecha) */
+.day-images-grid .img-cell .fade-right {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 18px;
+  height: 100%;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.45));
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Degradado en el borde izquierdo */
+.day-images-grid .img-cell .fade-left {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 18px;
+  height: 100%;
+  background: linear-gradient(to left, transparent, rgba(255, 255, 255, 0.45));
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Degradado en el borde inferior */
+.day-images-grid .img-cell .fade-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 18px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(255, 255, 255, 0.45)
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Degradado en el borde superior */
+.day-images-grid .img-cell .fade-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 18px;
+  background: linear-gradient(to top, transparent, rgba(255, 255, 255, 0.45));
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ---- layouts ---- */
+
+.img-grid-1 {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+}
+
+.img-grid-2 {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+/* 3 imágenes: 1 arriba, 2 abajo */
+.day-images-grid.img-grid-3-top {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+.day-images-grid.img-grid-3-top .img-cell:nth-child(1) {
+  grid-column: 1 / span 2;
+  grid-row: 1;
+}
+
+.day-images-grid.img-grid-3-top .img-cell:nth-child(2) {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.day-images-grid.img-grid-3-top .img-cell:nth-child(3) {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+/* 3 imágenes: 2 arriba, 1 abajo */
+.day-images-grid.img-grid-3-bottom {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+.day-images-grid.img-grid-3-bottom .img-cell:nth-child(1) {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.day-images-grid.img-grid-3-bottom .img-cell:nth-child(2) {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.day-images-grid.img-grid-3-bottom .img-cell:nth-child(3) {
+  grid-column: 1 / span 2;
+  grid-row: 2;
+}
+
+.img-grid-4 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+/* ============================================
+ BOTÓN / ESTADÍSTICAS UI
+ ============================================ */
+
+@mixin soft-card {
+  background: var(--pdf-card);
+  border: 1px solid var(--pdf-border);
+  border-radius: var(--pdf-radius);
+  box-shadow: var(--pdf-shadow);
+}
+
+.pdf-cotizacion-container {
+  display: grid;
+  gap: 18px;
+  background: linear-gradient(180deg, var(--pdf-bg) 0%, transparent 120%);
+  border-radius: calc(var(--pdf-radius) + 2px);
+
+  .pdf-info {
+    @include soft-card;
+    padding: 14px 16px;
+
+    .pdf-stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+
+      @media (max-width: 720px) {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      @media (max-width: 520px) {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .stat-item {
+        position: relative;
+        background:
+          linear-gradient(
+            180deg,
+            rgba(2, 82, 47, 0.06) 0%,
+            rgba(2, 82, 47, 0.02) 100%
+          ),
+          var(--pdf-card);
+        border: 1px solid var(--pdf-border);
+        border-radius: 12px;
+        box-shadow: var(--pdf-shadow-sm);
+        padding: 14px 12px;
+        display: grid;
+        justify-items: center;
+        gap: 6px;
+        transition:
+          transform 0.18s ease,
+          box-shadow 0.18s ease,
+          border-color 0.18s ease;
+
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 14px 32px rgba(0, 0, 0, 0.1);
+          border-color: rgba(2, 82, 47, 0.25);
+        }
+
+        .stat-icon {
+          display: grid;
+          place-items: center;
+          width: 36px;
+          height: 36px;
+          border-radius: 999px;
+          background: radial-gradient(
+            100% 100% at 50% 0%,
+            rgba(2, 82, 47, 0.18) 0%,
+            rgba(2, 82, 47, 0.08) 100%
+          );
+          color: var(--pdf-brand);
+          font-weight: 700;
+          letter-spacing: 0.5px;
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+          user-select: none;
+        }
+
+        .stat-value {
+          font-family:
+            ui-sans-serif,
+            system-ui,
+            -apple-system,
+            "Segoe UI",
+            Roboto,
+            "Poppins",
+            Arial,
+            sans-serif;
+          font-size: 20px;
+          font-weight: 800;
+          color: var(--pdf-text);
+          line-height: 1;
+        }
+
+        span:last-child:not(.stat-value):not(.stat-icon) {
+          font-size: 12px;
+          color: var(--pdf-muted);
+          letter-spacing: 0.2px;
+        }
+      }
+    }
+  }
+
+  .pdf-actions-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+
+    @media (max-width: 520px) {
+      justify-content: stretch;
+    }
+  }
+
+  .pdf-cotizacion-button {
+    --btn-h: 44px;
+    position: relative;
+    height: var(--btn-h);
+    padding: 0 16px 0 12px;
+    border-radius: 12px;
+    border: 1px solid color-mix(in srgb, var(--pdf-brand), #000 10%);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--pdf-brand) 92%, #fff 8%) 0%,
+      var(--pdf-brand-dark) 100%
+    );
+    color: #fff;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow:
+      0 6px 18px rgba(2, 82, 47, 0.28),
+      inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    transition:
+      transform 0.16s ease,
+      box-shadow 0.16s ease;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+
+    @media (hover: hover) {
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow:
+          0 10px 24px rgba(2, 82, 47, 0.34),
+          inset 0 1px 0 rgba(255, 255, 255, 0.22);
+      }
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+
+    &:focus-visible {
+      outline: none;
+      box-shadow:
+        0 0 0 4px var(--pdf-ring),
+        0 6px 18px rgba(2, 82, 47, 0.28);
+    }
+
+    .pdf-icon {
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 9px;
+      background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.25) 0%,
+        rgba(255, 255, 255, 0.06) 100%
+      );
+      color: #fff;
+      font-weight: 900;
+      font-size: 12px;
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      user-select: none;
+    }
+  }
+}
+
+/* Deshabilitado */
+.pdf-cotizacion-button:disabled,
+.pdf-cotizacion-button[disabled] {
+  cursor: not-allowed;
+  opacity: 0.65;
+  filter: grayscale(0.15);
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Responsive pages */
+@media (max-width: 960px) {
+  .pdf-page {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 297 / 210;
+  }
+
+  .pdf-page.pdf-page--summary-portrait {
+    aspect-ratio: 297 / 210;
+  }
+}
+
+@media (max-width: 420px) {
+  .pdf-cotizacion-container {
+    .pdf-info {
+      padding: 12px;
+      .pdf-stats {
+        gap: 10px;
+        .stat-item {
+          padding: 12px 10px;
+          .stat-icon {
+            width: 32px;
+            height: 32px;
+          }
+          .stat-value {
+            font-size: 18px;
+          }
+        }
+      }
+    }
+    .pdf-actions-wrapper {
+      .pdf-cotizacion-button {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  }
+}
+
+/* Impresión: ocultar UI de botón */
+@media print {
+  .pdf-cotizacion-container {
+    display: none !important;
+  }
+}
+
+/* ============================================================
+   VENSO PDF CANVA — UI controls and brand surface
+   ============================================================ */
+.pdf-cotizacion-container {
+  .pdf-info {
+    border-color: rgba(255, 0, 126, 0.18);
+  }
+
+  .pdf-stats .stat-item {
+    .stat-icon {
+      background: rgba(255, 0, 126, 0.1);
+      color: #ff007e;
+    }
+
+    .stat-value {
+      color: #111;
+    }
+  }
+
+  .pdf-cotizacion-button {
+    background: linear-gradient(135deg, #ff007e 0%, #c80063 100%);
+    border-color: #ff007e;
+    box-shadow: 0 8px 22px rgba(255, 0, 126, 0.24);
+
+    &:hover:not(:disabled) {
+      box-shadow: 0 11px 26px rgba(255, 0, 126, 0.34);
+    }
+
+    &:focus-visible {
+      box-shadow:
+        0 0 0 4px rgba(255, 0, 126, 0.2),
+        0 8px 22px rgba(255, 0, 126, 0.28);
+    }
+  }
+}
+
+/* ============================================================
+   VENSO CANVA 2026 - portrait 4:5 direct renderer
+   Reference: supplied Venso Canva quotation PDFs
+   ============================================================ */
+.pdf-pages-wrapper--venso-canva {
+  --venso-pdf-primary: var(--color-primary, #ff007e);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+
+  .pdf-page {
+    width: 800px;
+    height: 1000px;
+    aspect-ratio: 4 / 5;
+    flex: 0 0 auto;
+    position: relative;
+    overflow: hidden;
+    background: #fff;
+    color: #171717;
+    font-family: "Montserrat", "Poppins", Arial, sans-serif;
+    box-shadow: 0 16px 42px rgba(15, 23, 42, 0.14);
+  }
+}
+
+.pdf-page.venso-canva-page,
+.pdf-page.canva-closing-page,
+.pdf-page.pricing-page {
+  --venso-pdf-primary: var(--color-primary, #ff007e);
+  width: 800px;
+  height: 1000px;
+  aspect-ratio: 4 / 5;
+  position: relative;
+  overflow: hidden;
+  background: #fff;
+  color: #171717;
+}
+
+/* Cover */
+.pdf-page.cover-page.venso-canva-page {
+  background: #111;
+
+  .canva-cover-collage {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    background: #151515;
+  }
+
+  .canva-cover-panel {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    overflow: hidden;
+
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.3));
+      pointer-events: none;
+    }
+
+    img,
+    .canva-cover-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+  }
+
+  .canva-cover-panel--1 {
+    left: 0;
+    width: 34%;
+    clip-path: polygon(0 0, 100% 0, 83% 100%, 0 100%);
+  }
+
+  .canva-cover-panel--2 {
+    left: 27%;
+    width: 48%;
+    z-index: 2;
+    clip-path: polygon(12% 0, 100% 0, 88% 100%, 0 100%);
+  }
+
+  .canva-cover-panel--3 {
+    right: 0;
+    width: 36%;
+    clip-path: polygon(17% 0, 100% 0, 100% 100%, 0 100%);
+  }
+
+  .canva-cover-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(145deg, #242424, #5b5b5b);
+  }
+
+  .canva-cover-logo {
+    position: absolute;
+    left: 34px;
+    top: 30px;
+    z-index: 5;
+    width: 92px;
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.35));
+  }
+
+  .canva-cover-title-frame {
+    position: absolute;
+    z-index: 5;
+    left: 12%;
+    right: 12%;
+    top: 34%;
+    padding: 18px 24px 20px;
+    border: 2px solid rgba(255, 255, 255, 0.94);
+    background: rgba(0, 0, 0, 0.22);
+  }
+
+  .canva-cover-title {
+    margin: 0;
+    color: #fff;
+    text-align: center;
+    text-transform: uppercase;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 42px;
+    line-height: 1.08;
+    font-weight: 700;
+    letter-spacing: 0.025em;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.55);
+  }
+
+  .canva-cover-duration {
+    position: absolute;
+    z-index: 6;
+    left: 50%;
+    top: 52.8%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 28px;
+    color: #fff;
+    background: var(--venso-pdf-primary);
+    font-size: 16px;
+    line-height: 1;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+}
+
+/* Day page */
+.pdf-page.day-page.venso-canva-page,
+.pdf-page.day-page.editor-page {
+  display: grid;
+  grid-template-columns: 43% 57%;
+  gap: 28px;
+  padding: 28px 30px 28px 26px;
+  background: #fff;
+
+  .canva-day-media-column {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .canva-day-main-photo {
+    width: 100%;
+    height: 675px;
+    overflow: hidden;
+    background: #ececec;
+
+    > img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+  }
+
+  .canva-day-photo-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(145deg, #f2f2f2, #dcdcdc);
+  }
+
+  .canva-day-copy-column {
+    min-width: 0;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding-top: 6px;
+  }
+
+  .canva-day-script-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    height: 56px;
+    margin-bottom: 4px;
+  }
+
+  .canva-day-script {
+    color: var(--venso-pdf-primary);
+    font-family: "Brush Script MT", "Segoe Script", cursive;
+    font-size: 48px;
+    line-height: 0.95;
+    transform: rotate(-3deg);
+    white-space: nowrap;
+  }
+
+  .canva-day-script-line {
+    height: 2px;
+    flex: 1;
+    margin-bottom: 8px;
+    background: var(--venso-pdf-primary);
+  }
+
+  .canva-day-intro {
+    margin: 0 0 14px;
+    max-width: 92%;
+    color: var(--venso-pdf-primary);
+    font-size: 15px;
+    line-height: 1.25;
+    font-weight: 800;
+  }
+
+  .canva-day-title {
+    margin: 0 0 10px;
+    color: #171717;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 24px;
+    line-height: 1.12;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .canva-day-description {
+    margin: 0;
+    color: #2f2f2f;
+    font-size: 12.2px;
+    line-height: 1.47;
+    text-align: justify;
+  }
+
+  .canva-day-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 22px;
+    margin-top: 16px;
+    align-items: start;
+  }
+
+  .canva-day-list {
+    min-width: 0;
+
+    h3,
+    .list-block-title {
+      margin: 0 0 5px;
+      color: #151515;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 15px;
+      line-height: 1.1;
+      font-weight: 700;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 15px;
+    }
+
+    li {
+      margin-bottom: 2px;
+      color: #313131;
+      font-size: 9.7px;
+      line-height: 1.35;
+    }
+  }
+
+  .canva-day-list--compact {
+    margin-top: 12px;
+    padding-top: 8px;
+    border-top: 1px solid #d7d7d7;
+  }
+
+  .canva-day-accent-grid {
+    width: 78%;
+    height: 150px;
+    display: grid;
+    gap: 8px;
+    margin-top: auto;
+    margin-left: auto;
+    padding-top: 12px;
+  }
+
+  .canva-day-accent-grid--1 {
+    grid-template-columns: 1fr;
+  }
+
+  .canva-day-accent-grid--2 {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .canva-day-accent-photo {
+    overflow: hidden;
+    border-radius: 8px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+  }
+}
+
+/* Pricing + legal pages */
+.pdf-page.canva-closing-page,
+.pdf-page.pricing-page.canva-closing-page {
+  position: relative;
+  padding: 48px 58px 50px;
+  background: #f6f6f4;
+  color: #222;
+
+  .canva-closing-backdrop {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: grayscale(1);
+    opacity: 0.1;
+  }
+
+  .canva-closing-veil {
+    position: absolute;
+    inset: 0;
+    background: rgba(248, 248, 246, 0.85);
+  }
+
+  .canva-closing-content {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .canva-closing-title {
+    margin: 0 0 22px;
+    color: var(--venso-pdf-primary);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 25px;
+    line-height: 1.15;
+    font-weight: 700;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  .canva-closing-copy,
+  .canva-closing-copy li {
+    color: #333;
+    font-size: 10.5px;
+    line-height: 1.48;
+  }
+
+  .canva-legal-sections {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px 30px;
+    align-content: start;
+  }
+
+  .canva-legal-section {
+    break-inside: avoid;
+
+    h3 {
+      margin: 0 0 5px;
+      color: var(--venso-pdf-primary);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 15px;
+      line-height: 1.18;
+    }
+
+    p {
+      margin: 0 0 5px;
+    }
+
+    ul {
+      margin: 4px 0 0;
+      padding-left: 16px;
+    }
+  }
+
+  .canva-legal-signature {
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 0, 126, 0.22);
+    color: var(--venso-pdf-primary);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-align: right;
+  }
+}
+
+.pdf-page.pricing-page.canva-closing-page {
+  padding: 44px 56px 48px;
+
+  .pricing-canva-lists {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 26px;
+    margin-bottom: 16px;
+  }
+
+  .pricing-canva-list {
+    h3 {
+      margin: 0 0 7px;
+      color: var(--venso-pdf-primary);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 17px;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 17px;
+    }
+
+    li,
+    p {
+      margin: 0 0 3px;
+      color: #333;
+      font-size: 9.8px;
+      line-height: 1.38;
+    }
+  }
+
+  .pricing-canva-table {
+    width: 100%;
+    margin-top: 12px;
+    border-collapse: collapse;
+    background: rgba(255, 255, 255, 0.76);
+    font-size: 10px;
+
+    th {
+      padding: 9px 8px;
+      border: 1px solid color-mix(in srgb, var(--venso-pdf-primary) 78%, #111 22%);
+      background: var(--venso-pdf-primary);
+      color: #fff;
+      font-size: 9px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    td {
+      padding: 8px;
+      border: 1px solid rgba(255, 0, 126, 0.28);
+      vertical-align: top;
+    }
+  }
+
+  .pricing-canva-price {
+    color: var(--venso-pdf-primary);
+    font-weight: 900;
+    white-space: nowrap;
+  }
+
+  .pricing-canva-notes {
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 0, 126, 0.25);
+
+    h3 {
+      margin: 0 0 5px;
+      color: var(--venso-pdf-primary);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 16px;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 16px;
+    }
+
+    li {
+      margin-bottom: 2px;
+      font-size: 9px;
+      line-height: 1.35;
+    }
+  }
+}
+
+@media (max-width: 900px) {
+  .pdf-pages-wrapper--venso-canva .pdf-page,
+  .pdf-page.venso-canva-page,
+  .pdf-page.canva-closing-page,
+  .pdf-page.pricing-page {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 5;
+  }
+}
+
+/* Word usa exactamente las mismas capturas de página que el PDF Canva. */
+.pdf-cotizacion-container .pdf-cotizacion-button--word {
+  background: linear-gradient(135deg, #2b579a 0%, #1f417a 100%);
+  border-color: #2b579a;
+  box-shadow: 0 8px 22px rgba(43, 87, 154, 0.24);
+
+  &:hover:not(:disabled) {
+    box-shadow: 0 11px 26px rgba(43, 87, 154, 0.34);
+  }
+
+  &:focus-visible {
+    box-shadow:
+      0 0 0 4px rgba(43, 87, 154, 0.2),
+      0 8px 22px rgba(43, 87, 154, 0.28);
+  }
+}

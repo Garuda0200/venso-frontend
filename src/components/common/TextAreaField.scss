@@ -1,0 +1,147 @@
+// TextAreaField Styles
+.textarea-field {
+  margin-bottom: 1.25rem;
+
+  .textarea-field-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+
+    label {
+      font-weight: 500;
+      font-size: 0.95rem;
+      color: #2c3e50;
+      margin: 0;
+
+      &.required::after {
+        content: " *";
+        color: #e74c3c;
+        font-weight: 600;
+      }
+    }
+
+    .char-counter {
+      font-size: 0.85rem;
+      color: #7f8c8d;
+      font-weight: 500;
+
+      &.warning {
+        color: #f39c12;
+      }
+    }
+  }
+
+  .textarea-control {
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 1rem;
+    font-family: inherit;
+    line-height: 1.5;
+    border: 2px solid #dfe6e9;
+    border-radius: 6px;
+    background-color: #ffffff;
+    color: #2c3e50;
+    transition: all 0.2s ease;
+    resize: vertical;
+    min-height: 80px;
+
+    &::placeholder {
+      color: #95a5a6;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    &.error {
+      border-color: #e74c3c;
+
+      &:focus {
+        box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+      }
+    }
+
+    &:disabled {
+      background-color: #f5f6fa;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+  }
+
+  .error-message {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+    color: #e74c3c;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .hint-text {
+    display: block;
+    margin-top: 0.5rem;
+    color: #7f8c8d;
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
+
+  .suggestion-chips {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%);
+    border-radius: 6px;
+    border: 1px solid #e8eaff;
+
+    .suggestion-label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #667eea;
+      margin-bottom: 0.5rem;
+    }
+
+    .chips-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .suggestion-chip {
+      padding: 0.5rem 0.875rem;
+      background: white;
+      color: #667eea;
+      border: 1.5px solid #667eea;
+      border-radius: 20px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover:not(:disabled) {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+      }
+
+      &:active:not(:disabled) {
+        transform: translateY(0);
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  &.has-error {
+    .textarea-control {
+      border-color: #e74c3c;
+    }
+  }
+}

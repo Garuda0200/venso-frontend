@@ -1,0 +1,384 @@
+@import "../../../styles/_variables.scss";
+
+$fdz-radius: 12px;
+$fdz-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+$fdz-accent: $primary;
+
+// ── Drop zone ──
+
+.file-drop-zone-wrapper {
+  width: 100%;
+}
+
+.file-drop-zone {
+  position: relative;
+  border: 2px dashed #d0d5dd;
+  border-radius: $fdz-radius;
+  padding: 28px 20px;
+  text-align: center;
+  background: #fafbfc;
+  cursor: pointer;
+  overflow: hidden;
+  transition: $fdz-transition;
+
+  &:hover {
+    border-color: rgba($fdz-accent, 0.5);
+    background: rgba($fdz-accent, 0.02);
+
+    .drop-icon-circle {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba($fdz-accent, 0.2);
+    }
+
+    .drop-icon {
+      color: $fdz-accent;
+    }
+  }
+
+  // ── Drag-over state: pulsing glow ──
+  &.drag-over {
+    border-color: $fdz-accent;
+    border-style: solid;
+    background: rgba($fdz-accent, 0.06);
+    transform: scale(1.01);
+    box-shadow:
+      0 0 0 4px rgba($fdz-accent, 0.12),
+      0 8px 24px rgba($fdz-accent, 0.1);
+
+    .drop-ring {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .drop-icon-circle {
+      background: $fdz-accent;
+      transform: translateY(-4px) scale(1.1);
+      box-shadow: 0 8px 24px rgba($fdz-accent, 0.35);
+
+      .drop-icon {
+        color: #fff;
+      }
+    }
+
+    .drop-primary-text {
+      color: $fdz-accent;
+      font-weight: 600;
+    }
+  }
+
+  &.drag-rejected {
+    border-color: #e74a3b;
+    background: rgba(#e74a3b, 0.04);
+
+    .drop-icon-circle {
+      background: rgba(#e74a3b, 0.1);
+    }
+
+    .drop-icon {
+      color: #e74a3b;
+    }
+  }
+
+  &.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}
+
+// Animated ring that appears on drag-over
+.drop-ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: inherit;
+  border: 2px solid rgba($fdz-accent, 0.25);
+  opacity: 0;
+  transform: scale(0.98);
+  transition: $fdz-transition;
+  pointer-events: none;
+  animation: none;
+
+  .drag-over & {
+    animation: fdz-pulse 1.5s ease-in-out infinite;
+  }
+}
+
+@keyframes fdz-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.005);
+  }
+}
+
+// ── Content inside drop zone ──
+
+.drop-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.drop-icon-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba($fdz-accent, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: $fdz-transition;
+  margin-bottom: 4px;
+}
+
+.drop-icon {
+  font-size: 26px;
+  color: #adb5bd;
+  transition: $fdz-transition;
+}
+
+.drop-primary-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: #495057;
+  transition: $fdz-transition;
+}
+
+.drop-secondary-text {
+  font-size: 12px;
+  color: #868e96;
+}
+
+// ── Progress bar ──
+
+.drop-progress {
+  margin-top: 14px;
+  height: 6px;
+  border-radius: 6px;
+  background: #e9ecef;
+  overflow: hidden;
+  position: relative;
+}
+
+.drop-progress-bar {
+  height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, $fdz-accent, lighten($fdz-accent, 10%));
+  transition: width 0.3s ease;
+}
+
+// ============================================================
+// Preview grid
+// ============================================================
+
+.file-drop-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.fdz-card {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #e9ecef;
+  transition: all 0.25s ease;
+
+  &:hover {
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+
+    .fdz-remove {
+      opacity: 1;
+    }
+  }
+
+  &.pending {
+    border-style: dashed;
+  }
+}
+
+.fdz-card-preview {
+  height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  overflow: hidden;
+
+  .fdz-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.fdz-pdf-icon,
+.fdz-file-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+
+  svg {
+    font-size: 28px;
+  }
+
+  span {
+    font-size: 10px;
+    font-weight: 600;
+  }
+}
+
+.fdz-pdf-icon {
+  color: #e74a3b;
+}
+
+.fdz-file-icon {
+  color: #6c757d;
+}
+
+.fdz-fallback {
+  align-items: center;
+  justify-content: center;
+  color: #adb5bd;
+
+  svg {
+    font-size: 28px;
+  }
+}
+
+.fdz-card-info {
+  padding: 6px 8px;
+
+  .fdz-name {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #495057;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .fdz-size {
+    display: block;
+    font-size: 10px;
+    color: #868e96;
+    margin-top: 1px;
+  }
+}
+
+.fdz-pending-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f59e0b;
+  flex-shrink: 0;
+  animation: fdz-blink 1.2s ease-in-out infinite;
+}
+
+@keyframes fdz-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.fdz-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(231, 74, 59, 0.9);
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.2s;
+  padding: 0;
+
+  svg {
+    font-size: 14px;
+  }
+
+  &:hover {
+    background: #e74a3b;
+    transform: scale(1.1);
+  }
+}
+
+// ============================================================
+// Responsive
+// ============================================================
+
+@media (max-width: 576px) {
+  .file-drop-zone {
+    padding: 20px 14px;
+  }
+
+  .drop-icon-circle {
+    width: 40px;
+    height: 40px;
+  }
+
+  .drop-icon {
+    font-size: 22px;
+  }
+
+  .file-drop-preview-grid {
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 8px;
+  }
+
+  .fdz-card-preview {
+    height: 64px;
+  }
+}
+
+.fdz-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  margin-top: 2px;
+
+  .fdz-size {
+    margin-top: 0;
+  }
+}
+
+.fdz-persisted-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 16px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: #eef2f6;
+  color: #64748b;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}

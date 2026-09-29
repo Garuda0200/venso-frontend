@@ -1,0 +1,491 @@
+@import "../../../styles/_variables.scss";
+
+.payment-service-overview {
+  margin: 18px 0;
+  padding: 16px;
+  background: linear-gradient(135deg, #f7fbf9, #ffffff);
+  border-radius: 12px;
+  border: 1px solid #cfe1d8;
+  border-left: 4px solid $color-brand-green;
+
+  &--embedded {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .service-info-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e2ece7;
+  }
+
+  .service-info-eyebrow {
+    display: block;
+    margin-bottom: 2px;
+    color: $color-brand-green;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .service-info-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #263a31;
+  }
+
+  .service-info-reference {
+    flex-shrink: 0;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: rgba($color-brand-green, 0.08);
+    color: darken($color-brand-green, 7%);
+    font-size: 10px;
+    font-weight: 700;
+  }
+}
+
+.payment-service-comparison {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.payment-service-panel {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #dfe8e3;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 6px 18px rgba(24, 61, 44, 0.04);
+
+  > header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-bottom: 1px solid #e4ece8;
+
+    > div {
+      min-width: 0;
+    }
+
+    span,
+    small {
+      display: block;
+    }
+
+    span {
+      color: #52655b;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    small {
+      margin-top: 2px;
+      color: #7b8881;
+      font-size: 9px;
+    }
+
+    strong {
+      flex-shrink: 0;
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 800;
+    }
+  }
+
+  &__body {
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+
+    .service-detailed-info {
+      min-width: 0;
+      min-height: 0;
+      margin: 0;
+      background: #f8faf9;
+    }
+  }
+
+  &__pricing {
+    min-width: 0;
+    padding-top: 10px;
+    border-top: 1px dashed #dce7e1;
+  }
+
+  &--quoted {
+    border-color: #cfe2f1;
+
+    > header {
+      background: #eef7ff;
+
+      strong {
+        background: #dceeff;
+        color: #1f5f99;
+      }
+    }
+  }
+
+  &--assigned {
+    border-color: #cde2d7;
+
+    > header {
+      background: #edf8f2;
+
+      strong {
+        background: rgba($color-brand-green, 0.12);
+        color: darken($color-brand-green, 10%);
+      }
+    }
+  }
+
+  &__empty {
+    display: flex;
+    min-height: 72px;
+    align-items: center;
+    padding: 12px;
+    border-radius: 9px;
+    background: #f7f9f8;
+    color: #7a8680;
+    font-size: 11px;
+    line-height: 1.45;
+  }
+}
+
+.payment-service-flow-connector {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 34px;
+  color: #718078;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+
+  &::before,
+  &::after {
+    content: "";
+    width: min(90px, 20%);
+    height: 1px;
+    background: #dce7e1;
+  }
+
+  svg {
+    color: $color-brand-green;
+    font-size: 16px;
+  }
+}
+
+.payment-service-pricing {
+  overflow: hidden;
+  min-width: 0;
+  border: 1px solid #dfe8e3;
+  border-radius: 11px;
+  background: #ffffff;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 7px 9px;
+    border-bottom: 1px solid #e6ece9;
+    background: #f8faf9;
+
+    span {
+      color: #68776f;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    small {
+      color: #7d8983;
+      font-size: 9px;
+      font-weight: 700;
+    }
+  }
+
+  &__rows {
+    display: grid;
+    gap: 1px;
+    padding: 5px 9px;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 5px 0;
+
+    > span {
+      color: #67766e;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    > div {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      text-align: right;
+    }
+
+    strong {
+      color: #263a31;
+      font-size: 12px;
+    }
+
+    small {
+      color: #76827c;
+      font-size: 9px;
+    }
+
+    &--child {
+      > span,
+      strong {
+        color: #9b5c08;
+      }
+    }
+  }
+
+  &__converted {
+    margin: 0 9px 7px;
+    padding: 6px 8px;
+    border-radius: 7px;
+    background: #fff8ec;
+    color: #7b6337;
+    font-size: 9px;
+  }
+
+  &__total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 9px 10px;
+    border-top: 1px solid #dfe8e3;
+    background: #edf5f1;
+
+    span {
+      color: #67766e;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    strong {
+      color: darken($color-brand-green, 10%);
+      font-size: 13px;
+    }
+  }
+
+  &--empty {
+    padding: 9px;
+  }
+
+  &__label {
+    display: block;
+    margin-bottom: 4px;
+    color: #68776f;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  &__empty {
+    display: block;
+    padding: 7px;
+    border-radius: 8px;
+    background: #f7f9f8;
+    color: #89938e;
+    font-size: 10px;
+    font-style: italic;
+  }
+}
+
+@media (max-width: 760px) {
+  .payment-service-overview .service-info-title-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+// Variante compacta para previews: cotizado y asignado se comparan lado a lado.
+.payment-service-overview--horizontal {
+  .payment-service-comparison {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 46px minmax(0, 1fr);
+    align-items: stretch;
+    gap: 0;
+  }
+
+  .payment-service-panel {
+    border-radius: 10px;
+    box-shadow: none;
+
+    > header {
+      min-height: 48px;
+      padding: 8px 10px;
+
+      span {
+        font-size: 9px;
+      }
+
+      small {
+        max-width: 220px;
+        overflow: hidden;
+        font-size: 8.5px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      strong {
+        padding: 4px 7px;
+        font-size: 9px;
+      }
+    }
+
+    &__body {
+      gap: 7px;
+      padding: 8px;
+
+      .service-detailed-info {
+        padding: 8px !important;
+        border-radius: 8px;
+      }
+    }
+
+    &__pricing {
+      padding-top: 7px;
+    }
+  }
+
+  .payment-service-flow-connector {
+    flex-direction: column;
+    gap: 5px;
+    min-height: 0;
+    padding: 12px 6px;
+
+    &::before,
+    &::after {
+      width: 1px;
+      height: 100%;
+      min-height: 18px;
+      background: #dce7e1;
+    }
+
+    svg {
+      flex: 0 0 auto;
+      font-size: 18px;
+    }
+
+    span {
+      display: none;
+    }
+  }
+
+  .payment-service-pricing {
+    border-radius: 8px;
+
+    &__header {
+      padding: 5px 7px;
+
+      span,
+      small {
+        font-size: 8px;
+      }
+    }
+
+    &__rows {
+      padding: 3px 7px;
+    }
+
+    &__row {
+      gap: 7px;
+      padding: 3px 0;
+
+      > span {
+        font-size: 9px;
+      }
+
+      > div {
+        gap: 4px;
+      }
+
+      strong {
+        font-size: 11px;
+      }
+
+      small {
+        font-size: 8px;
+      }
+    }
+
+    &__converted {
+      margin: 0 7px 5px;
+      padding: 4px 6px;
+      font-size: 8px;
+    }
+
+    &__total {
+      padding: 6px 7px;
+
+      span {
+        font-size: 9px;
+      }
+
+      strong {
+        font-size: 12px;
+      }
+    }
+
+    &--empty {
+      padding: 7px;
+    }
+  }
+}
+
+@media (max-width: 900px) {
+  .payment-service-overview--horizontal {
+    .payment-service-comparison {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .payment-service-flow-connector {
+      flex-direction: row;
+      min-height: 26px;
+      padding: 4px 0;
+
+      &::before,
+      &::after {
+        width: min(72px, 18%);
+        height: 1px;
+        min-height: 0;
+      }
+
+      svg {
+        transform: rotate(90deg);
+      }
+    }
+  }
+}

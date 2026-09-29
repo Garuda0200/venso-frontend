@@ -1,0 +1,1307 @@
+// src/pages/Ventas/Cotizaciones/Cotizaciones.scss
+// Refactored - Minimal page-level styles only
+
+
+// Page wrapper
+.cotizaciones-page {
+  padding: 0 20px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  min-height: calc(100vh - 60px);
+  position: relative;
+  background-color: var(--color-bg-primary);
+
+  // Modo edición: sin restricciones de ancho para que EdicionCotizacion llene el content wrapper
+  &--edicion {
+    max-width: 100%;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+
+  // ── Sticky top bar: page-header + filter ──────────────────────────────────
+  .cotizaciones-sticky-top {
+    position: sticky;
+    top: 0;
+    z-index: 100; // Reducido para asegurar que los modales queden por encima
+    background: var(--color-bg-primary);
+    // Extend to full content width (negate cotizaciones-page horizontal padding)
+    margin-left: -20px;
+    margin-right: -20px;
+    padding: 20px 20px 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
+    border-bottom: 1px solid #e9eef4;
+  }
+
+
+  .quotation-status-tabs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+
+    button {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      flex: 0 0 auto;
+      border: 1px solid #d8e1ea;
+      background: #fff;
+      color: #475569;
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition:
+        background 0.15s ease,
+        border-color 0.15s ease,
+        color 0.15s ease;
+
+      strong {
+        min-width: 22px;
+        padding: 2px 6px;
+        border-radius: 999px;
+        background: #eef2f7;
+        color: #334155;
+        text-align: center;
+      }
+
+      &.active {
+        border-color: #ff007e;
+        background: #ff007e;
+        color: #fff;
+        box-shadow: 0 5px 14px rgba(var(--color-primary-rgb), 0.18);
+
+        strong {
+          background: rgba(255, 255, 255, 0.2);
+          color: #fff;
+        }
+      }
+    }
+  }
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+
+    .header-left {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+
+      h1 {
+        color: #1e293b;
+        font-size: 20px;
+        margin: 0;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+      }
+
+      .user-context-info {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+
+        .platform-badge {
+          padding: 5px 12px;
+          border-radius: 6px;
+          color: white;
+          font-size: 12px;
+          font-weight: 600;
+          letter-spacing: 0.3px;
+        }
+
+        .business-badge {
+          padding: 5px 12px;
+          border-radius: 6px;
+          background: #f1f5f9;
+          color: #475569;
+          font-size: 12px;
+          font-weight: 600;
+          letter-spacing: 0.3px;
+          border: 1px solid #e2e8f0;
+        }
+      }
+    }
+
+    .btn-create-cotizacion {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--color-primary);
+      color: white;
+      border: none;
+      padding: 9px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+
+      &:hover {
+        background: var(--color-primary-dark);
+      }
+
+      &:active {
+        background: var(--color-primary-darker);
+      }
+
+      svg {
+        font-size: 16px;
+      }
+    }
+  }
+
+  .seller-scope-tabs {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 4px;
+    border: 1px solid #dbe5ee;
+    border-radius: 12px;
+    background: #f8fafc;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+
+    .seller-scope-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 32px;
+      padding: 0 12px;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      background: transparent;
+      color: #475569;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition:
+        background 0.18s ease,
+        color 0.18s ease,
+        border-color 0.18s ease,
+        box-shadow 0.18s ease;
+
+      span {
+        min-width: 22px;
+        padding: 2px 7px;
+        border-radius: 999px;
+        background: #e2e8f0;
+        color: #334155;
+        font-size: 11px;
+        line-height: 1.2;
+      }
+
+      &:hover {
+        background: var(--color-bg-primary);
+        border-color: #cbd5e1;
+        color: #b00057;
+      }
+
+      &.active {
+        background: var(--color-primary);
+        border-color: var(--color-primary);
+        color: #ffffff;
+        box-shadow: 0 6px 16px rgba(var(--color-primary-rgb), 0.18);
+
+        span {
+          background: rgba(255, 255, 255, 0.18);
+          color: #ffffff;
+        }
+      }
+    }
+  }
+
+  .back-to-list-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding: 10px 16px;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+    transition: all 0.2s;
+
+    &:hover {
+      background-color: #e9ecef;
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+    }
+
+    svg {
+      font-size: 18px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 12px;
+
+    .page-header {
+      flex-direction: column;
+      gap: 12px;
+      text-align: center;
+      padding: 16px;
+
+      .header-left {
+        width: 100%;
+
+        h1 {
+          font-size: 20px;
+        }
+
+        .user-context-info {
+          justify-content: center;
+        }
+      }
+
+      .btn-create-cotizacion {
+        width: 100%;
+        justify-content: center;
+        min-height: 44px;
+        font-size: 15px;
+      }
+    }
+
+    .seller-scope-tabs {
+      width: 100%;
+      overflow-x: auto;
+
+      .seller-scope-tab {
+        white-space: nowrap;
+      }
+    }
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px;
+
+    .page-header {
+      padding: 14px 12px;
+      border-radius: 8px;
+      gap: 10px;
+
+      .header-left h1 {
+        font-size: 18px;
+      }
+
+      .user-context-info {
+        gap: 6px;
+
+        .platform-badge,
+        .business-badge {
+          padding: 4px 10px;
+          font-size: 12px;
+        }
+      }
+
+      .btn-create-cotizacion {
+        padding: 10px 14px;
+        font-size: 14px;
+        border-radius: 6px;
+      }
+    }
+
+    .back-to-list-btn {
+      padding: 8px 12px;
+      font-size: 13px;
+    }
+  }
+}
+
+// ─── Floating Snackbar ──────────────────────────────────────────────────────
+.cotizaciones-snackbar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 320px;
+  max-width: 520px;
+  padding: 14px 18px;
+  border-radius: 10px;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  z-index: 3000;
+  animation: snackbarSlideUp 0.3s ease;
+
+  &.success {
+    background: #059669;
+  }
+
+  &.error {
+    background: #dc2626;
+  }
+
+  &.info {
+    background: #2563eb;
+  }
+
+  &.warning {
+    background: #d97706;
+  }
+
+  span {
+    flex: 1;
+    line-height: 1.4;
+  }
+
+  button {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border-radius: 6px;
+    opacity: 0.8;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+
+    &:hover {
+      opacity: 1;
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    svg {
+      font-size: 18px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    min-width: 0;
+    width: calc(100% - 24px);
+    left: 12px;
+    right: 12px;
+    transform: none;
+    bottom: 16px;
+    font-size: 13px;
+    padding: 12px 14px;
+  }
+}
+
+@keyframes snackbarSlideUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+// Animations
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse-blue {
+  0% {
+    box-shadow: 0 0 0 0 rgba(21, 101, 192, 0.4);
+  }
+
+  70% {
+    box-shadow: 0 0 0 5px rgba(21, 101, 192, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(21, 101, 192, 0);
+  }
+}
+
+// Summary Modal Styles
+.summary-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.58);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 18px;
+  animation: fadeIn 0.18s ease;
+}
+
+.summary-modal-content {
+  background: var(--color-bg-primary);
+  border-radius: 16px;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
+  width: min(1040px, calc(100vw - 24px));
+  max-height: min(92vh, 920px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideUp 0.2s ease;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px) scale(0.95);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+}
+
+.summary-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #ff007e, #c60062);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px 16px 0 0;
+
+  h3 {
+    margin: 0;
+    color: white;
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: 0;
+  }
+
+  .close-button {
+    width: 34px;
+    height: 34px;
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 0;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.18s ease;
+
+    svg {
+      font-size: 20px;
+    }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.26);
+    }
+  }
+}
+
+.summary-modal-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 18px;
+  background: #f8fafc;
+
+  .summary-content {
+    --gap: 14px;
+    --pad: 16px;
+  }
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #eef2f7;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 999px;
+    border: 2px solid #eef2f7;
+
+    &:hover {
+      background: #94a3b8;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .summary-modal-overlay {
+    padding: 10px;
+  }
+
+  .summary-modal-content {
+    max-width: 100%;
+    max-height: 90vh;
+  }
+
+  .summary-modal-header {
+    padding: 18px 20px;
+
+    h3 {
+      font-size: 18px;
+    }
+
+    .close-button {
+      font-size: 20px;
+      padding: 4px 8px;
+    }
+  }
+
+  .summary-modal-body {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .summary-modal-overlay {
+    padding: 5px;
+  }
+
+  .summary-modal-header {
+    padding: 16px 16px;
+
+    h3 {
+      font-size: 16px;
+    }
+  }
+
+  .summary-modal-body {
+    padding: 16px;
+  }
+}
+
+// ─── Save Choice Modal (dual-save for processed cotizaciones) ───────────────
+.save-choice-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.save-choice-modal {
+  background: white;
+  border-radius: 12px;
+  padding: 28px 32px;
+  max-width: 460px;
+  width: 90%;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
+  animation: scaleIn 0.15s ease;
+  text-align: center;
+
+  h3 {
+    margin: 0 0 8px;
+    font-size: 17px;
+    font-weight: 700;
+    color: #1e293b;
+  }
+
+  p {
+    margin: 0 0 20px;
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.5;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.save-choice-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.save-choice-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &.regenerate {
+    background: #f59e0b;
+    color: white;
+
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+
+  &.keep {
+    background: #171218;
+    color: white;
+
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+}
+
+.save-choice-close {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 6px 12px;
+
+  &:hover {
+    color: #64748b;
+  }
+}
+
+/* Venso Tours — centro comercial de cotizaciones */
+.cotizaciones-page:not(.cotizaciones-page--edicion) {
+  max-width: 1450px;
+  padding: 0 26px 28px;
+  background:
+    radial-gradient(circle at 95% 5%, rgba(255, 0, 126, 0.045), transparent 25%),
+    #ffffff;
+
+  .cotizaciones-sticky-top {
+    position: relative;
+    top: auto;
+    z-index: 90;
+    margin: 0 -26px;
+    padding: 24px 26px 16px;
+    border: 0;
+    border-bottom: 1px solid #eee8ec;
+    background: rgba(255, 255, 255, 0.97);
+    box-shadow: 0 12px 34px rgba(37, 19, 31, 0.055);
+    backdrop-filter: blur(18px);
+  }
+
+  .quotation-command-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 28px;
+    align-items: center;
+    margin-bottom: 17px;
+    padding: 24px 26px;
+    overflow: hidden;
+    border-radius: 22px;
+    color: #ffffff;
+    background:
+      radial-gradient(circle at 84% 16%, rgba(255, 0, 126, 0.32), transparent 30%),
+      linear-gradient(140deg, #211820, #0e0a0e 72%);
+    box-shadow: 0 22px 52px rgba(29, 14, 24, 0.17);
+  }
+
+  .quotation-command-header__copy {
+    min-width: 0;
+
+    h1 {
+      margin: 6px 0 7px;
+      color: #ffffff;
+      font-size: clamp(25px, 3vw, 37px);
+      line-height: 1.08;
+      letter-spacing: -0.045em;
+    }
+
+    p {
+      max-width: 700px;
+      margin: 0;
+      color: rgba(255, 255, 255, 0.61);
+      font-size: 11px;
+      line-height: 1.65;
+    }
+  }
+
+  .quotation-command-header__eyebrow {
+    color: #ff65ad;
+    font-size: 9px;
+    font-weight: 850;
+    letter-spacing: 0.15em;
+  }
+
+  .quotation-command-header__context {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 14px;
+
+    span {
+      padding: 5px 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 999px;
+      color: rgba(255, 255, 255, 0.75);
+      background: rgba(255, 255, 255, 0.055);
+      font-size: 8px;
+      font-weight: 750;
+    }
+
+    .agency-badge {
+      color: #ff8ac0;
+      background: rgba(255, 0, 126, 0.12);
+      border-color: rgba(255, 0, 126, 0.18);
+    }
+  }
+
+  .quotation-command-header__aside {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(78px, 1fr));
+    gap: 9px;
+    min-width: 280px;
+  }
+
+  .quotation-command-header__metric {
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 13px;
+    background: rgba(255, 255, 255, 0.055);
+
+    span {
+      display: block;
+      color: rgba(255, 255, 255, 0.48);
+      font-size: 8px;
+      font-weight: 750;
+      text-transform: uppercase;
+    }
+
+    strong {
+      display: block;
+      margin-top: 4px;
+      color: #ffffff;
+      font-size: 21px;
+    }
+  }
+
+  .quotation-command-header__aside .btn-create-cotizacion {
+    grid-column: 1 / -1;
+    min-height: 43px;
+    justify-content: center;
+    border: 0;
+    border-radius: 12px;
+    color: #ffffff;
+    background: linear-gradient(135deg, #ff007e, #c60062);
+    box-shadow: 0 12px 28px rgba(255, 0, 126, 0.25);
+    font-size: 11px;
+    font-weight: 800;
+
+    &:hover {
+      background: linear-gradient(135deg, #ff218f, #d00068);
+      transform: translateY(-1px);
+    }
+  }
+
+  .quotation-status-tabs button {
+    border-color: #e2dbe0;
+    color: #61575f;
+    background: var(--color-bg-primary);
+
+    strong {
+      color: #5f555c;
+      background: #f3eff1;
+    }
+
+    &.active {
+      border-color: #171218;
+      color: #ffffff;
+      background: #171218;
+      box-shadow: 0 8px 20px rgba(23, 18, 24, 0.18);
+
+      strong {
+        color: #ffffff;
+        background: rgba(255, 0, 126, 0.45);
+      }
+    }
+  }
+
+  .seller-scope-tabs {
+    border-color: #e4dde1;
+    background: #f8f5f7;
+
+    .seller-scope-tab:hover {
+      color: #c50062;
+      border-color: rgba(255, 0, 126, 0.25);
+    }
+
+    .seller-scope-tab.active {
+      border-color: #ff007e;
+      color: #ffffff;
+      background: #ff007e;
+      box-shadow: 0 7px 18px rgba(255, 0, 126, 0.2);
+    }
+  }
+
+  .cotizaciones-filter {
+    border-color: #e8e1e5;
+    border-radius: 15px;
+    box-shadow: 0 8px 24px rgba(32, 16, 27, 0.04);
+
+    .filter-header .filter-header-left .filter-icon,
+    .active-filter-count {
+      color: #ff007e;
+    }
+  }
+
+  @media (max-width: 880px) {
+    .quotation-command-header {
+      grid-template-columns: 1fr;
+    }
+
+    .quotation-command-header__aside {
+      min-width: 0;
+    }
+  }
+
+  @media (max-width: 620px) {
+    padding: 0 14px 20px;
+
+    .cotizaciones-sticky-top {
+      margin: 0 -14px;
+      padding: 14px;
+    }
+
+    .quotation-command-header {
+      padding: 20px;
+      border-radius: 18px;
+    }
+  }
+}
+
+/* ==========================================================
+   VENSO QUOTATION STUDIO — navegación superior / cero legado Magic
+   ========================================================== */
+.cotizaciones-page:not(.cotizaciones-page--edicion) {
+  --quote-ink: #171218;
+  --quote-magenta: #ff007e;
+  --quote-muted: #7c7b7a;
+  --quote-line: #e9e2e6;
+
+  width: min(100%, 1760px);
+  margin: 0 auto;
+  padding: 0 0 30px;
+  color: var(--quote-ink);
+  background: transparent;
+
+  .cotizaciones-sticky-top {
+    position: relative;
+    top: auto;
+    z-index: 10;
+    margin: 0;
+    padding: 0 0 16px;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .quotation-command-header {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 28px;
+    align-items: end;
+    padding: 28px 30px 24px 38px;
+    overflow: hidden;
+    border: 1px solid var(--quote-line);
+    border-radius: 18px;
+    color: var(--quote-ink);
+    background: var(--color-bg-primary);
+    box-shadow: 0 16px 44px rgba(32, 17, 27, 0.07);
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 8px;
+      background: var(--quote-magenta);
+    }
+
+    &::after {
+      content: "V";
+      position: absolute;
+      right: 22px;
+      bottom: -50px;
+      color: rgba(255, 0, 126, 0.035);
+      font-family: Georgia, serif;
+      font-size: 150px;
+      font-weight: 900;
+      line-height: 1;
+      pointer-events: none;
+    }
+  }
+
+  .quotation-command-header__copy {
+    position: relative;
+    z-index: 1;
+    max-width: 780px;
+
+    h1 {
+      margin: 6px 0 8px;
+      color: var(--quote-ink);
+      font-size: clamp(30px, 4vw, 48px);
+      line-height: 1;
+      letter-spacing: -0.05em;
+    }
+
+    p {
+      max-width: 700px;
+      margin: 0;
+      color: var(--quote-muted);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+  }
+
+  .quotation-command-header__eyebrow {
+    color: var(--quote-magenta);
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 0.18em;
+  }
+
+  .quotation-command-header__context {
+    margin-top: 14px;
+
+    span {
+      border: 1px solid #ece5e9;
+      color: #5f555c;
+      background: #faf8f9;
+    }
+  }
+
+  .quotation-command-header__aside {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(78px, auto));
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .quotation-command-header__metric {
+    min-width: 82px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 10px 12px;
+    border: 1px solid var(--quote-line);
+    border-radius: 12px;
+    background: #faf8f9;
+
+    span {
+      color: var(--quote-muted);
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    strong {
+      color: var(--quote-ink);
+      font-size: 22px;
+      line-height: 1.1;
+    }
+  }
+
+  .btn-create-cotizacion {
+    grid-column: 1 / -1;
+    min-height: 44px;
+    border: 1px solid var(--quote-ink);
+    border-radius: 12px;
+    color: #ffffff;
+    background: var(--quote-ink);
+    box-shadow: none;
+
+    &:hover {
+      border-color: var(--quote-magenta);
+      background: var(--quote-magenta);
+      box-shadow: 0 10px 24px rgba(255, 0, 126, 0.2);
+    }
+  }
+
+  .cotizaciones-filter {
+    margin-top: 12px;
+    border: 1px solid var(--quote-line);
+    border-radius: 16px;
+    background: var(--color-bg-primary);
+    box-shadow: none;
+
+    input,
+    select {
+      border-color: #e7e0e4 !important;
+      border-radius: 10px !important;
+      background: #fbfafb !important;
+
+      &:focus {
+        border-color: var(--quote-magenta) !important;
+        box-shadow: 0 0 0 3px rgba(255, 0, 126, 0.08) !important;
+      }
+    }
+  }
+
+  .seller-scope-tabs,
+  .quotation-status-tabs {
+    gap: 5px;
+    padding: 5px;
+    border: 1px solid var(--quote-line);
+    border-radius: 12px;
+    background: var(--color-bg-primary);
+    box-shadow: none;
+  }
+
+  .quotation-status-tabs {
+    margin-top: 9px;
+
+    button {
+      min-height: 34px;
+      border: 0;
+      border-radius: 9px;
+      color: #71676e;
+      background: transparent;
+
+      &.active {
+        color: #ffffff;
+        background: var(--quote-ink);
+        box-shadow: inset 0 -2px 0 var(--quote-magenta);
+      }
+    }
+  }
+
+  .seller-scope-tabs .seller-scope-tab.active {
+    border-color: var(--quote-magenta);
+    color: #c50062;
+    background: #fff1f8;
+    box-shadow: none;
+  }
+
+  .cotizaciones-table-container {
+    padding-top: 4px;
+  }
+
+  .quotation-pagination {
+    border-color: var(--quote-line);
+    background: var(--color-bg-primary);
+    box-shadow: none;
+  }
+
+  @media (max-width: 820px) {
+    .quotation-command-header {
+      grid-template-columns: 1fr;
+      align-items: start;
+      padding: 24px 22px 22px 30px;
+    }
+
+    .quotation-command-header__aside {
+      width: 100%;
+    }
+  }
+}
+
+// Compact sticky quotation command area for Venso's table-row workspace.
+.cotizaciones-page:not(.cotizaciones-page--edicion) {
+  .cotizaciones-sticky-top {
+    position: sticky;
+    top: 0;
+    z-index: 145;
+    margin-inline: -26px;
+    padding: 8px 26px 9px;
+    background: rgba(255, 252, 254, 0.97);
+    border-bottom-color: #eadfe5;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.065);
+  }
+
+  .quotation-command-header {
+    min-height: 45px;
+    margin-bottom: 6px;
+    padding: 5px 7px;
+    gap: 12px;
+    border-radius: 0;
+    color: #171218;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .quotation-command-header__copy {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 10px;
+    align-items: center;
+
+    &::before {
+      content: "";
+      grid-row: 1 / span 3;
+      width: 34px;
+      height: 34px;
+      border: 1px solid #eadde5;
+      border-radius: 10px;
+      background: #fff2f8;
+      box-shadow: inset 4px 0 0 #ff007e;
+    }
+
+    h1 {
+      margin: 0;
+      color: #171218;
+      font-size: 18px;
+      line-height: 1.1;
+      letter-spacing: -0.025em;
+    }
+
+    p,
+    .quotation-command-header__eyebrow {
+      display: none;
+    }
+  }
+
+  .quotation-command-header__context {
+    grid-column: 2;
+    margin-top: 3px;
+    gap: 4px;
+
+    span {
+      padding: 2px 6px;
+      border-color: #eadfe5;
+      color: #6f626a;
+      background: #faf7f9;
+      font-size: 7px;
+    }
+
+    .agency-badge {
+      color: #b00057;
+      background: #fff0f7;
+      border-color: #f0ccdf;
+    }
+  }
+
+  .quotation-command-header__aside {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .quotation-command-header__metric {
+    min-width: 68px;
+    padding: 5px 8px;
+    border: 1px solid #e8dfe4;
+    border-radius: 9px;
+    background: #faf7f9;
+
+    span {
+      color: #7e7179;
+      font-size: 7px;
+    }
+
+    strong {
+      color: #171218;
+      font-size: 15px;
+    }
+  }
+
+  .quotation-command-header__aside .btn-create-cotizacion {
+    min-height: 34px;
+    padding: 0 12px;
+    border-radius: 9px;
+    font-size: 10px;
+    background: #171218;
+  }
+
+  .seller-scope-tabs,
+  .quotation-status-tabs {
+    min-height: 31px;
+    margin-top: 6px;
+    padding: 3px;
+    border-radius: 9px;
+  }
+
+  .seller-scope-tab,
+  .quotation-status-tabs button {
+    min-height: 25px;
+    padding: 0 9px;
+    border-radius: 7px;
+    font-size: 9px;
+  }
+
+  @media (max-width: 720px) {
+    .cotizaciones-sticky-top {
+      margin-inline: -10px;
+      padding-inline: 10px;
+    }
+
+    .quotation-command-header__metric,
+    .quotation-command-header__context {
+      display: none;
+    }
+
+    .quotation-command-header__aside .btn-create-cotizacion {
+      span {
+        display: none;
+      }
+    }
+  }
+}

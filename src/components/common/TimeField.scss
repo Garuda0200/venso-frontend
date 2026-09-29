@@ -1,0 +1,131 @@
+// TimeField Styles
+.time-field {
+  margin-bottom: 1.25rem;
+
+  .time-field-header {
+    margin-bottom: 0.5rem;
+
+    label {
+      font-weight: 500;
+      font-size: 0.95rem;
+      color: #2c3e50;
+      margin: 0;
+
+      &.required::after {
+        content: " *";
+        color: #e74c3c;
+        font-weight: 600;
+      }
+    }
+  }
+
+  .time-input-container {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+
+  .time-control {
+    flex: 1;
+    padding: 0.75rem;
+    font-size: 1rem;
+    border: 2px solid #dfe6e9;
+    border-radius: 6px;
+    background-color: #ffffff;
+    color: #2c3e50;
+    transition: all 0.2s ease;
+
+    &:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    &.error {
+      border-color: #e74c3c;
+
+      &:focus {
+        box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+      }
+    }
+
+    &:disabled {
+      background-color: #f5f6fa;
+      cursor: not-allowed;
+      opacity: 0.6;
+      color: #95a5a6;
+    }
+  }
+
+  .toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 48px;
+    padding: 0.75rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    svg {
+      display: block;
+    }
+
+    &.active {
+      background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+
+      &:hover:not(:disabled) {
+        background: linear-gradient(135deg, #00cec9 0%, #00b894 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 184, 148, 0.3);
+      }
+    }
+
+    &.inactive {
+      background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+
+      &:hover:not(:disabled) {
+        background: linear-gradient(135deg, #7f8c8d 0%, #95a5a6 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(127, 140, 141, 0.3);
+      }
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  .error-message {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+    color: #e74c3c;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .null-message {
+    display: block;
+    margin-top: 0.5rem;
+    color: #7f8c8d;
+    font-size: 0.875rem;
+    font-style: italic;
+  }
+
+  &.has-error {
+    .time-control {
+      border-color: #e74c3c;
+    }
+  }
+}

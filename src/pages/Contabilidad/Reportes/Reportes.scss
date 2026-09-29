@@ -1,0 +1,223 @@
+@import "../../../styles/_variables.scss";
+
+.reportes-page {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  animation: fadeIn 0.4s ease;
+
+  .page-header {
+    text-align: center;
+    margin-bottom: 3rem;
+
+    h1 {
+      font-size: 2.5rem;
+      color: $color-brand-black;
+      margin-bottom: 0.75rem;
+    }
+
+    p {
+      font-size: 1.2rem;
+      color: $color-gray-medium;
+      margin: 0;
+    }
+  }
+
+  .view-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+    gap: 2rem;
+
+    .view-option {
+      background: white;
+      border-radius: 16px;
+      padding: 2.5rem;
+      box-shadow: $shadow-md;
+      cursor: pointer;
+      transition: $transition-normal;
+      display: flex;
+      gap: 1.5rem;
+      border: 3px solid transparent;
+      position: relative;
+      overflow: hidden;
+
+      &::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        transition: $transition-normal;
+      }
+
+      &.gestion {
+        &::before {
+          background: $color-brand-green;
+        }
+
+        .option-icon {
+          background: lighten($color-brand-green, 45%);
+          color: $color-brand-green;
+        }
+
+        &:hover {
+          border-color: $color-brand-green;
+          transform: translateY(-8px);
+          box-shadow: $shadow-lg;
+
+          .option-arrow {
+            transform: translateX(10px);
+            color: $color-brand-green;
+          }
+        }
+      }
+
+      &.informes {
+        &::before {
+          background: $color-brand-orange;
+        }
+
+        .option-icon {
+          background: lighten($color-brand-orange, 35%);
+          color: $color-brand-orange;
+        }
+
+        &:hover {
+          border-color: $color-brand-orange;
+          transform: translateY(-8px);
+          box-shadow: $shadow-lg;
+
+          .option-arrow {
+            transform: translateX(10px);
+            color: $color-brand-orange;
+          }
+        }
+      }
+
+      .option-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        flex-shrink: 0;
+      }
+
+      .option-content {
+        flex: 1;
+
+        h2 {
+          font-size: 1.5rem;
+          color: $color-brand-black;
+          margin-bottom: 0.75rem;
+        }
+
+        p {
+          color: $color-gray-dark;
+          line-height: 1.6;
+          margin-bottom: 1rem;
+        }
+
+        ul {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+
+          li {
+            color: $color-gray-dark;
+            padding: 0.4rem 0;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+
+            &::before {
+              content: "";
+              color: $color-success;
+              font-weight: bold;
+              margin-right: 0.5rem;
+            }
+          }
+        }
+      }
+
+      .option-arrow {
+        font-size: 2rem;
+        color: $color-gray-medium;
+        display: flex;
+        align-items: center;
+        transition: $transition-normal;
+      }
+    }
+  }
+}
+
+.reportes-container {
+  .view-header {
+    padding: 1rem 2rem;
+    background: white;
+    box-shadow: $shadow-sm;
+    margin-bottom: 1rem;
+
+    .btn-back {
+      background: $color-gray-medium;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: $border-radius-lg;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: $transition-normal;
+
+      &:hover {
+        background: $color-gray-dark;
+        transform: translateX(-5px);
+      }
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .reportes-page {
+    padding: 1rem;
+
+    .page-header h1 {
+      font-size: 2rem;
+    }
+
+    .view-selector {
+      grid-template-columns: 1fr;
+
+      .view-option {
+        flex-direction: column;
+        text-align: center;
+
+        .option-icon {
+          margin: 0 auto;
+        }
+
+        .option-arrow {
+          transform: rotate(90deg);
+          margin-top: 1rem;
+        }
+      }
+    }
+  }
+}

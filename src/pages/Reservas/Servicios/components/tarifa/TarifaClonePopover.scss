@@ -1,0 +1,345 @@
+@import "../../../../../styles/_variables.scss";
+
+$interna-color: $color-primary;
+$externa-color: $color-accent;
+$temp-alta: $color-accent;
+$temp-baja: #3b82f6;
+$temp-estandar: #6b7280;
+
+.tarifa-clone-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  background: white;
+  color: $color-primary;
+  cursor: pointer;
+  transition: $transition-fast;
+
+  svg {
+    font-size: 0.75rem;
+  }
+
+  &:hover:not(:disabled) {
+    background: rgba($color-primary, 0.1);
+    border-color: $color-primary;
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &.active {
+    background: $color-primary;
+    border-color: $color-primary;
+    color: white;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    color: $color-text-light;
+    background: $color-bg-secondary;
+  }
+}
+
+.tarifa-clone-popover {
+  width: 260px;
+  background: white;
+  border-radius: $border-radius-lg;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18), 0 4px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba($color-primary, 0.12);
+  padding: $spacing-sm;
+  z-index: 6000;
+  font-size: 0.85rem;
+  color: $color-text-dark;
+
+  .clone-popover-arrow {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: white;
+    border: 1px solid rgba($color-primary, 0.12);
+    transform: rotate(45deg);
+    z-index: -1;
+  }
+
+  &.bottom .clone-popover-arrow {
+    top: -6px;
+    left: 50%;
+    margin-left: -5px;
+    border-bottom: none;
+    border-right: none;
+  }
+
+  &.top .clone-popover-arrow {
+    bottom: -6px;
+    left: 50%;
+    margin-left: -5px;
+    border-top: none;
+    border-left: none;
+  }
+
+  .clone-popover-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: $spacing-sm;
+    padding-bottom: $spacing-sm;
+    border-bottom: 1px solid $color-border-light;
+
+    .clone-popover-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: $font-weight-bold;
+      color: $color-primary;
+      font-size: 0.85rem;
+
+      svg {
+        font-size: 0.8rem;
+      }
+    }
+
+    .clone-popover-close {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border: none;
+      border-radius: 50%;
+      background: transparent;
+      color: $color-text-light;
+      cursor: pointer;
+      transition: $transition-fast;
+
+      svg {
+        font-size: 0.75rem;
+      }
+
+      &:hover {
+        background: $color-bg-secondary;
+        color: $color-danger;
+      }
+    }
+  }
+
+  .clone-popover-source {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: $spacing-sm;
+
+    .source-mini {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: $border-radius-pill;
+      font-size: 0.7rem;
+      font-weight: $font-weight-bold;
+
+      svg {
+        font-size: 0.65rem;
+      }
+
+      &.tipo {
+        &.interna {
+          background: rgba($interna-color, 0.12);
+          color: $interna-color;
+        }
+
+        &.externa {
+          background: rgba($externa-color, 0.12);
+          color: $externa-color;
+        }
+      }
+
+      &.temp {
+        &.alta {
+          background: rgba($temp-alta, 0.12);
+          color: $temp-alta;
+        }
+
+        &.baja {
+          background: rgba($temp-baja, 0.12);
+          color: $temp-baja;
+        }
+
+        &.estandar,
+        &.custom {
+          background: rgba($temp-estandar, 0.12);
+          color: $temp-estandar;
+        }
+      }
+
+      &.price {
+        background: $color-bg-secondary;
+        color: $color-text-dark;
+        margin-left: auto;
+      }
+    }
+  }
+
+  .clone-popover-body {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-sm;
+  }
+
+  .clone-popover-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+
+    label {
+      font-size: 0.7rem;
+      font-weight: $font-weight-bold;
+      color: $color-text-medium;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+  }
+
+  .clone-popover-options {
+    display: flex;
+    gap: 5px;
+
+    .clone-option {
+      flex: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 5px 6px;
+      border: 1px solid $color-border;
+      border-radius: $border-radius-md;
+      background: white;
+      color: $color-text-medium;
+      font-size: 0.75rem;
+      font-weight: $font-weight-semibold;
+      cursor: pointer;
+      transition: $transition-fast;
+
+      svg {
+        font-size: 0.7rem;
+      }
+
+      &:hover:not(:disabled) {
+        border-color: $color-primary;
+        color: $color-primary;
+      }
+
+      &.active {
+        color: white;
+        border-color: transparent;
+
+        &.interna {
+          background: $interna-color;
+        }
+
+        &.externa {
+          background: $externa-color;
+        }
+
+        &.estandar {
+          background: $temp-estandar;
+        }
+
+        &.alta {
+          background: $temp-alta;
+        }
+
+        &.baja {
+          background: $temp-baja;
+        }
+      }
+
+      &:disabled,
+      &.disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        background: $color-bg-secondary;
+        border-color: $color-border;
+        color: $color-text-light;
+
+        &:hover {
+          border-color: $color-border;
+          color: $color-text-light;
+        }
+      }
+    }
+  }
+
+  .clone-popover-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+    margin-top: $spacing-sm;
+    padding: $spacing-sm;
+    background: rgba($color-danger, 0.08);
+    border: 1px solid rgba($color-danger, 0.2);
+    border-radius: $border-radius-md;
+    color: $color-danger;
+    font-size: 0.75rem;
+
+    svg {
+      font-size: 0.8rem;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+  }
+
+  .clone-popover-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: $spacing-sm;
+    padding-top: $spacing-sm;
+    border-top: 1px solid $color-border-light;
+
+    .clone-btn-generate {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 6px 12px;
+      border: none;
+      border-radius: $border-radius-md;
+      background: linear-gradient(135deg, $color-primary 0%, $color-primary-dark 100%);
+      color: white;
+      font-size: 0.8rem;
+      font-weight: $font-weight-semibold;
+      cursor: pointer;
+      transition: $transition-fast;
+
+      svg {
+        font-size: 0.75rem;
+      }
+
+      &:hover:not(:disabled) {
+        box-shadow: $shadow-md;
+      }
+
+      &:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+    }
+  }
+}
+
+/* 0050 — labels de visibilidad completos */
+.tarifa-clone-popover {
+  width: min(320px, calc(100vw - 20px));
+
+  .clone-popover-options .clone-option {
+    min-width: 0;
+    white-space: nowrap;
+  }
+}

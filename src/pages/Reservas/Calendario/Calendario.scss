@@ -1,0 +1,2762 @@
+.biblia-page {
+  --biblia-green: #006b4f;
+  --biblia-green-dark: #034b3a;
+  --biblia-green-soft: #eaf6f1;
+  --biblia-border: #dfe8e4;
+  --biblia-text: #1f2937;
+  --biblia-muted: #69766f;
+  min-height: calc(100vh - 110px);
+  color: var(--biblia-text);
+  font-family: "Poppins", sans-serif;
+}
+
+.biblia-page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 12px;
+
+  &__title {
+    min-width: 0;
+
+    > span {
+      color: var(--biblia-green);
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 2px 0 0;
+      color: #16201c;
+      font-size: clamp(1.35rem, 2vw, 1.85rem);
+      line-height: 1.15;
+    }
+
+    p {
+      margin: 4px 0 0;
+      color: var(--biblia-muted);
+      font-size: 0.82rem;
+    }
+  }
+}
+
+.biblia-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+
+  button {
+    border: 1px solid var(--biblia-border);
+    background: #fff;
+    color: #35433d;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  &__today,
+  &__refresh {
+    min-height: 36px;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 0 11px;
+    font-size: 0.76rem;
+    font-weight: 700;
+
+    &:hover {
+      border-color: rgba(0, 107, 79, 0.35);
+      color: var(--biblia-green);
+    }
+  }
+
+  &__refresh {
+    width: 36px;
+    padding: 0;
+    font-size: 1.05rem;
+
+    &.is-loading svg {
+      animation: biblia-spin 0.8s linear infinite;
+    }
+  }
+
+  &__navigation {
+    display: grid;
+    grid-template-columns: 34px minmax(145px, auto) 34px;
+    align-items: center;
+    min-height: 36px;
+    border: 1px solid var(--biblia-border);
+    border-radius: 9px;
+    background: #fff;
+    overflow: hidden;
+
+    button {
+      height: 34px;
+      border: 0;
+      border-radius: 0;
+      display: grid;
+      place-items: center;
+      font-size: 1.2rem;
+
+      &:hover { background: #f4f8f6; }
+    }
+
+    strong {
+      padding: 0 8px;
+      overflow: hidden;
+      color: #24322c;
+      font-size: 0.74rem;
+      font-weight: 800;
+      text-align: center;
+      text-overflow: ellipsis;
+      text-transform: capitalize;
+      white-space: nowrap;
+    }
+  }
+}
+
+.biblia-view-switcher {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--biblia-border);
+  border-radius: 10px;
+  background: #f5f8f7;
+
+  button {
+    min-height: 29px;
+    border: 0;
+    border-radius: 7px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 9px;
+    background: transparent;
+    color: #64716b;
+    font-size: 0.72rem;
+    font-weight: 750;
+
+    &.active {
+      background: var(--biblia-green);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(0, 107, 79, 0.18);
+    }
+  }
+}
+
+.biblia-filterbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding: 8px;
+  border: 1px solid var(--biblia-border);
+  border-radius: 12px;
+  background: #fff;
+
+  &__selects {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #829089;
+
+    select {
+      min-height: 34px;
+      max-width: 190px;
+      border: 1px solid #e1e8e5;
+      border-radius: 8px;
+      background: #fafcfb;
+      color: #3f4d47;
+      padding: 0 28px 0 9px;
+      font: inherit;
+      font-size: 0.7rem;
+      font-weight: 650;
+      outline: 0;
+
+      &:focus { border-color: rgba(0, 107, 79, 0.45); }
+    }
+  }
+}
+
+.biblia-search {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 1 1 360px;
+  max-width: 540px;
+  min-height: 35px;
+  padding: 0 10px;
+  border: 1px solid #e1e8e5;
+  border-radius: 9px;
+  background: #fafcfb;
+  color: #7d8a84;
+
+  svg { flex: 0 0 auto; font-size: 1rem; }
+
+  input {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    color: #25332d;
+    font: inherit;
+    font-size: 0.74rem;
+    outline: 0;
+
+    &::placeholder { color: #97a29d; }
+  }
+}
+
+.biblia-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+  margin-bottom: 10px;
+
+  > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 48px;
+    padding: 8px 11px;
+    border: 1px solid var(--biblia-border);
+    border-radius: 11px;
+    background: #fff;
+
+    span {
+      color: var(--biblia-muted);
+      font-size: 0.65rem;
+      font-weight: 650;
+    }
+
+    strong {
+      color: var(--biblia-green-dark);
+      font-size: 0.98rem;
+      font-weight: 850;
+    }
+  }
+}
+
+.biblia-content {
+  border: 1px solid var(--biblia-border);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 8px 30px rgba(23, 45, 36, 0.045);
+  overflow: hidden;
+}
+
+.biblia-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  border-bottom: 1px solid var(--biblia-border);
+  background: #fafcfb;
+
+  span {
+    padding: 8px 7px;
+    color: #66746d;
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-align: center;
+    text-transform: uppercase;
+  }
+}
+
+.biblia-month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  background: var(--biblia-border);
+  gap: 1px;
+}
+
+.biblia-month-day {
+  min-width: 0;
+  min-height: 126px;
+  border: 0;
+  padding: 6px;
+  background: #fff;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover { background: #f9fcfa; }
+  &.is-outside { background: #fbfcfc; opacity: 0.58; }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 24px;
+  }
+
+  &__number {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: #4d5a54;
+    font-size: 0.7rem;
+    font-weight: 800;
+  }
+
+  &.is-today &__number {
+    background: var(--biblia-green);
+    color: #fff;
+  }
+
+  &__count {
+    min-width: 19px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: #edf4f1;
+    color: var(--biblia-green);
+    font-size: 0.58rem;
+    font-weight: 850;
+    text-align: center;
+  }
+
+  &__events {
+    display: grid;
+    gap: 3px;
+  }
+
+  &__more {
+    display: block;
+    padding: 1px 3px;
+    color: var(--biblia-green);
+    font-size: 0.58rem;
+    font-weight: 750;
+  }
+}
+
+.biblia-event-chip {
+  --activity-color: #475569;
+  --activity-soft: #f1f5f9;
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  border-left: 3px solid var(--activity-color);
+  border-radius: 5px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px;
+  align-items: center;
+  padding: 4px 5px;
+  background: var(--activity-soft);
+  color: #25312c;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover { filter: brightness(0.985); }
+
+  &__time {
+    color: var(--activity-color);
+    font-size: 0.55rem;
+    font-weight: 850;
+    white-space: nowrap;
+  }
+
+  &__text {
+    min-width: 0;
+    display: grid;
+    gap: 1px;
+
+    strong,
+    small {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    strong { font-size: 0.58rem; font-weight: 800; }
+    small { color: #68746e; font-size: 0.54rem; }
+  }
+
+  &.is-compact {
+    padding-block: 3px;
+
+    .biblia-event-chip__text strong { font-size: 0.55rem; }
+  }
+}
+
+.biblia-day-view { padding: 14px; }
+
+.biblia-day-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #edf1ef;
+
+  span {
+    color: var(--biblia-green);
+    font-size: 0.63rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    margin: 2px 0 0;
+    font-size: 1rem;
+    text-transform: capitalize;
+  }
+
+  > strong {
+    padding: 5px 8px;
+    border-radius: 999px;
+    background: var(--biblia-green-soft);
+    color: var(--biblia-green);
+    font-size: 0.68rem;
+  }
+}
+
+.biblia-empty-state {
+  min-height: 280px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 5px;
+  color: #718078;
+  text-align: center;
+
+  svg { color: #9fbab0; font-size: 2rem; }
+  strong { color: #35443d; font-size: 0.82rem; }
+  span { font-size: 0.68rem; }
+}
+
+.biblia-error {
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border: 1px solid #fecaca;
+  border-radius: 9px;
+  background: #fff1f2;
+  color: #b42318;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+@keyframes biblia-spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 1100px) {
+  .biblia-page-header { align-items: flex-start; flex-direction: column; }
+  .biblia-toolbar { width: 100%; justify-content: flex-start; }
+  .biblia-filterbar { align-items: stretch; flex-direction: column; }
+  .biblia-search { max-width: none; flex-basis: auto; }
+  .biblia-filterbar__selects { overflow-x: auto; }
+}
+
+@media (max-width: 860px) {
+  .biblia-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .biblia-month-day { min-height: 104px; padding: 4px; }
+  .biblia-event-chip__time { display: none; }
+  .biblia-event-chip { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 680px) {
+  .biblia-page-header__title p { display: none; }
+  .biblia-toolbar__navigation { order: 3; width: 100%; grid-template-columns: 34px minmax(0, 1fr) 34px; }
+  .biblia-filterbar__selects { display: grid; grid-template-columns: 20px repeat(3, minmax(130px, 1fr)); }
+
+  .biblia-weekdays span { padding-inline: 2px; font-size: 0.55rem; }
+  .biblia-month-day { min-height: 82px; }
+  .biblia-month-day__count { display: none; }
+  .biblia-month-day__events { gap: 2px; }
+  .biblia-month-day .biblia-event-chip:nth-of-type(n + 3) { display: none; }
+  .biblia-month-day__more { font-size: 0.52rem; }
+  .biblia-event-chip { border-left-width: 2px; padding: 3px; }
+  .biblia-event-chip__text strong { font-size: 0.49rem; }
+
+  .biblia-day-view { padding: 10px; }
+}
+
+// Vista diaria de la Biblia operativa con acción documental al final.
+.biblia-day-heading__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+
+  > strong {
+    padding: 5px 8px;
+    border-radius: 999px;
+    background: var(--biblia-green-soft);
+    color: var(--biblia-green);
+    font-size: 0.68rem;
+  }
+}
+
+.biblia-day-download-trigger,
+.biblia-day-download-options {
+  min-height: 31px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #ff007e;
+  border-radius: 8px;
+  background: #ff007e;
+  color: #fff;
+  overflow: hidden;
+  box-shadow: 0 3px 10px rgba(255, 0, 126, 0.16);
+}
+
+.biblia-month-download-trigger {
+  min-height: 31px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px;
+  border: 1px solid #007a5e;
+  border-radius: 8px;
+  background: #eaf7f2;
+  color: #006b4f;
+  font: inherit;
+  font-size: 0.64rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 120ms ease, transform 120ms ease;
+
+  &:hover:not(:disabled) {
+    background: #d9f1e8;
+    transform: translateY(-1px);
+  }
+
+  &:disabled { cursor: wait; opacity: 0.62; }
+}
+
+.biblia-day-download-trigger {
+  gap: 5px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 0.64rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 14px rgba(255, 0, 126, 0.24);
+  }
+
+  svg:last-child { font-size: 0.9rem; }
+}
+
+.biblia-day-download-options {
+  button {
+    min-height: 30px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0 10px;
+    border: 0;
+    color: inherit;
+    font: inherit;
+    font-size: 0.64rem;
+    font-weight: 800;
+  }
+
+  button {
+    background: rgba(0, 0, 0, 0.08);
+    cursor: pointer;
+    transition: background 120ms ease, opacity 120ms ease;
+
+    + button { border-left: 1px solid rgba(255, 255, 255, 0.45); }
+    &:hover:not(:disabled) { background: rgba(0, 0, 0, 0.28); }
+
+    &:disabled {
+      opacity: 0.58;
+      cursor: wait;
+    }
+  }
+}
+
+.biblia-sheet-wrap {
+  width: 100%;
+  max-height: calc(100vh - 315px);
+  overflow: auto;
+  border: 1px solid #e4ebe8;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.biblia-sheet-table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  color: #27342e;
+  font-size: 0.62rem;
+
+  th,
+  td {
+    min-width: 115px;
+    max-width: 220px;
+    padding: 7px 8px;
+    border-right: 1px solid #e7ecea;
+    border-bottom: 1px solid #e7ecea;
+    overflow: hidden;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  th {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    background: #edf6f2;
+    color: #24493c;
+    font-size: 0.56rem;
+    font-weight: 900;
+    letter-spacing: 0.025em;
+    text-transform: uppercase;
+  }
+
+  tbody tr {
+    cursor: pointer;
+    transition: background 0.12s ease;
+
+    &:hover td { background: #f7fbf9; }
+  }
+
+  th:nth-child(1),
+  td:nth-child(1) { min-width: 92px; width: 92px; }
+  th:nth-child(2),
+  td:nth-child(2) { min-width: 160px; width: 160px; font-weight: 800; }
+  th:nth-child(3),
+  td:nth-child(3) { min-width: 190px; width: 190px; }
+  th:nth-child(4),
+  td:nth-child(4) { min-width: 64px; width: 64px; text-align: center; }
+  th:nth-child(8),
+  td:nth-child(8) { min-width: 72px; width: 72px; font-weight: 800; }
+  th:nth-child(9),
+  td:nth-child(9) { min-width: 220px; width: 220px; font-weight: 750; }
+  th:nth-child(n + 20),
+  td:nth-child(n + 20) { min-width: 175px; }
+
+  // FECHA y FILE permanecen visibles al recorrer las columnas del día.
+  th:nth-child(1),
+  td:nth-child(1) {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: #fff;
+  }
+
+  th:nth-child(2),
+  td:nth-child(2) {
+    position: sticky;
+    left: 92px;
+    z-index: 2;
+    background: #fff;
+    box-shadow: 5px 0 8px rgba(38, 62, 52, 0.04);
+  }
+
+  thead th:nth-child(1),
+  thead th:nth-child(2) {
+    z-index: 6;
+    background: #e6f2ed;
+  }
+}
+
+@media (max-width: 680px) {
+  .biblia-day-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .biblia-day-heading__actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .biblia-sheet-wrap {
+    max-height: calc(100vh - 360px);
+  }
+}
+
+// Visualización documental asociada a cada actividad de la Biblia.
+.biblia-voucher-button {
+  min-height: 32px;
+  border: 1px solid #c9ddd5;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 11px;
+  background: #f5fbf8;
+  color: var(--biblia-green-dark);
+  font: inherit;
+  font-size: 0.67rem;
+  font-weight: 850;
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:hover:not(:disabled) {
+    border-color: #9fc9b9;
+    background: #eaf7f1;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+
+  &.is-compact {
+    min-height: 27px;
+    padding: 0 8px;
+    font-size: 0.6rem;
+  }
+}
+
+.biblia-sheet-table__voucher {
+  min-width: 86px !important;
+  width: 86px;
+  text-align: center !important;
+}
+
+// ─── Edición operativa incremental ──────────────────────────────────────────
+.biblia-toolbar__add {
+  min-height: 36px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 11px;
+  background: var(--biblia-green) !important;
+  border-color: var(--biblia-green) !important;
+  color: #fff !important;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.biblia-saving {
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.68rem;
+  font-weight: 750;
+}
+
+.biblia-edit-input {
+  width: 100%;
+  min-width: 0;
+  height: 28px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: inherit;
+  padding: 3px 5px;
+  font: inherit;
+  font-size: inherit;
+  outline: none;
+
+  &:hover {
+    border-color: #d7e3de;
+    background: #fff;
+  }
+
+  &:focus {
+    border-color: rgba(0, 107, 79, 0.48);
+    background: #fff;
+    box-shadow: 0 0 0 2px rgba(0, 107, 79, 0.08);
+  }
+}
+
+.biblia-sheet-table {
+  tbody tr.is-materialized td {
+    background: #fbfefc;
+  }
+
+  tbody tr.is-materialized td:first-child {
+    box-shadow: inset 3px 0 0 #22a06b;
+  }
+
+  td:has(.biblia-edit-input:focus) {
+    overflow: visible;
+  }
+}
+
+.biblia-sheet-table__actions {
+  position: sticky;
+  right: 0;
+  z-index: 3;
+  min-width: 205px !important;
+  width: 205px !important;
+  background: #fff;
+  white-space: nowrap;
+  box-shadow: -5px 0 10px rgba(38, 62, 52, 0.04);
+
+  > button {
+    width: 27px;
+    height: 27px;
+    margin-right: 3px;
+    border: 1px solid #dfe8e4;
+    border-radius: 6px;
+    display: inline-grid;
+    place-items: center;
+    background: #fff;
+    color: #53625b;
+    cursor: pointer;
+
+    &:hover {
+      border-color: rgba(0, 107, 79, 0.35);
+      color: var(--biblia-green);
+      background: #f5faf8;
+    }
+  }
+
+  .biblia-voucher-button {
+    width: auto;
+    display: inline-flex;
+  }
+}
+
+.biblia-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1700;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(16, 24, 20, 0.38);
+  backdrop-filter: blur(2px);
+}
+
+.biblia-add-modal {
+  width: min(620px, 96vw);
+  max-height: 90vh;
+  overflow: auto;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(20, 36, 29, 0.22);
+
+  > header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 15px 16px 12px;
+    border-bottom: 1px solid var(--biblia-border);
+
+    span {
+      color: var(--biblia-green);
+      font-size: 0.58rem;
+      font-weight: 850;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    h2 {
+      margin: 3px 0 0;
+      font-size: 0.98rem;
+    }
+
+    button {
+      width: 32px;
+      height: 32px;
+      border: 1px solid var(--biblia-border);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: #fff;
+      color: #5d6a64;
+      cursor: pointer;
+    }
+  }
+
+  > footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 7px;
+    padding: 11px 16px 15px;
+    border-top: 1px solid var(--biblia-border);
+
+    button {
+      min-height: 34px;
+      border: 1px solid var(--biblia-border);
+      border-radius: 8px;
+      padding: 0 12px;
+      background: #fff;
+      color: #526059;
+      font: inherit;
+      font-size: 0.68rem;
+      font-weight: 800;
+      cursor: pointer;
+
+      &.primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        border-color: var(--biblia-green);
+        background: var(--biblia-green);
+        color: #fff;
+      }
+    }
+  }
+}
+
+.biblia-add-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  padding: 14px 16px;
+
+  label {
+    display: grid;
+    gap: 4px;
+
+    &.is-wide { grid-column: 1 / -1; }
+
+    span {
+      color: #66746d;
+      font-size: 0.58rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid #dfe8e4;
+      border-radius: 8px;
+      background: #fff;
+      color: #27342e;
+      padding: 7px 9px;
+      font: inherit;
+      font-size: 0.7rem;
+      outline: none;
+
+      &:focus {
+        border-color: rgba(0, 107, 79, 0.48);
+        box-shadow: 0 0 0 2px rgba(0, 107, 79, 0.08);
+      }
+    }
+
+    textarea { resize: vertical; }
+  }
+}
+
+@media (max-width: 680px) {
+  .biblia-add-grid { grid-template-columns: 1fr; }
+  .biblia-add-grid label.is-wide { grid-column: auto; }
+  .biblia-sheet-table__actions { min-width: 190px !important; width: 190px !important; }
+}
+
+// ─── Biblia visual tipo Excel + paleta del programador ─────────────────────
+// El color de cada fila es dato operativo persistido; no se deriva de la
+// categoría después de la materialización inicial.
+.biblia-colorbar {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border: 1px solid #d9e4df;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 4px 14px rgba(31, 57, 47, 0.06);
+
+  &__title {
+    min-width: 220px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    color: var(--biblia-green-dark);
+
+    > svg { flex: 0 0 auto; font-size: 1.25rem; }
+
+    div {
+      min-width: 0;
+      display: grid;
+      gap: 1px;
+    }
+
+    strong { font-size: 0.82rem; }
+    span {
+      max-width: 360px;
+      overflow: hidden;
+      color: var(--biblia-muted);
+      font-size: 0.72rem;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  &__palette {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 5px;
+    flex-wrap: wrap;
+
+    > button {
+      width: 26px;
+      height: 26px;
+      border: 1px solid rgba(31, 41, 55, 0.22);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+
+      &:hover { transform: translateY(-1px) scale(1.07); }
+      &.active {
+        box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--biblia-green);
+        transform: scale(1.04);
+      }
+    }
+  }
+
+  &__custom {
+    position: relative;
+    width: 30px;
+    height: 28px;
+    border: 1px dashed #91a29a;
+    border-radius: 7px;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    background: #fff;
+    color: var(--biblia-green-dark);
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 900;
+
+    input {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+  }
+}
+
+.biblia-sheet-table {
+  font-size: 0.76rem;
+
+  th {
+    font-size: 0.68rem;
+    line-height: 1.25;
+  }
+
+  td {
+    color: var(--row-text, #1f2937);
+    background: var(--row-color, #fff);
+    transition: filter 0.12s ease, box-shadow 0.12s ease;
+  }
+
+  tbody tr:hover td {
+    background: var(--row-color, #fff);
+    filter: brightness(0.965);
+  }
+
+  tbody tr.is-selected td {
+    box-shadow: inset 0 2px 0 var(--biblia-green), inset 0 -2px 0 var(--biblia-green);
+  }
+
+  tbody tr.is-selected td:first-child {
+    box-shadow: inset 3px 0 0 var(--biblia-green), inset 0 2px 0 var(--biblia-green), inset 0 -2px 0 var(--biblia-green);
+  }
+
+  tbody tr.is-standalone td:first-child::after {
+    content: "LIBRE";
+    display: inline-block;
+    margin-left: 5px;
+    padding: 1px 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.72);
+    color: #34433c;
+    font-size: 0.58rem;
+    font-weight: 900;
+    vertical-align: middle;
+  }
+
+  // Las dos columnas congeladas conservan el mismo color del registro.
+  tbody td:nth-child(1),
+  tbody td:nth-child(2),
+  tbody .biblia-sheet-table__actions {
+    background: var(--row-color, #fff);
+  }
+
+  .biblia-edit-input {
+    min-height: 31px;
+    color: inherit;
+    font-size: 0.75rem;
+    font-weight: 650;
+
+    &:hover,
+    &:focus {
+      color: #1f2937;
+      background: rgba(255, 255, 255, 0.93);
+    }
+  }
+}
+
+.biblia-sheet-table__actions {
+  min-width: 250px !important;
+  width: 250px !important;
+  color: #26332d;
+
+  > button,
+  .biblia-voucher-button {
+    background: rgba(255, 255, 255, 0.92);
+  }
+}
+
+.biblia-row-color {
+  color: #17201c !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.72);
+}
+
+.biblia-link-control {
+  max-width: 145px;
+  min-height: 29px;
+  margin-right: 4px;
+  border: 1px solid rgba(71, 85, 105, 0.22);
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 4px;
+  background: rgba(255, 255, 255, 0.92);
+  vertical-align: middle;
+
+  svg { flex: 0 0 auto; font-size: 0.9rem; }
+
+  select {
+    min-width: 0;
+    width: 112px;
+    border: 0;
+    background: transparent;
+    color: #34433c;
+    font: inherit;
+    font-size: 0.67rem;
+    font-weight: 750;
+    outline: 0;
+  }
+}
+
+.biblia-add-palette {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 8px;
+  border: 1px solid #e0e8e4;
+  border-radius: 9px;
+  background: #fafcfb;
+
+  button {
+    width: 28px;
+    height: 28px;
+    border: 1px solid rgba(31, 41, 55, 0.2);
+    border-radius: 6px;
+    cursor: pointer;
+
+    &.active { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--biblia-green); }
+  }
+
+  input[type="color"] {
+    width: 36px;
+    height: 30px;
+    padding: 2px;
+    cursor: pointer;
+  }
+}
+
+// Refuerzo de legibilidad específico de Biblia, complementario al baseline
+// global del sistema.
+.biblia-page-header__title > span,
+.biblia-month-day__count,
+.biblia-month-day__more,
+.biblia-event-chip__time,
+.biblia-event-chip__text small {
+  font-size: 0.68rem;
+}
+
+.biblia-page-header__title p,
+.biblia-toolbar__today,
+.biblia-filterbar__selects select,
+.biblia-search input,
+.biblia-kpis > div span,
+.biblia-day-heading > strong,
+.biblia-voucher-button,
+.biblia-add-grid label input,
+.biblia-add-grid label select,
+.biblia-add-grid label textarea {
+  font-size: 0.76rem;
+}
+
+.biblia-event-chip__text strong,
+.biblia-month-day__number {
+  font-size: 0.74rem;
+}
+
+@media (max-width: 900px) {
+  .biblia-colorbar {
+    align-items: flex-start;
+    flex-direction: column;
+
+    &__palette { justify-content: flex-start; }
+  }
+
+  .biblia-sheet-table__actions {
+    min-width: 230px !important;
+    width: 230px !important;
+  }
+}
+
+// Los colores del programador también gobiernan las tarjetas del calendario,
+// manteniendo el mismo código visual entre Mes y Biblia.
+.biblia-event-chip {
+  border: 1px solid rgba(31, 41, 55, 0.16);
+  border-left-width: 3px;
+  border-left-color: var(--activity-color);
+  background: var(--activity-color);
+  color: var(--activity-text, #1f2937);
+
+  &__time { color: inherit; }
+  &__text strong { color: inherit; }
+  &__text small { color: inherit; opacity: 0.78; }
+}
+
+.biblia-row-color {
+  color: var(--row-text, #17201c) !important;
+}
+
+// ─── 022 · Biblia compacta, color directo y responsive real ────────────────
+// La navegación temporal ocupa el centro. El título técnico y los KPI de
+// implementación salen de la interfaz para dar prioridad al trabajo diario.
+.biblia-toolbar-shell {
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--biblia-border);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(23, 45, 36, 0.035);
+}
+
+.biblia-toolbar {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(300px, 480px) minmax(220px, 1fr);
+  align-items: center;
+  gap: 10px;
+  justify-content: stretch;
+
+  &__side {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+
+    &--left { justify-content: flex-start; }
+    &--right { justify-content: flex-end; }
+  }
+
+  &__navigation {
+    width: 100%;
+    grid-template-columns: 40px minmax(0, 1fr) 40px;
+    min-height: 40px;
+    border-radius: 10px;
+
+    button { height: 38px; }
+
+    strong {
+      padding-inline: 10px;
+      font-size: 0.84rem;
+      line-height: 1.2;
+    }
+  }
+}
+
+// Filtros compactos: búsqueda flexible y filtros operativos de igual jerarquía.
+.biblia-filterbar {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 7px;
+
+  &__selects {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: auto repeat(7, minmax(135px, 1fr));
+    align-items: center;
+    gap: 6px;
+
+    select {
+      width: 100%;
+      max-width: 190px;
+    }
+  }
+}
+
+.biblia-search {
+  max-width: none;
+  min-width: 0;
+}
+
+.biblia-day-view { padding: 12px; }
+
+.biblia-day-heading {
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+
+  h2 {
+    margin: 0;
+    font-size: 0.98rem;
+  }
+}
+
+// La tabla se ve como una hoja normal. La edición aparece solo al pedirla.
+.biblia-participants-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(19, 12, 18, .48);
+}
+
+.biblia-participants-modal__panel {
+  width: min(620px, 100%);
+  max-height: min(760px, calc(100vh - 2rem));
+  overflow: auto;
+  padding: 1.25rem;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(30, 10, 23, .28);
+
+  header, footer { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+  section { margin-top: .8rem; padding-top: .8rem; border-top: 1px solid #eee; }
+  label { display: flex; align-items: center; justify-content: space-between; gap: .75rem; font-weight: 700; }
+  input { min-width: 0; padding: .5rem .6rem; border: 1px solid #d9ced4; border-radius: 8px; }
+  button { border-radius: 8px; padding: .45rem .7rem; cursor: pointer; }
+}
+
+.biblia-participants-modal__row { display: grid; grid-template-columns: minmax(0, 1fr) 84px auto; gap: .45rem; margin: .45rem 0; }
+.biblia-participants-modal__error { color: #bc145c; font-weight: 600; }
+
+.biblia-edit-value {
+  width: 100%;
+  min-height: 31px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  display: block;
+  overflow: hidden;
+  padding: 4px 5px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 650;
+  line-height: 1.25;
+  text-align: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: text;
+
+  &:hover,
+  &:focus-visible {
+    border-color: rgba(255, 255, 255, 0.68);
+    background: rgba(255, 255, 255, 0.35);
+    outline: none;
+  }
+
+  &.is-empty { opacity: 0.58; }
+}
+
+// Selector de color en la propia fila: un clic al pincel y otro al color.
+.biblia-row-color-picker {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+.biblia-row-color-trigger {
+  position: relative;
+  width: 34px !important;
+  height: 29px !important;
+  margin-right: 3px;
+  border: 1px solid rgba(71, 85, 105, 0.2) !important;
+  border-radius: 7px !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 0 4px !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  color: #33443c !important;
+  cursor: pointer;
+
+  &__swatch {
+    width: 13px;
+    height: 13px;
+    flex: 0 0 auto;
+    border: 1px solid rgba(31, 41, 55, 0.25);
+    border-radius: 4px;
+  }
+
+  svg { font-size: 0.9rem; }
+}
+
+.biblia-row-color-picker.is-open .biblia-row-color-trigger {
+  border-color: var(--biblia-green) !important;
+  box-shadow: 0 0 0 2px rgba(0, 107, 79, 0.1);
+}
+
+.biblia-row-color-popover {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 7px);
+  z-index: 30;
+  width: 246px;
+  padding: 8px;
+  border: 1px solid #d7e2dd;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 12px 34px rgba(20, 42, 33, 0.18);
+  transform: translateY(-50%);
+
+  &__palette {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 5px;
+
+    button {
+      aspect-ratio: 1;
+      min-width: 0;
+      border: 1px solid rgba(31, 41, 55, 0.2);
+      border-radius: 5px;
+      cursor: pointer;
+
+      &:hover { transform: scale(1.08); }
+      &.active { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--biblia-green); }
+    }
+  }
+
+  &__custom {
+    min-height: 30px;
+    margin-top: 8px;
+    display: grid;
+    gap: 8px;
+    color: #526159;
+    font-size: 0.68rem;
+    font-weight: 750;
+
+    > div {
+      display: grid;
+      grid-template-columns: 40px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 6px;
+
+      input[type="color"] {
+        width: 40px;
+        height: 32px;
+        border: 1px solid #d8e1dd;
+        border-radius: 6px;
+        padding: 2px;
+        background: #fff;
+        cursor: pointer;
+      }
+
+      input[type="text"] {
+        min-width: 0;
+        height: 32px;
+        border: 1px solid #d8e1dd;
+        border-radius: 6px;
+        padding: 0 8px;
+        color: #2f4038;
+        font: inherit;
+        font-weight: 800;
+        text-transform: uppercase;
+
+        &:focus {
+          border-color: var(--biblia-green);
+          outline: 0;
+          box-shadow: 0 0 0 2px rgba(0, 107, 79, 0.1);
+        }
+      }
+
+      button {
+        min-height: 32px;
+        border: 1px solid var(--biblia-green);
+        border-radius: 6px;
+        padding: 0 9px;
+        background: var(--biblia-green);
+        color: #fff;
+        font: inherit;
+        font-size: 0.67rem;
+        font-weight: 850;
+        cursor: pointer;
+
+        &:disabled { cursor: not-allowed; opacity: 0.5; }
+      }
+    }
+  }
+}
+
+.biblia-sheet-table__actions {
+  overflow: visible !important;
+}
+
+// Tablet: controles en dos niveles, sin perder el selector de fecha centrado.
+@media (max-width: 1120px) {
+  .biblia-toolbar {
+    grid-template-columns: minmax(185px, 1fr) minmax(280px, 1.35fr) minmax(185px, 1fr);
+  }
+
+  .biblia-filterbar {
+    grid-template-columns: 1fr;
+
+    &__selects {
+      grid-template-columns: auto repeat(4, minmax(0, 1fr));
+
+      select { max-width: none; }
+    }
+  }
+}
+
+@media (max-width: 900px) {
+  .biblia-toolbar {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "navigation navigation"
+      "left right";
+
+    &__navigation { grid-area: navigation; }
+    &__side--left { grid-area: left; }
+    &__side--right { grid-area: right; }
+  }
+
+  .biblia-day-heading {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  // La Biblia mantiene la misma hoja operativa de escritorio. En tablet y
+  // móvil se desplaza dentro de este contenedor, sin convertir columnas en
+  // tarjetas ni ocultar datos.
+  .biblia-sheet-wrap {
+    max-height: min(64dvh, 560px);
+    overflow: auto;
+    border: 1px solid #e4ebe8;
+    background: #fff;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable both-edges;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .biblia-row-color-popover {
+    top: calc(100% + 6px);
+    right: auto;
+    left: 0;
+    width: min(280px, calc(100vw - 52px));
+    transform: none;
+  }
+}
+
+@media (max-width: 680px) {
+  .biblia-page { min-height: calc(100vh - 82px); }
+
+  .biblia-toolbar-shell { padding: 7px; }
+
+  .biblia-toolbar {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "navigation"
+      "left"
+      "right";
+    gap: 7px;
+
+    &__side {
+      width: 100%;
+      justify-content: stretch;
+    }
+
+    &__side--left > button { flex: 1 1 0; }
+    &__side--right { justify-content: space-between; }
+
+    &__navigation strong {
+      font-size: 0.78rem;
+      white-space: normal;
+    }
+  }
+
+  .biblia-view-switcher { flex: 1 1 auto; }
+  .biblia-view-switcher button { flex: 1 1 0; justify-content: center; }
+  .biblia-month-download-trigger { flex: 1 1 auto; justify-content: center; }
+
+  .biblia-filterbar {
+    padding: 7px;
+
+    &__selects {
+      grid-template-columns: 1fr;
+
+      > svg { display: none; }
+      select { min-height: 38px; }
+    }
+  }
+
+  .biblia-search { min-height: 40px; }
+
+  .biblia-day-view { padding: 8px; }
+  .biblia-day-heading { align-items: stretch; flex-direction: column; }
+  .biblia-day-heading__actions { width: 100%; justify-content: space-between; }
+
+  // En móvil el mes funciona como selector compacto: mantiene las siete
+  // columnas, muestra el volumen por día y deja el detalle para la vista Día.
+  .biblia-month-shell { min-width: 0; overflow: hidden; }
+  .biblia-weekdays,
+  .biblia-month-grid { width: 100%; min-width: 0; }
+  .biblia-month-day { min-height: 74px; }
+  .biblia-month-day__count { display: inline-block; }
+  .biblia-month-day__events { display: none; }
+
+  .biblia-add-modal {
+    width: min(100%, 620px);
+    max-height: calc(100dvh - 20px);
+  }
+}
+
+@media (max-width: 540px) {
+  .biblia-sheet-table tbody tr { overflow: visible; }
+
+  .biblia-sheet-table__actions { grid-column: auto; }
+
+  .biblia-row-color-popover {
+    position: fixed;
+    top: auto;
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    z-index: 1800;
+    width: auto;
+    max-height: 46vh;
+    overflow: auto;
+    transform: none;
+  }
+
+  .biblia-row-color-popover__palette {
+    grid-template-columns: repeat(8, minmax(24px, 1fr));
+  }
+
+  .biblia-row-color-popover__palette button { min-height: 28px; }
+
+}
+
+.biblia-row-color-popover__header {
+  min-height: 26px;
+  margin-bottom: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+
+  > div {
+    min-width: 0;
+    display: grid;
+    gap: 1px;
+
+    small {
+      overflow: hidden;
+      color: #718078;
+      font-size: 0.61rem;
+      font-weight: 700;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  strong {
+    color: #33443c;
+    font-size: 0.68rem;
+    font-weight: 850;
+  }
+
+  button {
+    width: 25px;
+    height: 25px;
+    border: 1px solid #e0e7e4;
+    border-radius: 6px;
+    display: grid;
+    place-items: center;
+    background: #fff;
+    color: #607069;
+    cursor: pointer;
+  }
+}
+
+/* 026 — interacción operativa: DnD, catálogos lazy y borrado lógico */
+.biblia-drag-handle {
+  cursor: grab !important;
+  touch-action: none;
+  user-select: none;
+
+  &:active { cursor: grabbing !important; }
+
+  svg { font-size: 1.25rem; }
+}
+
+.biblia-sheet-table tbody tr.is-dragging {
+  position: relative;
+  z-index: 40;
+  opacity: 0.9;
+  box-shadow: 0 10px 28px rgba(20, 54, 42, 0.2) !important;
+}
+
+.biblia-inline-editor {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.biblia-inline-editor__loading {
+  position: absolute;
+  right: 7px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-weight: 900;
+  pointer-events: none;
+  opacity: 0.65;
+}
+
+.biblia-inline-editor--train,
+.biblia-inline-editor--catalog {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 360px;
+  overflow: visible;
+}
+
+.biblia-train-combobox,
+.biblia-catalog-combobox {
+  flex: 1 1 320px;
+  min-width: 300px;
+
+  .combobox-input-wrapper {
+    min-height: 34px;
+    border-color: #ff007e;
+    background: #fff;
+  }
+}
+
+.biblia-inline-editor__actions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 3px;
+
+  button {
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #d7d9dd;
+    border-radius: 7px;
+    background: #fff;
+    color: #252525;
+    cursor: pointer;
+  }
+
+  button:first-child {
+    border-color: #ff007e;
+    background: #ff007e;
+    color: #fff;
+  }
+}
+
+.biblia-add-mode {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  padding: 0 18px 14px;
+
+  button {
+    min-height: 40px;
+    border: 1px solid #d8e2de;
+    border-radius: 9px;
+    background: #f7faf9;
+    color: #405149;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  button.active {
+    border-color: #087657;
+    background: #e9f6f1;
+    color: #075c46;
+    box-shadow: inset 0 0 0 1px #087657;
+  }
+}
+
+.biblia-add-grid label small {
+  margin-top: 4px;
+  color: #6b7772;
+  font-size: 0.72rem;
+  line-height: 1.3;
+}
+
+.biblia-confirm-modal {
+  width: min(460px, calc(100vw - 28px));
+  overflow: hidden;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 22px 70px rgba(16, 24, 20, 0.25);
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 15px 18px;
+    border-bottom: 1px solid #e8eeeb;
+
+    h2 { margin: 0; font-size: 1rem; }
+    button {
+      width: 34px;
+      height: 34px;
+      border: 0;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: #f2f5f4;
+      cursor: pointer;
+    }
+  }
+
+  > p { margin: 0; padding: 18px 18px 8px; line-height: 1.45; }
+  > small { display: block; padding: 0 18px 18px; color: #68756f; line-height: 1.45; }
+
+  footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 13px 18px;
+    border-top: 1px solid #e8eeeb;
+    background: #fafcfb;
+
+    button {
+      min-height: 38px;
+      padding: 0 14px;
+      border: 1px solid #d7dfdb;
+      border-radius: 8px;
+      background: #fff;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    button.danger {
+      border-color: #b42318;
+      background: #b42318;
+      color: #fff;
+    }
+  }
+}
+
+.biblia-delete-button {
+  color: #9c251c !important;
+}
+
+@media (max-width: 900px) {
+  .biblia-drag-handle {
+    width: 42px !important;
+    min-height: 42px !important;
+  }
+
+  .biblia-order-fallback { display: none !important; }
+
+  .biblia-sheet-table tbody tr.is-dragging {
+    transform-origin: center;
+  }
+}
+
+@media (max-width: 680px) {
+  .biblia-add-mode {
+    grid-template-columns: 1fr;
+    padding-inline: 12px;
+  }
+
+  .biblia-confirm-modal footer {
+    display: grid;
+    grid-template-columns: 1fr;
+
+    button { width: 100%; }
+  }
+}
+
+
+// ─── 023 · Alta rápida, salto de fecha, vínculo y transporte ───────────────
+.biblia-date-jump {
+  position: relative;
+  min-width: 0;
+  height: 38px;
+  display: flex;
+  align-items: stretch;
+
+  &__trigger {
+    width: 100%;
+    min-width: 0;
+    border: 0 !important;
+    border-radius: 7px;
+    padding: 0 10px;
+    overflow: hidden;
+    background: transparent !important;
+    color: #263b32;
+    font: inherit;
+    font-size: 0.84rem;
+    font-weight: 850;
+    line-height: 1.2;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background: rgba(0, 107, 79, 0.07) !important;
+      outline: none;
+    }
+  }
+
+  &__popover {
+    position: absolute;
+    top: calc(100% + 7px);
+    left: 50%;
+    z-index: 80;
+    width: 250px;
+    border: 1px solid #d7e2dd;
+    border-radius: 10px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px;
+    padding: 8px;
+    background: #fff;
+    box-shadow: 0 12px 34px rgba(20, 42, 33, 0.18);
+    transform: translateX(-50%);
+
+    input,
+    button {
+      min-height: 36px;
+      border: 1px solid #d8e1dd;
+      border-radius: 7px;
+      background: #fff;
+      color: #2f4038;
+      font: inherit;
+      font-size: 0.76rem;
+      font-weight: 700;
+    }
+
+    input { min-width: 0; padding: 0 8px; }
+    button { padding: 0 10px; cursor: pointer; }
+    button:hover { border-color: var(--biblia-green); color: var(--biblia-green); }
+  }
+}
+
+.biblia-link-picker {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+.biblia-file-cell {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+
+  .biblia-link-picker {
+    width: 100%;
+  }
+
+  .biblia-link-trigger {
+    width: 100%;
+    max-width: none;
+    justify-content: center;
+  }
+}
+
+.biblia-link-trigger {
+  max-width: 132px;
+  min-height: 29px;
+  border: 1px solid rgba(71, 85, 105, 0.22) !important;
+  border-radius: 7px !important;
+  display: inline-flex !important;
+  align-items: center;
+  gap: 4px;
+  padding: 0 7px !important;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.94) !important;
+  color: #34433c !important;
+  cursor: pointer;
+
+  svg { flex: 0 0 auto; font-size: 0.9rem; }
+  span { overflow: hidden; font-size: 0.67rem; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+.biblia-link-picker.is-open .biblia-link-trigger {
+  border-color: var(--biblia-green) !important;
+  box-shadow: 0 0 0 2px rgba(0, 107, 79, 0.1);
+}
+
+.biblia-link-popover {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 7px);
+  z-index: 70;
+  width: 330px;
+  max-height: 390px;
+  border: 1px solid #d7e2dd;
+  border-radius: 10px;
+  padding: 8px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 12px 34px rgba(20, 42, 33, 0.18);
+  color: #33443c;
+  transform: translateY(-50%);
+
+  &.is-floating {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__header {
+    min-height: 28px;
+    margin-bottom: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+
+    > div {
+      min-width: 0;
+      display: grid;
+      gap: 1px;
+    }
+
+    strong { font-size: 0.72rem; font-weight: 850; }
+    small {
+      overflow: hidden;
+      color: #718078;
+      font-size: 0.61rem;
+      font-weight: 700;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    button {
+      width: 26px;
+      height: 26px;
+      border: 1px solid #e0e7e4;
+      border-radius: 6px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      background: #fff;
+      color: #53645c;
+      cursor: pointer;
+    }
+  }
+
+  &__search {
+    min-height: 36px;
+    border: 1px solid #d8e1dd;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 8px;
+    background: #fff;
+
+    svg { flex: 0 0 auto; color: #6b7b74; }
+    input {
+      width: 100%;
+      min-width: 0;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: #2f4038;
+      font: inherit;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+  }
+
+  &__unlink {
+    width: 100%;
+    min-height: 30px;
+    margin-top: 6px;
+    border: 1px dashed #cdd8d3;
+    border-radius: 7px;
+    background: #f8faf9;
+    color: #56675f;
+    font: inherit;
+    font-size: 0.68rem;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  &__create {
+    width: 100%;
+    min-height: 32px;
+    margin-top: 6px;
+    border: 1px solid rgba(0, 107, 79, 0.35);
+    border-radius: 7px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    background: rgba(0, 107, 79, 0.06);
+    color: var(--biblia-green);
+    font: inherit;
+    font-size: 0.68rem;
+    font-weight: 850;
+    cursor: pointer;
+  }
+
+  &__create-form {
+    margin-top: 6px;
+    border: 1px solid rgba(0, 107, 79, 0.22);
+    border-radius: 8px;
+    display: grid;
+    gap: 6px;
+    padding: 8px;
+    background: rgba(0, 107, 79, 0.035);
+
+    strong { font-size: 0.68rem; font-weight: 850; }
+
+    > input {
+      width: 100%;
+      min-height: 32px;
+      border: 1px solid #d8e1dd;
+      border-radius: 6px;
+      padding: 0 8px;
+      outline: 0;
+      background: #fff;
+      color: #2f4038;
+      font: inherit;
+      font-size: 0.7rem;
+      font-weight: 700;
+
+      &:focus { border-color: var(--biblia-green); box-shadow: 0 0 0 2px rgba(0, 107, 79, 0.1); }
+    }
+
+    > div {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 6px;
+
+      button {
+        min-height: 30px;
+        border: 1px solid #ccd9d3;
+        border-radius: 6px;
+        padding: 0 8px;
+        background: #fff;
+        color: #43534b;
+        font: inherit;
+        font-size: 0.66rem;
+        font-weight: 850;
+        cursor: pointer;
+
+        &:disabled { cursor: wait; opacity: 0.72; }
+      }
+    }
+  }
+
+  &__create-submit {
+    border-color: var(--biblia-green, #006b4f) !important;
+    background: var(--biblia-green, #006b4f) !important;
+    color: #fff !important;
+
+    &:disabled {
+      border-color: #93b9ac !important;
+      background: #93b9ac !important;
+    }
+  }
+
+  &__create-cancel {
+    border-color: #ccd9d3 !important;
+    background: #fff !important;
+    color: #43534b !important;
+  }
+
+  &__list {
+    min-height: 0;
+    max-height: 280px;
+    flex: 1 1 auto;
+    margin-top: 7px;
+    display: grid;
+    gap: 4px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+
+    > button {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid #e2e9e6;
+      border-radius: 7px;
+      display: grid;
+      gap: 2px;
+      padding: 6px 8px;
+      background: #fff;
+      color: #34433c;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+
+      span { font-size: 0.69rem; font-weight: 800; line-height: 1.25; }
+      small { color: #6d7b75; font-size: 0.62rem; font-weight: 700; }
+
+      &:hover,
+      &.active {
+        border-color: rgba(0, 107, 79, 0.45);
+        background: rgba(0, 107, 79, 0.055);
+      }
+    }
+  }
+
+  &__empty {
+    padding: 14px 8px;
+    color: #7a8982;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-align: center;
+  }
+}
+
+@media (max-width: 900px) {
+  .biblia-link-popover {
+    top: calc(100% + 6px);
+    right: auto;
+    left: 0;
+    width: min(330px, calc(100vw - 52px));
+    transform: none;
+  }
+}
+
+@media (max-width: 680px) {
+  .biblia-date-jump__trigger { font-size: 0.78rem; white-space: normal; }
+  .biblia-date-jump__popover { width: min(270px, calc(100vw - 40px)); }
+}
+
+@media (max-width: 540px) {
+  .biblia-link-popover {
+    position: fixed;
+    top: auto;
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    z-index: 1800;
+    width: auto;
+    max-height: 58vh;
+    transform: none;
+  }
+}
+
+// Los selectores se portalean al body para escapar del overflow y de las
+// capas sticky de la tabla. Las coordenadas se calculan contra el botón activo.
+.biblia-link-popover.is-floating,
+.biblia-row-color-popover.is-floating {
+  --biblia-green: #006b4f;
+  --biblia-green-dark: #034b3a;
+  --biblia-green-soft: #eaf6f1;
+  --biblia-border: #dfe8e4;
+  position: fixed;
+  right: auto;
+  bottom: auto;
+  z-index: 2200;
+  box-sizing: border-box;
+  transform: none;
+}
+
+.biblia-link-popover.is-floating {
+  width: min(360px, calc(100vw - 24px));
+  max-height: min(560px, calc(100vh - 24px));
+
+  .biblia-link-popover__list {
+    max-height: none;
+  }
+}
+
+.biblia-row-color-popover.is-floating {
+  width: min(280px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+  overflow: auto;
+}
+
+@media (max-width: 420px) {
+  .biblia-row-color-popover__custom > div {
+    grid-template-columns: 38px minmax(0, 1fr);
+
+    button { grid-column: 1 / -1; }
+  }
+}
+
+// ─── 027 · Capa responsive canónica de la Biblia ───────────────────────────
+// Estas reglas poseen la última palabra frente a los breakpoints históricos.
+// El objetivo es que ningún control, editor o popover ensanche el layout raíz.
+.biblia-page {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-x: clip;
+
+  *,
+  *::before,
+  *::after { box-sizing: border-box; }
+
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [role="button"]:focus-visible {
+    outline: 2px solid var(--biblia-green);
+    outline-offset: 2px;
+  }
+}
+
+.biblia-toolbar-shell,
+.biblia-toolbar,
+.biblia-toolbar__side,
+.biblia-filterbar,
+.biblia-filterbar__selects,
+.biblia-content,
+.biblia-month-shell,
+.biblia-day-view,
+.biblia-sheet-wrap { min-width: 0; max-width: 100%; }
+
+.biblia-filterbar__primary { display: contents; }
+.biblia-filterbar__mobile-toggle,
+.biblia-filterbar__mobile-summary { display: none; }
+
+.biblia-search__clear {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: transparent;
+  color: #66746d;
+  cursor: pointer;
+
+  &:hover { background: #edf4f1; color: var(--biblia-green); }
+}
+
+@media (max-width: 1120px) {
+  .biblia-toolbar {
+    grid-template-columns: minmax(180px, 0.9fr) minmax(260px, 1.25fr) minmax(180px, 0.9fr);
+  }
+
+  .biblia-toolbar__side { flex-wrap: wrap; }
+  .biblia-month-download-trigger { white-space: nowrap; }
+}
+
+@media (max-width: 900px) {
+  .biblia-toolbar {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "navigation navigation"
+      "left right";
+  }
+
+  .biblia-toolbar__navigation { grid-area: navigation; }
+  .biblia-toolbar__side--left { grid-area: left; }
+  .biblia-toolbar__side--right { grid-area: right; }
+
+  .biblia-filterbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .biblia-filterbar__primary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 7px;
+  }
+
+  .biblia-filterbar__mobile-toggle {
+    min-width: 112px;
+    min-height: 40px;
+    border: 1px solid #dce6e2;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 0 10px;
+    background: #f7faf9;
+    color: #3e4d46;
+    font: inherit;
+    font-size: 0.74rem;
+    font-weight: 800;
+    cursor: pointer;
+
+    strong {
+      min-width: 20px;
+      min-height: 20px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      padding-inline: 5px;
+      background: var(--biblia-green);
+      color: #fff;
+      font-size: 0.64rem;
+    }
+  }
+
+  .biblia-filterbar__selects {
+    display: none !important;
+
+    &.is-open {
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 7px;
+      padding-top: 8px;
+      border-top: 1px solid #edf1ef;
+    }
+
+    select {
+      width: 100%;
+      max-width: none;
+      min-height: 40px;
+    }
+  }
+
+  .biblia-filterbar__icon { display: none; }
+
+  .biblia-filterbar__mobile-summary {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    color: #607069;
+    font-size: 0.7rem;
+    font-weight: 800;
+
+    button {
+      min-height: 32px;
+      border: 1px solid #d7e2dd;
+      border-radius: 7px;
+      padding: 0 10px;
+      background: #fff;
+      color: var(--biblia-green);
+      font: inherit;
+      font-size: 0.68rem;
+      font-weight: 850;
+      cursor: pointer;
+    }
+  }
+
+  .biblia-inline-editor--train,
+  .biblia-inline-editor--catalog {
+    width: 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  .biblia-train-combobox,
+  .biblia-catalog-combobox {
+    width: 100%;
+    min-width: 0;
+    flex: 1 1 190px;
+
+    .combobox-input { min-width: 0; width: 100%; }
+  }
+
+  .biblia-inline-editor__actions {
+    margin-left: auto;
+
+    button { width: 38px; height: 38px; }
+  }
+
+  .biblia-sheet-table__actions > button,
+  .biblia-sheet-table__actions .biblia-row-color-trigger,
+  .biblia-sheet-table__actions .biblia-voucher-button {
+    min-width: 40px;
+    min-height: 40px;
+  }
+
+  .biblia-link-trigger { max-width: none; min-height: 38px; }
+
+  // La última columna continúa visible al recorrer la misma tabla de
+  // escritorio; se amplía para conservar todos sus controles en una línea.
+  .biblia-sheet-table__actions {
+    position: sticky !important;
+    right: 0;
+    z-index: 3;
+    min-width: 280px !important;
+    width: 280px !important;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 680px) {
+  .biblia-page {
+    min-height: calc(100dvh - 82px);
+  }
+
+  .biblia-toolbar-shell { padding: 7px; }
+
+  .biblia-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "navigation"
+      "left"
+      "right";
+  }
+
+  .biblia-toolbar__side {
+    width: 100%;
+    flex-wrap: nowrap;
+    justify-content: stretch;
+  }
+
+  .biblia-toolbar__side--left > button { flex: 1 1 0; min-width: 0; }
+  .biblia-toolbar__side--right { justify-content: space-between; }
+  .biblia-month-download-trigger { flex: 1 1 auto; justify-content: center; }
+  .biblia-view-switcher { flex: 1 1 auto; }
+  .biblia-view-switcher button { flex: 1 1 0; justify-content: center; }
+
+  .biblia-toolbar__today,
+  .biblia-toolbar__add,
+  .biblia-toolbar__refresh,
+  .biblia-month-download-trigger,
+  .biblia-view-switcher button,
+  .biblia-toolbar__navigation button { min-height: 42px; }
+
+  .biblia-toolbar__refresh { width: 42px; flex: 0 0 42px; }
+  .biblia-toolbar__navigation { grid-template-columns: 42px minmax(0, 1fr) 42px; }
+  .biblia-toolbar__navigation button { height: 42px; }
+
+  .biblia-filterbar__selects.is-open {
+    grid-template-columns: minmax(0, 1fr);
+    max-height: min(55dvh, 430px);
+    padding-right: 2px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .biblia-filterbar__mobile-summary { grid-column: 1; }
+
+  .biblia-search,
+  .biblia-filterbar__mobile-toggle { min-height: 42px; }
+
+  // Evita el zoom automático de iOS al enfocar controles pequeños.
+  .biblia-search input,
+  .biblia-filterbar select,
+  .biblia-edit-input,
+  .biblia-add-grid input,
+  .biblia-add-grid select,
+  .biblia-add-grid textarea,
+  .biblia-date-jump__popover input,
+  .biblia-link-popover input,
+  .biblia-catalog-combobox .combobox-input { font-size: 16px; }
+
+  .biblia-day-view { padding: 8px; }
+  .biblia-day-heading { align-items: stretch; flex-direction: column; }
+  .biblia-day-heading__actions { width: 100%; justify-content: space-between; }
+
+  .biblia-day-download-trigger { min-height: 42px; }
+  .biblia-day-download-options { max-width: 100%; min-height: 42px; }
+  .biblia-day-download-options button { min-height: 40px; }
+
+  .biblia-month-shell { width: 100%; min-width: 0; overflow: hidden; }
+  .biblia-weekdays,
+  .biblia-month-grid { width: 100%; min-width: 0; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+  .biblia-weekdays span { min-width: 0; padding: 7px 1px; font-size: 0.58rem; }
+  .biblia-month-day {
+    min-width: 0;
+    min-height: 74px;
+    display: grid;
+    place-items: center;
+    padding: 4px 2px;
+  }
+  .biblia-month-day__header {
+    width: 100%;
+    min-height: 0;
+    display: grid;
+    justify-items: center;
+    gap: 3px;
+  }
+  .biblia-month-day__number { width: 28px; height: 28px; }
+  .biblia-month-day__count {
+    display: inline-grid;
+    min-width: 22px;
+    padding: 2px 5px;
+    font-size: 0.62rem;
+  }
+  .biblia-month-day__events { display: none; }
+
+  .biblia-sheet-table tbody tr { max-width: none; overflow: visible; }
+
+  .biblia-sheet-table__actions {
+    overflow: visible !important;
+    min-width: 310px !important;
+    width: 310px !important;
+
+    > button,
+    .biblia-row-color-trigger,
+    .biblia-voucher-button { min-width: 44px; min-height: 44px; }
+  }
+
+  .biblia-modal-backdrop {
+    align-items: end;
+    padding: 0;
+  }
+
+  .biblia-add-modal,
+  .biblia-confirm-modal {
+    width: 100%;
+    max-width: none;
+    max-height: min(92dvh, 820px);
+    border-radius: 16px 16px 0 0;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .biblia-add-modal > header,
+  .biblia-confirm-modal header { position: sticky; top: 0; z-index: 3; background: #fff; }
+  .biblia-add-modal > footer,
+  .biblia-confirm-modal footer { position: sticky; bottom: 0; z-index: 3; background: #fafcfb; }
+
+  .biblia-add-modal > header button,
+  .biblia-confirm-modal header button { width: 42px; height: 42px; flex: 0 0 42px; }
+
+  .biblia-add-grid { grid-template-columns: minmax(0, 1fr); padding-inline: 12px; }
+  .biblia-add-grid label.is-wide { grid-column: auto; }
+
+  .biblia-date-jump__popover {
+    position: fixed;
+    top: auto;
+    right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    left: 12px;
+    z-index: 2300;
+    width: auto;
+    transform: none;
+  }
+}
+
+@media (max-width: 540px) {
+  .biblia-filterbar__primary { grid-template-columns: minmax(0, 1fr); }
+  .biblia-filterbar__mobile-toggle { width: 100%; }
+
+  .biblia-toolbar__side--right {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 42px;
+  }
+
+  .biblia-month-download-trigger { grid-column: 1 / -1; width: 100%; }
+  .biblia-view-switcher { width: 100%; }
+
+  .biblia-day-heading__actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+
+    > strong { justify-self: start; }
+  }
+
+  .biblia-day-download-trigger,
+  .biblia-day-download-options { width: 100%; }
+  .biblia-day-download-trigger { justify-content: center; }
+  .biblia-day-download-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .biblia-day-download-options button { justify-content: center; padding-inline: 6px; }
+
+  .biblia-month-day { min-height: 66px; }
+  .biblia-month-day__number { width: 26px; height: 26px; font-size: 0.7rem; }
+
+  .biblia-sheet-table tbody tr { grid-template-columns: minmax(0, 1fr); }
+  .biblia-sheet-table__actions { grid-column: 1; justify-content: flex-start; }
+
+  .biblia-link-popover.is-floating,
+  .biblia-row-color-popover.is-floating {
+    width: calc(100vw - 24px);
+    max-width: calc(100vw - 24px);
+    max-height: min(70dvh, 560px);
+  }
+
+  .biblia-add-modal > footer,
+  .biblia-confirm-modal footer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .biblia-add-modal > footer button,
+  .biblia-confirm-modal footer button { width: 100%; min-height: 44px; }
+}
+
+@media (max-width: 420px) {
+  .biblia-toolbar__side--left { display: grid; grid-template-columns: minmax(0, 0.72fr) minmax(0, 1.28fr); }
+  .biblia-toolbar__today,
+  .biblia-toolbar__add { padding-inline: 7px; font-size: 0.68rem; }
+  .biblia-toolbar__navigation strong,
+  .biblia-date-jump__trigger { font-size: 0.72rem; }
+
+  .biblia-weekdays span { font-size: 0.52rem; }
+  .biblia-month-day { min-height: 60px; }
+  .biblia-month-day__count { min-width: 20px; font-size: 0.57rem; }
+
+  .biblia-day-download-options { grid-template-columns: minmax(0, 1fr); }
+  .biblia-sheet-table td,
+  .biblia-sheet-table th { padding-inline: 8px; }
+
+  .biblia-row-color-popover__palette { grid-template-columns: repeat(6, minmax(28px, 1fr)); }
+  .biblia-link-popover__create-form > div { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 900px) and (max-height: 600px) and (orientation: landscape) {
+  .biblia-filterbar__selects.is-open { max-height: 42dvh; }
+  .biblia-add-modal,
+  .biblia-confirm-modal { max-height: 96dvh; }
+  .biblia-link-popover.is-floating,
+  .biblia-row-color-popover.is-floating { max-height: calc(100dvh - 16px); }
+}
+
+@media (hover: none), (pointer: coarse) {
+  .biblia-month-day,
+  .biblia-event-chip,
+  .biblia-edit-value { -webkit-tap-highlight-color: transparent; }
+
+  .biblia-sheet-table tbody tr:hover td,
+  .biblia-month-day:hover,
+  .biblia-event-chip:hover { filter: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .biblia-page *,
+  .biblia-page *::before,
+  .biblia-page *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

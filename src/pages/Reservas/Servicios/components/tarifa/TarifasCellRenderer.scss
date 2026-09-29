@@ -1,0 +1,409 @@
+@import "../../../../../styles/_variables.scss";
+
+$interna-color: $color-primary;
+$externa-color: $color-accent;
+$soles-color: #10b981;
+$dolares-color: $color-info;
+$temp-alta: $color-accent;
+$temp-baja: $color-info;
+$temp-std: #6b7280;
+$tasa-color: #d97706;
+
+.cell-tarifas-manager {
+  display: grid;
+  gap: 7px;
+  min-width: 310px;
+  max-width: 100%;
+
+  .cell-tarifas-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 30px;
+
+    > span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: $color-text-light;
+      font-size: 10px;
+      font-weight: $font-weight-bold;
+      letter-spacing: 0.035em;
+      text-transform: uppercase;
+
+      b {
+        display: inline-grid;
+        place-items: center;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 5px;
+        border-radius: $border-radius-pill;
+        background: rgba($color-primary, 0.1);
+        color: $color-primary;
+        font-size: 10px;
+      }
+    }
+  }
+
+  .cell-add-tarifa {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-height: 29px;
+    padding: 5px 9px;
+    border: 1px solid rgba($color-primary, 0.25);
+    border-radius: $border-radius-pill;
+    background: rgba($color-primary, 0.07);
+    color: $color-primary;
+    font-size: 10px;
+    font-weight: $font-weight-bold;
+    cursor: pointer;
+    transition: $transition-fast;
+
+    svg {
+      font-size: 9px;
+    }
+
+    &:hover:not(:disabled) {
+      border-color: $color-primary;
+      background: $color-primary;
+      color: white;
+      transform: translateY(-1px);
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+  }
+
+  .cell-tarifa-feedback {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 6px 8px;
+    border-radius: $border-radius-md;
+    font-size: 10px;
+    line-height: 1.35;
+
+    svg {
+      flex: 0 0 auto;
+      margin-top: 1px;
+    }
+
+    &.success {
+      border: 1px solid rgba($color-success, 0.22);
+      background: rgba($color-success, 0.07);
+      color: darken($color-success, 9%);
+    }
+
+    &.error {
+      border: 1px solid rgba($color-danger, 0.22);
+      background: rgba($color-danger, 0.07);
+      color: $color-danger;
+    }
+  }
+}
+
+.cell-no-tarifas {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 40px;
+  padding: 7px 9px 7px 11px;
+  border: 1px dashed rgba($temp-std, 0.3);
+  border-radius: $border-radius-lg;
+  background: rgba($temp-std, 0.055);
+  color: $color-text-light;
+  font-size: 11px;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 28px;
+    padding: 5px 9px;
+    border: 1px solid rgba($color-primary, 0.22);
+    border-radius: $border-radius-pill;
+    background: white;
+    color: $color-primary;
+    font-size: 10px;
+    font-weight: $font-weight-bold;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      background: $color-primary;
+      color: white;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+  }
+}
+
+.cell-tarifas-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 310px;
+  max-width: 100%;
+
+  .cell-tipo-group {
+    display: grid;
+    grid-template-columns: 92px minmax(0, 1fr);
+    align-items: start;
+    gap: 7px;
+    padding: 7px;
+    border: 1px solid rgba($color-border, 0.72);
+    border-radius: $border-radius-lg;
+    background: rgba(white, 0.96);
+
+    .cell-tipo-header {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      min-height: 27px;
+      padding: 5px 8px;
+      border-radius: $border-radius-pill;
+      font-size: 9px;
+      font-weight: $font-weight-bold;
+      letter-spacing: 0.025em;
+      text-transform: uppercase;
+      white-space: nowrap;
+
+      svg {
+        font-size: 9px;
+      }
+
+      &.interna {
+        border: 1px solid rgba($interna-color, 0.16);
+        background: rgba($interna-color, 0.09);
+        color: $interna-color;
+      }
+
+      &.externa {
+        border: 1px solid rgba($externa-color, 0.18);
+        background: rgba($externa-color, 0.09);
+        color: darken($externa-color, 8%);
+      }
+
+      &.cotizacion,
+      &.sin_tipo {
+        border: 1px solid rgba($temp-std, 0.18);
+        background: rgba($temp-std, 0.09);
+        color: $temp-std;
+      }
+    }
+
+    .cell-tipo-items {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+  }
+
+  .cell-tarifa-item {
+    display: grid;
+    grid-template-columns: minmax(95px, auto) minmax(105px, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 6px 7px;
+    border: 1px solid rgba($color-border, 0.58);
+    border-radius: $border-radius-md;
+    background: $color-bg-secondary;
+    transition: $transition-fast;
+
+    &:hover {
+      border-color: rgba($color-primary, 0.28);
+      background: white;
+      box-shadow: 0 5px 12px rgba(15, 23, 42, 0.055);
+    }
+
+    &.protected {
+      border-style: dashed;
+      background: rgba($color-border, 0.16);
+    }
+
+    .cell-badges {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 4px;
+
+      .cell-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        min-height: 23px;
+        padding: 3px 6px;
+        border-radius: $border-radius-pill;
+        font-size: 9px;
+        font-weight: $font-weight-bold;
+        text-transform: capitalize;
+
+        svg {
+          font-size: 8px;
+        }
+
+        &.temp {
+          &.alta {
+            background: rgba($temp-alta, 0.11);
+            color: $temp-alta;
+          }
+
+          &.baja {
+            background: rgba($temp-baja, 0.11);
+            color: $temp-baja;
+          }
+
+          &.std {
+            background: rgba($temp-std, 0.1);
+            color: $temp-std;
+          }
+        }
+
+        &.moneda {
+          width: 24px;
+          height: 24px;
+          min-height: 24px;
+          padding: 0;
+          color: white;
+          font-size: 10px;
+
+          &.soles {
+            background: $soles-color;
+          }
+
+          &.dolares {
+            background: $dolares-color;
+          }
+        }
+
+        &.tasa {
+          border: 1px solid rgba($tasa-color, 0.16);
+          background: rgba($tasa-color, 0.09);
+          color: $tasa-color;
+        }
+      }
+    }
+
+    .cell-precio {
+      min-width: 0;
+
+      .precio-single,
+      .precio-range {
+        display: block;
+        overflow: hidden;
+        color: $color-text-dark;
+        font-size: 12px;
+        font-weight: $font-weight-bold;
+        text-align: right;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .precio-range {
+        font-size: 11px;
+      }
+    }
+
+    .cell-tarifa-actions {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 4px;
+    }
+
+    .cell-tarifa-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border: 1px solid rgba($color-border, 0.82);
+      border-radius: $border-radius-md;
+      background: white;
+      color: $color-text-light;
+      cursor: pointer;
+      transition: $transition-fast;
+
+      svg {
+        font-size: 10px;
+      }
+
+      &:hover:not(:disabled) {
+        transform: translateY(-1px);
+      }
+
+      &.clone:hover:not(:disabled),
+      &.clone.active {
+        border-color: $color-primary;
+        background: rgba($color-primary, 0.09);
+        color: $color-primary;
+      }
+
+      &.edit:hover:not(:disabled) {
+        border-color: $color-info;
+        background: rgba($color-info, 0.09);
+        color: $color-info;
+      }
+
+      &.delete:hover:not(:disabled) {
+        border-color: $color-danger;
+        background: rgba($color-danger, 0.08);
+        color: $color-danger;
+      }
+
+      &:disabled {
+        cursor: not-allowed;
+        opacity: 0.38;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .cell-tarifas-manager,
+  .cell-tarifas-wrapper {
+    min-width: 270px;
+  }
+
+  .cell-tarifas-wrapper {
+    .cell-tipo-group {
+      grid-template-columns: 1fr;
+
+      .cell-tipo-header {
+        width: fit-content;
+      }
+    }
+
+    .cell-tarifa-item {
+      grid-template-columns: minmax(90px, 1fr) auto;
+
+      .cell-precio {
+        text-align: right;
+      }
+
+      .cell-tarifa-actions {
+        grid-column: 1 / -1;
+        justify-content: flex-end;
+      }
+    }
+  }
+}
+
+.cell-badge.agencies {
+  background: #fff0f7;
+  color: #b8005c;
+  border-color: #f3bdd8;
+  font-weight: 800;
+}

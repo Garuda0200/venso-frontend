@@ -1,0 +1,92 @@
+.agency-payment-report-modal { max-width: 1240px; }
+.agency-payment-report-modal .modal-header { background: var(--color-primary); border-bottom: 3px solid var(--color-primary-dark); }
+.agency-payment-report-modal .modal-footer { background: var(--color-surface-accent); border-top-color: var(--color-brand-border); }
+.agency-payment-report-modal .modal-body { background: var(--color-bg-secondary); }
+.agency-payment-report__state { padding: 2rem; text-align: center; color: var(--color-text-secondary); }
+.agency-payment-report__state--error { color: var(--color-danger); }
+
+.agency-payment-report { display: grid; gap: 1rem; padding: 1rem; background: var(--color-bg-primary); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+.agency-payment-report__header { display:flex; justify-content:space-between; gap:1rem; padding:.9rem 1rem; border:1px solid var(--color-border); border-left:5px solid var(--color-primary); background:var(--color-bg-primary); }
+.agency-payment-report__header > div:first-child > span { display:inline-block; padding-bottom:.25rem; font-size:.72rem; font-weight:var(--font-weight-bold); letter-spacing:.08em; color:var(--color-primary); }
+.agency-payment-report__header h3 { margin:.15rem 0; font-size:1.25rem; color:var(--color-text-primary); }
+.agency-payment-report__header p { margin:0; color:var(--color-text-secondary); }
+.agency-payment-report__meta { display:flex; flex-direction:column; align-items:flex-end; justify-content:center; gap:.28rem; }
+.agency-payment-report__meta strong { padding:.22rem .5rem; border:1px solid var(--color-brand-border); background:var(--color-surface-accent); color:var(--color-primary-dark); font-size:1.05rem; }
+.agency-payment-report__meta span { font-size:.74rem; font-weight:var(--font-weight-semibold); color:var(--color-text-secondary); }
+
+.agency-payment-report__days { display:grid; gap:1rem; }
+.agency-payment-report__day { border:1px solid var(--color-border); border-radius:var(--radius-sm); overflow:hidden; background:var(--color-bg-primary); }
+.agency-payment-report__day-header { display:flex; justify-content:space-between; align-items:center; gap:1rem; padding:.62rem .8rem; border-left:4px solid var(--color-primary); background:var(--color-surface-accent); }
+.agency-payment-report__day-header > div { display:flex; align-items:center; gap:.55rem; min-width:0; }
+.agency-payment-report__day-header strong { color:var(--color-primary-dark); font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; }
+.agency-payment-report__day-header span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--color-text-primary); font-size:.8rem; font-weight:var(--font-weight-semibold); }
+.agency-payment-report__day-header time { color:var(--color-text-secondary); font-size:.74rem; white-space:nowrap; }
+.agency-payment-report__table-wrap { overflow:auto; }
+.agency-payment-report table { width:100%; border-collapse:collapse; min-width:860px; background:var(--color-bg-primary); }
+.agency-payment-report th,.agency-payment-report td { padding:.68rem .72rem; border-right:1px solid var(--color-border-light); border-bottom:1px solid var(--color-border-light); text-align:left; font-size:.82rem; vertical-align:middle; }
+.agency-payment-report th:last-child,.agency-payment-report td:last-child { border-right:0; }
+.agency-payment-report th { background:var(--gray-200); color:var(--gray-800); font-size:.7rem; font-weight:var(--font-weight-bold); text-transform:uppercase; letter-spacing:.04em; white-space:nowrap; }
+.agency-payment-report tbody tr:nth-child(4n + 3) { background:var(--gray-100); }
+.agency-payment-report tbody tr:not(.agency-payment-report__detail-row):hover { background:var(--color-row-hover); }
+.agency-payment-report td small { display:block; margin-top:.18rem; color:var(--color-text-secondary); }
+.agency-payment-report__agency-price { color:var(--color-primary-dark); font-size:.88rem; }
+.agency-payment-report__detail-toggle { display:inline-flex; align-items:center; justify-content:center; gap:.35rem; min-width:96px; padding:.38rem .55rem; border:1px solid var(--color-brand-border); border-radius:999px; background:var(--color-bg-primary); color:var(--color-primary-dark); font-size:.7rem; font-weight:var(--font-weight-bold); cursor:pointer; transition:.15s ease; }
+.agency-payment-report__detail-toggle:hover,.agency-payment-report__detail-toggle.active { background:var(--color-primary-light); border-color:var(--color-primary); }
+.agency-payment-report__detail-toggle svg { font-size:.68rem; }
+.agency-payment-report__detail-row td { padding:.55rem .7rem .7rem; background:rgba(var(--color-primary-rgb),.035); }
+.agency-payment-report__detail-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.55rem; }
+.agency-payment-report__detail-grid > span { display:grid; gap:.1rem; padding:.52rem .62rem; border:1px solid var(--color-border-light); border-radius:var(--radius-sm); background:var(--color-bg-primary); }
+.agency-payment-report__detail-grid small { margin:0; font-size:.66rem; text-transform:uppercase; letter-spacing:.03em; }
+.agency-payment-report__detail-grid strong { font-size:.82rem; color:var(--color-text-primary); }
+.agency-payment-report__detail-grid > span:last-child { border-color:var(--color-brand-border); background:var(--color-surface-accent); }
+.agency-payment-report__detail-grid > span:last-child strong { color:var(--color-primary-dark); }
+.agency-payment-report__totals { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:.75rem; }
+.agency-payment-report__totals > div { min-width:260px; display:grid; gap:.18rem; padding:.8rem 1rem; border:1px solid var(--color-border); border-top:3px solid var(--color-primary); background:var(--color-bg-primary); }
+.agency-payment-report__totals span { font-size:.72rem; font-weight:var(--font-weight-bold); text-transform:uppercase; color:var(--color-text-secondary); }
+.agency-payment-report__totals small { color:var(--color-text-secondary); }
+.agency-payment-report__totals strong { font-size:1.15rem; color:var(--color-primary-dark); }
+
+.venso-payment-documents { display:grid; gap:1rem; padding:.4rem; }
+.venso-kelly-document { padding:1rem 1.1rem 1.2rem; border:1px solid var(--color-border); background:var(--color-bg-primary); box-shadow:var(--shadow-sm); }
+.venso-kelly-document__brand { display:flex; justify-content:space-between; gap:2rem; align-items:flex-start; min-height:102px; padding:.45rem 0 .7rem; border-top:4px solid var(--color-primary); }
+.venso-kelly-document__brand img { width:220px; max-width:34%; height:78px; object-fit:contain; object-position:left top; }
+.venso-kelly-document__brand > div { display:grid; gap:.14rem; text-align:center; color:var(--color-text-secondary); font-size:.72rem; line-height:1.35; }
+.venso-kelly-document__brand > div strong { margin-bottom:.18rem; color:var(--color-primary-dark); font-size:1rem; letter-spacing:.04em; }
+.venso-kelly-document__identity { display:flex; justify-content:space-between; align-items:flex-end; gap:1rem; margin:1rem 0 .75rem; }
+.venso-kelly-document__identity h3 { margin:0 0 .2rem; font-size:1.2rem; color:var(--color-text-primary); }
+.venso-kelly-document__identity > div:first-child > span { color:var(--color-text-secondary); font-size:.72rem; }
+.venso-kelly-document__date-box { display:grid; grid-template-columns:repeat(3,58px); border:2px solid var(--color-primary); }
+.venso-kelly-document__date-box > span { display:grid; padding:.26rem .35rem 0; border-right:1px solid var(--color-primary); background:var(--color-primary-light); text-align:center; color:var(--color-text-primary); font-size:.68rem; font-weight:var(--font-weight-bold); }
+.venso-kelly-document__date-box > span:last-child { border-right:0; }
+.venso-kelly-document__date-box strong { margin:.22rem -.35rem 0; padding:.26rem; background:var(--color-bg-primary); font-size:.8rem; }
+.venso-kelly-document__table-wrap { overflow:auto; border:1px solid var(--color-primary); }
+.venso-kelly-document table { width:100%; min-width:1000px; border-collapse:collapse; }
+.venso-kelly-document th,.venso-kelly-document td { padding:.56rem .6rem; border-right:1px solid var(--color-primary); border-bottom:1px solid var(--color-primary); text-align:left; vertical-align:middle; font-size:.76rem; }
+.venso-kelly-document th:last-child,.venso-kelly-document td:last-child { border-right:0; }
+.venso-kelly-document th { background:rgba(var(--color-primary-rgb),.16); color:var(--color-text-primary); text-align:center; font-size:.68rem; font-weight:var(--font-weight-bold); text-transform:uppercase; }
+.venso-kelly-document td small { display:block; margin-top:.12rem; color:var(--color-text-secondary); }
+.venso-kelly-document__day-row td { padding:.38rem .6rem; background:var(--color-surface-accent); color:var(--color-primary-dark); font-size:.68rem; font-weight:var(--font-weight-bold); text-transform:uppercase; letter-spacing:.03em; }
+.venso-kelly-document__total-row td { background:rgba(var(--color-primary-rgb),.12); font-weight:var(--font-weight-bold); }
+.venso-kelly-document__total-row td:first-child { text-align:right; }
+.venso-kelly-document__status { width:max-content; min-width:180px; margin:1rem auto 0; padding:.38rem .8rem; border-bottom:2px solid var(--color-primary); text-align:center; color:var(--color-primary-dark); font-size:.82rem; font-weight:var(--font-weight-bold); letter-spacing:.05em; }
+.venso-payment-status { display:inline-flex; padding:.2rem .42rem; border-radius:999px; background:var(--gray-200); color:var(--color-text-secondary); font-size:.64rem; font-weight:var(--font-weight-bold); white-space:nowrap; }
+.venso-payment-status--paid { background:var(--color-success-light); color:var(--color-success-dark); }
+.venso-payment-status--pending,.venso-payment-status--partial { background:var(--color-warning-light); color:var(--color-warning-dark); }
+.venso-kelly-document__status--paid { color:var(--color-success-dark); border-color:var(--color-success); }
+.venso-kelly-document__status--pending,.venso-kelly-document__status--partial { color:var(--color-warning-dark); border-color:var(--color-warning); }
+
+@media (max-width: 860px) {
+  .agency-payment-report__detail-grid { grid-template-columns:1fr 1fr; }
+  .venso-kelly-document__brand { gap:1rem; }
+  .venso-kelly-document__brand img { width:170px; }
+}
+@media (max-width: 760px) {
+  .agency-payment-report { padding:.7rem; }
+  .agency-payment-report__header,.venso-kelly-document__identity,.venso-kelly-document__brand { flex-direction:column; align-items:flex-start; }
+  .agency-payment-report__meta { align-items:flex-start; }
+  .agency-payment-report__day-header { align-items:flex-start; }
+  .agency-payment-report__day-header > div { display:grid; gap:.15rem; }
+  .agency-payment-report__detail-grid { grid-template-columns:1fr; }
+  .venso-kelly-document__brand img { max-width:70%; }
+  .venso-kelly-document__brand > div { text-align:left; }
+}

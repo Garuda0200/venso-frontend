@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "rootDir": ".",
+    "outDir": ".tmp-assignment-tests",
+    "strict": false,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "types": [],
+    "lib": ["ES2022", "DOM"]
+  },
+  "include": [
+    "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/assignmentProtection.test.ts"
+  ]
+}

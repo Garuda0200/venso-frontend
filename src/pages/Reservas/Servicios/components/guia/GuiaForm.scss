@@ -1,0 +1,320 @@
+// GuiaForm.scss - Estilos para el formulario de guías
+
+// Variables
+$chip-bg-selected: #21633d;
+$chip-bg-available: #e8f5e9;
+$chip-text-selected: white;
+$chip-text-available: #21633d;
+$chip-border: #21633d;
+$chip-hover-bg: darken(#e8f5e9, 5%);
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 12px;
+$border-radius-sm: 4px;
+$border-radius-pill: 50px;
+
+// Contenedor de chips seleccionados
+.selected-idiomas-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-md;
+  min-height: 36px;
+  padding: $spacing-sm;
+  background: #f5f5f5;
+  border-radius: $border-radius-sm;
+  border: 1px dashed #ccc;
+
+  &:empty::before {
+    content: "No hay idiomas seleccionados";
+    color: #999;
+    font-style: italic;
+    font-size: 13px;
+  }
+}
+
+// Contenedor de chips disponibles
+.available-idiomas-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+  margin-top: $spacing-sm;
+}
+
+// Chip base
+.idioma-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-md;
+  border-radius: $border-radius-pill;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1.5px solid $chip-border;
+
+  // Chip seleccionado
+  &.selected {
+    background: $chip-bg-selected;
+    color: $chip-text-selected;
+
+    .chip-remove {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      margin-left: $spacing-xs;
+      padding: 0;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      border-radius: 50%;
+      color: white;
+      cursor: pointer;
+      transition: background 0.2s ease;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.4);
+      }
+
+      svg {
+        font-size: 14px;
+      }
+    }
+
+    &:hover {
+      background: darken($chip-bg-selected, 5%);
+    }
+  }
+
+  // Chip disponible (no seleccionado)
+  &.available {
+    background: $chip-bg-available;
+    color: $chip-text-available;
+
+    svg {
+      font-size: 14px;
+    }
+
+    &:hover {
+      background: $chip-hover-bg;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+  }
+}
+
+// Texto para cuando no hay selección
+.no-selection-text {
+  color: #999;
+  font-style: italic;
+  font-size: 13px;
+  padding: $spacing-xs;
+}
+
+// Estilos para el formulario de guía
+.guia-form {
+  .form-section {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: #fafafa;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+
+    h3 {
+      margin: 0 0 1rem 0;
+      font-size: 1.1rem;
+      color: #333;
+      border-bottom: 2px solid $chip-bg-selected;
+      padding-bottom: 0.5rem;
+    }
+
+    // Sección colapsable
+    &.collapsible {
+      padding: 0;
+      overflow: hidden;
+      transition: all 0.3s ease;
+
+      .collapsible-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: 1rem;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 500;
+        color: #555;
+        transition: background 0.2s ease;
+
+        &:hover {
+          background: #f0f0f0;
+        }
+
+        .header-content {
+          display: flex;
+          align-items: center;
+          gap: $spacing-sm;
+
+          svg {
+            font-size: 1.4rem;
+            color: $chip-bg-selected;
+          }
+        }
+
+        .optional-badge {
+          font-size: 0.75rem;
+          font-weight: normal;
+          color: #888;
+          background: #e8e8e8;
+          padding: 2px 8px;
+          border-radius: 12px;
+        }
+      }
+
+      .collapsible-content {
+        padding: 0 1rem 1rem 1rem;
+        animation: slideDown 0.3s ease;
+      }
+
+      &.collapsed {
+        background: #f8f8f8;
+
+        .collapsible-header {
+          border-radius: 8px;
+        }
+      }
+
+      &.expanded {
+        .collapsible-header {
+          border-bottom: 1px solid #e0e0e0;
+          margin-bottom: 1rem;
+        }
+      }
+    }
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+
+    @media (max-width: 600px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.4rem;
+      font-weight: 500;
+      color: #444;
+      font-size: 0.9rem;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 0.6rem 0.8rem;
+      border: 1px solid #d0d0d0;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      transition:
+        border-color 0.2s,
+        box-shadow 0.2s;
+
+      &:focus {
+        outline: none;
+        border-color: $chip-bg-selected;
+        box-shadow: 0 0 0 3px rgba(33, 99, 61, 0.1);
+      }
+
+      &.error {
+        border-color: #e53935;
+      }
+
+      &::placeholder {
+        color: #aaa;
+      }
+    }
+
+    select {
+      cursor: pointer;
+      background: white
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E")
+        no-repeat right 0.8rem center;
+      appearance: none;
+      padding-right: 2.5rem;
+    }
+
+    .error-message {
+      color: #e53935;
+      font-size: 0.8rem;
+      margin-top: 0.3rem;
+    }
+
+    .form-text {
+      display: block;
+      color: #888;
+      font-size: 0.8rem;
+      margin-top: 0.3rem;
+    }
+  }
+
+  .button-group {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e0e0e0;
+  }
+}
+
+// Animación para contenido colapsable
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .selected-idiomas-chips,
+  .available-idiomas-chips {
+    gap: 6px;
+  }
+
+  .idioma-chip {
+    font-size: 12px;
+    padding: 3px 10px;
+  }
+
+  .guia-form {
+    .form-section {
+      padding: 0.75rem;
+    }
+  }
+}

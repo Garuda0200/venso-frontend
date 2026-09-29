@@ -1,0 +1,70 @@
+﻿// Extracted from Servicios.scss: small shared badges, info blocks, and text utilities
+.servicios-container {
+  // Common Badges (Unified)
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid transparent;
+
+    &.success {
+      background: var(--color-success-light);
+      border-color: rgba(28, 200, 138, 0.24);
+      color: var(--color-success-dark);
+    }
+    &.primary,
+    &.info {
+      background: var(--color-primary-light);
+      border-color: rgba(var(--color-primary-rgb), 0.24);
+      color: var(--color-primary);
+    }
+    &.danger {
+      background: var(--color-danger-light);
+      border-color: rgba(231, 74, 59, 0.24);
+      color: var(--color-danger-dark);
+    }
+    &.warning {
+      background: var(--color-warning-light);
+      border-color: rgba(246, 194, 62, 0.24);
+      color: var(--color-warning-dark);
+    }
+    &.secondary {
+      background: var(--color-bg-secondary);
+      border-color: var(--color-border);
+      color: var(--color-text-secondary);
+    }
+  }
+
+  // Information card styles
+  .info-card {
+    background-color: #fff;
+    border: 1px solid var(--color-border-light);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  // La gestión de tarifas se concentra en la columna mediante TarifasCellRenderer.scss
+
+  // Estilos movidos a TarifasCellRenderer.scss
+
+  // Text utilities
+  .text-muted {
+    color: #777;
+  }
+}

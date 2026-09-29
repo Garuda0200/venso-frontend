@@ -1,0 +1,1770 @@
+@import "../../../../../styles/_variables.scss";
+
+.flight-payment-modal {
+  padding: 1rem;
+
+  // Price fields must not change through native number-input stepping. The
+  // React handlers also block mouse-wheel and ArrowUp/ArrowDown interactions.
+  .fpm__price-step-locked {
+    appearance: textfield;
+    -moz-appearance: textfield;
+
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+      margin: 0;
+      -webkit-appearance: none;
+    }
+  }
+
+  .loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    gap: 1rem;
+
+    svg {
+      font-size: 3rem;
+      color: $primary;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    p {
+      font-size: 1.1rem;
+      color: $text-dark;
+      font-weight: 500;
+    }
+  }
+
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  .info-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    background: lighten($primary, 50%);
+    border: 2px solid $primary;
+    border-radius: $border-radius-md;
+    color: darken($primary, 10%);
+    font-weight: 600;
+
+    svg {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+
+    &.info-update {
+      background: lighten($info, 45%);
+      border-color: $info;
+      color: darken($info, 10%);
+    }
+  }
+
+  .existing-assignment-section {
+    h3 {
+      color: $primary;
+      margin-bottom: 1rem;
+      font-size: 1.2rem;
+    }
+
+    .assigned-header-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin: -0.25rem 0 0.85rem;
+    }
+
+    .btn-header-remove {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid rgba($danger, 0.25);
+      border-radius: $border-radius-sm;
+      background: rgba($danger, 0.06);
+      color: darken($danger, 8%);
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 700;
+      transition: all 0.2s ease;
+
+      &:hover:not(:disabled) {
+        background: rgba($danger, 0.12);
+        border-color: $danger;
+      }
+
+      &:disabled {
+        cursor: not-allowed;
+        opacity: 0.55;
+      }
+    }
+
+    .assigned-flight-card {
+      border: 2px solid $success;
+      border-radius: $border-radius-md;
+      padding: 1rem;
+      background: lighten($success, 45%);
+      margin-bottom: 1.5rem;
+    }
+
+    .assigned-info {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 1rem;
+      background: lighten($info, 45%);
+      border: 2px solid $info;
+      border-radius: $border-radius-md;
+      color: darken($info, 15%);
+
+      svg {
+        font-size: 1.5rem;
+        flex-shrink: 0;
+        margin-top: 0.25rem;
+      }
+
+      p {
+        margin: 0;
+        line-height: 1.5;
+      }
+    }
+
+    .payment-request-status {
+      margin: 1.5rem 0;
+      padding: 1.5rem;
+      border-radius: $border-radius-md;
+      border: 2px solid;
+
+      h4 {
+        margin: 0 0 1rem 0;
+        font-size: 1.1rem;
+        color: $text-dark;
+      }
+
+      .status-paid,
+      .status-pending,
+      .status-unknown {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+
+        > span {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 1.1rem;
+          font-weight: 600;
+
+          svg {
+            font-size: 1.5rem;
+          }
+        }
+
+        .payment-details {
+          padding: 1rem;
+          background: rgba(255, 255, 255, 0.5);
+          border-radius: $border-radius-sm;
+
+          p {
+            margin: 0.5rem 0;
+            font-size: 0.95rem;
+            color: $text-dark;
+
+            strong {
+              font-weight: 600;
+              margin-right: 0.5rem;
+            }
+          }
+        }
+
+        .btn-primary {
+          width: 100%;
+          padding: 1rem 2rem;
+          background: $primary;
+          color: $color-white;
+          border: none;
+          border-radius: $border-radius-md;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+          margin-top: 1rem;
+
+          svg {
+            font-size: 1.3rem;
+          }
+
+          &:hover:not(:disabled) {
+            background: darken($primary, 10%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba($primary, 0.3);
+          }
+
+          &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+          }
+        }
+      }
+
+      &.paid,
+      &.completed {
+        background: lighten($success, 45%);
+        border-color: $success;
+
+        .status-paid {
+          color: darken($success, 10%);
+
+          svg {
+            color: $success;
+          }
+        }
+      }
+
+      &.pending {
+        background: lighten($warning, 45%);
+        border-color: $warning;
+
+        .status-pending {
+          color: darken($warning, 15%);
+
+          svg {
+            color: $warning;
+          }
+        }
+      }
+
+      &.unknown {
+        background: lighten($info, 45%);
+        border-color: $info;
+
+        .status-unknown {
+          color: darken($info, 15%);
+
+          svg {
+            color: $info;
+          }
+        }
+      }
+    }
+
+    .no-payment-request {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      background: lighten($warning, 45%);
+      border: 2px solid $warning;
+      border-radius: $border-radius-md;
+      color: darken($warning, 15%);
+
+      svg {
+        font-size: 2rem;
+        color: $warning;
+      }
+
+      p {
+        margin: 0;
+        font-weight: 600;
+        font-size: 1.05rem;
+        text-align: center;
+      }
+
+      .btn-primary {
+        width: 100%;
+        max-width: 300px;
+        padding: 1rem 2rem;
+        background: $primary;
+        color: $color-white;
+        border: none;
+        border-radius: $border-radius-md;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+
+        svg {
+          font-size: 1.3rem;
+          color: $color-white;
+        }
+
+        &:hover:not(:disabled) {
+          background: darken($primary, 10%);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba($primary, 0.3);
+        }
+
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+      }
+    }
+  }
+
+  .flight-selection-section {
+    margin-bottom: 2rem;
+
+    h3 {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: $primary;
+      margin-bottom: 1rem;
+      font-size: 1.2rem;
+
+      svg {
+        font-size: 1.5rem;
+      }
+    }
+
+    .flights-by-day {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+
+      .day-flights-group {
+        border: 2px solid $color-border;
+        border-radius: $border-radius-md;
+        overflow: hidden;
+        background: $color-white;
+
+        .day-header {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 1rem;
+          background: linear-gradient(
+            135deg,
+            $primary 0%,
+            darken($primary, 10%) 100%
+          );
+          color: $color-white;
+          font-weight: 600;
+          font-size: 1.1rem;
+
+          svg {
+            font-size: 1.3rem;
+          }
+        }
+
+        .flights-list {
+          padding: 1rem;
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+
+          .flight-card {
+            position: relative;
+            border: 1px solid rgba($primary, 0.16);
+            border-radius: $border-radius-md;
+            padding: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(180deg, $color-white 0%, #f8fafc 100%);
+
+            &:hover {
+              border-color: $primary;
+              box-shadow: 0 4px 12px rgba($primary, 0.1);
+              transform: translateY(-2px);
+            }
+
+            &.selected {
+              border-color: $primary;
+              background: rgba($primary, 0.05);
+              box-shadow: 0 4px 12px rgba($primary, 0.2);
+
+              .selected-indicator {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                margin-top: 1rem;
+                padding: 0.5rem 1rem;
+                background: $primary;
+                color: $color-white;
+                border-radius: $border-radius-md;
+                font-weight: 600;
+                justify-content: center;
+
+                svg {
+                  font-size: 1.2rem;
+                }
+              }
+            }
+
+            &.flight-card--assigned {
+              border-color: rgba($info, 0.35);
+            }
+
+            &.flight-card--pending {
+              border-color: rgba($warning, 0.5);
+              background: linear-gradient(
+                180deg,
+                $color-white 0%,
+                rgba($warning, 0.08) 100%
+              );
+            }
+
+            &.flight-card--paid {
+              border-color: rgba($success, 0.5);
+              background: linear-gradient(
+                180deg,
+                $color-white 0%,
+                rgba($success, 0.08) 100%
+              );
+            }
+
+            .flight-card__status-row {
+              display: flex;
+              justify-content: flex-end;
+              min-height: 1.35rem;
+              margin-bottom: 0.25rem;
+            }
+
+            .flight-card__status {
+              display: inline-flex;
+              align-items: center;
+              padding: 0.22rem 0.55rem;
+              border-radius: 999px;
+              font-size: 0.72rem;
+              font-weight: 800;
+              line-height: 1;
+              text-transform: uppercase;
+              letter-spacing: 0;
+
+              &--assigned {
+                background: rgba($info, 0.12);
+                color: darken($info, 18%);
+              }
+
+              &--pending {
+                background: rgba($warning, 0.15);
+                color: darken($warning, 24%);
+              }
+
+              &--paid {
+                background: rgba($success, 0.14);
+                color: darken($success, 18%);
+              }
+            }
+
+            .flight-card__paid-actions {
+              display: flex;
+              justify-content: flex-end;
+              flex-wrap: wrap;
+              gap: 0.45rem;
+              margin-top: 0.65rem;
+              padding-top: 0.65rem;
+              border-top: 1px solid rgba($success, 0.16);
+
+              button {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.35rem;
+                min-height: 30px;
+                padding: 0.4rem 0.65rem;
+                border: 1px solid rgba($success, 0.35);
+                border-radius: $border-radius-sm;
+                background: $color-white;
+                color: darken($success, 12%);
+                font-size: 0.75rem;
+                font-weight: 800;
+                cursor: pointer;
+
+                &:hover:not(:disabled) {
+                  border-color: $success;
+                  background: lighten($success, 48%);
+                }
+
+                &.is-media {
+                  border-color: rgba($info, 0.35);
+                  color: darken($info, 14%);
+
+                  &:hover:not(:disabled) {
+                    border-color: $info;
+                    background: lighten($info, 45%);
+                  }
+                }
+
+                &:disabled {
+                  opacity: 0.6;
+                  cursor: wait;
+                }
+              }
+            }
+
+            .selected-indicator {
+              display: none;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .assigned-flight-section {
+    margin-bottom: 2rem;
+    padding: 1.25rem;
+    background:
+      linear-gradient(180deg, rgba($primary, 0.08), rgba($primary, 0.025)),
+      $color-white;
+    border-radius: $border-radius-lg;
+    border: 1px solid rgba($primary, 0.22);
+    box-shadow: 0 14px 36px rgba($primary, 0.08);
+
+    h3 {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      color: $primary;
+      margin-bottom: 1rem;
+      font-size: 1.2rem;
+      font-weight: 900;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 1rem 2rem;
+      background: $primary;
+      color: $color-white;
+      border: none;
+      border-radius: $border-radius-md;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+
+      svg {
+        font-size: 1.3rem;
+      }
+
+      &:hover:not(:disabled) {
+        background: darken($primary, 10%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba($primary, 0.3);
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+
+    .assigned-flight-display {
+      .assigned-flight-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+
+        h4 {
+          color: $text-dark;
+          font-size: 1.1rem;
+        }
+
+        .btn-secondary {
+          padding: 0.5rem 1rem;
+          background: $color-white;
+          color: $primary;
+          border: 2px solid $primary;
+          border-radius: $border-radius-md;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+
+          &:hover:not(:disabled) {
+            background: $primary;
+            color: $color-white;
+          }
+
+          &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+          }
+        }
+      }
+
+      .fpm__adult-price-editor {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin: 1rem 0;
+        padding: 0.85rem 1rem;
+        background: $color-white;
+        border: 1px solid rgba($primary, 0.18);
+        border-radius: $border-radius-md;
+        box-shadow: 0 6px 18px rgba($primary, 0.08);
+
+        .fpm__adult-price-copy {
+          display: flex;
+          flex-direction: column;
+          gap: 0.2rem;
+
+          span {
+            color: $text-dark;
+            font-size: 0.92rem;
+            font-weight: 800;
+          }
+
+          small {
+            color: rgba($text-dark, 0.62);
+            font-size: 0.78rem;
+            line-height: 1.25;
+          }
+        }
+
+        .fpm__adult-price-input {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.35rem;
+          flex: 0 0 150px;
+          min-height: 42px;
+          padding: 0 0.75rem;
+          background: rgba($primary, 0.06);
+          border: 1px solid rgba($primary, 0.22);
+          border-radius: $border-radius-sm;
+          color: $primary;
+
+          svg {
+            flex-shrink: 0;
+            font-size: 1.1rem;
+          }
+
+          input {
+            width: 100%;
+            border: 0;
+            outline: 0;
+            background: transparent;
+            color: $primary;
+            font-size: 1rem;
+            font-weight: 800;
+            text-align: right;
+
+            &::-webkit-outer-spin-button,
+            &::-webkit-inner-spin-button {
+              margin: 0;
+              -webkit-appearance: none;
+            }
+          }
+        }
+      }
+
+      .fpm__commercial-summary {
+        margin: 1.25rem 0 0;
+        padding: 1rem;
+        border: 1px solid rgba($primary, 0.2);
+        border-radius: $border-radius-md;
+        background:
+          linear-gradient(135deg, rgba($primary, 0.055), transparent 55%),
+          $color-white;
+        box-shadow: 0 8px 24px rgba($primary, 0.08);
+      }
+
+      .fpm__commercial-summary-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 0.9rem;
+      }
+
+      .fpm__commercial-summary-title {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.65rem;
+        min-width: 0;
+
+        > svg {
+          flex: 0 0 auto;
+          margin-top: 0.1rem;
+          color: $primary;
+          font-size: 1.3rem;
+        }
+
+        > div {
+          display: flex;
+          flex-direction: column;
+          gap: 0.2rem;
+          min-width: 0;
+        }
+
+        strong {
+          color: $text-dark;
+          font-size: 0.96rem;
+          font-weight: 900;
+        }
+
+        span {
+          color: rgba($text-dark, 0.63);
+          font-size: 0.78rem;
+          line-height: 1.35;
+        }
+      }
+
+      .fpm__commercial-summary-badge {
+        flex: 0 0 auto;
+        padding: 0.35rem 0.6rem;
+        border: 1px solid rgba($primary, 0.2);
+        border-radius: 999px;
+        background: rgba($primary, 0.08);
+        color: darken($primary, 8%);
+        font-size: 0.72rem;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
+      .fpm__commercial-metrics {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.7rem;
+      }
+
+      .fpm__commercial-metric {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        min-width: 0;
+        padding: 0.8rem;
+        border: 1px solid rgba($primary, 0.13);
+        border-radius: $border-radius-sm;
+        background: rgba($color-white, 0.88);
+
+        > span {
+          color: rgba($text-dark, 0.66);
+          font-size: 0.72rem;
+          font-weight: 800;
+          letter-spacing: 0.02em;
+          text-transform: uppercase;
+        }
+
+        > strong {
+          color: $primary;
+          font-size: 1.2rem;
+          font-weight: 900;
+          line-height: 1.15;
+        }
+
+        > small {
+          color: rgba($text-dark, 0.58);
+          font-size: 0.72rem;
+          line-height: 1.3;
+        }
+
+        &--total {
+          border-color: rgba($info, 0.24);
+          background: rgba($info, 0.07);
+
+          > strong {
+            color: darken($info, 18%);
+          }
+        }
+      }
+
+      .fpm__profit-summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-top: 0.75rem;
+        padding: 0.75rem 0.9rem;
+        border: 1px solid transparent;
+        border-radius: $border-radius-sm;
+
+        > div {
+          display: flex;
+          flex-direction: column;
+          gap: 0.15rem;
+          min-width: 0;
+        }
+
+        span {
+          font-size: 0.86rem;
+          font-weight: 900;
+        }
+
+        small {
+          font-size: 0.74rem;
+          line-height: 1.3;
+          opacity: 0.82;
+        }
+
+        > strong {
+          flex: 0 0 auto;
+          font-size: 1.2rem;
+          font-weight: 900;
+          white-space: nowrap;
+        }
+
+        &--positive {
+          border-color: rgba($success, 0.32);
+          background: rgba($success, 0.1);
+          color: darken($success, 22%);
+        }
+
+        &--negative {
+          border-color: rgba($danger, 0.32);
+          background: rgba($danger, 0.09);
+          color: darken($danger, 14%);
+        }
+
+        &--neutral {
+          border-color: rgba($warning, 0.35);
+          background: rgba($warning, 0.12);
+          color: darken($warning, 28%);
+        }
+      }
+
+      .payment-amount {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 1.5rem 0;
+        padding: 1rem;
+        background: $color-white;
+        border-radius: $border-radius-md;
+        border: 2px solid $primary;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: $primary;
+
+        svg {
+          font-size: 1.5rem;
+        }
+      }
+
+      .fpm__payment-breakdown {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin: -0.75rem 0 1rem;
+
+        span,
+        strong {
+          padding: 0.4rem 0.6rem;
+          border-radius: $border-radius-sm;
+          background: rgba($primary, 0.07);
+          color: $text-dark;
+          font-size: 0.82rem;
+        }
+
+        strong {
+          background: rgba($success, 0.12);
+          color: darken($success, 18%);
+        }
+      }
+
+      // ── Children panel (FpmChildrenPanel) ────────────────────────────────
+      // Base visual styles come from ChildrenPanel.scss (.sr__children).
+      // Only layout overrides needed here.
+      .fpm__children,
+      .assigned-child-panel {
+        margin: 1rem 0 0;
+        // Slight color override so it sits within the primary-tinted section
+        background: #fff;
+        border: 1px solid rgba($primary, 0.2);
+        border-radius: $border-radius-md;
+        overflow: hidden;
+
+        // Responsive: compact inputs on mobile
+        @media (max-width: 480px) {
+          .sr__ch-row {
+            grid-template-columns: 1fr 1fr;
+          }
+        }
+      }
+
+      .btn-success {
+        width: 100%;
+        padding: 1rem 2rem;
+        background: $success;
+        color: $color-white;
+        border: none;
+        border-radius: $border-radius-md;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+
+        &:hover:not(:disabled) {
+          background: darken($success, 10%);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba($success, 0.3);
+        }
+
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+      }
+    }
+  }
+
+  .existing-assignment-section--selected {
+    margin: 0 0 1.5rem;
+    padding: 1.2rem;
+    border: 1px solid rgba($success, 0.25);
+    border-radius: $border-radius-md;
+    background: linear-gradient(180deg, rgba($success, 0.08), rgba($success, 0.03));
+
+    .info-banner {
+      margin-bottom: 1rem;
+      padding: 0.85rem 1rem;
+      border-width: 1px;
+    }
+
+    .assigned-flight-card {
+      margin-bottom: 1rem;
+      border-width: 1px;
+      background: $color-white;
+      box-shadow: 0 8px 22px rgba($success, 0.08);
+    }
+
+    .assigned-header-actions {
+      margin: 0 0 1rem;
+    }
+  }
+
+  .fpm-flight-builder {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    border: 1px solid rgba($primary, 0.18);
+    border-radius: $border-radius-lg;
+    background:
+      linear-gradient(135deg, rgba($primary, 0.075), rgba($success, 0.045)),
+      $color-white;
+    box-shadow: inset 0 1px 0 rgba($color-white, 0.8);
+
+    &__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+
+      div {
+        display: grid;
+        gap: 0.2rem;
+      }
+
+      strong {
+        color: $primary;
+        font-size: 1rem;
+      }
+
+      span {
+        color: $text-muted;
+        font-size: 0.8rem;
+        line-height: 1.35;
+      }
+    }
+
+    &__grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(190px, 0.55fr);
+      gap: 0.75rem;
+
+      &--type {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: end;
+      }
+
+      &--type-main {
+        grid-template-columns:
+          minmax(190px, 1.25fr)
+          minmax(150px, 1fr)
+          minmax(150px, 1fr)
+          minmax(110px, 0.7fr)
+          minmax(110px, 0.7fr)
+          minmax(150px, 0.9fr);
+        align-items: end;
+      }
+    }
+
+    &__actions {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+  }
+
+  .fpm-icon-btn {
+    min-width: 40px;
+    width: 40px;
+    height: 40px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .fpm-flight-field {
+    display: grid;
+    gap: 0.35rem;
+    min-width: 0;
+
+    span {
+      color: $text-muted;
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    select,
+    input {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid $border-color;
+      border-radius: $border-radius-sm;
+      background: $color-white;
+      color: $text-dark;
+      font-weight: 700;
+      outline: 0;
+      padding: 0 0.75rem;
+
+      &:focus {
+        border-color: $primary;
+        box-shadow: 0 0 0 3px rgba($primary, 0.1);
+      }
+    }
+
+    .fpm-smart-combo {
+      min-width: 0;
+
+      .combobox-input-wrapper {
+        min-height: 42px;
+        border-color: $border-color;
+        border-radius: $border-radius-sm;
+        background: $color-white;
+
+        &:focus-within {
+          border-color: $primary;
+          box-shadow: 0 0 0 3px rgba($primary, 0.1);
+        }
+      }
+
+      .combobox-input {
+        min-height: 40px;
+        padding: 0 0.75rem;
+        color: $text-dark;
+        font-size: 0.88rem;
+        font-weight: 800;
+      }
+
+      .combobox-actions {
+        padding-right: 0.35rem;
+      }
+
+      .combobox-dropdown {
+        z-index: 80;
+        border-color: rgba($primary, 0.18);
+        border-radius: $border-radius-sm;
+        box-shadow: 0 16px 30px rgba($text-dark, 0.14);
+      }
+    }
+  }
+
+  .fpm-flight-price-input {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 42px;
+    border: 1px solid $border-color;
+    border-radius: $border-radius-sm;
+    background: $color-white;
+    padding: 0 0.75rem;
+
+    svg {
+      flex-shrink: 0;
+      color: $primary;
+    }
+
+    input {
+      min-height: auto;
+      border: 0;
+      box-shadow: none;
+      padding: 0;
+      text-align: right;
+
+      &:focus {
+        border-color: transparent;
+        box-shadow: none;
+      }
+    }
+  }
+
+  .fpm-flight-route-card {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.9rem;
+    padding: 0.85rem 1rem;
+    border: 1px dashed rgba($success, 0.4);
+    border-radius: $border-radius-md;
+    background: linear-gradient(90deg, rgba($success, 0.09), rgba($primary, 0.04));
+
+    strong {
+      color: darken($success, 12%);
+      font-size: 0.92rem;
+    }
+
+    span,
+    small {
+      color: $text-muted;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+  }
+
+  .fpm-inline-create {
+    display: grid;
+    grid-template-columns: minmax(200px, 1fr) 160px auto;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.75rem;
+    border: 1px solid rgba($primary, 0.14);
+    border-radius: $border-radius-sm;
+    background: $color-white;
+
+    input,
+    select {
+      min-height: 40px;
+      border: 1px solid $border-color;
+      border-radius: $border-radius-sm;
+      outline: 0;
+      padding: 0 0.7rem;
+      font-weight: 700;
+
+      &:focus {
+        border-color: $primary;
+        box-shadow: 0 0 0 3px rgba($primary, 0.08);
+      }
+    }
+
+    &--type {
+      grid-template-columns: repeat(3, minmax(150px, 1fr)) repeat(2, 120px) minmax(160px, 1fr);
+      align-items: end;
+    }
+
+    &--flight {
+      grid-template-columns: minmax(220px, 1fr) 180px minmax(220px, 0.8fr);
+      align-items: end;
+    }
+  }
+
+  .fpm-customize-type-btn {
+    min-height: 42px;
+    white-space: nowrap;
+  }
+
+  .fpm-auto-create-note {
+    align-self: center;
+    color: $text-muted;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.35;
+
+    &--inline {
+      padding: 0.65rem 0.85rem;
+      border: 1px dashed rgba($primary, 0.24);
+      border-radius: $border-radius-sm;
+      background: rgba($primary, 0.045);
+      color: darken($primary, 6%);
+    }
+  }
+
+  .payment-request-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .btn-cancel-request {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.65rem 0.9rem;
+    border: 1px solid rgba($danger, 0.35);
+    border-radius: $border-radius-sm;
+    background: rgba($danger, 0.07);
+    color: darken($danger, 8%);
+    font-weight: 800;
+    cursor: pointer;
+
+    &.confirming {
+      background: $danger;
+      color: $color-white;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  .warning-message {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: lighten($warning, 40%);
+    border: 2px solid $warning;
+    border-radius: $border-radius-md;
+    color: darken($warning, 20%);
+    font-weight: 600;
+
+    svg {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+
+    &--soft {
+      margin-top: 0.5rem;
+      border-width: 1px;
+      background: rgba($primary, 0.04);
+      color: $text-dark;
+    }
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .flight-payment-modal {
+    padding: 0.5rem;
+
+    .flight-selection-section {
+      h3 {
+        font-size: 1rem;
+      }
+
+      .flights-by-day {
+        gap: 1rem;
+
+        .day-flights-group {
+          .day-header {
+            padding: 0.75rem;
+            font-size: 1rem;
+          }
+
+          .flights-list {
+            padding: 0.75rem;
+
+            .flight-card {
+              padding: 0.75rem;
+            }
+          }
+        }
+      }
+    }
+
+    .assigned-flight-section {
+      padding: 1rem;
+
+      h3 {
+        font-size: 1rem;
+      }
+
+      .btn-primary,
+      .assigned-flight-display .btn-success {
+        padding: 0.75rem 1.5rem;
+        font-size: 0.9rem;
+      }
+
+      .assigned-flight-display {
+        .fpm__adult-price-editor {
+          align-items: stretch;
+          flex-direction: column;
+
+          .fpm__adult-price-input {
+            flex: 1 1 auto;
+            width: 100%;
+          }
+        }
+
+        .fpm__commercial-summary-head,
+        .fpm__profit-summary {
+          align-items: stretch;
+          flex-direction: column;
+        }
+
+        .fpm__commercial-summary-badge {
+          align-self: flex-start;
+        }
+
+        .fpm__commercial-metrics {
+          grid-template-columns: 1fr;
+        }
+
+        .fpm__profit-summary > strong {
+          align-self: flex-start;
+        }
+
+        .payment-amount {
+          font-size: 1rem;
+          padding: 0.75rem;
+        }
+      }
+    }
+
+    .fpm-flight-builder {
+      &__grid,
+      .fpm-inline-create,
+      .fpm-inline-create--type {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .warning-message {
+      padding: 0.75rem;
+      font-size: 0.9rem;
+    }
+  }
+}
+
+.flight-payment-modal {
+  .status-paid__message {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .payment-request-actions--paid {
+    margin-top: 0.15rem;
+  }
+
+  .btn-payment-evidence {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    min-height: 34px;
+    padding: 0.55rem 0.8rem;
+    border: 1px solid rgba($success, 0.35);
+    border-radius: $border-radius-sm;
+    background: $color-white;
+    color: darken($success, 11%);
+    font-size: 0.82rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    svg {
+      font-size: 1rem;
+    }
+
+    &:hover:not(:disabled) {
+      border-color: $success;
+      background: lighten($success, 48%);
+    }
+
+    &--media {
+      border-color: rgba($info, 0.35);
+      color: darken($info, 13%);
+
+      &:hover:not(:disabled) {
+        border-color: $info;
+        background: lighten($info, 45%);
+      }
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+  }
+}
+
+// =============================================================================
+// COMPACT PAYMENT UX
+// Reduce la jerarquía visual del selector y evita repetir acciones en el vuelo
+// seleccionado. Las reglas se mantienen al final para sobreescribir el diseño
+// histórico sin alterar la lógica del modal.
+// =============================================================================
+.flight-payment-modal {
+  padding: 0.7rem;
+
+  .info-banner {
+    gap: 0.55rem;
+    margin-bottom: 0.9rem;
+    padding: 0.7rem 0.85rem;
+    border-width: 1px;
+    border-radius: $border-radius-md;
+    font-size: 0.85rem;
+    line-height: 1.35;
+
+    svg {
+      font-size: 1.05rem;
+    }
+  }
+
+  .flight-selection-section {
+    margin-bottom: 1rem;
+
+    > h3 {
+      gap: 0.4rem;
+      margin: 0 0 0.65rem;
+      font-size: 1rem;
+      font-weight: 850;
+
+      svg {
+        font-size: 1.1rem;
+      }
+    }
+
+    .flights-by-day {
+      gap: 0.75rem;
+
+      .day-flights-group {
+        overflow: hidden;
+        border: 1px solid rgba($primary, 0.18);
+        border-radius: $border-radius-md;
+        background: $color-white;
+
+        .day-header {
+          gap: 0.4rem;
+          padding: 0.58rem 0.75rem;
+          background: rgba($primary, 0.065);
+          color: $primary;
+          font-size: 0.82rem;
+          font-weight: 850;
+
+          svg {
+            font-size: 0.95rem;
+          }
+        }
+
+        .flights-list {
+          gap: 0.55rem;
+          padding: 0.65rem;
+
+          .flight-card {
+            padding: 0.62rem 0.68rem;
+            border: 1px solid $color-border-light;
+            border-radius: $border-radius-md;
+            background: $color-white;
+            box-shadow: none;
+            transition:
+              border-color 0.18s ease,
+              background 0.18s ease,
+              box-shadow 0.18s ease;
+
+            &:hover {
+              border-color: rgba($primary, 0.45);
+              background: rgba($primary, 0.018);
+              box-shadow: 0 3px 10px rgba($primary, 0.06);
+              transform: none;
+            }
+
+            > .service-detailed-info {
+              padding-right: 5.2rem;
+            }
+
+            &.flight-card--assigned,
+            &.flight-card--pending,
+            &.flight-card--paid {
+              background: $color-white;
+            }
+
+            &.flight-card--assigned {
+              border-color: rgba($info, 0.26);
+            }
+
+            &.flight-card--pending {
+              border-color: rgba($warning, 0.38);
+            }
+
+            &.flight-card--paid {
+              border-color: rgba($success, 0.34);
+            }
+
+            &.selected {
+              border-color: rgba($primary, 0.65);
+              background: rgba($primary, 0.025);
+              box-shadow: 0 0 0 2px rgba($primary, 0.055);
+
+              .selected-indicator {
+                display: inline-flex;
+                width: fit-content;
+                align-items: center;
+                justify-content: center;
+                gap: 0.28rem;
+                margin: 0.45rem 0 0 auto;
+                padding: 0.24rem 0.52rem;
+                border-radius: 999px;
+                background: rgba($primary, 0.09);
+                color: $primary;
+                font-size: 0.7rem;
+                font-weight: 850;
+
+                svg {
+                  font-size: 0.78rem;
+                }
+              }
+            }
+
+            .flight-card__status-row {
+              position: absolute;
+              top: 0.55rem;
+              right: 0.6rem;
+              z-index: 2;
+              min-height: 0;
+              margin: 0;
+            }
+
+            .flight-card__status {
+              padding: 0.2rem 0.45rem;
+              font-size: 0.64rem;
+              font-weight: 900;
+            }
+
+            .flight-card__paid-actions {
+              gap: 0.35rem;
+              margin-top: 0.42rem;
+              padding-top: 0.42rem;
+              border-top: 1px solid $color-border-light;
+
+              button {
+                min-height: 28px;
+                padding: 0.32rem 0.52rem;
+                border-radius: $border-radius-sm;
+                font-size: 0.68rem;
+                font-weight: 850;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .existing-assignment-section--selected {
+    margin: 0 0 1rem;
+    padding: 0.75rem;
+    border: 1px solid rgba($success, 0.25);
+    border-radius: $border-radius-md;
+    background: $color-white;
+    box-shadow: none;
+
+    .existing-assignment-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.55rem;
+      color: $primary;
+
+      > svg {
+        flex: 0 0 auto;
+        font-size: 1rem;
+      }
+
+      > div {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        gap: 0.05rem;
+
+        span {
+          color: $text-muted;
+          font-size: 0.66rem;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.035em;
+        }
+
+        strong {
+          color: $text-dark;
+          font-size: 0.82rem;
+          font-weight: 850;
+        }
+      }
+    }
+
+    .assigned-flight-card {
+      margin-bottom: 0.55rem;
+      padding: 0.52rem 0.6rem;
+      border: 1px solid $color-border-light;
+      border-radius: $border-radius-md;
+      background: #fafbfc;
+      box-shadow: none;
+    }
+
+    .assigned-header-actions {
+      margin: 0 0 0.55rem;
+    }
+
+    .payment-request-status {
+      display: block;
+      margin: 0;
+      padding: 0.55rem 0.65rem;
+      border-width: 1px;
+      border-radius: $border-radius-md;
+
+      &.paid,
+      &.completed {
+        border-color: rgba($success, 0.3);
+        background: rgba($success, 0.055);
+      }
+
+      &.pending {
+        border-color: rgba($warning, 0.35);
+        background: rgba($warning, 0.065);
+      }
+
+      .status-paid,
+      .status-pending,
+      .status-unknown {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+
+        > span,
+        > .status-paid__message {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.3rem;
+          margin-right: auto;
+          font-size: 0.78rem;
+          font-weight: 850;
+
+          svg {
+            font-size: 0.9rem;
+          }
+        }
+
+        > svg {
+          flex: 0 0 auto;
+          font-size: 0.95rem;
+        }
+
+        .btn-primary {
+          width: auto;
+          min-height: 30px;
+          margin: 0;
+          padding: 0.4rem 0.65rem;
+          font-size: 0.72rem;
+          box-shadow: none;
+
+          svg {
+            font-size: 0.85rem;
+          }
+
+          &:hover:not(:disabled) {
+            transform: none;
+            box-shadow: none;
+          }
+        }
+      }
+    }
+  }
+
+  .payment-request-actions {
+    gap: 0.35rem;
+  }
+
+  .payment-request-actions--paid {
+    margin: 0;
+  }
+
+  .btn-payment-evidence {
+    min-height: 29px;
+    padding: 0.38rem 0.58rem;
+    font-size: 0.7rem;
+
+    svg {
+      font-size: 0.82rem;
+    }
+  }
+
+  .no-payment-request {
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 0.6rem;
+    margin: 0;
+    padding: 0.65rem 0.75rem;
+    border-width: 1px;
+    border-radius: $border-radius-md;
+
+    > svg {
+      font-size: 1rem;
+    }
+
+    p {
+      flex: 1;
+      font-size: 0.78rem;
+      text-align: left;
+    }
+
+    .btn-primary {
+      width: auto;
+      min-height: 30px;
+      padding: 0.4rem 0.65rem;
+      font-size: 0.72rem;
+
+      svg {
+        font-size: 0.85rem;
+      }
+    }
+  }
+}
+
+@media (max-width: 720px) {
+  .flight-payment-modal {
+    padding: 0.5rem;
+
+    .flight-selection-section .flights-by-day .day-flights-group .flights-list {
+      .flight-card > .service-detailed-info {
+        padding-right: 0;
+        padding-top: 1.35rem;
+      }
+    }
+
+    .existing-assignment-section--selected .payment-request-status {
+      .status-paid,
+      .status-pending,
+      .status-unknown {
+        align-items: flex-start;
+        flex-direction: column;
+
+        > span,
+        > .status-paid__message {
+          margin-right: 0;
+        }
+      }
+    }
+
+    .no-payment-request {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }
+}

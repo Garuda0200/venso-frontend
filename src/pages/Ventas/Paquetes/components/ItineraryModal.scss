@@ -1,0 +1,238 @@
+@import "../../../../styles/_variables.scss";
+@import "../../../../components/UI/variables.scss";
+
+$paq-radius: 10px;
+$paq-radius-sm: 6px;
+$paq-transition: 0.2s ease;
+$paq-border: #e8e8e8;
+$paq-bg: #f7f8fa;
+
+/* ── Overlay ── */
+.paq__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: paq-fade 0.2s ease;
+}
+
+.paq__overlay--blur {
+  backdrop-filter: blur(4px);
+}
+
+@keyframes paq-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ── Modal ── */
+.paq__modal {
+  background: #fff;
+  border-radius: $paq-radius;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+  animation: paq-slide-up 0.25s ease;
+}
+
+@keyframes paq-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.paq__modal--itinerary {
+  width: min(96vw, 1280px);
+  max-width: 1280px;
+}
+
+.paq__modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid $paq-border;
+
+  h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+    color: $color-text;
+  }
+}
+
+.paq__modal-close {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: #999;
+  cursor: pointer;
+  display: flex;
+  padding: 4px;
+  border-radius: 4px;
+  transition:
+    color $paq-transition,
+    background $paq-transition;
+
+  &:hover {
+    color: $color-danger;
+    background: rgba($color-danger, 0.06);
+  }
+}
+
+.paq__modal-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.paq__modal-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 24px;
+  border-top: 1px solid $paq-border;
+}
+
+/* ── Form fields ── */
+.paq__field {
+  margin-bottom: 16px;
+
+  label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: $color-text-secondary;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid $paq-border;
+    border-radius: $paq-radius-sm;
+    font-size: 0.875rem;
+    color: $color-text;
+    background: #fff;
+    transition: border-color $paq-transition;
+    outline: none;
+
+    &:focus {
+      border-color: $color-primary;
+    }
+    &::placeholder {
+      color: #bbb;
+    }
+  }
+}
+
+/* ── Itinerary total ── */
+.paq__itinerary-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  margin-top: 16px;
+  background: $paq-bg;
+  border-radius: $paq-radius-sm;
+  font-size: 0.95rem;
+
+  span {
+    color: $color-text-secondary;
+  }
+  strong {
+    color: $color-primary;
+    font-size: 1.1rem;
+  }
+}
+
+/* ── Buttons ── */
+.paq__btn--primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 20px;
+  border: none;
+  border-radius: $paq-radius-sm;
+  background: $color-primary;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background $paq-transition;
+
+  &:hover {
+    background: $color-primary-dark;
+  }
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+.paq__btn--ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 20px;
+  border: 1px solid $paq-border;
+  border-radius: $paq-radius-sm;
+  background: #fff;
+  color: $color-text-secondary;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    border-color $paq-transition,
+    color $paq-transition;
+
+  &:hover {
+    border-color: #ccc;
+    color: $color-text;
+  }
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+.paq__spinner--sm {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(#fff, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: paq-spin 0.7s linear infinite;
+}
+
+@keyframes paq-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .paq__modal {
+    margin: 10px;
+    max-height: 95vh;
+  }
+}

@@ -1,0 +1,70 @@
+@import "../../../styles/_variables.scss";
+
+.loading-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+
+  &.small {
+    padding: 10px;
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+    }
+
+    .loading-message {
+      font-size: 12px;
+    }
+  }
+
+  &.medium {
+    padding: 20px;
+
+    .spinner {
+      width: 30px;
+      height: 30px;
+    }
+
+    .loading-message {
+      font-size: 14px;
+    }
+  }
+
+  &.large {
+    padding: 40px;
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+    }
+
+    .loading-message {
+      font-size: 16px;
+    }
+  }
+
+  .spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 10px;
+  }
+
+  .loading-message {
+    color: #666;
+    text-align: center;
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

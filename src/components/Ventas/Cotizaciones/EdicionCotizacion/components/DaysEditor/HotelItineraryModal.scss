@@ -1,0 +1,726 @@
+﻿// Variables: usar var(--xxx) de :root (index.scss). @import mantenido para funciones SCSS.
+@import "../../../../../../styles/_variables";
+
+// =============================================
+// HOTEL ITINERARY MODAL - ESTILOS LIMPIOS
+// =============================================
+
+.hotel-itinerary-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 11000;
+  padding: 20px;
+}
+
+.hotel-itinerary-modal {
+  background: white;
+  border-radius: 14px;
+  width: 95%;
+  max-width: 1200px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+
+  // Header
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    background: linear-gradient(
+      135deg,
+      var(--color-primary),
+      var(--color-primary-dark)
+    );
+    color: white;
+
+    h2 {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.2rem;
+      font-weight: 700;
+
+      .header-icon {
+        font-size: 1.1rem;
+      }
+    }
+
+    .close-button {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+    }
+  }
+
+  // Content area
+  .modal-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px;
+  }
+
+  // Progress steps
+  .progress-steps {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 20px;
+    position: relative;
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 18px;
+      left: 22%;
+      right: 22%;
+      height: 2px;
+      background: var(--color-border-light);
+      z-index: 0;
+    }
+
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      z-index: 1;
+      background: white;
+      padding: 0 14px;
+
+      svg {
+        width: 36px;
+        height: 36px;
+        padding: 8px;
+        border-radius: 50%;
+        border: 2px solid var(--color-border-light);
+        background: white;
+        color: var(--color-border);
+        margin-bottom: 5px;
+        transition: all 0.3s ease;
+      }
+
+      span {
+        font-size: 0.75rem;
+        color: var(--color-text-secondary);
+        font-weight: 600;
+      }
+
+      &.active {
+        svg {
+          border-color: var(--color-primary);
+          color: var(--color-primary);
+          background: rgba(var(--color-primary-rgb), 0.1);
+        }
+        span {
+          color: var(--color-primary);
+        }
+      }
+
+      &.completed {
+        svg {
+          border-color: var(--color-success);
+          color: white;
+          background: var(--color-success);
+        }
+        span {
+          color: var(--color-success);
+        }
+      }
+    }
+  }
+
+  // Info pasajeros
+  .passenger-info {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+
+    .info-card {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background: linear-gradient(
+        135deg,
+        var(--color-info),
+        lighten($color-info, 8%)
+      );
+      color: white;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      box-shadow: 0 2px 8px rgba($color-info, 0.2);
+
+      svg {
+        font-size: 0.9rem;
+      }
+
+      &.warning {
+        background: linear-gradient(
+          135deg,
+          var(--color-warning),
+          lighten($color-warning, 8%)
+        );
+        box-shadow: 0 2px 8px rgba($color-warning, 0.2);
+      }
+    }
+  }
+
+  // =============================================
+  // PANEL DE SELECCIÓN DE DÍAS (siempre visible)
+  // =============================================
+  .days-selection-panel {
+    background: white;
+    border: 2px solid var(--color-border-light);
+    border-radius: 12px;
+    margin-bottom: 20px;
+    overflow: hidden;
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: linear-gradient(
+        135deg,
+        var(--color-primary),
+        var(--color-primary-dark)
+      );
+      color: white;
+
+      h3 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 700;
+      }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .select-all-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.75rem;
+        cursor: pointer;
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.3);
+        }
+      }
+
+      .selected-count {
+        font-size: 0.8rem;
+        font-weight: 600;
+        background: rgba(255, 255, 255, 0.25);
+        padding: 4px 10px;
+        border-radius: 12px;
+      }
+    }
+
+    .days-compact-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 8px;
+      padding: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .day-item {
+      background: white;
+      border: 2px solid var(--color-border-light);
+      border-radius: 8px;
+      padding: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        border-color: var(--color-primary-light);
+        box-shadow: 0 2px 8px rgba(var(--color-primary-rgb), 0.1);
+      }
+
+      &.selected {
+        border-color: var(--color-primary);
+        background: rgba(var(--color-primary-rgb), 0.06);
+        box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.1);
+      }
+
+      .day-item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+
+        .day-number {
+          font-weight: 700;
+          font-size: 0.85rem;
+          color: var(--color-primary-dark);
+        }
+
+        input[type="checkbox"] {
+          width: 16px;
+          height: 16px;
+          accent-color: var(--color-primary);
+          cursor: pointer;
+        }
+      }
+
+      .day-title {
+        display: block;
+        font-size: 0.75rem;
+        color: var(--color-text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-bottom: 4px;
+      }
+
+      .day-hotels {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        margin-top: 6px;
+
+        .hotel-tag {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          padding: 3px 6px;
+          background: rgba($color-success, 0.1);
+          border: 1px solid rgba($color-success, 0.4);
+          border-radius: 4px;
+          font-size: 0.65rem;
+          color: var(--color-success);
+
+          svg {
+            font-size: 0.6rem;
+            flex-shrink: 0;
+          }
+
+          .hotel-name {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 70px;
+            font-weight: 600;
+            color: darken($color-success, 10%);
+          }
+
+          .remove-btn {
+            background: none;
+            border: none;
+            color: var(--color-danger);
+            cursor: pointer;
+            padding: 1px;
+            font-size: 0.6rem;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+
+            &:hover {
+              color: darken($color-danger, 15%);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // =============================================
+  // PANEL DE SELECCIÓN DE DÍAS (sin occupancy-panel)
+  // =============================================
+  .panels-row {
+    margin-bottom: 20px;
+
+    &.single-panel {
+      display: block;
+    }
+  }
+
+  // =============================================
+  // VENSO: Estado de carga al auto-seleccionar 5?
+  // =============================================
+  .venso-loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--color-border-light);
+      border-top-color: var(--color-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 16px;
+    }
+
+    p {
+      color: var(--color-text-secondary);
+      font-size: 0.95rem;
+      font-weight: 500;
+      margin: 0;
+    }
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .panel {
+    background: white;
+    border: 2px solid var(--color-border-light);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      background: linear-gradient(
+        135deg,
+        var(--color-primary),
+        var(--color-primary-dark)
+      );
+      color: white;
+
+      h3 {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin: 0;
+        font-size: 0.9rem;
+        font-weight: 700;
+      }
+
+      button {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 5px 8px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.7rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .select-all-btn {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        &:hover {
+          background: rgba(255, 255, 255, 0.3);
+        }
+      }
+
+      .clear-all-btn {
+        background: rgba(255, 100, 100, 0.4);
+        border: none;
+        color: white;
+        &:hover {
+          background: rgba(255, 100, 100, 0.6);
+        }
+      }
+    }
+
+    .panel-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      max-height: 240px;
+    }
+  }
+
+  // Panel de selección de días
+  .days-panel {
+    .days-compact-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 6px;
+    }
+
+    .day-item {
+      background: white;
+      border: 2px solid var(--color-border-light);
+      border-radius: 6px;
+      padding: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        border-color: var(--color-primary-light);
+        box-shadow: 0 2px 8px rgba(var(--color-primary-rgb), 0.1);
+      }
+
+      &.selected {
+        border-color: var(--color-primary);
+        background: rgba(var(--color-primary-rgb), 0.06);
+        box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.1);
+      }
+
+      .day-item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+
+        .day-number {
+          font-weight: 700;
+          font-size: 0.8rem;
+          color: var(--color-primary-dark);
+        }
+
+        input[type="checkbox"] {
+          width: 14px;
+          height: 14px;
+          accent-color: var(--color-primary);
+          cursor: pointer;
+        }
+      }
+
+      .day-title {
+        display: block;
+        font-size: 0.7rem;
+        color: var(--color-text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-bottom: 4px;
+      }
+
+      .day-hotels {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        margin-top: 4px;
+
+        .hotel-tag {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          padding: 3px 6px;
+          background: rgba($color-success, 0.1);
+          border: 1px solid rgba($color-success, 0.4);
+          border-radius: 4px;
+          font-size: 0.65rem;
+          color: var(--color-success);
+
+          svg {
+            font-size: 0.6rem;
+            flex-shrink: 0;
+          }
+
+          .hotel-name {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 80px;
+            font-weight: 600;
+            color: darken($color-success, 10%);
+          }
+
+          .remove-btn {
+            background: none;
+            border: none;
+            color: var(--color-danger);
+            cursor: pointer;
+            padding: 1px;
+            font-size: 0.6rem;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+
+            &:hover {
+              color: darken($color-danger, 15%);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Footer
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 14px 24px;
+    background: #f8f9fa;
+    border-top: 1px solid var(--color-border-light);
+    flex-wrap: wrap;
+
+    button {
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .cancel-btn {
+      background: white;
+      border: 1px solid var(--color-border);
+      color: var(--color-text-secondary);
+
+      &:hover {
+        border-color: var(--color-danger);
+        color: var(--color-danger);
+      }
+    }
+
+    .secondary-btn {
+      background: white;
+      border: 1px solid var(--color-primary);
+      color: var(--color-primary);
+
+      &:hover {
+        background: rgba(var(--color-primary-rgb), 0.05);
+      }
+    }
+
+    .confirm-btn {
+      background: var(--color-success);
+      border: none;
+      color: white;
+
+      &:hover {
+        background: darken($color-success, 8%);
+      }
+      &:disabled {
+        background: var(--color-border);
+        color: var(--color-text-secondary);
+        cursor: not-allowed;
+      }
+    }
+  }
+}
+
+// =============================================
+// RESPONSIVE
+// =============================================
+@media (max-width: 900px) {
+  .hotel-itinerary-modal {
+    .panels-row {
+      grid-template-columns: 1fr;
+    }
+
+    .panel .panel-body {
+      max-height: 180px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .hotel-itinerary-modal {
+    width: 100%;
+    max-height: 95vh;
+    border-radius: 10px;
+
+    .modal-header {
+      padding: 12px 16px;
+    }
+    .modal-content {
+      padding: 14px 16px;
+    }
+
+    .progress-steps {
+      gap: 4px;
+
+      &::before {
+        display: none;
+      }
+
+      .step {
+        padding: 0 6px;
+
+        svg {
+          width: 28px;
+          height: 28px;
+          padding: 6px;
+        }
+        span {
+          font-size: 0.65rem;
+        }
+      }
+    }
+
+    .passenger-info {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 6px;
+
+      .info-card {
+        justify-content: center;
+      }
+    }
+
+    .days-panel .days-compact-grid {
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    }
+
+    .modal-footer {
+      flex-direction: column;
+      padding: 12px 16px;
+
+      button {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  }
+}

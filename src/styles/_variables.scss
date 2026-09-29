@@ -1,0 +1,164 @@
+// ── Import base (canonical SCSS values for darken/lighten functions) ──
+@import "../components/UI/variables.scss";
+
+// ── Brand Colors (alias de los valores de UI/variables.scss) ──
+$color-primary: $primary; // #ff007e
+$color-primary-light: $primary-light;
+$color-primary-dark: darken($primary, 8%);
+$color-primary-darker: darken($primary, 15%);
+$color-primary-hover: lighten($primary, 5%);
+
+$color-secondary: $secondary; // #858796
+$color-secondary-light: $secondary-light;
+$color-secondary-dark: darken($secondary, 15%);
+
+$color-accent: #000000;
+$color-accent-light: rgba($color-accent, 0.1);
+$color-accent-dark: darken($color-accent, 8%);
+
+$color-tertiary: #ff4ca5;
+$color-tertiary-light: lighten($color-tertiary, 15%);
+$color-tertiary-dark: darken($color-tertiary, 15%);
+
+// ── Semantic Colors ──
+$color-success: $success; // #1cc88a
+$color-success-light: $success-light;
+$color-success-dark: darken($success, 10%);
+
+$color-danger: $danger; // #e74a3b
+$color-danger-light: $danger-light;
+$color-danger-dark: darken($danger, 10%);
+$color-error: $danger;
+$color-error-light: $danger-light;
+
+$color-warning: $warning; // #f6c23e
+$color-warning-light: $warning-light;
+$color-warning-dark: darken($warning, 15%);
+
+$color-info: $info; // #36b9cc
+$color-info-light: $info-light;
+$color-info-dark: darken($info, 15%);
+
+// ── Text Colors ──
+$color-text: #333333;
+$color-text-primary: #333333;
+$color-text-secondary: #666666;
+$color-text-light: #999999;
+$color-text-muted: #444444;
+$color-text-white: #ffffff;
+$color-text-dark: $text-dark; // $gray-800
+$color-text-medium: $text-medium; // $gray-600
+
+// Legacy text aliases (used by files outside EdicionCotizacion)
+$text-primary: #333333;
+$text-secondary: #858796;
+$text-muted: $color-text-muted;
+
+// ── Gray Scale (aliases from UI/variables.scss $gray-xxx) ──
+$color-white: #fff;
+$color-gray: #6c757d;
+$color-gray-lightest: $gray-100;
+$color-gray-lighter: $gray-200;
+$color-gray-light: $gray-300;
+$color-gray-light-alt: #f7f9fc;
+$color-gray-medium: $gray-600;
+$color-gray-dark: $gray-800;
+$color-gray-darker: $gray-900;
+$color-gray-bg: $gray-200;
+$color-black: #222;
+
+// ── Background Colors ──
+$color-bg-primary: #ffffff;
+$color-bg-secondary: $gray-100;
+$color-bg-tertiary: #e9ecef;
+$color-bg-light: $gray-100;
+$color-bg-dark: $gray-800;
+$color-background: $gray-100;
+
+// ── Border Colors ──
+$color-border: $gray-300;
+$color-border-light: $gray-200;
+$color-border-dark: $gray-400;
+$color-border-input: #ddd;
+
+// ── Brand Aliases ──
+$color-brand-green: $primary;
+$color-brand-orange: $color-accent;
+$color-brand-black: #333333;
+
+// ── Border Radius ──
+$border-radius-xs: 2px;
+$border-radius-sm: 4px;
+$border-radius-md: 6px;
+$border-radius-lg: 8px;
+$border-radius-xl: 12px;
+$border-radius-pill: 50px;
+
+// ── Shadows ──
+$shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+$shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
+$shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.1);
+$shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.15);
+
+// ── Spacing ──
+$spacing-xs: 0.25rem;
+$spacing-sm: 0.5rem;
+$spacing-md: 0.75rem;
+$spacing-base: 1rem;
+$spacing-lg: 1.5rem;
+$spacing-xl: 2rem;
+$spacing-xxl: 3rem;
+
+// ── Font Sizes ──
+$font-size-xs: 0.8125rem;
+$font-size-sm: 0.875rem;
+$font-size-md: 0.9375rem;
+$font-size-base: 1rem;
+$font-size-lg: 1.1875rem;
+$font-size-xl: 1.375rem;
+$font-size-xxl: 1.625rem;
+
+// ── Font Weights ──
+$font-weight-light: 300;
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+$font-weight-black: 700;
+
+// ── Typography ──
+$font-family-base:
+  "Poppins",
+  -apple-system,
+  BlinkMacSystemFont,
+  "Segoe UI",
+  Roboto,
+  "Helvetica Neue",
+  Arial,
+  sans-serif;
+$font-family-heading: "Poppins", "Arial", sans-serif;
+$line-height-base: 1.5;
+
+// ── Breakpoints ──
+$breakpoint-xs: 0;
+$breakpoint-sm: 576px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 992px;
+$breakpoint-xl: 1200px;
+$breakpoint-xxl: 1400px;
+
+// ── Transitions ──
+$transition-fast: all 0.15s ease-in-out;
+$transition-base: all 0.2s ease-in-out;
+$transition-normal: all 0.3s ease-in-out;
+$transition-slow: all 0.3s ease-in-out;
+
+// ── Z-index ──
+$z-index-dropdown: 1000;
+$z-index-sticky: 1010;
+$z-index-fixed: 1020;
+$z-index-modal-backdrop: 1030;
+$z-index-modal: 1040;
+$z-index-popover: 1050;
+$z-index-tooltip: 1060;
+$z-index-snackbar: 9000;

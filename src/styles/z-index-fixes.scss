@@ -1,0 +1,54 @@
+/**
+ * Global z-index hierarchy to prevent modal overlapping issues
+ * Higher numbers appear in front of lower numbers
+ */
+
+// Base UI elements: 1-999
+.navbar,
+.header,
+.footer {
+  z-index: 100;
+}
+
+.sidebar {
+  z-index: 200;
+}
+
+// Tooltips, popovers, dropdowns: 1000-4999
+.tooltip,
+.popover,
+.dropdown-menu {
+  z-index: 2000;
+}
+
+// Standard modals and overlays: 5000-9999
+.modal,
+.modal-backdrop,
+.modal-overlay {
+  z-index: 5000;
+}
+
+.modal-content {
+  z-index: 5100;
+}
+
+// Add snackbar to high-priority components
+.snackbar-notification {
+  z-index: 9000; // High enough to appear above modals
+}
+
+// High-priority components: 10000-99999
+.confirmation-dialog,
+.alert-modal {
+  z-index: 10000;
+}
+
+// Top-level system components: 100000+
+// LogoutModal is specifically set with ultra-high z-index to always be on top
+.logout-modal-backdrop {
+  z-index: 9999999;
+}
+
+.logout-modal {
+  z-index: 10000000;
+}

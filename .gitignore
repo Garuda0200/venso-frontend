@@ -1,0 +1,73 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+# testing
+/coverage
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.development
+
+# Auto-generated build files (DO NOT COMMIT)
+/public/build-info.json
+.env.local
+NUL
+
+# El código fuente de despliegue (Dockerfile, fly.toml y nginx.conf) debe quedar
+# visible en Git. Solo los overrides locales se mantienen sin seguimiento.
+/.env
+.env.*
+!.env.example
+/.docker
+docker-compose.override.yml
+/fly.local.toml
+/fly.*.local.toml
+/Dockerfile.local
+/.dockerignore.local
+
+# Local configuration and logs
+.idea/
+.vscode/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+
+# Ensure build artifacts and generated files stay ignored
+/build
+/dist
+
+# Playwright (removed from project)
+/playwright-report
+/test-results
+/e2e/.auth
+/.next
+
+# Lockfiles (if you prefer one package manager)
+yarn.lock
+
+# Playwright
+/e2e/.auth/
+/e2e/screenshots/
+/test-results/
+/playwright-report/
+
+# Local compiled unit-test artifacts
+/.tmp-feature-tests
+
+# Infraestructura privada de despliegue: se conserva localmente, pero no se
+# publica en el repositorio de código fuente.
+/.dockerignore
+/Dockerfile
+/fly.toml
+/nginx.conf
+/docs/DEPLOY_FLY_FRONTEND.md
+/.env.example
+/*.zip

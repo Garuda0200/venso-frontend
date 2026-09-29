@@ -1,0 +1,613 @@
+// Variables — import system palette, keep only local overrides
+@import "../../../../styles/_variables.scss";
+
+// $color-primary and $color-primary-light come from _variables.scss
+$color-white: #fff;
+$color-gray-light: #f8f9fa;
+$color-gray: #e9ecef;
+$color-gray-dark: #6c757d;
+$color-border: #dee2e6;
+$color-text: #333;
+$color-overlay: rgba(0, 0, 0, 0.65);
+$color-background: #ffffff;
+
+.pdf-preview-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: $color-overlay;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+  animation: none;
+  cursor: pointer;
+
+  .pdf-preview-modal {
+    background: $color-background;
+    border-radius: 16px;
+    width: 96%;
+    max-width: 1280px;
+    height: 96vh;
+    max-height: 1100px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    cursor: default;
+    overflow: hidden;
+
+    // ═══════════════════════════════════════════════════════════
+    // HEADER
+    // ═══════════════════════════════════════════════════════════
+    .pdf-preview-header {
+      padding: 14px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      background: linear-gradient(
+        135deg,
+        var(--color-primary, #ff007e),
+        var(--color-primary-dark, #c80063)
+      );
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      flex-shrink: 0;
+
+      .header-left {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+
+        h2 {
+          color: $color-white;
+          font-size: 18px;
+          font-weight: 700;
+          margin: 0;
+          letter-spacing: -0.3px;
+        }
+
+        .page-info {
+          color: rgba(255, 255, 255, 0.72);
+          font-size: 12px;
+          font-weight: 500;
+        }
+      }
+
+      .pdf-hotel-filter-actions {
+        flex: 1;
+        justify-content: center;
+        min-width: 0;
+      }
+
+      .pdf-hotel-filter-chips--preview {
+        flex: 1;
+        justify-content: center;
+        max-width: 620px;
+      }
+
+      .close-button {
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.26);
+        color: $color-white;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.22);
+          border-color: rgba(255, 255, 255, 0.38);
+          color: $color-white;
+        }
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // BODY - Layout con sidebars
+    // ═══════════════════════════════════════════════════════════
+    .pdf-preview-body {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      background: #e8ecf0;
+
+      // Sidebar izquierda - Navegación vertical
+      .navigation-sidebar {
+        width: 60px;
+        background: $color-white;
+        border-right: 1px solid $color-gray;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 16px 8px;
+        gap: 8px;
+        flex-shrink: 0;
+
+        .nav-btn {
+          background: $color-gray-light;
+          border: none;
+          color: $color-gray-dark;
+          cursor: pointer;
+          padding: 10px;
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 44px;
+          height: 44px;
+
+          &:hover:not(:disabled) {
+            background: $color-primary;
+            color: $color-white;
+            transform: scale(1.08);
+          }
+
+          &:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+          }
+
+          &:active:not(:disabled) {
+            transform: scale(0.95);
+          }
+        }
+
+        .page-indicator {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 12px 0;
+          margin: 8px 0;
+          border-radius: 10px;
+          background: linear-gradient(
+            135deg,
+            $color-primary-light 0%,
+            $color-primary 100%
+          );
+          width: 44px;
+
+          .current-page {
+            color: $color-white;
+            font-size: 18px;
+            font-weight: 700;
+          }
+
+          .separator {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 10px;
+            margin: 2px 0;
+          }
+
+          .total-pages {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 12px;
+            font-weight: 600;
+          }
+        }
+      }
+
+      // Contenido del PDF — páginas HTML renderizadas directamente
+      .pdf-preview-content {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 16px;
+        gap: 16px;
+        background: #e8ecf0;
+        will-change: scroll-position;
+        -webkit-overflow-scrolling: touch;
+
+        // Override de tamaño para las páginas dentro del preview
+        .pdf-pages-wrapper {
+          gap: 16px;
+          padding: 0;
+          width: 100%;
+          max-width: 1100px;
+
+          .pdf-page {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 16 / 9; // 16:9 presentation ratio
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+            border-radius: 4px;
+            content-visibility: auto;
+            contain-intrinsic-size: auto 300px;
+
+            // Imágenes 6000x3375 (16:9) → contain para mostrar completas
+            &.pdf-page--summary-portrait {
+              width: min(100%, 900px);
+              aspect-ratio: 900 / 636;
+            }
+
+            &.full-image-page .full-bg {
+              object-fit: cover;
+            }
+          }
+        }
+      }
+
+      // Sidebar derecha - Descarga
+      .download-sidebar {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+
+        padding: 12px;
+
+        background: $color-primary;
+        border-left: 1px solid $color-gray;
+
+        width: 110px;
+        flex-shrink: 0;
+
+        .download-button {
+          background: $color-white;
+          color: $color-primary;
+
+          border: none;
+          border-radius: 10px;
+
+          padding: 10px 8px;
+
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+
+          gap: 6px;
+
+          width: 100%;
+
+          font-size: 11px;
+          font-weight: 600;
+
+          cursor: pointer;
+
+          transition: all 0.2s ease;
+
+          box-shadow: 0 4px 12px rgba($color-primary, 0.25);
+
+          svg {
+            font-size: 20px;
+          }
+
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: none;
+          }
+        }
+
+        .download-button.edit {
+          background: $color-white;
+          color: $color-primary;
+
+          border: 2px solid $color-primary;
+
+          box-shadow: none;
+
+          &:hover {
+            background: rgba($color-primary, 0.05);
+          }
+        }
+      }
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// RESPONSIVE
+// ═══════════════════════════════════════════════════════════
+@media (max-width: 768px) {
+  .pdf-preview-modal-overlay .pdf-preview-modal {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 0;
+
+    .pdf-preview-header {
+      padding: 12px 16px;
+
+      .header-left h2 {
+        font-size: 16px;
+      }
+    }
+
+    .pdf-preview-body {
+      .navigation-sidebar {
+        width: 50px;
+        padding: 12px 6px;
+
+        .nav-btn {
+          width: 38px;
+          height: 38px;
+          padding: 8px;
+        }
+
+        .page-indicator {
+          width: 38px;
+          padding: 10px 0;
+
+          .current-page {
+            font-size: 16px;
+          }
+        }
+      }
+
+      .pdf-preview-content {
+        .pdf-iframe-container {
+          padding: 10px;
+        }
+      }
+
+      .download-sidebar {
+        width: 70px;
+        padding: 12px 8px;
+
+        .download-button {
+          padding: 12px 8px;
+          font-size: 10px;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .pdf-preview-modal-overlay .pdf-preview-modal {
+    .pdf-preview-body {
+      .navigation-sidebar {
+        width: 45px;
+
+        .nav-btn {
+          width: 34px;
+          height: 34px;
+        }
+
+        .page-indicator {
+          width: 34px;
+
+          .current-page {
+            font-size: 14px;
+          }
+
+          .total-pages {
+            font-size: 10px;
+          }
+        }
+      }
+
+      .download-sidebar {
+        width: 60px;
+
+        .download-button {
+          padding: 10px 6px;
+
+          svg {
+            width: 20px;
+            height: 20px;
+          }
+
+          span {
+            font-size: 9px;
+          }
+        }
+      }
+    }
+  }
+}
+
+/* ============================================================
+   VENSO PDF CANVA WORKSPACE
+   ============================================================ */
+.pdf-preview-modal-overlay {
+  background:
+    radial-gradient(circle at 18% 12%, rgba(255, 0, 126, 0.18), transparent 32%),
+    rgba(0, 0, 0, 0.76);
+
+  .pdf-preview-modal {
+    width: min(98vw, 1540px);
+    max-width: 1540px;
+    height: 96vh;
+    border-radius: 22px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: #f3f3f4;
+  }
+
+  .pdf-preview-header {
+    min-height: 72px;
+    padding: 12px 18px;
+    background: #050505 !important;
+    border-bottom: 3px solid #ff007e !important;
+
+    .header-left {
+      min-width: 280px;
+      flex-direction: row !important;
+      align-items: center;
+      gap: 12px !important;
+    }
+
+    .pdf-preview-brand-logo {
+      width: 84px;
+      height: 38px;
+      object-fit: contain;
+      object-position: left center;
+    }
+
+    .pdf-preview-brand-copy {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .pdf-preview-eyebrow {
+      color: #ff4aa3;
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.2em;
+    }
+
+    .pdf-preview-brand-copy h2 {
+      font-size: 16px;
+      line-height: 1.15;
+    }
+  }
+
+  .pdf-preview-body {
+    gap: 0;
+    background: #ececee;
+  }
+
+  .navigation-sidebar,
+  .download-sidebar {
+    width: 104px !important;
+    flex: 0 0 104px;
+    background: #111 !important;
+    border: 0 !important;
+    padding: 16px 10px !important;
+    gap: 10px;
+  }
+
+  .download-sidebar {
+    border-left: 1px solid rgba(255, 255, 255, 0.08) !important;
+  }
+
+  .sidebar-eyebrow {
+    width: 100%;
+    color: #ff4aa3;
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 0.14em;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+
+  .navigation-sidebar .nav-btn {
+    width: 46px !important;
+    height: 42px !important;
+    border-radius: 12px !important;
+    color: #fff !important;
+    background: #202024 !important;
+    border: 1px solid #333 !important;
+
+    &:hover:not(:disabled) {
+      background: #ff007e !important;
+      border-color: #ff007e !important;
+    }
+  }
+
+  .navigation-sidebar .page-indicator {
+    width: 58px !important;
+    min-height: 62px;
+    border-radius: 16px !important;
+    background: #fff !important;
+    color: #111 !important;
+    border: 0 !important;
+    box-shadow: inset 0 0 0 2px #ff007e;
+  }
+
+  .download-sidebar .download-button {
+    width: 84px !important;
+    min-height: 78px;
+    padding: 10px 6px !important;
+    border-radius: 14px !important;
+    border: 1px solid #34343a !important;
+    color: #fff !important;
+    background: #202024 !important;
+    font-size: 10px !important;
+
+    &:hover:not(:disabled) {
+      background: #ff007e !important;
+      border-color: #ff007e !important;
+      transform: translateY(-1px);
+    }
+  }
+
+  .pdf-preview-content {
+    padding: 28px 34px 64px !important;
+    background:
+      linear-gradient(135deg, rgba(255, 0, 126, 0.035) 25%, transparent 25%) 0 0 / 24px 24px,
+      #ececee !important;
+  }
+
+  .pdf-pages-wrapper {
+    gap: 30px;
+  }
+
+  .pdf-page {
+    border-radius: 8px;
+    outline: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.16);
+  }
+}
+
+/* Venso Canva 2026 - portrait document preview */
+.pdf-preview-modal {
+  .pdf-preview-header {
+    background: #111 !important;
+    border-bottom: 3px solid var(--color-primary, #ff007e) !important;
+  }
+
+  .pdf-preview-eyebrow,
+  .sidebar-eyebrow {
+    color: var(--color-primary, #ff007e) !important;
+  }
+
+  .navigation-sidebar .nav-btn:hover:not(:disabled),
+  .download-sidebar .download-button:hover:not(:disabled) {
+    background: var(--color-primary, #ff007e) !important;
+    border-color: var(--color-primary, #ff007e) !important;
+  }
+
+  .navigation-sidebar .page-indicator {
+    box-shadow: inset 0 0 0 2px var(--color-primary, #ff007e) !important;
+  }
+
+  .pdf-preview-content {
+    align-items: center;
+    overflow-x: auto !important;
+  }
+
+  .pdf-preview-content .pdf-pages-wrapper,
+  .pdf-preview-content .pdf-pages-wrapper--venso-canva {
+    width: min(100%, 840px) !important;
+    max-width: 840px !important;
+    align-items: center;
+    gap: 30px;
+  }
+
+  .pdf-preview-content .pdf-page {
+    width: min(100%, 800px) !important;
+    height: auto !important;
+    aspect-ratio: 4 / 5 !important;
+    flex: 0 0 auto;
+  }
+}
+
+.pdf-preview-modal .download-sidebar .download-button.word {
+  background: #2b579a !important;
+  border-color: #2b579a !important;
+  color: #fff !important;
+
+  &:hover:not(:disabled) {
+    background: #1f417a !important;
+    border-color: #1f417a !important;
+  }
+}
+
+.pdf-preview-modal .download-sidebar .download-button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+  transform: none !important;
+}

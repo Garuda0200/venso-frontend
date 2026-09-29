@@ -1,0 +1,550 @@
+﻿@import "../../styles/_variables.scss";
+
+$form-border-radius: 12px;
+$transition-smooth: all 0.25s ease;
+$modal-header-height: 64px;
+
+.liquidacion-modal {
+  .modal-container {
+    width: 90vw !important;
+    max-width: 700px !important;
+    height: auto !important;
+    max-height: 92vh !important;
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    animation: zoomIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    @media (max-width: 768px) {
+      width: 96vw !important;
+      max-width: 96vw !important;
+      max-height: 96vh !important;
+      border-radius: 12px;
+    }
+  }
+
+  @keyframes zoomIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  // ============================================================
+  // MODAL HEADER - Color naranja para liquidaciones (egreso)
+  // ============================================================
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 24px;
+    background: linear-gradient(
+      135deg,
+      $color-brand-orange,
+      darken($color-brand-orange, 12%)
+    );
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    min-height: $modal-header-height;
+
+    @media (max-width: 768px) {
+      padding: 12px 16px;
+    }
+
+    .modal-title {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: white;
+    }
+
+    .close-button {
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      color: white;
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: $transition-smooth;
+
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.25);
+        transform: scale(1.05);
+      }
+    }
+  }
+
+  &.egreso .modal-header {
+    background: linear-gradient(135deg, #e74a3b, darken(#e74a3b, 10%));
+  }
+
+  // ============================================================
+  // MODAL BODY
+  // ============================================================
+
+  .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 24px;
+    background: linear-gradient(to bottom, #ffffff 0%, #fafbfc 100%);
+    max-height: calc(92vh - #{$modal-header-height} - 70px);
+
+    @media (max-width: 768px) {
+      padding: 16px;
+    }
+
+    &::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 4px;
+
+      &:hover {
+        background: #a8a8a8;
+      }
+    }
+  }
+
+  // ============================================================
+  // MODAL FOOTER
+  // ============================================================
+
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 24px;
+    background: linear-gradient(to top, #f8f9fa 0%, #ffffff 100%);
+    border-top: 2px solid #e3e7eb;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+
+    @media (max-width: 768px) {
+      padding: 12px 16px;
+    }
+
+    .modal-action-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: $transition-smooth;
+      border: none;
+
+      &.secondary {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border: 2px solid #dee2e6;
+        color: #495057;
+
+        &:hover:not(:disabled) {
+          background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+        }
+      }
+
+      &.success {
+        background: linear-gradient(
+          135deg,
+          #1cc88a 0%,
+          darken(#1cc88a, 8%) 100%
+        );
+        color: white;
+        box-shadow: 0 4px 14px rgba(#1cc88a, 0.35);
+
+        &:hover:not(:disabled) {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 18px rgba(#1cc88a, 0.4);
+        }
+      }
+
+      &.danger {
+        background: linear-gradient(
+          135deg,
+          #e74a3b 0%,
+          darken(#e74a3b, 8%) 100%
+        );
+        color: white;
+        box-shadow: 0 4px 14px rgba(#e74a3b, 0.35);
+
+        &:hover:not(:disabled) {
+          transform: translateY(-1px);
+        }
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+  }
+}
+
+// ============================================================
+// COMPACT LIQUIDACION FORM
+// ============================================================
+
+.liq-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  // ---- Payments table ----
+  .liq-payments-table {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    overflow: hidden;
+
+    .liq-table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      background: #f8fafc;
+      border-bottom: 1px solid #e5e7eb;
+
+      .liq-th-count {
+        font-size: 12px;
+        font-weight: 600;
+        color: #475569;
+      }
+      .liq-th-moneda {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 4px;
+        background: #dbeafe;
+        color: #1e40af;
+      }
+
+      .liq-th-billing-note {
+        margin-left: auto;
+        font-size: 11px;
+        font-weight: 600;
+        color: $color-tertiary-dark;
+        background: rgba($color-tertiary, 0.12);
+        border: 1px solid rgba($color-tertiary, 0.24);
+        border-radius: 999px;
+        padding: 4px 10px;
+      }
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+
+      thead th {
+        padding: 6px 12px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        border-bottom: 1px solid #f1f5f9;
+        text-align: left;
+        &.text-right {
+          text-align: right;
+        }
+      }
+
+      tbody td {
+        padding: 8px 12px;
+        border-bottom: 1px solid #f8fafc;
+        color: #334155;
+        &.text-right {
+          text-align: right;
+        }
+      }
+
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+      tbody tr:hover {
+        background: #f8fafc;
+      }
+
+      .row-num {
+        font-size: 11px;
+        color: #94a3b8;
+        font-weight: 500;
+        width: 28px;
+      }
+      .row-voucher .voucher-code {
+        font-family: "JetBrains Mono", "Fira Code", monospace;
+        font-size: 12px;
+        font-weight: 500;
+        color: #1e40af;
+        background: #eff6ff;
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+      .row-amount {
+        font-weight: 600;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 13px;
+      }
+
+      .row-billing {
+        .billing-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 96px;
+          padding: 4px 8px;
+          border-radius: 999px;
+          font-size: 11px;
+          font-weight: 700;
+          border: 1px solid transparent;
+
+          &.exportacion {
+            color: $color-tertiary-dark;
+            background: rgba($color-tertiary, 0.14);
+            border-color: rgba($color-tertiary, 0.24);
+          }
+
+          &.intangible {
+            color: darken($color-tertiary-dark, 10%);
+            background: rgba($color-tertiary-light, 0.18);
+            border-color: rgba($color-tertiary, 0.24);
+          }
+        }
+      }
+
+      .row-converted {
+        font-weight: 600;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 13px;
+        color: #059669;
+      }
+    }
+  }
+
+  // ---- Fields grid ----
+  .liq-fields-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 14px;
+  }
+
+  .liq-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+      .req {
+        color: #ef4444;
+        font-weight: 700;
+      }
+    }
+
+    input,
+    select,
+    textarea {
+      padding: 8px 12px;
+      font-size: 13px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 7px;
+      color: #1e293b;
+      background: #fff;
+      transition: border-color 0.2s;
+      &:focus {
+        outline: none;
+        border-color: $color-brand-orange;
+        box-shadow: 0 0 0 2px rgba($color-brand-orange, 0.1);
+      }
+      &::placeholder {
+        color: #94a3b8;
+      }
+      &.invalid {
+        border-color: #ef4444;
+      }
+      &.readonly-field,
+      &:read-only {
+        background: #f8fafc;
+        color: #64748b;
+        cursor: default;
+      }
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 50px;
+    }
+
+    // Compact FundoSelector override
+    .fundo-selector.compact {
+      .fundo-select {
+        padding: 8px 12px;
+        font-size: 13px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 7px;
+        width: 100%;
+        &:focus {
+          border-color: $color-brand-orange;
+          box-shadow: 0 0 0 2px rgba($color-brand-orange, 0.1);
+        }
+      }
+    }
+
+    // DatePicker override
+    .react-datepicker-wrapper {
+      width: 100%;
+    }
+    .custom-datepicker {
+      width: 100%;
+      padding: 8px 12px;
+      font-size: 13px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 7px;
+      &:focus {
+        outline: none;
+        border-color: $color-brand-orange;
+        box-shadow: 0 0 0 2px rgba($color-brand-orange, 0.1);
+      }
+      &.invalid {
+        border-color: #ef4444;
+      }
+    }
+  }
+
+  .liq-field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    @media (max-width: 480px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .liq-field-row--single {
+    grid-template-columns: minmax(220px, 1fr);
+  }
+
+  // ---- Collapsible details ----
+  .liq-details {
+    border: 1px solid #e2e8f0;
+    border-radius: 7px;
+    overflow: hidden;
+
+    summary {
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      cursor: pointer;
+      background: #f8fafc;
+      user-select: none;
+      &:hover {
+        background: #f1f5f9;
+      }
+      &::marker {
+        color: #94a3b8;
+      }
+    }
+
+    .liq-details-content {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      border-top: 1px solid #e2e8f0;
+    }
+  }
+
+  // ---- Evidencias ----
+  .liq-evidencias {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 14px;
+
+    .liq-ev-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #334155;
+
+      .ev-required {
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 4px;
+        background: #fef2f2;
+        color: #dc2626;
+        text-transform: uppercase;
+      }
+      .ev-optional {
+        font-size: 10px;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 4px;
+        background: #f0fdf4;
+        color: #16a34a;
+      }
+    }
+  }
+}
+
+// Validation feedback
+form.validated .liq-field {
+  input.invalid + .feedback,
+  select.invalid + .feedback {
+    display: block;
+    font-size: 11px;
+    color: #ef4444;
+    margin-top: 2px;
+  }
+}
+
+.liq-hint {
+  display: block;
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.calculated-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-weight: 500;
+  margin-left: 4px;
+}

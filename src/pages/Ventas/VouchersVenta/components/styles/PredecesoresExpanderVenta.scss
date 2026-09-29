@@ -1,0 +1,417 @@
+// PredecesoresExpanderVenta.scss
+// Collapsible section for viewing voucher venta version history
+@import "../../../../../styles/_variables.scss";
+
+.predecessors-expander-venta {
+  width: 100%;
+  margin: 0;
+  animation: slideDown 0.3s ease-out;
+  margin-top: 15px;
+  border-top: 2px solid rgba($primary, 0.15);
+  padding-top: 15px;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.predecessors-expander-venta {
+  .predecessors-toggle {
+    width: 100%;
+    padding: 14px 18px;
+    background: linear-gradient(
+      135deg,
+      rgba($primary, 0.08) 0%,
+      rgba($info, 0.08) 100%
+    );
+    border: 2px solid rgba($primary, 0.3);
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 14px;
+    font-weight: 600;
+    color: $text-dark;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 2px 8px rgba($primary, 0.1);
+
+    &:hover {
+      background: linear-gradient(
+        135deg,
+        rgba($primary, 0.12) 0%,
+        rgba($info, 0.12) 100%
+      );
+      border-color: rgba($primary, 0.5);
+      box-shadow: 0 4px 16px rgba($primary, 0.15);
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+
+    .history-icon {
+      font-size: 18px;
+      color: $primary;
+      flex-shrink: 0;
+      transition: transform 0.3s ease;
+    }
+
+    &:hover .history-icon {
+      transform: rotate(12deg) scale(1.1);
+    }
+
+    .expander-label {
+      flex: 1;
+      text-align: left;
+      color: $text-dark;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+
+    .expand-icon {
+      font-size: 20px;
+      color: $info;
+      flex-shrink: 0;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    &[aria-expanded="true"] .expand-icon {
+      transform: rotate(180deg);
+      color: $primary;
+    }
+  }
+
+  .predecessors-timeline {
+    padding: 18px;
+    position: relative;
+    background: linear-gradient(
+      135deg,
+      rgba(248, 249, 250, 0.8) 0%,
+      rgba(243, 244, 246, 0.8) 100%
+    );
+    border-radius: 0 0 10px 10px;
+    border: 1px solid rgba($primary, 0.2);
+    border-top: 2px solid rgba($primary, 0.2);
+    animation: slideDown 0.3s ease-out;
+    backdrop-filter: blur(10px);
+    margin-top: 2px;
+
+    .archive-notice {
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #e0f2fe 0%, #bfdbfe 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: #1e40af;
+      border-left: 4px solid #3b82f6;
+      box-shadow: 0 2px 6px rgba(59, 130, 246, 0.15);
+
+      svg {
+        font-size: 18px;
+        color: #2563eb;
+        flex-shrink: 0;
+      }
+
+      strong {
+        font-weight: 700;
+        color: #1e3a8a;
+      }
+    }
+
+    .predecessors-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 20px;
+
+      @media (max-width: 768px) {
+        grid-template-columns: 1fr;
+      }
+
+      .predecessor-item {
+        position: relative;
+        transition: all 0.25s ease;
+
+        &.inactive-voucher {
+          opacity: 0.85;
+
+          &:hover {
+            opacity: 0.95;
+          }
+        }
+
+        &.archived-version {
+          opacity: 0.9;
+          background: linear-gradient(
+            135deg,
+            rgba(#fef3c7, 0.6) 0%,
+            rgba(#fde68a, 0.6) 100%
+          );
+          border-radius: 8px;
+          padding: 8px;
+          border: 1px solid rgba(#f59e0b, 0.3);
+
+          &:hover {
+            opacity: 1;
+            box-shadow: 0 4px 12px rgba(#f59e0b, 0.15);
+            border-color: rgba(#f59e0b, 0.5);
+          }
+        }
+
+        .inactive-badge {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          background: linear-gradient(
+            135deg,
+            rgba($danger, 0.95) 0%,
+            darken($danger, 5%) 100%
+          );
+          color: white;
+          padding: 5px 14px;
+          border-radius: 6px;
+          font-size: 11px;
+          font-weight: 700;
+          z-index: 10;
+          box-shadow: 0 2px 6px rgba($danger, 0.3);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          border: 1px solid rgba(white, 0.3);
+          animation: pulse 2s ease-in-out infinite;
+        }
+
+        .archived-badge {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+          color: #78350f;
+          padding: 6px 14px;
+          border-radius: 6px;
+          font-size: 11px;
+          font-weight: 700;
+          z-index: 10;
+          box-shadow: 0 2px 8px rgba(#f59e0b, 0.4);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          border: 1px solid rgba(#92400e, 0.3);
+          animation: archivePulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+          0%,
+          100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.85;
+          }
+        }
+
+        @keyframes archivePulse {
+          0%,
+          100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.9;
+            transform: scale(0.98);
+          }
+        }
+
+        // Deshabilitar interacciones en vouchers inactivos
+        .voucher-card {
+          pointer-events: auto; // Permitir solo preview
+          filter: grayscale(0.2); // Efecto visual sutil
+
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+          }
+
+          // Deshabilitar todos los botones excepto preview
+          .voucher-footer {
+            .action-button {
+              // Deshabilitar editar y eliminar
+              &.edit,
+              &.delete,
+              &.edit.no-permission,
+              &.edit.pending-permission,
+              &.edit.approved-permission {
+                opacity: 0.4;
+                cursor: not-allowed;
+                pointer-events: none;
+                filter: grayscale(0.8);
+              }
+
+              // Permitir solo preview
+              &.preview {
+                opacity: 1;
+                pointer-events: auto;
+                cursor: pointer;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 1200px) {
+  .predecessors-expander-venta {
+    .predecessors-toggle {
+      padding: 12px 16px;
+      font-size: 13px;
+
+      .history-icon {
+        font-size: 17px;
+      }
+
+      .expand-icon {
+        font-size: 19px;
+      }
+    }
+
+    .predecessors-timeline {
+      padding: 16px;
+    }
+  }
+}
+
+// Compact Archived Version Cards
+.archived-versions-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.archived-version-card {
+  background: linear-gradient(
+    135deg,
+    rgba(#fef3c7, 0.7) 0%,
+    rgba(#fde68a, 0.7) 100%
+  );
+  border: 1px solid rgba(#f59e0b, 0.3);
+  border-radius: 8px;
+  padding: 14px;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 6px rgba(#f59e0b, 0.1);
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(#f59e0b, 0.2);
+    border-color: rgba(#f59e0b, 0.5);
+    transform: translateY(-2px);
+  }
+
+  .archived-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(#f59e0b, 0.2);
+
+    .archived-badge {
+      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+      color: #78350f;
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 4px rgba(#f59e0b, 0.3);
+    }
+
+    .archived-date {
+      color: #92400e;
+      font-size: 12px;
+      font-weight: 600;
+    }
+  }
+
+  .archived-content {
+    margin-bottom: 12px;
+
+    .archived-row {
+      padding: 6px 0;
+      font-size: 13px;
+      color: #1f2937;
+      border-bottom: 1px solid rgba(#f59e0b, 0.1);
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      strong {
+        color: #78350f;
+        font-weight: 600;
+        margin-right: 6px;
+      }
+    }
+  }
+
+  .archived-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+
+    .btn-archived-action,
+    .btn-archived-delete {
+      padding: 6px 12px;
+      border-radius: 5px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+      flex: 1;
+      min-width: 110px;
+      text-align: center;
+    }
+
+    .btn-archived-action {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+      border-color: rgba(#1d4ed8, 0.3);
+
+      &:hover {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        box-shadow: 0 2px 6px rgba(#3b82f6, 0.4);
+        transform: translateY(-1px);
+      }
+    }
+
+    .btn-archived-delete {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white;
+      border-color: rgba(#b91c1c, 0.3);
+
+      &:hover {
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        box-shadow: 0 2px 6px rgba(#ef4444, 0.4);
+        transform: translateY(-1px);
+      }
+    }
+  }
+}

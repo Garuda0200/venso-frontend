@@ -1,0 +1,118 @@
+.servicios-container .movilidades-routes-view {
+  .grouped-controls {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 14px;
+  }
+
+  .tickets-grouped-view {
+    margin-top: 0;
+  }
+}
+
+.servicios-container .ticket-group-card.movilidad-route-card {
+  .group-header {
+    gap: 18px;
+  }
+
+  .group-info {
+    min-width: 260px;
+    flex: 1;
+
+    .group-icon {
+      color: var(--color-primary);
+    }
+  }
+
+  &.expanded {
+    border-color: rgba(var(--color-primary-rgb), 0.25);
+  }
+
+  .route-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-left: auto;
+
+    .route-metric {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: var(--radius-pill);
+      background: var(--color-bg-light);
+      border: 1px solid var(--color-border-light);
+      color: var(--color-text-secondary);
+      font-size: 12px;
+      font-weight: var(--font-weight-bold);
+
+      svg {
+        color: var(--color-primary);
+      }
+    }
+  }
+
+  .group-content {
+    overflow-x: auto;
+  }
+}
+
+.servicios-container .vehicle-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  .vehicle-icon-box {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: linear-gradient(
+      135deg,
+      var(--color-primary-light),
+      rgba(255, 140, 0, 0.08)
+    );
+    color: var(--color-primary);
+    border: 1px solid rgba(var(--color-primary-rgb), 0.14);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex: 0 0 auto;
+  }
+
+  .vehicle-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+
+    .vehicle-name {
+      color: var(--text-main);
+      font-size: 14px;
+      font-weight: var(--font-weight-bold);
+    }
+
+    .vehicle-status {
+      display: inline-flex;
+    }
+  }
+}
+
+.servicios-container .movilidad-variants-table {
+  min-width: 940px;
+}
+
+@media (max-width: 900px) {
+  .servicios-container .ticket-group-card.movilidad-route-card {
+    .group-header {
+      flex-wrap: wrap;
+    }
+
+    .route-metrics {
+      width: 100%;
+      justify-content: flex-start;
+      margin-left: 0;
+    }
+  }
+}

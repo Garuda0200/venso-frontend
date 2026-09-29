@@ -1,0 +1,156 @@
+// Variables: usar var(--xxx) de :root (index.scss). @import mantenido para funciones SCSS.
+@import "../../../../../../../../styles/_variables";
+
+.service-category-buttons {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+  border: 1px solid #edf2f7;
+
+  .category-header {
+    text-align: left;
+    margin-bottom: 12px;
+    padding-left: 4px;
+
+    h3 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 800;
+      color: #1e293b;
+      letter-spacing: -0.01em;
+    }
+
+    p {
+      margin: 2px 0 0;
+      color: #94a3b8;
+      font-size: 12px;
+      font-weight: 500;
+    }
+  }
+
+  .category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 8px;
+  }
+
+  .category-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #ffffff;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    color: #475569;
+    min-height: 60px;
+    position: relative;
+
+    &:hover {
+      border-color: var(--category-color);
+      background: rgba(var(--category-color-rgb, 52, 152, 219), 0.04);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    &.selected {
+      border-color: var(--category-color);
+      background: rgba(var(--category-color-rgb, 52, 152, 219), 0.08);
+      color: var(--category-color);
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(var(--category-color-rgb), 0.1);
+    }
+  }
+
+  .category-icon {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8fafc;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    transition: all 0.2s;
+
+    svg {
+      font-size: 16px;
+      color: var(--category-color);
+    }
+
+    .category-button:hover & {
+      background: #fff;
+      transform: scale(1.1);
+    }
+
+    .category-button.selected & {
+      background: var(--category-color);
+      svg {
+        color: #fff;
+      }
+    }
+  }
+
+  .category-info {
+    text-align: center;
+    .category-name {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+  }
+}
+
+// COMPACT MODE
+.service-category-compact {
+  .compact-categories {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 4px 2px 8px;
+    scrollbar-width: none;
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    .compact-category-btn {
+      flex-shrink: 0;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      color: #64748b;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+
+      &:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+        color: #1e293b;
+      }
+
+      &.selected {
+        background: var(--color-primary);
+        color: white;
+        border-color: var(--color-primary);
+        box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.2);
+      }
+
+      svg {
+        font-size: 16px;
+      }
+    }
+  }
+}

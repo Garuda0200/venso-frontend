@@ -1,0 +1,460 @@
+/* PassengerSelectorModal.scss */
+
+/* ===========================
+ Variables & Base Theme
+ =========================== */
+:root {
+  --pax-bg: rgba(111, 206, 56, 0.55);
+  --pax-surface: #ffffff;
+  --pax-surface-2: #f7f8fa;
+  --pax-text: #0f172a;
+  --pax-text-muted: #475569;
+  --pax-border: #e5e7eb;
+  --pax-primary: #2563eb;
+  --pax-primary-contrast: #ffffff;
+  --pax-accent: #22c55e;
+  --pax-warning: #f59e0b;
+  --pax-shadow: 0 10px 30px rgba(2, 6, 23, 0.15);
+  --pax-radius: 16px;
+  --pax-radius-sm: 12px;
+  --pax-gap: 16px;
+  --pax-gap-lg: 20px;
+  --pax-grid-min: 220px;
+  --pax-transition: 180ms ease;
+  --pax-transition-fast: 120ms ease;
+  --pax-focus: 0 0 0 3px rgba(37, 99, 235, 0.35);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --pax-bg: rgba(5, 6, 10, 0.65);
+    --pax-surface: #0b1220;
+    --pax-surface-2: #0f172a;
+    --pax-text: #e6edf7;
+    --pax-text-muted: #9aa7bd;
+    --pax-border: #1e293b;
+    --pax-primary: #3b82f6;
+    --pax-primary-contrast: #0b1220;
+    --pax-accent: #22c55e;
+    --pax-warning: #f59e0b;
+    --pax-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
+  }
+}
+
+/* ===========================
+ Overlay & Modal
+ =========================== */
+.pax-modal-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--pax-bg);
+  z-index: 9999;
+  animation: pax-fade-in 180ms ease;
+  padding: 20px;
+}
+
+.pax-modal {
+  width: clamp(320px, 92vw, 980px);
+  max-height: 86vh;
+  background: var(--pax-surface);
+  color: var(--pax-text);
+  border: 1px solid var(--pax-border);
+  border-radius: var(--pax-radius);
+  box-shadow: var(--pax-shadow);
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto; /* header, actions, body (sections), footer */
+  animation: pax-slide-up 200ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  position: relative;
+}
+
+/* Scroll container (the whole modal) */
+.pax-modal {
+  overflow: hidden;
+}
+.pax-modal > .pax-section:last-of-type {
+  margin-bottom: 8px;
+}
+
+/* ===========================
+ Header
+ =========================== */
+.pax-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--pax-border);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--pax-surface) 92%, #fff 8%) 0%,
+    var(--pax-surface) 100%
+  );
+}
+
+.pax-modal__header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+/* Close icon button */
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid var(--pax-border);
+  background: var(--pax-surface-2);
+  color: var(--pax-text);
+  cursor: pointer;
+  transition:
+    transform var(--pax-transition-fast),
+    background var(--pax-transition);
+}
+.icon-btn:hover {
+  transform: translateY(-1px);
+  background: color-mix(in oklab, var(--pax-surface-2) 82%, #fff 18%);
+}
+.icon-btn:active {
+  transform: translateY(0);
+}
+.icon-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--pax-focus);
+}
+
+/* ===========================
+ Global Actions (Top)
+ =========================== */
+.pax-modal__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-bottom: 1px dashed var(--pax-border);
+  background: var(--pax-surface);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+/* Buttons */
+.btn {
+  appearance: none;
+  border: 1px solid var(--pax-primary);
+  background: var(--pax-primary);
+  color: var(--pax-primary-contrast);
+  padding: 10px 16px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  border-radius: 12px;
+  cursor: pointer;
+  transition:
+    transform var(--pax-transition-fast),
+    box-shadow var(--pax-transition),
+    background var(--pax-transition);
+}
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.25);
+}
+.btn:active {
+  transform: translateY(0);
+}
+.btn:focus-visible {
+  outline: none;
+  box-shadow: var(--pax-focus);
+}
+
+.btn.ghost {
+  background: transparent;
+  color: var(--pax-text);
+  border: 1px solid var(--pax-border);
+}
+.btn.ghost:hover {
+  background: var(--pax-surface-2);
+  box-shadow: none;
+}
+
+/* Counter */
+.pax-modal__counter {
+  margin-left: auto;
+  font-size: 0.9rem;
+  color: var(--pax-text-muted);
+}
+.pax-modal__counter strong {
+  color: var(--pax-text);
+}
+
+/* ===========================
+ Sections (Adults / Children)
+ =========================== */
+.pax-section {
+  padding: 14px 16px 6px;
+}
+.pax-section + .pax-section {
+  border-top: 1px dashed var(--pax-border);
+}
+
+.pax-section__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  position: sticky;
+  top: 56px; /* below global actions */
+  background: var(--pax-surface);
+  padding: 8px 0;
+  z-index: 1;
+}
+
+.pax-section__header h4 {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.pax-section__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.pax-section__counter {
+  font-size: 0.85rem;
+  color: var(--pax-text-muted);
+}
+
+/* ===========================
+ Grid
+ =========================== */
+.pax-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--pax-grid-min), 1fr));
+  gap: var(--pax-gap);
+}
+
+/* ===========================
+ Cards
+ =========================== */
+.pax-card {
+  position: relative;
+  border: 1px solid var(--pax-border);
+  border-radius: var(--pax-radius-sm);
+  background: var(--pax-surface-2);
+  padding: 14px 14px 12px 14px;
+  cursor: pointer;
+  transition:
+    transform var(--pax-transition-fast),
+    box-shadow var(--pax-transition),
+    border-color var(--pax-transition);
+  box-shadow: 0 2px 8px rgba(2, 6, 23, 0.04);
+  outline: none;
+}
+.pax-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(2, 6, 23, 0.08);
+}
+.pax-card:focus-visible {
+  box-shadow: var(--pax-focus);
+}
+
+.pax-card.is-selected {
+  border-color: color-mix(in oklab, var(--pax-primary) 75%, #ffffff 25%);
+  background:
+    radial-gradient(
+      1200px 80px at 10% -10%,
+      color-mix(in oklab, var(--pax-primary) 8%, transparent 92%),
+      transparent
+    ),
+    var(--pax-surface-2);
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.15);
+}
+
+/* Check bubble */
+.pax-card__check {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--pax-border);
+  background: #fff;
+  color: var(--pax-accent);
+  transition:
+    background var(--pax-transition),
+    border-color var(--pax-transition),
+    transform var(--pax-transition-fast);
+}
+.pax-card.is-selected .pax-card__check {
+  background: var(--pax-primary);
+  border-color: var(--pax-primary);
+  color: var(--pax-primary-contrast);
+  transform: scale(1.06);
+}
+
+/* Name & Tag */
+.pax-card__name {
+  font-weight: 700;
+  font-size: 0.98rem;
+  margin-bottom: 6px;
+  padding-right: 36px; /* room for check */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pax-card__tag {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--pax-text-muted);
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid var(--pax-border);
+  padding: 4px 8px;
+  border-radius: 999px;
+}
+
+/* Info table inside cards */
+.pax-card__info {
+  margin-top: 10px;
+  background: color-mix(in oklab, var(--pax-surface) 88%, #fff 12%);
+  border: 1px dashed var(--pax-border);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 6px;
+}
+
+.pax-info-row {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  align-items: start;
+  column-gap: 10px;
+  row-gap: 2px;
+  font-size: 0.86rem;
+}
+.pax-info-label {
+  color: var(--pax-text-muted);
+  font-weight: 600;
+}
+.pax-info-value {
+  color: var(--pax-text);
+  overflow-wrap: anywhere;
+  opacity: 0.95;
+}
+
+/* ===========================
+ Footer
+ =========================== */
+.pax-modal__footer {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--pax-border);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--pax-surface) 85%, transparent 15%),
+    var(--pax-surface)
+  );
+  z-index: 2;
+}
+
+.pax-modal__summary {
+  margin-right: auto;
+  font-size: 0.95rem;
+  color: var(--pax-text-muted);
+}
+.pax-modal__footer .btn {
+  min-width: 160px;
+}
+
+/* ===========================
+ Animations
+ =========================== */
+@keyframes pax-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes pax-slide-up {
+  from {
+    transform: translateY(8px);
+    opacity: 0.98;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ===========================
+ Utilities
+ =========================== */
+@media (max-width: 560px) {
+  .pax-modal {
+    width: 96vw;
+    grid-template-rows: auto auto 1fr auto;
+  }
+  .pax-section__header {
+    top: 56px;
+  }
+  .pax-info-row {
+    grid-template-columns: 1fr;
+  }
+  .pax-modal__actions {
+    flex-wrap: wrap;
+  }
+  .pax-modal__counter {
+    width: 100%;
+    margin-left: 0;
+    text-align: left;
+  }
+}
+
+/* Custom scrollbar for modal (WebKit) */
+.pax-modal::-webkit-scrollbar,
+.pax-grid::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.pax-modal::-webkit-scrollbar-thumb,
+.pax-grid::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--pax-text-muted) 35%, transparent 65%);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.pax-modal::-webkit-scrollbar-track,
+.pax-grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .pax-modal-overlay,
+  .pax-modal {
+    animation: none;
+  }
+  .btn,
+  .icon-btn,
+  .pax-card,
+  .pax-card__check {
+    transition: none;
+  }
+}

@@ -1,0 +1,436 @@
+@import "../../../../../styles/_variables.scss";
+@import "../../../../../styles/mixins.scss";
+
+.vouchers-filters {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e5e7eb;
+
+  .filters-row {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+
+    // Search container
+    .search-container {
+      flex: 1;
+      min-width: 300px;
+      position: relative;
+
+      .search-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9ca3af;
+        font-size: 20px;
+        pointer-events: none;
+      }
+
+      .search-input {
+        width: 100%;
+        height: 44px;
+        padding: 0 40px 0 46px;
+        border: 2px solid #e5e7eb;
+        border-radius: 10px;
+        font-size: 15px;
+        color: #1f2937;
+        background: #f9fafb;
+        transition: all 0.2s ease;
+
+        &:focus {
+          outline: none;
+          border-color: $primary;
+          background: white;
+          box-shadow: 0 0 0 3px rgba($primary, 0.1);
+        }
+
+        &::placeholder {
+          color: #9ca3af;
+        }
+      }
+
+      .clear-search {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 28px;
+        height: 28px;
+        border: none;
+        background: #f3f4f6;
+        border-radius: 50%;
+        color: #6b7280;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: #e5e7eb;
+          color: #374151;
+        }
+
+        svg {
+          font-size: 18px;
+        }
+      }
+    }
+
+    // Date filters
+    .date-filters {
+      display: flex;
+      gap: 12px;
+
+      .date-filter-item {
+        position: relative;
+        display: flex;
+        align-items: center;
+        background: #f9fafb;
+        border: 2px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 0 14px;
+        height: 44px;
+        min-width: 180px;
+        transition: all 0.2s ease;
+
+        &:focus-within {
+          border-color: $primary;
+          background: white;
+          box-shadow: 0 0 0 3px rgba($primary, 0.1);
+        }
+
+        .date-icon {
+          color: #9ca3af;
+          font-size: 18px;
+          margin-right: 8px;
+        }
+
+        .date-input {
+          flex: 1;
+          border: none;
+          background: transparent;
+          font-size: 14px;
+          color: #1f2937;
+          outline: none;
+          cursor: pointer;
+
+          &::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+
+            &:hover {
+              opacity: 1;
+            }
+          }
+        }
+
+        .date-label {
+          position: absolute;
+          left: 42px;
+          top: -8px;
+          background: white;
+          padding: 0 6px;
+          font-size: 11px;
+          font-weight: 600;
+          color: #6b7280;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+      }
+    }
+
+    // Select filter
+    .voucher-select-filter {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background: #f9fafb;
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 0 14px;
+      height: 44px;
+      min-width: 200px;
+      transition: all 0.2s ease;
+
+      &:focus-within {
+        border-color: $primary;
+        background: white;
+        box-shadow: 0 0 0 3px rgba($primary, 0.1);
+      }
+
+      .filter-icon {
+        color: #9ca3af;
+        font-size: 18px;
+        margin-right: 10px;
+      }
+
+      .voucher-select {
+        flex: 1;
+        border: none;
+        background: transparent;
+        font-size: 14px;
+        color: #1f2937;
+        font-weight: 500;
+        outline: none;
+        cursor: pointer;
+        appearance: none;
+        padding-right: 24px;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%239ca3af' d='M1.41 0L6 4.58 10.59 0 12 1.41l-6 6-6-6z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right center;
+      }
+
+      &.seller-filter {
+        min-width: 260px;
+        background:
+          linear-gradient(180deg, #ffffff 0%, #f8fafc 100%),
+          #ffffff;
+        border-color: #dbe5ee;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.7);
+
+        .filter-icon {
+          color: $primary;
+        }
+
+        .voucher-select {
+          font-weight: 700;
+          color: #0f172a;
+        }
+      }
+    }
+
+    // Filter actions
+    .filter-actions {
+      display: flex;
+      gap: 8px;
+      margin-left: auto;
+
+      button {
+        height: 44px;
+        padding: 0 18px;
+        border: none;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+
+        svg {
+          font-size: 18px;
+        }
+      }
+
+
+
+      .clear-filters-btn {
+        background: #fee2e2;
+        color: #dc2626;
+
+        &:hover {
+          background: #fecaca;
+          transform: translateY(-2px);
+        }
+
+        &:active {
+          transform: translateY(0);
+        }
+      }
+
+      .refresh-btn {
+        width: 44px;
+        padding: 0;
+        background: #f3f4f6;
+        color: #6b7280;
+        justify-content: center;
+
+        &:hover {
+          background: #e5e7eb;
+          color: #374151;
+          transform: translateY(-2px);
+        }
+
+        &:active {
+          transform: translateY(0);
+        }
+
+        span {
+          display: none;
+        }
+      }
+    }
+  }
+}
+
+// Responsive design
+@media (max-width: 1200px) {
+  .vouchers-filters {
+    .filters-row {
+      .search-container {
+        min-width: 250px;
+      }
+
+      .date-filters {
+        flex-wrap: wrap;
+
+        .date-filter-item {
+          min-width: 160px;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .vouchers-filters {
+    padding: 16px;
+
+    .filters-row {
+      flex-direction: column;
+      align-items: stretch;
+
+      .search-container,
+      .date-filters,
+      .voucher-select-filter,
+      .filter-actions {
+        width: 100%;
+      }
+
+      .search-container {
+        min-width: unset;
+      }
+
+      .date-filters {
+        flex-direction: column;
+
+        .date-filter-item {
+          width: 100%;
+          min-width: unset;
+        }
+      }
+
+      .voucher-select-filter {
+        min-width: unset;
+      }
+
+      .filter-actions {
+        margin-left: 0;
+
+        button {
+          flex: 1;
+        }
+
+        .refresh-btn {
+          flex: 0 0 44px;
+        }
+      }
+    }
+  }
+}
+
+// Compact toolbar variant used inside the sticky vouchers command area.
+.vouchers-venta-sticky-top .vouchers-filters {
+  margin: 0;
+  padding: 5px;
+  border-color: #dde8e2;
+  border-radius: 10px;
+  background: #f7faf8;
+  box-shadow: none;
+
+  .filters-row {
+    display: grid;
+    grid-template-columns: minmax(220px, 1.4fr) minmax(290px, 0.9fr) minmax(190px, 0.8fr) auto;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .search-container {
+    min-width: 0;
+
+    .search-input {
+      height: 34px;
+      padding-left: 35px;
+      border-width: 1px;
+      border-radius: 8px;
+      background: #fff;
+      font-size: 11px;
+    }
+
+    .search-icon {
+      left: 10px;
+      font-size: 16px;
+    }
+  }
+
+  .date-filters {
+    min-width: 0;
+    gap: 6px;
+
+    .date-filter-item {
+      min-width: 0;
+      width: 100%;
+      height: 34px;
+      padding: 0 9px;
+      border-width: 1px;
+      border-radius: 8px;
+
+      .date-input {
+        font-size: 10px;
+      }
+
+      .date-label {
+        display: none;
+      }
+    }
+  }
+
+  .voucher-select-filter {
+    min-width: 0 !important;
+    height: 34px;
+    padding: 0 9px;
+    border-width: 1px;
+    border-radius: 8px;
+
+    .voucher-select {
+      font-size: 10px;
+    }
+  }
+
+  .filter-actions {
+    margin-left: 0;
+    gap: 5px;
+
+    button {
+      height: 34px;
+      padding: 0 9px;
+      border-radius: 8px;
+      font-size: 9px;
+    }
+
+    .refresh-btn {
+      width: 34px;
+    }
+  }
+
+  @media (max-width: 1080px) {
+    .filters-row {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media (max-width: 620px) {
+    .filters-row {
+      grid-template-columns: 1fr;
+    }
+  }
+}

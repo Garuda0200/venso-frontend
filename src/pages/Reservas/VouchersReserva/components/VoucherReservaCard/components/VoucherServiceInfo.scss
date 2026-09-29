@@ -1,0 +1,132 @@
+.voucher-service-info {
+  display: flex;
+  min-height: 100%;
+  margin: 0;
+  padding: var(--spacing-md);
+  flex-direction: column;
+  justify-content: center;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+
+  .service-overview {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+
+    &__title {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+      color: var(--color-primary-dark);
+      font-size: 10px;
+      font-weight: var(--font-weight-bold);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+
+      svg {
+        flex: 0 0 auto;
+        font-size: 16px;
+      }
+    }
+
+    strong {
+      display: inline-flex;
+      min-width: 46px;
+      height: 24px;
+      align-items: center;
+      justify-content: center;
+      padding: 0 9px;
+      border: 1px solid rgba(var(--color-primary-rgb), 0.18);
+      border-radius: var(--radius-pill);
+      background: var(--color-primary-light);
+      color: var(--color-primary-dark);
+      font-size: 11px;
+      font-weight: var(--font-weight-bold);
+    }
+  }
+
+  .service-progress {
+    height: 6px;
+    margin-bottom: var(--spacing-sm);
+    overflow: hidden;
+    border-radius: var(--radius-pill);
+    background: var(--gray-200);
+
+    span {
+      display: block;
+      height: 100%;
+      min-width: 8px;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--color-primary-dark), var(--color-primary));
+      transition: width 0.25s ease;
+    }
+  }
+
+  .service-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .service-stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    padding: 7px;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    background: var(--color-bg-primary);
+
+    &__icon {
+      width: 24px;
+      height: 24px;
+      flex: 0 0 auto;
+      padding: 5px;
+      border-radius: 50%;
+      background: var(--color-primary-light);
+      color: var(--color-primary);
+    }
+
+    div {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    span {
+      max-width: 58px;
+      overflow: hidden;
+      color: var(--color-text-light);
+      font-size: 8px;
+      font-weight: var(--font-weight-bold);
+      letter-spacing: 0.04em;
+      text-overflow: ellipsis;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    strong {
+      color: var(--color-text-primary);
+      font-size: 14px;
+      line-height: 1;
+    }
+
+    &--pending .service-stat__icon {
+      background: var(--color-warning-light);
+      color: var(--color-warning-dark);
+    }
+  }
+}
+
+@media (max-width: 1280px) {
+  .voucher-service-info .service-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

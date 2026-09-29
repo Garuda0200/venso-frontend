@@ -1,0 +1,113 @@
+/*
+ * Venso Tours brand layer.
+ * The operational UI remains intact while these overrides provide the
+ * official magenta / gray / black / white visual language from the brand guide.
+ */
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap");
+
+:root {
+  --venso-magenta: #ff007e;
+  --venso-magenta-rgb: 255, 0, 126;
+  --venso-gray: #7c7b7a;
+  --venso-black: #000000;
+  --venso-white: #ffffff;
+
+  --color-primary: var(--venso-magenta);
+  --color-primary-light: rgba(var(--venso-magenta-rgb), 0.1);
+  --color-primary-dark: #d9006b;
+  --color-primary-darker: #ac0055;
+  --color-primary-hover: #e60071;
+  --color-primary-rgb: var(--venso-magenta-rgb);
+  --color-secondary: var(--venso-gray);
+  --color-accent: var(--venso-black);
+  --color-accent-light: rgba(0, 0, 0, 0.08);
+  --color-accent-dark: #000000;
+  --color-tertiary: #ff4ca5;
+  --color-tertiary-light: #ff8fc8;
+  --color-tertiary-dark: #cc0065;
+  --color-tertiary-rgb: 255, 0, 126;
+  --font-family-base: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-family-heading: "Antonia H2", "Noto Serif", Georgia, serif;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font-family-base);
+  background: var(--color-bg-light);
+}
+
+h1,
+h2,
+.brand-heading {
+  font-family: var(--font-family-heading);
+}
+
+::selection {
+  color: var(--color-text-white);
+  background: var(--color-primary);
+}
+
+:is(button, .btn, .p-button):focus-visible,
+:is(a, input, select, textarea):focus-visible {
+  outline: 3px solid rgba(var(--venso-magenta-rgb), 0.28);
+  outline-offset: 2px;
+}
+
+/* High-level application chrome */
+.sidebar,
+.sidebar-container,
+.app-sidebar,
+[class*="sidebar"] {
+  --sidebar-accent: var(--venso-magenta);
+}
+
+:is(.primary-button, .btn-primary, .p-button-primary, button[type="submit"]):not(:disabled) {
+  border-color: var(--venso-magenta);
+  background-color: var(--venso-magenta);
+}
+
+:is(.primary-button, .btn-primary, .p-button-primary, button[type="submit"]):not(:disabled):hover {
+  border-color: #d9006b;
+  background-color: #d9006b;
+}
+
+/* Quote/PDF chrome */
+.pdf-preview-modal__header,
+.pdf-editor-view__header,
+.hotel-pricing-preview__header,
+.hpp-header,
+.pdf-hotel-preview-header,
+.edicion-cotizacion-header {
+  border-bottom-color: var(--venso-magenta) !important;
+  background: var(--color-accent) !important;
+}
+
+.hpp-filter-chips button[aria-pressed="true"],
+.pdf-hotel-filter-chips button[aria-pressed="true"],
+.pdf-hotel-filter-chips--preview button[aria-pressed="true"],
+.category-chip.active,
+.filter-chip.active {
+  color: var(--color-text-white) !important;
+  border-color: var(--venso-magenta) !important;
+  background: var(--venso-magenta) !important;
+}
+
+/* Modal headers preserve semantic content but adopt the brand. */
+.modal-header,
+.p-dialog .p-dialog-header,
+.hotel-pricing-modal__header {
+  border-bottom: 3px solid var(--venso-magenta);
+}
+
+.brand-logo--white {
+  content: url("/brand/logo-principal-blanco.webp");
+}
+
+.brand-icon--white {
+  content: url("/brand/isotipo-blanco.webp");
+}

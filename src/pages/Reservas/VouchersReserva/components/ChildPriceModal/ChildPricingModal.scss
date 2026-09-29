@@ -1,0 +1,133 @@
+/* Reutiliza el overlay/contenedor del ServicePicker */
+.child-pricing-modal {
+  width: 560px;
+  max-width: 96vw;
+}
+
+.child-modal-body {
+  padding: 12px 2px 8px;
+}
+
+.child-modal-body .row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.child-modal-body .field label {
+  display: block;
+  font-size: 12px;
+  color: #667085;
+  margin-bottom: 4px;
+}
+
+.child-modal-body .field .readonly {
+  background: #f6f7f9;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.mode-switch {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.mode-switch button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.mode-switch button.active {
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
+}
+
+.value-input {
+  margin: 10px 0 8px;
+}
+
+.value-input label {
+  display: block;
+  font-size: 12px;
+  color: #667085;
+  margin-bottom: 6px;
+}
+
+.value-input input {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.preview {
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: #f9fafb;
+  border: 1px solid #eef0f3;
+  border-radius: 10px;
+}
+
+.preview-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.preview-total {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed #e5e7eb;
+}
+
+.child-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.child-modal-actions .btn-cancel,
+.child-modal-actions .btn-apply {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.child-modal-actions .btn-cancel {
+  background: #fff;
+  border-color: #e5e7eb;
+  color: #374151;
+}
+
+.child-modal-actions .btn-apply {
+  background: #0ea5e9;
+  color: #fff;
+}
+
+.child-modal-actions .btn-apply:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

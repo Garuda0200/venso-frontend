@@ -1,0 +1,102 @@
+.post-sale-request-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(15, 23, 42, 0.58);
+  backdrop-filter: blur(3px);
+}
+
+.post-sale-request-modal {
+  width: min(500px, 100%);
+  border-radius: 16px;
+  background: var(--surface-card, #fff);
+  color: var(--text-color, #172033);
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.24);
+  padding: 20px;
+}
+
+.post-sale-request-modal header {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.post-sale-request-modal h3 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 3px 0 4px;
+  font-size: 1.08rem;
+}
+
+.post-sale-request-modal header p {
+  margin: 0;
+  color: var(--text-color-secondary, #64748b);
+  font-size: 0.84rem;
+}
+
+.post-sale-request-kicker {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #b45309;
+}
+
+.post-sale-request-modal label {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.post-sale-request-modal textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 112px;
+  resize: vertical;
+  border: 1px solid var(--surface-border, #d7dee8);
+  border-radius: 11px;
+  padding: 11px 12px;
+  background: var(--surface-ground, #f8fafc);
+  color: inherit;
+  font: inherit;
+  outline: none;
+}
+
+.post-sale-request-modal textarea:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.post-sale-request-modal footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 16px;
+}
+
+.post-sale-request-modal button {
+  border: 0;
+  border-radius: 9px;
+  padding: 8px 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.post-sale-request-modal button:disabled { opacity: 0.55; cursor: not-allowed; }
+.post-sale-request-modal .primary { background: #2563eb; color: #fff; }
+.post-sale-request-modal .secondary { background: var(--surface-hover, #e8edf4); color: inherit; }
+.post-sale-request-modal .icon-close { padding: 6px; background: transparent; font-size: 1.2rem; }
+
+@media (max-width: 560px) {
+  .post-sale-request-backdrop { padding: 12px; }
+  .post-sale-request-modal { padding: 18px; border-radius: 14px; }
+  .post-sale-request-modal footer { width: 100%; }
+  .post-sale-request-modal footer button { flex: 1; }
+}

@@ -1,0 +1,1345 @@
+.estado-contabilidad-page {
+  min-height: 100vh;
+  padding: 28px;
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(25, 118, 210, 0.12),
+      transparent 34%
+    ),
+    linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+  color: #102033;
+
+  * {
+    box-sizing: border-box;
+  }
+
+  &.estado-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 14px;
+    font-weight: 700;
+    color: #0f766e;
+
+    .spin {
+      animation: estado-spin 1s linear infinite;
+      font-size: 2rem;
+    }
+  }
+}
+
+@keyframes estado-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.estado-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  padding: 28px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #0f766e 0%, #2563eb 100%);
+  color: white;
+  box-shadow: 0 20px 45px rgba(15, 118, 110, 0.22);
+
+  h1 {
+    margin: 6px 0 10px;
+    font-size: clamp(1.6rem, 3vw, 2.3rem);
+    line-height: 1.1;
+  }
+
+  p {
+    margin: 0;
+    max-width: 840px;
+    color: rgba(255, 255, 255, 0.86);
+    line-height: 1.6;
+  }
+}
+
+.estado-eyebrow {
+  display: inline-flex;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.estado-refresh-button,
+.estado-view-tabs button,
+.estado-link-button {
+  border: 0;
+  cursor: pointer;
+  font-weight: 800;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+}
+
+.estado-refresh-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  color: #0f766e;
+  background: #ffffff;
+  white-space: nowrap;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.16);
+}
+
+.estado-filters-card,
+.estado-report-card {
+  margin-bottom: 22px;
+  padding: 22px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(10px);
+}
+
+.estado-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  color: #0f766e;
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.estado-filters-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(140px, 1fr));
+  gap: 16px;
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    color: #475569;
+    font-size: 0.83rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  input,
+  select {
+    min-height: 42px;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    background: #ffffff;
+    color: #0f172a;
+    font-size: 0.94rem;
+    text-transform: none;
+    letter-spacing: 0;
+    outline: none;
+
+    &:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+    }
+  }
+}
+
+.estado-filter-wide {
+  grid-column: span 2;
+}
+
+.estado-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(190px, 1fr));
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.estado-summary-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 22px;
+  background: white;
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+
+  > svg {
+    flex: 0 0 48px;
+    width: 48px;
+    height: 48px;
+    padding: 12px;
+    border-radius: 16px;
+    color: white;
+  }
+
+  span,
+  small {
+    display: block;
+  }
+
+  span {
+    color: #64748b;
+    font-size: 0.86rem;
+    font-weight: 800;
+  }
+
+  strong {
+    display: block;
+    margin: 4px 0;
+    color: #0f172a;
+    font-size: 1.28rem;
+  }
+
+  small {
+    color: #94a3b8;
+    font-weight: 700;
+  }
+
+  &.saldo > svg {
+    background: linear-gradient(135deg, #2563eb, #06b6d4);
+  }
+  &.ingreso > svg {
+    background: linear-gradient(135deg, #059669, #22c55e);
+  }
+  &.egreso > svg {
+    background: linear-gradient(135deg, #dc2626, #fb7185);
+  }
+  &.transferencia > svg {
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+  }
+}
+
+.estado-view-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 22px;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 12px 18px;
+    border-radius: 14px;
+    color: #334155;
+    background: #ffffff;
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.07);
+
+    &.active {
+      color: white;
+      background: linear-gradient(135deg, #0f766e, #2563eb);
+      box-shadow: 0 16px 28px rgba(37, 99, 235, 0.18);
+    }
+  }
+}
+
+.estado-table-wrapper,
+.estado-mini-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.estado-table,
+.estado-mini-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    color: #475569;
+    background: #f8fafc;
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  th,
+  td {
+    padding: 13px 14px;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  tbody tr:hover:not(.estado-detail-row) {
+    background: #f8fafc;
+  }
+
+  .positive {
+    color: #047857;
+    font-weight: 900;
+  }
+
+  .negative {
+    color: #dc2626;
+    font-weight: 900;
+  }
+}
+
+.estado-table.daily tbody > tr:not(.estado-detail-row) td:first-child {
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.estado-link-button {
+  padding: 8px 12px;
+  border-radius: 10px;
+  color: #2563eb;
+  background: #eff6ff;
+
+  &:hover {
+    background: #dbeafe;
+  }
+}
+
+.estado-detail-row td {
+  padding: 0;
+  background: #f8fafc;
+}
+
+.estado-day-detail {
+  display: grid;
+  grid-template-columns: minmax(340px, 0.9fr) minmax(480px, 1.1fr);
+  gap: 18px;
+  padding: 20px;
+
+  h3 {
+    margin: 0 0 12px;
+    color: #0f172a;
+    font-size: 1rem;
+  }
+}
+
+.estado-mini-table {
+  overflow: hidden;
+  border-radius: 14px;
+  background: white;
+  box-shadow: inset 0 0 0 1px #e2e8f0;
+
+  td strong,
+  td small {
+    display: block;
+  }
+
+  td small {
+    margin-top: 3px;
+    color: #64748b;
+    font-size: 0.8rem;
+  }
+}
+
+.empty-cell {
+  text-align: center !important;
+  color: #94a3b8;
+  font-weight: 800;
+}
+
+.estado-balance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.estado-balance-card {
+  padding: 18px;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
+
+  h3 {
+    margin: 0 0 6px;
+    color: #0f172a;
+    font-size: 1rem;
+    text-transform: capitalize;
+  }
+
+  p,
+  small {
+    color: #64748b;
+  }
+
+  p {
+    margin: 0 0 12px;
+  }
+
+  strong {
+    display: block;
+    margin-bottom: 8px;
+    color: #0f766e;
+    font-size: 1.28rem;
+  }
+}
+
+@media (max-width: 1200px) {
+  .estado-filters-grid,
+  .estado-summary-grid {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+
+  .estado-filter-wide {
+    grid-column: span 2;
+  }
+
+  .estado-day-detail {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .estado-contabilidad-page {
+    padding: 16px;
+  }
+
+  .estado-header {
+    flex-direction: column;
+    padding: 22px;
+  }
+
+  .estado-filters-grid,
+  .estado-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .estado-filter-wide {
+    grid-column: span 1;
+  }
+}
+
+.estado-period-switch {
+  display: inline-flex;
+  gap: 8px;
+  padding: 6px;
+  margin: -4px 0 18px;
+  border: 1px solid #dbeafe;
+  border-radius: 16px;
+  background: #f8fafc;
+
+  button {
+    border: 0;
+    padding: 9px 14px;
+    border-radius: 12px;
+    color: #475569;
+    background: transparent;
+    cursor: pointer;
+    font-weight: 900;
+
+    &.active {
+      color: white;
+      background: linear-gradient(135deg, #0f766e, #2563eb);
+      box-shadow: 0 10px 20px rgba(37, 99, 235, 0.16);
+    }
+  }
+}
+
+.estado-datepicker-input {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 0.94rem;
+  outline: none;
+
+  &:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+  }
+
+  &:disabled {
+    background: #f1f5f9;
+    color: #64748b;
+    cursor: not-allowed;
+  }
+}
+
+.estado-contabilidad-page {
+  .react-datepicker-wrapper,
+  .react-datepicker__input-container {
+    width: 100%;
+  }
+
+  .estado-datepicker-popper {
+    z-index: 50;
+  }
+
+  .estado-datepicker-calendar {
+    border: 0;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.22);
+    font-family: inherit;
+
+    .react-datepicker__header {
+      border-bottom: 0;
+      background: linear-gradient(135deg, #0f766e, #2563eb);
+    }
+
+    .react-datepicker__current-month,
+    .react-datepicker-time__header,
+    .react-datepicker-year-header,
+    .react-datepicker__day-name {
+      color: #ffffff;
+      font-weight: 900;
+    }
+
+    .react-datepicker__day {
+      border-radius: 10px;
+      color: #0f172a;
+
+      &:hover {
+        background: #dbeafe;
+      }
+    }
+
+    .react-datepicker__day--selected,
+    .react-datepicker__day--keyboard-selected {
+      color: white;
+      background: #0f766e;
+    }
+
+    .react-datepicker__day--today {
+      font-weight: 900;
+      box-shadow: inset 0 0 0 2px #60a5fa;
+    }
+  }
+}
+
+.estado-checkbox-filter {
+  span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    background: #ffffff;
+    color: #0f172a;
+    font-size: 0.9rem;
+    font-weight: 800;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  input {
+    width: auto;
+    min-height: auto;
+    padding: 0;
+    accent-color: #0f766e;
+  }
+}
+
+@media (max-width: 720px) {
+  .estado-period-switch {
+    width: 100%;
+    flex-direction: column;
+  }
+}
+
+// ============================================
+// DETALLE DIARIO CATEGORIZADO POR PLATAFORMA Y MONEDA
+// ============================================
+.estado-day-detail {
+  grid-template-columns: minmax(420px, 1fr) minmax(460px, 0.95fr);
+  align-items: start;
+}
+
+.estado-balance-detail-panel,
+.estado-day-detail > div:last-child {
+  min-width: 0;
+}
+
+.estado-detail-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+
+  h3 {
+    margin: 0;
+  }
+
+  span {
+    color: #64748b;
+    font-size: 0.78rem;
+    font-weight: 800;
+  }
+}
+
+.estado-balance-groups {
+  display: grid;
+  gap: 16px;
+}
+
+.estado-platform-balance-group {
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.06);
+
+  &.venso .estado-platform-header {
+    background: linear-gradient(
+      135deg,
+      rgba(15, 118, 110, 0.12),
+      rgba(37, 99, 235, 0.12)
+    );
+    border-left: 5px solid #0f766e;
+  }
+
+  &.mil .estado-platform-header {
+    background: linear-gradient(
+      135deg,
+      rgba(124, 58, 237, 0.12),
+      rgba(14, 165, 233, 0.12)
+    );
+    border-left: 5px solid #7c3aed;
+  }
+}
+
+.estado-platform-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #e2e8f0;
+
+  strong,
+  span {
+    display: block;
+  }
+
+  strong {
+    color: #0f172a;
+    font-size: 1rem;
+  }
+}
+
+.estado-platform-kicker {
+  margin-bottom: 3px;
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.estado-platform-net {
+  padding: 7px 10px;
+  border-radius: 999px;
+  color: #0f766e;
+  background: #ecfdf5;
+  font-size: 0.78rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.estado-currency-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+  padding: 14px;
+  background: #f8fafc;
+}
+
+.estado-currency-group {
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #ffffff;
+
+  &.soles .estado-currency-header > span {
+    background: linear-gradient(135deg, #059669, #22c55e);
+  }
+
+  &.dolares .estado-currency-header > span {
+    background: linear-gradient(135deg, #2563eb, #06b6d4);
+  }
+}
+
+.estado-currency-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-bottom: 1px solid #e2e8f0;
+
+  > span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    color: #ffffff;
+    font-weight: 900;
+  }
+
+  strong,
+  small {
+    display: block;
+  }
+
+  strong {
+    color: #0f172a;
+    font-size: 0.92rem;
+  }
+
+  small {
+    margin-top: 2px;
+    color: #64748b;
+    font-size: 0.74rem;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+}
+
+.estado-balance-line {
+  display: grid;
+  grid-template-columns: minmax(130px, 1.2fr) repeat(3, minmax(80px, 0.8fr));
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid #eef2f7;
+  color: #0f172a;
+  font-size: 0.82rem;
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  strong,
+  small {
+    display: block;
+  }
+
+  strong {
+    font-size: 0.84rem;
+    line-height: 1.25;
+  }
+
+  small {
+    margin-top: 2px;
+    color: #94a3b8;
+    font-size: 0.72rem;
+    font-weight: 800;
+  }
+
+  > span:not(:first-child) {
+    text-align: right;
+    font-weight: 800;
+  }
+}
+
+.estado-balance-line-head {
+  color: #64748b;
+  background: #f8fafc;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.estado-balance-list {
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+@media (max-width: 1380px) {
+  .estado-day-detail {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .estado-currency-groups {
+    grid-template-columns: 1fr;
+  }
+
+  .estado-balance-line {
+    grid-template-columns: 1fr 1fr;
+
+    &.estado-balance-line-head {
+      display: none;
+    }
+
+    > span:not(:first-child) {
+      text-align: left;
+    }
+  }
+}
+
+// ============================================
+// ESTADOS CONTABLES - ORDEN VISUAL Y DETALLE
+// ============================================
+.estado-contabilidad-page {
+  --estado-border: #dbe5ef;
+  --estado-muted: #64748b;
+  --estado-ink: #0f172a;
+}
+
+.estado-header {
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: "";
+    position: absolute;
+    right: -70px;
+    bottom: -110px;
+    width: 260px;
+    height: 260px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  > * {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+.estado-filters-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.estado-filters-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--estado-border);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+
+  .estado-section-title {
+    margin: 0;
+  }
+}
+
+.estado-filters-grid {
+  padding: 22px;
+  grid-template-columns: repeat(4, minmax(170px, 1fr));
+
+  label {
+    min-width: 0;
+  }
+}
+
+.estado-filter-wide {
+  grid-column: span 2;
+}
+
+.estado-summary-grid {
+  align-items: stretch;
+}
+
+.estado-summary-card {
+  min-height: 118px;
+  border-radius: 24px;
+
+  strong {
+    font-size: clamp(1.15rem, 2vw, 1.42rem);
+  }
+}
+
+.estado-report-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.estado-report-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--estado-border);
+  background: #ffffff;
+
+  .estado-section-title {
+    margin: 0;
+  }
+}
+
+.estado-report-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+
+  span {
+    padding: 6px 10px;
+    border-radius: 999px;
+    color: #0f766e;
+    background: #ecfdf5;
+    font-size: 12px;
+    font-weight: 900;
+  }
+}
+
+.estado-table-wrapper {
+  padding: 0 22px 22px;
+  background: #ffffff;
+}
+
+.estado-table {
+  border: 1px solid var(--estado-border);
+  border-radius: 18px;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+
+  th {
+    background: #f1f5f9;
+  }
+
+  th,
+  td {
+    border-bottom: 1px solid #e5edf5;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: 0;
+  }
+}
+
+.estado-detail-row td {
+  background: #eef4f8;
+}
+
+.estado-day-detail {
+  grid-template-columns: minmax(520px, 1.08fr) minmax(420px, 0.92fr);
+  padding: 18px;
+  background: #eef4f8;
+}
+
+.estado-balance-detail-panel,
+.estado-movement-panel {
+  padding: 16px;
+  border: 1px solid var(--estado-border);
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.06);
+}
+
+.estado-detail-heading {
+  h3 {
+    color: var(--estado-ink);
+    font-size: 1.04rem;
+  }
+
+  p {
+    margin: 4px 0 0;
+    color: var(--estado-muted);
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  > span {
+    padding: 6px 10px;
+    border-radius: 999px;
+    color: #334155;
+    background: #f1f5f9;
+    white-space: nowrap;
+  }
+}
+
+.estado-platform-balance-group {
+  box-shadow: none;
+
+  & + .estado-platform-balance-group {
+    margin-top: 4px;
+  }
+}
+
+.estado-platform-header {
+  strong {
+    font-size: 1.02rem;
+  }
+}
+
+.estado-platform-net {
+  color: #334155;
+  background: #ffffff;
+  border: 1px solid #dbeafe;
+}
+
+.estado-currency-groups {
+  grid-template-columns: 1fr;
+  background: #f8fafc;
+}
+
+.estado-currency-header {
+  align-items: flex-start;
+
+  small {
+    color: #475569;
+  }
+}
+
+.estado-balance-line {
+  grid-template-columns: minmax(170px, 1.25fr) repeat(3, minmax(86px, 0.75fr));
+  padding: 9px 12px;
+
+  &:not(.estado-balance-line-head):hover {
+    background: #f8fafc;
+  }
+}
+
+.estado-balance-list {
+  max-height: 420px;
+}
+
+.estado-empty-block,
+.estado-empty-movements {
+  border: 1px dashed #cbd5e1;
+  border-radius: 18px;
+  color: #64748b;
+  background: #f8fafc;
+  text-align: center;
+  font-weight: 800;
+}
+
+.estado-empty-block {
+  padding: 18px;
+}
+
+.estado-empty-movements {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  min-height: 240px;
+  padding: 42px 24px;
+
+  svg {
+    width: 46px;
+    height: 46px;
+    padding: 12px;
+    border-radius: 16px;
+    color: #0f766e;
+    background: #ecfdf5;
+  }
+
+  strong {
+    color: #0f172a;
+    font-size: 1rem;
+  }
+
+  p {
+    max-width: 360px;
+    margin: 0;
+    color: #64748b;
+    line-height: 1.45;
+  }
+}
+
+.estado-mini-table-wrapper {
+  padding: 0;
+  border: 1px solid var(--estado-border);
+  border-radius: 18px;
+  background: #ffffff;
+  overflow-x: auto;
+}
+
+.estado-mini-table {
+  min-width: 760px;
+  box-shadow: none;
+
+  th {
+    background: #f1f5f9;
+  }
+}
+
+.estado-source-pill {
+  display: inline-flex;
+  padding: 5px 8px;
+  border-radius: 999px;
+  color: #1d4ed8;
+  background: #eff6ff;
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+
+  &.transferencia {
+    color: #7c2d12;
+    background: #ffedd5;
+  }
+}
+
+@media (max-width: 1180px) {
+  .estado-filters-grid {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+
+  .estado-day-detail {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .estado-filters-head,
+  .estado-report-heading {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .estado-report-meta {
+    justify-content: flex-start;
+  }
+
+  .estado-filters-grid {
+    padding: 16px;
+    grid-template-columns: 1fr;
+  }
+
+  .estado-filter-wide {
+    grid-column: span 1;
+  }
+
+  .estado-table-wrapper {
+    padding: 0 14px 14px;
+  }
+}
+
+// ============================================
+// ESTADOS - PLATAFORMA VINCULADA A NEGOCIO
+// ============================================
+.estado-linked-business-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  min-height: 74px;
+  padding: 13px 15px;
+  border: 1px solid #dbeafe;
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at top right, rgba(37, 99, 235, 0.12), transparent 42%),
+    linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+
+  span {
+    color: #475569;
+    font-size: 11px;
+    font-weight: 950;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  strong {
+    color: #0f172a;
+    font-size: 15px;
+    font-weight: 950;
+  }
+
+  small {
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 750;
+    line-height: 1.3;
+  }
+}
+
+@media (max-width: 900px) {
+  .estado-linked-business-card {
+    min-height: auto;
+  }
+}
+
+// ============================================
+// AJUSTES FINALES: DATEPICKER, SALDOS FILTRADOS Y MOVIMIENTOS POR SALDO
+// ============================================
+.estado-filters-card,
+.estado-filters-grid,
+.estado-filters-grid label {
+  overflow: visible !important;
+}
+
+.estado-filters-card {
+  position: relative;
+  z-index: 40;
+}
+
+.estado-report-card,
+.estado-table-wrapper {
+  position: relative;
+  z-index: 1;
+}
+
+.estado-datepicker-popper,
+.react-datepicker-popper,
+#estado-datepicker-root {
+  z-index: 99999 !important;
+}
+
+#estado-datepicker-root .react-datepicker {
+  border: 1px solid rgba(15, 118, 110, 0.18);
+  border-radius: 18px;
+  box-shadow: 0 24px 54px rgba(15, 23, 42, 0.24);
+  overflow: hidden;
+  font-family: inherit;
+}
+
+.estado-filter-wide optgroup {
+  color: #0f766e;
+  font-weight: 900;
+}
+
+.estado-filter-wide option {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.estado-day-detail {
+  grid-template-columns: 1fr !important;
+}
+
+.estado-balance-line {
+  grid-template-columns: minmax(190px, 1.25fr) repeat(3, minmax(92px, 0.75fr)) minmax(78px, 0.5fr) !important;
+}
+
+.estado-balance-line--clickable {
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease;
+
+  &:hover,
+  &:focus-visible {
+    background: #ecfdf5 !important;
+    outline: 2px solid rgba(15, 118, 110, 0.18);
+    outline-offset: -2px;
+  }
+
+  &.is-expanded {
+    background: #f0fdfa !important;
+    border-bottom-color: transparent;
+  }
+}
+
+.estado-balance-movement-count {
+  display: inline-flex;
+  justify-content: flex-end;
+  align-items: center;
+  color: #0f766e;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.estado-balance-movement-drawer {
+  margin: -1px 10px 10px;
+  padding: 12px;
+  border: 1px solid rgba(15, 118, 110, 0.14);
+  border-radius: 0 0 16px 16px;
+  background: linear-gradient(180deg, #f8fffc 0%, #ffffff 100%);
+  box-shadow: inset 0 1px 0 rgba(15, 118, 110, 0.06);
+}
+
+.estado-balance-movement-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid #e2e8f0;
+
+  strong {
+    color: #0f172a;
+    font-size: 0.86rem;
+  }
+
+  span {
+    color: #475569;
+    font-size: 0.78rem;
+    font-weight: 800;
+  }
+}
+
+.estado-balance-movement-list {
+  display: grid;
+  gap: 8px;
+}
+
+.estado-balance-movement-item {
+  display: grid;
+  grid-template-columns: minmax(96px, 0.4fr) minmax(180px, 1fr) minmax(92px, 0.34fr);
+  gap: 10px;
+  align-items: center;
+  padding: 9px 10px;
+  border: 1px solid #eef2f7;
+  border-radius: 12px;
+  background: #ffffff;
+
+  strong,
+  small {
+    display: block;
+  }
+
+  strong {
+    color: #0f172a;
+    font-size: 0.82rem;
+    line-height: 1.25;
+  }
+
+  small {
+    margin-top: 2px;
+    color: #64748b;
+    font-size: 0.72rem;
+    font-weight: 750;
+  }
+
+  > span:last-child {
+    text-align: right;
+    font-size: 0.84rem;
+    font-weight: 900;
+  }
+}
+
+@media (max-width: 760px) {
+  .estado-balance-line {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .estado-balance-movement-summary,
+  .estado-balance-movement-item {
+    grid-template-columns: 1fr;
+    align-items: flex-start;
+  }
+
+  .estado-balance-movement-summary {
+    flex-direction: column;
+  }
+
+  .estado-balance-movement-item > span:last-child {
+    text-align: left;
+  }
+}

@@ -1,0 +1,920 @@
+@import "../../../styles/_variables.scss";
+
+.files-list-container {
+  background: white;
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-md;
+  overflow: hidden;
+
+  // Loading state
+  .loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    gap: 1rem;
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid $gray-200;
+      border-top-color: $primary;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    p {
+      color: $text-medium;
+      font-size: 0.9rem;
+    }
+  }
+
+  // Error state
+  .error-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    gap: 1rem;
+
+    p {
+      color: $danger;
+      font-size: 0.95rem;
+    }
+
+    .btn-retry {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: $primary;
+      color: white;
+      border: none;
+      border-radius: $border-radius-md;
+      cursor: pointer;
+      font-weight: 500;
+
+      &:hover {
+        background: darken($primary, 5%);
+      }
+    }
+  }
+
+  // Header
+  .files-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    background: linear-gradient(
+      135deg,
+      $primary 0%,
+      darken($primary, 10%) 100%
+    );
+    color: white;
+
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+
+      .header-icon {
+        font-size: 1.5rem;
+        opacity: 0.9;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+      }
+
+      .files-count {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 0.25rem 0.75rem;
+        border-radius: $border-radius-pill;
+        font-size: 0.8rem;
+        font-weight: 500;
+      }
+
+      .fetching-indicator {
+        margin-left: 0.5rem;
+        font-size: 0.9rem;
+        animation: spin 1s linear infinite;
+      }
+    }
+
+    .btn-refresh {
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      color: white;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s ease;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.25);
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      svg {
+        font-size: 1.25rem;
+
+        &.spinning {
+          animation: spin 1s linear infinite;
+        }
+      }
+    }
+
+    @keyframes spin {
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  }
+
+  // Summary cards
+  .files-summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    background: $gray-100;
+    border-bottom: 1px solid $gray-200;
+
+    @media (max-width: 900px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (max-width: 500px) {
+      grid-template-columns: 1fr;
+    }
+
+    .summary-card {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      background: white;
+      border-radius: $border-radius-md;
+      box-shadow: $shadow-sm;
+      border-left: 3px solid transparent;
+
+      .summary-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        font-size: 1.1rem;
+      }
+
+      .summary-content {
+        display: flex;
+        flex-direction: column;
+
+        .summary-label {
+          font-size: 0.75rem;
+          color: $text-medium;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .summary-value {
+          font-size: 1.1rem;
+          font-weight: 600;
+          color: $text-dark;
+        }
+      }
+
+      &.total {
+        border-left-color: $primary;
+
+        .summary-icon {
+          background: rgba($primary, 0.1);
+          color: $primary;
+        }
+      }
+
+      &.paid {
+        border-left-color: $success;
+
+        .summary-icon {
+          background: rgba($success, 0.1);
+          color: $success;
+        }
+      }
+
+      &.pending {
+        border-left-color: $warning;
+
+        .summary-icon {
+          background: rgba($warning, 0.1);
+          color: $warning;
+        }
+      }
+
+      &.passengers {
+        border-left-color: $info;
+
+        .summary-icon {
+          background: rgba($info, 0.1);
+          color: $info;
+        }
+      }
+    }
+  }
+
+  // Filters
+  .files-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    background: white;
+    border-bottom: 1px solid $gray-200;
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      min-width: 200px;
+      background: $gray-100;
+      border-radius: $border-radius-md;
+      padding: 0 0.75rem;
+
+      .search-icon {
+        color: $text-medium;
+        font-size: 1.1rem;
+      }
+
+      input {
+        flex: 1;
+        border: none;
+        background: transparent;
+        padding: 0.6rem 0.5rem;
+        font-size: 0.9rem;
+        outline: none;
+
+        &::placeholder {
+          color: $text-medium;
+        }
+      }
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      label {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-size: 0.85rem;
+        color: $text-medium;
+        font-weight: 500;
+
+        .filter-icon {
+          font-size: 0.9rem;
+        }
+      }
+
+      select {
+        padding: 0.5rem 0.75rem;
+        border: 1px solid $gray-300;
+        border-radius: $border-radius-md;
+        font-size: 0.85rem;
+        background: white;
+        cursor: pointer;
+        min-width: 150px;
+
+        &:focus {
+          outline: none;
+          border-color: $primary;
+        }
+      }
+    }
+  }
+
+  // Table
+  .files-table-wrapper {
+    overflow-x: auto;
+    max-height: 500px;
+    overflow-y: auto;
+  }
+
+  .files-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+
+    thead {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: $gray-100;
+
+      th {
+        padding: 0.75rem 1rem;
+        text-align: left;
+        font-weight: 600;
+        color: $text-dark;
+        border-bottom: 2px solid $gray-200;
+        white-space: nowrap;
+
+        svg {
+          vertical-align: middle;
+          margin-right: 0.35rem;
+          font-size: 1rem;
+          color: $text-medium;
+        }
+
+        &.th-date {
+          min-width: 100px;
+        }
+
+        &.th-code {
+          min-width: 120px;
+        }
+
+        &.th-passengers {
+          min-width: 80px;
+          text-align: center;
+        }
+
+        &.th-total {
+          min-width: 100px;
+        }
+
+        &.th-percentage {
+          min-width: 100px;
+        }
+
+        &.th-advance {
+          min-width: 100px;
+        }
+
+        &.th-balance {
+          min-width: 100px;
+        }
+
+        &.th-seller {
+          min-width: 150px;
+        }
+      }
+    }
+
+    tbody {
+      .file-row {
+        transition: background 0.15s ease;
+        border-bottom: 1px solid $gray-100;
+
+        &:hover {
+          background: rgba($primary, 0.03);
+        }
+
+        &.completed {
+          .td-balance .balance-amount.paid {
+            color: $success;
+          }
+        }
+
+        &.partial-high {
+          background: rgba($success, 0.02);
+        }
+
+        &.partial-low {
+          background: rgba($warning, 0.02);
+        }
+
+        &.pending {
+          background: rgba($danger, 0.02);
+        }
+
+        td {
+          padding: 0.75rem 1rem;
+          vertical-align: middle;
+        }
+
+        .td-date {
+          color: $text-medium;
+          font-size: 0.85rem;
+        }
+
+        .td-code {
+          .code-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: rgba($primary, 0.1);
+            color: $primary;
+            border-radius: $border-radius-sm;
+            font-weight: 600;
+            font-size: 0.85rem;
+          }
+        }
+
+        .td-passengers {
+          text-align: center;
+
+          .passengers-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            background: rgba($info, 0.1);
+            color: $info;
+            border-radius: 50%;
+            font-weight: 600;
+            font-size: 0.85rem;
+          }
+        }
+
+        .td-total {
+          font-weight: 600;
+          color: $text-dark;
+        }
+
+        .td-percentage {
+          .percentage-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+
+            .percentage-bar {
+              width: 50px;
+              height: 6px;
+              background: $gray-200;
+              border-radius: 3px;
+              overflow: hidden;
+
+              .percentage-fill {
+                height: 100%;
+                border-radius: 3px;
+                transition: width 0.3s ease;
+
+                &.completed {
+                  background: $success;
+                }
+
+                &.partial-high {
+                  background: lighten($success, 10%);
+                }
+
+                &.partial-low {
+                  background: $warning;
+                }
+
+                &.pending {
+                  background: $danger;
+                }
+              }
+            }
+
+            .percentage-text {
+              font-size: 0.8rem;
+              font-weight: 600;
+              min-width: 35px;
+            }
+          }
+        }
+
+        .td-advance {
+          .advance-amount {
+            color: $success;
+            font-weight: 500;
+          }
+        }
+
+        .td-balance {
+          .balance-amount {
+            font-weight: 600;
+
+            &.pending {
+              color: $warning;
+            }
+
+            &.paid {
+              color: $success;
+            }
+          }
+        }
+
+        .td-seller {
+          .seller-name {
+            font-size: 0.85rem;
+            color: $text-dark;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: block;
+          }
+        }
+      }
+
+      // Fila Desplegable de Movimientos (Acordeón)
+      .row-details {
+        background-color: white;
+
+        td {
+          padding: 5px;
+          border-bottom: 1px solid $gray-200;
+        }
+
+        .movimientos-container {
+          padding: 1.5rem 2.5rem;
+          background: linear-gradient(180deg, $gray-100 0%, #ffffff 100%);
+          border-left: 4px solid $primary;
+          animation: slideDown 0.3s ease-out;
+
+          h4 {
+            margin: 0 0 1.2rem 0;
+            color: $text-dark;
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+
+            svg {
+              color: $primary;
+              font-size: 1.2rem;
+            }
+          }
+        }
+
+        .movimientos-subtable {
+          width: 100%;
+          border-collapse: separate;
+          border-spacing: 0;
+          background: white;
+          border-radius: $border-radius-md;
+          box-shadow: $shadow-sm;
+          overflow: hidden;
+          border: 1px solid $gray-200;
+
+          thead th {
+            background: $gray-200;
+            padding: 0.75rem 1rem;
+            color: $text-medium;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+            border-bottom: 1px solid $gray-300;
+          }
+
+          tbody td {
+            padding: 0.8rem 1rem;
+            border-bottom: 1px solid $gray-100;
+            vertical-align: middle;
+            font-size: 0.85rem;
+            color: $text-dark;
+          }
+
+          .badge-tipo {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+
+            &.ingreso {
+              background-color: rgba($success, 0.1);
+              color: $success;
+            }
+
+            &.egreso {
+              background-color: rgba($danger, 0.1);
+              color: $danger;
+            }
+          }
+
+          .txt-amount {
+            &.ingreso {
+              color: $success;
+            }
+
+            &.egreso {
+              color: $danger;
+            }
+          }
+
+          .badge-cuenta {
+            display: inline-block;
+            margin-top: 4px;
+            padding: 2px 6px;
+            background: $gray-100;
+            color: $text-medium;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            border: 1px solid $gray-200;
+          }
+
+          .first-movement-row {
+            background-color: rgba(
+              $primary,
+              0.04
+            ) !important; // Fondo sutil azulado
+            position: relative;
+
+            td {
+              border-top: 2px solid $primary !important;
+              border-bottom: 2px solid $primary !important;
+              font-weight: 500;
+
+              &:first-child {
+                border-left: 2px solid $primary;
+                border-top-left-radius: 8px;
+                border-bottom-left-radius: 8px;
+              }
+
+              &:last-child {
+                border-right: 2px solid $primary;
+                border-top-right-radius: 8px;
+                border-bottom-right-radius: 8px;
+              }
+            }
+
+            .main-badge {
+              display: block;
+              font-size: 0.6rem;
+              color: $primary;
+              font-weight: 800;
+              letter-spacing: 1px;
+              margin-bottom: 2px;
+            }
+
+            .percentage-badge.highlight {
+              background: $primary;
+              color: white;
+              box-shadow: 0 2px 4px rgba($primary, 0.3);
+            }
+          }
+
+          .txt-amount {
+            font-weight: 700;
+            color: $success;
+            font-family: monospace;
+            font-size: 0.95rem;
+          }
+
+          .percentage-badge {
+            background: rgba($primary, 0.1);
+            color: $primary;
+            padding: 4px 8px;
+            border-radius: $border-radius-pill;
+            font-weight: 600;
+            font-size: 0.75rem;
+          }
+
+          .td-percentage {
+            .percentage-wrapper {
+              display: flex;
+              align-items: center;
+              gap: 0.5rem;
+
+              .percentage-bar {
+                width: 50px;
+                height: 6px;
+                background: $gray-200;
+                border-radius: 3px;
+                overflow: hidden;
+
+                .percentage-fill {
+                  height: 100%;
+                  border-radius: 3px;
+                  transition: width 0.3s ease;
+
+                  &.completed {
+                    background: $success;
+                  }
+
+                  &.partial-high {
+                    background: lighten($success, 10%);
+                  }
+
+                  &.partial-low {
+                    background: $warning;
+                  }
+
+                  &.pending {
+                    background: $danger;
+                  }
+                }
+              }
+
+              .percentage-text {
+                font-size: 0.8rem;
+                font-weight: 600;
+                min-width: 35px;
+              }
+            }
+          }
+
+          tr:last-child td {
+            border-bottom: none;
+          }
+
+          tr:hover td {
+            background-color: rgba($primary, 0.02);
+          }
+        }
+
+        .no-data-msg {
+          text-align: center;
+          padding: 2rem;
+          color: $text-medium;
+          font-style: italic;
+          background: white;
+          border-radius: $border-radius-md;
+          border: 1px dashed $gray-300;
+        }
+      }
+
+      .empty-row {
+        td {
+          padding: 2rem;
+        }
+
+        .empty-state {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.5rem;
+          color: $text-medium;
+
+          .empty-icon {
+            font-size: 2rem;
+            opacity: 0.5;
+          }
+
+          p {
+            margin: 0;
+            font-size: 0.9rem;
+          }
+        }
+      }
+    }
+  }
+
+  // Footer
+  .files-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem; // + aire general
+    padding: 1.5rem 2rem; // más alto y más ancho
+    background: $gray-100;
+    border-top: 1px solid $gray-200;
+
+    .footer-totals {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4rem; // más separación entre totales
+
+      .total-label {
+        font-weight: 600;
+        font-size: 1.2rem;
+        color: $text-dark;
+      }
+
+      .total-item {
+        font-size: 1.1rem; // antes 0.9rem
+        color: $text-medium;
+
+        strong {
+          color: $text-dark;
+          margin-right: 0.4rem;
+        }
+
+        &.pending {
+          color: $warning;
+          font-weight: 600;
+
+          strong {
+            color: inherit;
+          }
+        }
+      }
+    }
+
+    .btn-export {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 1.5rem; // botón más grande
+      border: none;
+      background: transparent;
+      border-radius: $border-radius-lg; // un poco más redondeado
+      font-weight: $font-weight-semibold;
+      font-size: 0.95rem; // + presencia
+      cursor: pointer;
+      transition: all $transition-normal;
+      color: $text-medium;
+
+      svg {
+        font-size: 1.2rem; // icono más visible
+      }
+
+      &:hover {
+        background: $color-gray-light;
+        color: $color-primary;
+      }
+
+      &:active {
+        transform: translateY(1px);
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .files-list-container {
+    .files-header {
+      padding: 0.75rem 1rem;
+
+      .header-title {
+        h2 {
+          font-size: 1.1rem;
+        }
+      }
+    }
+
+    .files-summary {
+      padding: 1rem;
+    }
+
+    .files-filters {
+      padding: 0.75rem 1rem;
+      flex-direction: column;
+
+      .search-box {
+        width: 100%;
+      }
+
+      .filter-group {
+        width: 100%;
+
+        select {
+          flex: 1;
+        }
+      }
+    }
+
+    .files-table {
+      font-size: 0.8rem;
+
+      thead th,
+      tbody td {
+        padding: 0.5rem 0.75rem;
+      }
+    }
+
+    .files-footer {
+      padding: 0.75rem 1rem;
+
+      .footer-totals {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+    }
+  }
+}

@@ -1,0 +1,111 @@
+.date-range-filter {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+  .filter-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    color: #333;
+
+    .filter-icon {
+      color: #2196f3;
+      font-size: 18px;
+    }
+
+    .filter-label {
+      font-weight: 600;
+      font-size: 14px;
+    }
+  }
+
+  .filter-inputs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: flex-end;
+
+    .date-input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+      min-width: 150px;
+
+      label {
+        font-size: 13px;
+        color: #666;
+        font-weight: 500;
+      }
+
+      .date-input {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+        font-family: inherit;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+
+        &:focus {
+          outline: none;
+          border-color: #2196f3;
+          box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        &:hover {
+          border-color: #bbb;
+        }
+      }
+    }
+
+    .clear-filter-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: #f5f5f5;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      color: #666;
+      transition: all 0.2s;
+
+      &:hover {
+        background: #e8e8e8;
+        border-color: #bbb;
+        color: #333;
+      }
+
+      svg {
+        font-size: 12px;
+      }
+    }
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .date-range-filter {
+    .filter-inputs {
+      flex-direction: column;
+      align-items: stretch;
+
+      .date-input-group {
+        min-width: 100%;
+      }
+
+      .clear-filter-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  }
+}

@@ -1,0 +1,146 @@
+.quotation-version-trigger {
+  border: 1px solid rgba(5, 112, 73, 0.18);
+  color: #075b40;
+  background: #f8fcfa;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+
+  &:hover {
+    border-color: rgba(5, 112, 73, 0.42);
+    background: #eef8f3;
+  }
+
+  &:focus-visible {
+    outline: 3px solid rgba(16, 185, 129, 0.2);
+    outline-offset: 2px;
+  }
+
+  &__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    color: #087b55;
+  }
+
+  &__copy {
+    display: flex;
+    min-width: 0;
+    flex: 1 1 auto;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+
+    strong {
+      font-size: 0.84rem;
+      line-height: 1.15;
+    }
+
+    small {
+      color: #718079;
+      font-size: 0.7rem;
+      font-weight: 500;
+    }
+  }
+
+  &__phase {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex: 0 0 auto;
+    padding: 5px 8px;
+    border-radius: 999px;
+    color: #52655d;
+    background: #e9f2ee;
+    font-size: 0.67rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  &--card {
+    display: flex;
+    width: calc(100% - 20px);
+    min-height: 52px;
+    margin: 10px;
+    padding: 9px 11px;
+    align-items: center;
+    gap: 9px;
+    border-radius: 10px;
+    text-align: left;
+
+    .quotation-version-trigger__icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
+      background: #dff3e9;
+      font-size: 1.15rem;
+    }
+  }
+
+  &--header {
+    display: inline-flex;
+    min-height: 36px;
+    padding: 7px 11px;
+    align-items: center;
+    gap: 7px;
+    border-radius: 9px;
+    font-weight: 700;
+    white-space: nowrap;
+
+    .quotation-version-trigger__icon {
+      font-size: 1rem;
+    }
+  }
+}
+
+@media (max-width: 760px) {
+  .quotation-version-trigger--card {
+    align-items: flex-start;
+
+    .quotation-version-trigger__phase {
+      display: none;
+    }
+  }
+
+  .quotation-version-trigger--header {
+    .quotation-version-trigger__copy strong {
+      font-size: 0.75rem;
+    }
+  }
+}
+
+// Compact closed-sale history action in list rows
+.voucher-reserva-card.list .voucher-list-section--controls {
+  .quotation-version-trigger--card {
+    width: 100%;
+    min-height: 34px;
+    margin: 0;
+    padding: 6px 8px;
+    gap: 7px;
+    border-radius: 8px;
+
+    .quotation-version-trigger__icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 7px;
+      font-size: 0.95rem;
+    }
+
+    .quotation-version-trigger__copy {
+      strong {
+        font-size: 0.68rem;
+      }
+
+      small {
+        display: none;
+      }
+    }
+
+    .quotation-version-trigger__phase {
+      display: none;
+    }
+  }
+}

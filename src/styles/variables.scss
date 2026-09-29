@@ -1,0 +1,105 @@
+// Legacy SCSS compatibility only. New UI code must use the CSS custom
+// properties declared in src/index.scss (var(--color-*), var(--spacing-*), etc.).
+// Colors
+$primary: #ff007e;
+$secondary: #858796;
+$success: #1cc88a;
+$danger: #e74a3b;
+$warning: #f6c23e;
+$info: #36b9cc;
+
+// Text Colors
+$text-primary: #5a5c69;
+$text-secondary: #858796;
+$text-light: #f8f9fc;
+$text-dark: #3a3b45;
+
+// Background Colors
+$bg-primary: #ff007e;
+$bg-secondary: #f8f9fc;
+$bg-light: #f8f9fc;
+$bg-dark: #5a5c69;
+
+// Border Colors
+$border-color: #e3e6f0;
+
+// Box Shadows
+$box-shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+$box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+$box-shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+
+// Fonts
+$font-family-sans-serif:
+  "Nunito",
+  -apple-system,
+  BlinkMacSystemFont,
+  "Segoe UI",
+  Roboto,
+  "Helvetica Neue",
+  Arial,
+  sans-serif,
+  "Apple Color Emoji",
+  "Segoe UI Emoji",
+  "Segoe UI Symbol",
+  "Noto Color Emoji";
+$font-family-monospace:
+  SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+  monospace;
+
+// Font sizes
+$font-size-base: 1rem;
+$font-size-sm: 0.9375rem;
+$font-size-lg: 1.25rem;
+
+// Spacing
+$spacer: 1rem;
+
+// Additional variables for components
+$color-white: #fff;
+$color-gray-light: #f8f9fc;
+$color-gray-medium: #858796;
+$color-gray-dark: #5a5c69;
+$color-primary: #ff007e;
+$color-secondary: #858796;
+$color-accent: #000000;
+$color-warning: #f6c23e;
+$color-danger: #e74a3b;
+$color-text-primary: #5a5c69;
+$color-text-secondary: #858796;
+$color-background: #f8f9fc;
+$color-border: #e3e6f0;
+$color-border-light: #e9ecef;
+
+// Border radius
+$border-radius-sm: 4px;
+$border-radius-md: 6px;
+$border-radius-lg: 8px;
+
+// Shadows
+$shadow-sm: 0 2px 5px rgba(0, 0, 0, 0.05);
+$shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+$shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.15);
+
+// Transitions
+$transition-fast: all 0.2s ease;
+
+// Font sizes
+$font-size-xs: 13px;
+$font-size-sm: 14px;
+$font-size-md: 15px;
+$font-size-lg: 17px;
+$font-size-xl: 20px;
+$font-size-xxl: 26px;
+
+// Spacing
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 12px;
+$spacing-lg: 16px;
+$spacing-xl: 24px;
+
+// Breakpoints
+$breakpoint-sm: 576px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 992px;
+$breakpoint-xl: 1200px;

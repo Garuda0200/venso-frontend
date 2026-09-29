@@ -1,0 +1,1207 @@
+@import "../../styles/_variables.scss";
+@import "../../styles/mixins.scss";
+
+// ============================================
+// SALDOS OVERVIEW - DISEÑO AGRUPADO MODERNO
+// ============================================
+
+.saldos-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 12px;
+  margin-bottom: $spacing-lg;
+  padding: $spacing-md $spacing-lg;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+
+    h4 {
+      margin: 0;
+      font-weight: 700;
+      color: #1e293b;
+      font-size: 20px;
+    }
+
+    .saldos-count {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 20px;
+    }
+  }
+
+  // Filtros de año y plataforma
+  .saldos-filters {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: nowrap;
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .filter-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #475569;
+        white-space: nowrap;
+      }
+
+      .filter-select {
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        background: white;
+        font-size: 13px;
+        font-weight: 500;
+        color: #334155;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-width: 90px;
+
+        &:hover {
+          border-color: #667eea;
+        }
+
+        &:focus {
+          outline: none;
+          border-color: #667eea;
+          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+        }
+      }
+
+      .platform-toggle {
+        display: flex;
+        background: #e2e8f0;
+        border-radius: 10px;
+        padding: 4px;
+        gap: 4px;
+
+        .platform-btn {
+          border: none;
+          background: transparent;
+          padding: 8px 16px;
+          font-size: 12px;
+          font-weight: 600;
+          color: #64748b;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          white-space: nowrap;
+
+          &:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.5);
+            color: #475569;
+          }
+
+          &.active {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          }
+        }
+      }
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+  }
+
+  .btn-initialize {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+    border: none;
+    color: white;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(100, 116, 139, 0.4);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    &.primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35);
+
+      &:hover:not(:disabled) {
+        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+      }
+    }
+  }
+}
+
+// Loading
+.loading-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #64748b;
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+  }
+
+  span {
+    font-size: 14px;
+    font-weight: 500;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Empty State
+.empty-state {
+  text-align: center;
+  padding: 60px 30px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 20px;
+  border: 2px dashed #cbd5e1;
+
+  .empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+  }
+
+  h5 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #334155;
+    margin: 0 0 8px 0;
+  }
+
+  p {
+    color: #64748b;
+    font-size: 14px;
+    margin: 0 0 20px 0;
+  }
+}
+
+// ============================================
+// GRID DE CARDS AGRUPADAS
+// ============================================
+
+.saldos-grid-grouped {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+
+  // En pantallas grandes (más de 1600px) → 5 columnas
+  @media (min-width: 1600px) {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  // En pantallas medianas (1200px - 1600px) → 4 columnas
+  @media (min-width: 1200px) and (max-width: 1599px) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  // En tablets → 2 columnas
+  @media (min-width: 768px) and (max-width: 1199px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  // En móviles → 1 columna
+  @media (max-width: 767px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Card agrupada por tipo
+.saldo-card-grouped {
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  border: 1px solid #e2e8f0;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+  }
+
+  // Header con gradiente
+  .card-header {
+    padding: 6px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: white;
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .icon-wrapper {
+      width: 30px;
+      height: 30px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(10px);
+
+      svg {
+        font-size: 15px;
+      }
+    }
+
+    .tipo-label {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    .credit-badge {
+      background: rgba(255, 255, 255, 0.25);
+      color: white;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+  }
+
+  // Resumen de totales
+  .totals-summary {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    padding: 8px 10px;
+    background: var(--card-bg-light, #f8fafc);
+    border-bottom: 1px solid #e2e8f0;
+
+    .total-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .total-icon {
+        font-size: 12px;
+        opacity: 0.6;
+      }
+
+      .total-amount {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1e293b;
+
+        &.negative {
+          color: #dc2626;
+        }
+      }
+
+      &.soles .total-icon {
+        color: #16a34a;
+      }
+
+      &.dolares .total-icon {
+        color: #3b82f6;
+      }
+    }
+  }
+
+  // Container de monedas
+  .monedas-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1px;
+    background: #e2e8f0;
+
+    &:has(.moneda-section:only-child) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  // Sección de moneda
+  .moneda-section {
+    padding: 8px;
+    background: white;
+
+    &.empty {
+      opacity: 0.5;
+
+      .no-config {
+        font-size: 12px;
+        color: #94a3b8;
+        font-style: italic;
+      }
+    }
+
+    &.soles {
+      .moneda-icon {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      }
+    }
+
+    &.dolares {
+      .moneda-icon {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      }
+    }
+
+    .moneda-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+
+      .moneda-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .moneda-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #475569;
+        flex: 1;
+      }
+
+      .edit-mini-btn {
+        width: 26px;
+        height: 26px;
+        border-radius: 6px;
+        border: none;
+        background: #f1f5f9;
+        color: #64748b;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: #e2e8f0;
+          color: #334155;
+        }
+
+        svg {
+          font-size: 12px;
+        }
+      }
+    }
+
+    .moneda-values {
+      .value-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 0;
+
+        &.main {
+          padding: 4px;
+          background: #f8fafc;
+          border-radius: 8px;
+          margin-top: 8px;
+        }
+
+        .value-label {
+          font-size: 12px;
+          color: #64748b;
+          font-weight: 500;
+        }
+
+        .value-amount {
+          font-weight: 600;
+
+          &.inicial {
+            font-size: 13px;
+            color: #94a3b8;
+          }
+
+          &.actual {
+            font-size: 18px;
+            color: #1e293b;
+
+            &.positive {
+              color: #16a34a;
+            }
+
+            &.negative {
+              color: #dc2626;
+            }
+          }
+        }
+      }
+    }
+
+    .moneda-footer {
+      padding-top: 4px;
+
+      .last-update {
+        font-size: 10px;
+        color: #94a3b8;
+      }
+    }
+  }
+}
+
+// ============================================
+// MODAL DE EDICIÓN
+// ============================================
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: fadeIn 0.2s ease;
+
+  .modal.edit-saldo-modal {
+    background-color: white;
+    border-radius: 20px;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+    width: 100%;
+    max-width: 420px;
+    overflow: hidden;
+    animation: slideUp 0.3s ease;
+
+    .modal-header {
+      padding: 20px 24px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      h4 {
+        margin: 0;
+        font-weight: 600;
+        font-size: 18px;
+      }
+
+      .close-button {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        font-size: 20px;
+        cursor: pointer;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.3);
+          transform: rotate(90deg);
+        }
+      }
+    }
+
+    .modal-body {
+      padding: 24px;
+
+      .form-info {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 20px;
+
+        .info-row {
+          display: flex;
+          justify-content: space-between;
+          padding: 6px 0;
+
+          .info-label {
+            font-size: 13px;
+            color: #64748b;
+          }
+
+          .info-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1e293b;
+          }
+        }
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+
+        label {
+          display: block;
+          margin-bottom: 8px;
+          font-weight: 600;
+          color: #334155;
+          font-size: 14px;
+        }
+
+        .input-with-prefix {
+          display: flex;
+          align-items: stretch;
+
+          .prefix {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 700;
+            font-size: 16px;
+            border-radius: 10px 0 0 10px;
+            min-width: 50px;
+          }
+
+          input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-left: none;
+            border-radius: 0 10px 10px 0;
+            font-size: 18px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+
+            &:focus {
+              outline: none;
+              border-color: #667eea;
+              box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+            }
+
+            &.invalid {
+              border-color: #dc2626;
+            }
+          }
+        }
+
+        .feedback {
+          color: #dc2626;
+          font-size: 12px;
+          margin-top: 6px;
+        }
+      }
+
+      .modal-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+
+        button {
+          flex: 1;
+          padding: 12px 20px;
+          border-radius: 10px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+
+          &.btn-cancel {
+            background: #f1f5f9;
+            border: none;
+            color: #64748b;
+
+            &:hover {
+              background: #e2e8f0;
+            }
+          }
+
+          &.btn-save {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35);
+
+            &:hover {
+              transform: translateY(-2px);
+              box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Spin animation
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+// ============================================
+// RESPONSIVE
+// ============================================
+
+@media (max-width: 640px) {
+  .saldos-header {
+    // flex-direction: column;
+    text-align: center;
+    gap: 8px;
+
+    .header-left {
+      flex-direction: column;
+    }
+
+    .header-actions {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
+  .saldo-card-grouped {
+    .totals-summary {
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .monedas-container {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+// ============================================
+// GESTOR DE CREACIÓN DE SALDOS EN CAJA
+// ============================================
+.saldos-header {
+  .btn-create-saldo {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    color: white;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    background: linear-gradient(135deg, #0f766e 0%, #2563eb 100%);
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
+
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(37, 99, 235, 0.34);
+    }
+
+    &:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.empty-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+
+  .btn-create-saldo {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    color: white;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    background: linear-gradient(135deg, #0f766e 0%, #2563eb 100%);
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
+  }
+}
+
+.modal-overlay {
+  .modal.create-saldo-modal {
+    background-color: white;
+    border-radius: 22px;
+    box-shadow: 0 28px 56px rgba(15, 23, 42, 0.28);
+    width: 100%;
+    max-width: 760px;
+    overflow: hidden;
+    animation: slideUp 0.3s ease;
+
+    .modal-header.create {
+      padding: 20px 24px;
+      background: linear-gradient(135deg, #0f766e 0%, #2563eb 100%);
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      h4 {
+        margin: 0;
+        font-weight: 800;
+        font-size: 19px;
+      }
+
+      .close-button {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        font-size: 20px;
+        cursor: pointer;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.3);
+          transform: rotate(90deg);
+        }
+      }
+    }
+
+    .modal-body {
+      padding: 24px;
+    }
+
+    .create-saldo-form {
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+
+        &.full {
+          grid-column: 1 / -1;
+        }
+
+        label {
+          color: #334155;
+          font-size: 13px;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+        }
+
+        input,
+        select {
+          min-height: 44px;
+          padding: 10px 12px;
+          border: 1px solid #cbd5e1;
+          border-radius: 12px;
+          color: #0f172a;
+          background: #ffffff;
+          outline: none;
+          font-size: 14px;
+          font-weight: 600;
+          transition: all 0.2s ease;
+
+          &:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+          }
+        }
+
+        .input-with-prefix.compact {
+          .prefix {
+            min-width: 48px;
+            padding: 0 12px;
+            background: linear-gradient(135deg, #0f766e 0%, #2563eb 100%);
+          }
+        }
+      }
+
+      .create-hint {
+        margin-top: 18px;
+        padding: 12px 14px;
+        border: 1px dashed #93c5fd;
+        border-radius: 14px;
+        color: #334155;
+        background: #eff6ff;
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .modal-actions .btn-save {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+    }
+  }
+}
+
+@media (max-width: 820px) {
+  .modal-overlay .modal.create-saldo-modal .create-saldo-form .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ============================================
+// CREACIÓN DE SALDOS - VALIDACIÓN ANTIDUPLICADOS
+// ============================================
+.modal-overlay .modal.create-saldo-modal {
+  max-width: 860px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+
+  .modal-header.create {
+    position: relative;
+
+    &::after {
+      content: "Valida año · plataforma · negocio · caja · moneda";
+      position: absolute;
+      left: 24px;
+      bottom: 7px;
+      color: rgba(255, 255, 255, 0.78);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+  }
+
+  .create-saldo-form {
+    .form-grid {
+      padding: 16px;
+      border: 1px solid #e2e8f0;
+      border-radius: 18px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    }
+
+    .form-group {
+      label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      input,
+      select {
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+      }
+
+      .input-with-prefix.compact {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        overflow: hidden;
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        background: #ffffff;
+
+        &:focus-within {
+          border-color: #2563eb;
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+        }
+
+        input {
+          border: 0;
+          border-radius: 0;
+          box-shadow: none;
+        }
+      }
+    }
+  }
+}
+
+.create-saldo-preview {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid #dbeafe;
+  border-radius: 18px;
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(37, 99, 235, 0.09),
+      transparent 32%
+    ),
+    linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.preview-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+
+  strong {
+    color: #0f172a;
+    font-size: 15px;
+  }
+
+  span {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 700;
+  }
+}
+
+.preview-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+
+  span {
+    padding: 6px 10px;
+    border: 1px solid #bfdbfe;
+    border-radius: 999px;
+    color: #1d4ed8;
+    background: #eff6ff;
+    font-size: 12px;
+    font-weight: 900;
+  }
+}
+
+.currency-validation-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.currency-validation-item {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid #dcfce7;
+  background: #f0fdf4;
+
+  .status-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+    color: #047857;
+    background: #dcfce7;
+  }
+
+  strong,
+  small {
+    display: block;
+  }
+
+  strong {
+    color: #0f172a;
+    font-size: 13px;
+  }
+
+  small {
+    margin-top: 2px;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  &.exists {
+    border-color: #fed7aa;
+    background: #fff7ed;
+
+    .status-icon {
+      color: #c2410c;
+      background: #ffedd5;
+    }
+  }
+}
+
+.create-warning,
+.create-hint {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.create-warning {
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  background: #fff7ed;
+}
+
+.modal-overlay .modal.create-saldo-modal .create-saldo-form .create-hint {
+  border: 1px dashed #93c5fd;
+  color: #1e3a8a;
+  background: #eff6ff;
+}
+
+@media (max-width: 720px) {
+  .preview-heading {
+    flex-direction: column;
+  }
+
+  .currency-validation-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ============================================
+// CREACIÓN DE SALDOS - PLATAFORMA VINCULADA Y FOOTER
+// ============================================
+.modal-overlay .modal.create-saldo-modal {
+  .platform-business-field {
+    select {
+      font-weight: 900;
+      color: #0f172a;
+      border-color: #bfdbfe;
+      background: linear-gradient(180deg, #ffffff 0%, #eff6ff 100%);
+    }
+  }
+
+  .linked-business-note {
+    display: block;
+    margin-top: 8px;
+    padding: 8px 10px;
+    border: 1px solid #dbeafe;
+    border-radius: 12px;
+    color: #1d4ed8;
+    background: #eff6ff;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.35;
+  }
+
+  .create-saldo-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-top: 18px;
+    padding: 16px;
+    border: 1px solid #dbeafe;
+    border-radius: 18px;
+    background:
+      radial-gradient(circle at top left, rgba(37, 99, 235, 0.1), transparent 36%),
+      linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+
+    .modal-actions {
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+  }
+
+  .create-saldo-footer-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+
+    strong {
+      color: #0f172a;
+      font-size: 14px;
+      font-weight: 950;
+    }
+
+    span {
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 800;
+    }
+  }
+}
+
+@media (max-width: 720px) {
+  .modal-overlay .modal.create-saldo-modal .create-saldo-footer {
+    align-items: stretch;
+    flex-direction: column;
+
+    .modal-actions {
+      flex-direction: column-reverse;
+
+      button {
+        width: 100%;
+      }
+    }
+  }
+}

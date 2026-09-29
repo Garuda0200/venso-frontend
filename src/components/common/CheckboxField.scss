@@ -1,0 +1,116 @@
+// CheckboxField Styles
+.checkbox-field {
+  margin-bottom: 1.25rem;
+
+  .checkbox-container {
+    display: flex;
+
+    &.position-left {
+      flex-direction: row;
+    }
+
+    &.position-right {
+      flex-direction: row-reverse;
+      justify-content: flex-end;
+    }
+  }
+
+  .checkbox-input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+
+    &:checked + .checkbox-label .checkbox-box {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-color: #667eea;
+    }
+
+    &:disabled + .checkbox-label {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    &:focus + .checkbox-label .checkbox-box {
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    }
+  }
+
+  .checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    cursor: pointer;
+    user-select: none;
+
+    .checkbox-box {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      border: 2px solid #dfe6e9;
+      border-radius: 4px;
+      background-color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+
+      &:hover {
+        border-color: #667eea;
+      }
+
+      .checkbox-icon {
+        width: 16px;
+        height: 16px;
+        fill: white;
+        animation: checkmark-appear 0.2s ease;
+      }
+    }
+
+    .checkbox-text {
+      flex: 1;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: #2c3e50;
+      line-height: 1.4;
+
+      .checkbox-description {
+        display: block;
+        margin-top: 0.25rem;
+        font-size: 0.85rem;
+        font-weight: 400;
+        color: #7f8c8d;
+        line-height: 1.3;
+      }
+    }
+  }
+
+  .error-message {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+    color: #e74c3c;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  &.has-error {
+    .checkbox-box {
+      border-color: #e74c3c;
+    }
+  }
+}
+
+@keyframes checkmark-appear {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}

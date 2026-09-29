@@ -1,0 +1,770 @@
+﻿// Extracted from Servicios.scss: shared form controls for service components
+.servicios-container {
+  .modal-body {
+    form:not(.tarifa-form-compact) {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 2px;
+    }
+  }
+
+  .form-container,
+  .guia-form,
+  .endose-form,
+  .vuelo-form,
+  .restaurante-form,
+  .servicio-extra-form,
+  .tipo-vuelo-form,
+  .tour-form,
+  .ruta-form,
+  .tren-form,
+  .vagon-form,
+  .hotel-form,
+  .habitacion-form,
+  .transporte-form,
+  .movilidad-form,
+  .ticket-form {
+    color: var(--color-text-primary);
+
+    .form-section {
+      padding: 16px;
+      background: var(--color-bg-light);
+      border: 1px solid var(--color-border-light);
+      border-radius: var(--radius-lg);
+
+      h3,
+      h4 {
+        margin: 0 0 12px;
+        color: var(--color-primary-dark);
+        font-size: 0.98rem;
+        font-weight: var(--font-weight-bold);
+      }
+    }
+
+    .form-text,
+    small {
+      color: var(--color-text-secondary);
+      line-height: 1.35;
+    }
+  }
+
+  // Form elements
+  .form-control {
+    width: 100%;
+    min-height: 40px;
+    padding: 9px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    color: var(--color-text-primary);
+    background: var(--color-bg-primary);
+    transition: var(--transition-base);
+
+    &:focus {
+      outline: none;
+      border-color: rgba(var(--color-primary-rgb), 0.42);
+      box-shadow: 0 0 0 3px var(--color-primary-light);
+    }
+  }
+
+  // Form styles
+  .form-group {
+    margin-bottom: 16px;
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.84rem;
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      min-height: 40px;
+      padding: 9px 12px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      color: var(--color-text-primary);
+      background: var(--color-bg-primary);
+      transition: var(--transition-base);
+
+      &:focus {
+        outline: none;
+        border-color: rgba(var(--color-primary-rgb), 0.42);
+        box-shadow: 0 0 0 3px var(--color-primary-light);
+      }
+
+      &.error {
+        border-color: var(--color-danger);
+        box-shadow: 0 0 0 3px var(--color-danger-light);
+      }
+    }
+
+    textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    .error-message {
+      color: var(--color-danger);
+      font-size: 12px;
+      margin-top: 4px;
+      font-weight: var(--font-weight-semibold);
+    }
+
+    &.switch-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+
+      .switch-label-container {
+        display: flex;
+        flex-direction: column;
+
+        label {
+          margin-bottom: 0;
+        }
+
+        .text-muted {
+          font-size: 12px;
+          margin-top: 2px;
+        }
+      }
+
+      .toggle-switch {
+        position: relative;
+        width: 50px;
+        height: 26px;
+        border-radius: 13px;
+        background-color: #ccc;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+
+        &.active {
+          background-color: var(--color-primary);
+        }
+
+        &.disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .switch-handle {
+          position: absolute;
+          top: 3px;
+          left: 3px;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background-color: white;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+          transition: transform 0.3s ease;
+        }
+
+        &.active .switch-handle {
+          transform: translateX(24px);
+        }
+
+        &:before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          border-radius: 13px;
+          transition: box-shadow 0.3s ease;
+        }
+
+        &:hover:not(.disabled):before {
+          box-shadow: 0 0 0 2px var(--color-primary-light);
+        }
+      }
+    }
+  }
+
+  // Button styles
+  .button-group {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 6px;
+    padding-top: 14px;
+    border-top: 1px solid var(--color-border-light);
+  }
+
+  .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    padding: 9px 16px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: var(--font-weight-bold);
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+
+    &-primary {
+      background-color: var(--color-primary);
+      color: white;
+      border-color: var(--color-primary);
+
+      &:hover:not(:disabled) {
+        background-color: var(--color-primary-hover);
+        border-color: var(--color-primary-hover);
+      }
+
+      &:active:not(:disabled) {
+        background-color: var(--color-primary-dark);
+        border-color: var(--color-primary-dark);
+      }
+    }
+
+    &-secondary {
+      background-color: white;
+      color: rgba(0, 0, 0, 0.65);
+      border-color: var(--color-border);
+
+      &:hover:not(:disabled) {
+        color: var(--color-primary-hover);
+        border-color: var(--color-primary-hover);
+      }
+
+      &:active:not(:disabled) {
+        color: var(--color-primary-dark);
+        border-color: var(--color-primary-dark);
+      }
+    }
+
+    &:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+  }
+
+  // Table actions
+  .action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    .action-button {
+      width: 34px;
+      height: 34px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--color-bg-primary);
+      border: 1px solid var(--color-border-light);
+      cursor: pointer;
+      padding: 0;
+      border-radius: var(--radius-md);
+      transition: var(--transition-base);
+
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
+      }
+
+      &.edit {
+        color: var(--color-primary);
+
+        &:hover {
+          background: var(--color-primary-light);
+          border-color: rgba(var(--color-primary-rgb), 0.28);
+        }
+      }
+
+      &.delete {
+        color: var(--color-danger);
+
+        &:hover {
+          background: var(--color-danger-light);
+          border-color: rgba(231, 74, 59, 0.28);
+        }
+      }
+
+      &.view {
+        color: var(--color-info-dark);
+
+        &:hover {
+          background: var(--color-info-light);
+          border-color: rgba(54, 185, 204, 0.28);
+        }
+      }
+
+      &.rating,
+      &.rate {
+        color: var(--color-accent-dark);
+
+        &:hover {
+          background: var(--color-accent-light);
+          border-color: rgba(255, 140, 0, 0.28);
+        }
+      }
+    }
+  }
+
+  // Add button floating at the bottom right
+  .add-button {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 56px;
+    height: 56px;
+    border-radius: 28px;
+    background-color: var(--color-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    border: none;
+    font-size: 24px;
+    transition: all 0.2s;
+    z-index: 10;
+
+    &:hover {
+      background-color: var(--color-primary-hover);
+      transform: translateY(-3px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    }
+  }
+
+  .input-with-toggle {
+    position: relative;
+
+    .input-toggle-container {
+      display: flex;
+      align-items: center;
+
+      input {
+        flex: 1;
+
+        &:disabled {
+          background-color: var(--color-bg-secondary);
+          color: #999;
+          border-color: #ddd;
+        }
+      }
+
+      .toggle-button {
+        margin-left: 8px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px;
+        &.active {
+          color: var(--color-primary);
+        }
+
+        &:hover {
+          color: var(--color-primary-hover);
+        }
+      }
+    }
+
+    small.form-text {
+      display: block;
+      margin-top: 4px;
+      font-size: 12px;
+      color: #777;
+    }
+  }
+
+  // Custom input fields for forms that need custom options
+  .custom-field-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 5px;
+  }
+
+  .switch-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border: 1px solid rgba(var(--color-primary-rgb), 0.18);
+    border-radius: var(--radius-md);
+    background: rgba(var(--color-primary-rgb), 0.06);
+    color: var(--color-primary-dark);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+
+    input {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--color-primary);
+      cursor: pointer;
+    }
+
+    input:disabled {
+      cursor: not-allowed;
+    }
+  }
+
+  // Con estas clases, aseguramos compatibilidad con selectores anteriores
+  .frequency-field-container,
+  .tipo-field-container {
+    @extend .custom-field-container;
+  }
+
+  // Formularios mejorados
+  .tren-form,
+  .vagon-form,
+  .hotel-form,
+  .habitacion-form,
+  .movilidad-form {
+    // Asegurar que los estilos no interfieran con el focus
+    .custom-field-container {
+      position: relative;
+      z-index: 2;
+    }
+
+    .custom-option-btn {
+      display: inline-flex;
+      align-items: center;
+      background-color: var(--color-primary-light);
+      border: 1px solid rgba(var(--color-primary-rgb), 0.2);
+      color: var(--color-primary-dark);
+      border-radius: var(--radius-md);
+      padding: 4px 10px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-left: 10px;
+
+      .btn-text {
+        margin-left: 5px;
+      }
+
+      &:hover {
+        background-color: rgba(var(--color-primary-rgb), 0.14);
+        border-color: rgba(var(--color-primary-rgb), 0.34);
+      }
+
+      &:active {
+        background-color: rgba(var(--color-primary-rgb), 0.18);
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+
+    .custom-input-container {
+      position: relative;
+      margin-bottom: 8px;
+      width: 100%;
+
+      // Evitar que se pierda el foco al hacer clic
+      &::before {
+        content: "";
+        position: absolute;
+        top: -1px;
+        left: -1px;
+        right: -1px;
+        bottom: -1px;
+        z-index: -1;
+      }
+    }
+
+    .custom-field {
+      width: 100%;
+      padding: 8px 12px;
+      border: 2px solid rgba(var(--color-primary-rgb), 0.24);
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      transition: all 0.3s;
+      background-color: var(--color-primary-light);
+      // Asegurar que el input tenga un z-index más alto que el contenedor
+      position: relative;
+      z-index: 1;
+
+      &:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 2px var(--color-primary-light);
+        background-color: #fff;
+        z-index: 2; // Aumentar el z-index durante el foco
+      }
+
+      &.error {
+        border-color: var(--color-danger);
+      }
+    }
+
+    // Form row para organizar campos en fila
+    .form-row {
+      display: flex;
+      margin: 0 -8px;
+      flex-wrap: wrap;
+
+      .form-group {
+        padding: 0 8px;
+
+        &.half {
+          flex: 0 0 50%;
+
+          @media (max-width: 768px) {
+            flex: 0 0 100%;
+          }
+        }
+      }
+    }
+
+    // Checkbox para mejor estilo
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+
+      input[type="checkbox"] {
+        width: auto;
+        margin-right: 8px;
+      }
+    }
+  }
+
+  .hint-text {
+    font-size: 12px;
+    color: #888;
+    font-weight: normal;
+    margin-left: 5px;
+  }
+
+  // Style for disabled/readonly fields with existing values
+  input[type="number"]:disabled {
+    background-color: var(--color-bg-light);
+    border-color: var(--color-border-light);
+    color: var(--color-text-secondary);
+    cursor: not-allowed;
+
+    &.existing-value {
+      border-left: 3px solid var(--color-primary);
+    }
+  }
+
+  .transporte-form {
+    .suggestion-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+
+      .suggestion-label {
+        font-size: 12px;
+        color: #666;
+        margin-right: 4px;
+        display: flex;
+        align-items: center;
+      }
+
+      .suggestion-chip {
+        background-color: var(--color-primary-light);
+        border: 1px solid rgba(var(--color-primary-rgb), 0.18);
+        color: var(--color-primary-dark);
+        padding: 4px 10px;
+        border-radius: 16px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+
+        &:hover {
+          background-color: rgba(var(--color-primary-rgb), 0.18);
+        }
+      }
+    }
+
+    .form-text {
+      font-size: 12px;
+      color: #666;
+      margin-top: 4px;
+    }
+  }
+
+  // Custom field container styles
+  .custom-field-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 5px;
+  }
+
+  .custom-option-btn {
+    background: none;
+    border: none;
+    color: var(--color-primary);
+    padding: 0;
+    cursor: pointer;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+
+    .btn-text {
+      margin-left: 4px;
+    }
+
+    &:hover {
+      color: var(--color-primary-dark);
+    }
+  }
+
+  .custom-input-container {
+    position: relative;
+  }
+
+  .custom-field {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    transition:
+      border-color 0.15s ease-in-out,
+      box-shadow 0.15s ease-in-out;
+
+    &:focus {
+      border-color: rgba(var(--color-primary-rgb), 0.42);
+      box-shadow: 0 0 0 0.2rem var(--color-primary-light);
+    }
+  }
+
+  /* Variant creation styles */
+  .variant-input-container {
+    position: relative;
+  }
+
+  .variant-field {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-bg-light);
+    border-radius: var(--radius-md);
+    color: var(--color-text-secondary);
+    font-style: italic;
+  }
+
+  /* Modern Switch Toggle Styles (for es_bimodal in Vagones) */
+  .switch-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 52px;
+      height: 28px;
+
+      input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+
+        &:checked + .slider {
+          background-color: var(--color-primary);
+        }
+
+        &:checked + .slider:before {
+          transform: translateX(24px);
+        }
+
+        &:disabled + .slider {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        &:focus + .slider {
+          box-shadow: 0 0 4px rgba(var(--color-primary-rgb), 0.35);
+        }
+      }
+
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: 0.3s;
+        border-radius: 28px;
+
+        &:before {
+          position: absolute;
+          content: "";
+          height: 20px;
+          width: 20px;
+          left: 4px;
+          bottom: 4px;
+          background-color: white;
+          transition: 0.3s;
+          border-radius: 50%;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        &.round {
+          border-radius: 28px;
+
+          &:before {
+            border-radius: 50%;
+          }
+        }
+      }
+    }
+
+    .switch-label {
+      font-size: 14px;
+      color: #333;
+      font-weight: 500;
+      user-select: none;
+    }
+  }
+}
+
+/* Room catalog: capacity is explicit because custom room names do not imply occupancy. */
+.habitacion-form .room-capacity-field {
+  .room-capacity-control {
+    display: grid;
+    grid-template-columns: minmax(96px, 150px) auto;
+    align-items: center;
+    gap: 10px;
+
+    input {
+      width: 100%;
+      min-width: 0;
+      font-variant-numeric: tabular-nums;
+    }
+
+    span {
+      color: var(--color-text-secondary);
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+  }
+
+  > small {
+    display: block;
+    margin-top: 6px;
+    line-height: 1.45;
+  }
+}
+
+@media (max-width: 560px) {
+  .habitacion-form .room-capacity-field .room-capacity-control {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+}

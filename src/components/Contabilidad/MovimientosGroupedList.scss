@@ -1,0 +1,402 @@
+@import "../../styles/_variables.scss";
+
+.movimientos-grouped-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+  padding: $spacing-sm 0;
+
+  .group-container {
+    background: $color-bg-primary;
+    border-radius: $border-radius-lg;
+    box-shadow: $shadow-md;
+    overflow: hidden;
+    transition: $transition-normal;
+
+    &:hover {
+      box-shadow: $shadow-lg;
+    }
+
+    &.ungrouped {
+      .group-header {
+        background: $color-gray-lightest;
+        border-left: 4px solid $color-gray-medium;
+      }
+    }
+
+    // Estilo especial para grupos sin file
+    &.no-file {
+      .group-header {
+        background: linear-gradient(
+          135deg,
+          $color-warning 0%,
+          darken($color-warning, 10%) 100%
+        );
+        border-left: 4px solid darken($color-warning, 15%);
+
+        &:hover {
+          background: linear-gradient(
+            135deg,
+            darken($color-warning, 5%) 0%,
+            darken($color-warning, 15%) 100%
+          );
+        }
+
+        .group-label {
+          font-style: italic;
+        }
+      }
+    }
+  }
+
+  .group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: $spacing-lg $spacing-xl;
+    background: linear-gradient(
+      135deg,
+      $color-primary 0%,
+      $color-primary-dark 100%
+    );
+    color: $color-text-white;
+    cursor: pointer;
+    user-select: none;
+    transition: $transition-normal;
+
+    &:hover {
+      background: linear-gradient(
+        135deg,
+        $color-primary-dark 0%,
+        darken($color-primary-dark, 5%) 100%
+      );
+    }
+
+    .group-header-left {
+      display: flex;
+      align-items: center;
+      gap: $spacing-md;
+      flex: 1;
+
+      .group-icon {
+        font-size: $font-size-lg;
+        transition: $transition-fast;
+      }
+
+      .group-label {
+        font-weight: 600;
+        font-size: $font-size-lg;
+        letter-spacing: 0.3px;
+      }
+
+      .btn-view-voucher-summary,
+      .btn-view-service-summary,
+      .btn-manage-documents {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: $border-radius-md;
+        color: white;
+        font-size: 18px;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-left: $spacing-md;
+
+        &:hover:not(:disabled) {
+          background: rgba(255, 255, 255, 0.3);
+          border-color: rgba(255, 255, 255, 0.5);
+          transform: translateY(-1px);
+        }
+
+        &:active:not(:disabled) {
+          transform: translateY(0);
+        }
+
+        &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+      }
+
+      // Botón de documentos con color distintivo verde
+      .btn-manage-documents {
+        background: rgba(76, 175, 80, 0.3);
+        border-color: rgba(76, 175, 80, 0.5);
+
+        &:hover:not(:disabled) {
+          background: rgba(76, 175, 80, 0.5);
+          border-color: rgba(76, 175, 80, 0.7);
+        }
+      }
+    }
+
+    .group-header-right {
+      display: flex;
+      align-items: center;
+      gap: $spacing-xl;
+
+      .group-count {
+        font-size: $font-size-sm;
+        opacity: 0.95;
+        background: rgba(255, 255, 255, 0.2);
+        padding: $spacing-xs $spacing-md;
+        border-radius: $border-radius-pill;
+        font-weight: 500;
+      }
+
+      // Container for multiple currency totals
+      .group-totals {
+        display: flex;
+        align-items: center;
+        gap: $spacing-sm;
+
+        &.ingreso .group-total {
+          color: lighten($color-success, 35%);
+        }
+
+        &.egreso .group-total {
+          color: lighten($color-danger, 30%);
+        }
+      }
+
+      .group-total {
+        font-size: $font-size-lg;
+        font-weight: 700;
+        background: rgba(255, 255, 255, 0.25);
+        padding: $spacing-sm $spacing-lg;
+        border-radius: $border-radius-md;
+        white-space: nowrap;
+
+        // Badge style for soles
+        &.soles {
+          background: rgba(255, 193, 7, 0.3);
+          border: 1px solid rgba(255, 193, 7, 0.5);
+        }
+
+        // Badge style for dolares
+        &.dolares {
+          background: rgba(46, 204, 113, 0.3);
+          border: 1px solid rgba(46, 204, 113, 0.5);
+        }
+
+        &.empty {
+          opacity: 0.6;
+        }
+
+        &.ingreso {
+          color: lighten($color-success, 35%);
+        }
+
+        &.egreso {
+          color: lighten($color-danger, 30%);
+        }
+      }
+    }
+  }
+
+  .group-content {
+    padding: $spacing-lg;
+    background: $color-bg-secondary;
+    animation: slideDown 0.3s ease;
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  }
+
+  .no-movimientos {
+    text-align: center;
+    padding: $spacing-xxl $spacing-lg;
+    color: $color-gray-medium;
+    background: $color-bg-primary;
+    border-radius: $border-radius-lg;
+    box-shadow: $shadow-sm;
+
+    p {
+      margin: 0;
+      font-size: $font-size-lg;
+      font-weight: 500;
+    }
+  }
+
+  // Contenedor de acciones del grupo - similar a Cotizaciones
+  .group-actions-container {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    margin-left: $spacing-md;
+
+    &.expanded {
+      .action-main-btn {
+        display: none;
+      }
+    }
+
+    .action-main-btn {
+      display: flex;
+      align-items: center;
+      gap: $spacing-xs;
+      padding: $spacing-sm $spacing-md;
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: $border-radius-md;
+      color: white;
+      font-size: $font-size-sm;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.35);
+        transform: translateY(-1px);
+      }
+
+      svg {
+        font-size: 14px;
+        transition: transform 0.2s ease;
+      }
+    }
+
+    .inline-expanded-buttons {
+      display: flex;
+      align-items: center;
+      gap: $spacing-xs;
+      animation: fadeInSlide 0.2s ease;
+
+      @keyframes fadeInSlide {
+        from {
+          opacity: 0;
+          transform: translateX(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      .action-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: $border-radius-md;
+        color: white;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+          transform: none;
+        }
+
+        svg {
+          font-size: 16px;
+        }
+
+        &.summary-btn {
+          background: rgba(46, 125, 50, 0.5);
+          border-color: rgba(46, 125, 50, 0.7);
+
+          &:hover {
+            background: rgba(46, 125, 50, 0.7);
+          }
+        }
+
+        &.pdf-btn {
+          background: rgba(211, 47, 47, 0.5);
+          border-color: rgba(211, 47, 47, 0.7);
+
+          &:hover {
+            background: rgba(211, 47, 47, 0.7);
+          }
+        }
+
+        &.new-movement-btn {
+          background: rgba(20, 184, 166, 0.5);
+          border-color: rgba(20, 184, 166, 0.75);
+
+          &:hover {
+            background: rgba(20, 184, 166, 0.75);
+          }
+        }
+
+        &.reserva-btn {
+          background: rgba(156, 39, 176, 0.5);
+          border-color: rgba(156, 39, 176, 0.7);
+
+          &:hover {
+            background: rgba(156, 39, 176, 0.7);
+          }
+        }
+
+        &.docs-btn {
+          background: rgba(255, 152, 0, 0.5);
+          border-color: rgba(255, 152, 0, 0.7);
+
+          &:hover {
+            background: rgba(255, 152, 0, 0.7);
+          }
+        }
+
+        &.collapse-btn {
+          background: rgba(96, 125, 139, 0.5);
+          border-color: rgba(96, 125, 139, 0.7);
+
+          &:hover {
+            background: rgba(96, 125, 139, 0.7);
+          }
+        }
+      }
+    }
+  }
+
+  // Botón de servicio de reserva standalone
+  .btn-view-service-summary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: rgba(156, 39, 176, 0.5);
+    border: 1px solid rgba(156, 39, 176, 0.7);
+    border-radius: $border-radius-md;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-left: $spacing-sm;
+
+    &:hover {
+      background: rgba(156, 39, 176, 0.7);
+      transform: translateY(-1px);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    svg {
+      font-size: 16px;
+    }
+  }
+}

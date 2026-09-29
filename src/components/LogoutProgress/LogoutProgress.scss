@@ -1,0 +1,285 @@
+@import "../../styles/_variables.scss";
+
+.logout-progress-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
+  animation: fadeIn 0.3s ease-in-out;
+  overflow: hidden;
+
+  // Decorative elements
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    filter: blur(40px);
+    opacity: 0.3;
+    z-index: -1;
+  }
+
+  &::before {
+    background-color: rgba($color-primary, 0.5);
+    top: -100px;
+    right: -50px;
+    animation: float 15s infinite alternate ease-in-out;
+  }
+
+  &::after {
+    background-color: rgba($color-secondary, 0.4);
+    bottom: -100px;
+    left: -50px;
+    animation: float 18s infinite alternate-reverse ease-in-out;
+  }
+
+  .logout-progress-container {
+    text-align: center;
+    max-width: 320px;
+    width: 90%;
+    padding: 30px 25px;
+    background-color: white;
+    border-radius: $border-radius-lg;
+    box-shadow: $shadow-lg;
+    animation: slideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+
+    // Decorative top bar
+    &::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, $color-secondary, $color-primary);
+    }
+
+    .status-icon {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 20px;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle,
+        rgba($color-primary, 0.05) 0%,
+        rgba($color-primary, 0.1) 100%
+      );
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      &::after {
+        content: "";
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 2px dashed rgba($color-secondary, 0.3);
+        animation: rotate 8s linear infinite;
+      }
+
+      .logout-icon {
+        width: 40px;
+        height: 40px;
+        background-color: $color-secondary;
+        mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath d='M377.9 105.9L500.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L377.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1-128 0c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM160 96L96 96c-17.7 0-32 14.3-32 32l0 256c0 17.7 14.3 32 32 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-64 0c-53 0-96-43-96-96L0 128C0 75 43 32 96 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32z'/%3E%3C/svg%3E");
+        mask-repeat: no-repeat;
+        mask-position: center;
+        animation: pulse 2s infinite;
+      }
+    }
+
+    h3 {
+      color: $color-text-primary;
+      font-size: 1.4rem;
+      margin: 0 0 10px;
+      font-weight: 600;
+    }
+
+    .status-message {
+      color: $color-text-secondary;
+      font-size: 1rem;
+      margin: 8px 0 20px;
+      font-weight: normal;
+      animation: textPulse 1.5s infinite;
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 8px;
+      background-color: $color-gray-light;
+      border-radius: $border-radius-pill;
+      overflow: hidden;
+      margin-top: 15px;
+
+      .progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, $color-primary, $color-secondary);
+        border-radius: $border-radius-pill;
+        transition: width 0.3s ease;
+        box-shadow: 0 0 10px rgba($color-primary, 0.3);
+        position: relative;
+        overflow: hidden;
+
+        &::after {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.4) 50%,
+            rgba(255, 255, 255, 0) 100%
+          );
+          transform: translateX(-100%);
+          animation: shimmer 1.5s infinite;
+        }
+      }
+    }
+
+    .footer-text {
+      color: #f8f9fc; // Replace $color-text-light with its actual value
+      font-size: 0.8rem;
+      margin-top: 20px;
+      opacity: 0.8;
+    }
+  }
+}
+
+.logout-progress-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1500;
+
+  .logout-container {
+    background-color: white;
+    border-radius: 8px;
+    padding: 30px;
+    width: 400px;
+    max-width: 90vw;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+    h2 {
+      font-size: 24px;
+      margin: 0 0 20px;
+      color: #333;
+    }
+
+    p {
+      margin: 20px 0 0;
+      color: #666;
+    }
+
+    .progress-track {
+      height: 8px;
+      background-color: #eee;
+      border-radius: 4px;
+      overflow: hidden;
+
+      .progress-bar {
+        height: 100%;
+        background-color: #f27c22; // Primary orange color from your PDF generation
+        transition: width 0.3s ease;
+      }
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes textPulse {
+  0% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.8;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0.8;
+    transform: scale(0.95);
+  }
+}
+
+@keyframes rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes float {
+  0% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(15px, -15px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}

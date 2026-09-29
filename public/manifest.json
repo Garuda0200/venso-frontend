@@ -1,0 +1,25 @@
+{
+  "short_name": "Venso Tours",
+  "name": "Venso Tours - Gestión integral de turismo",
+  "icons": [
+    {
+      "src": "favicon.webp",
+      "sizes": "64x64",
+      "type": "image/webp"
+    },
+    {
+      "src": "logo192.webp",
+      "type": "image/webp",
+      "sizes": "192x192"
+    },
+    {
+      "src": "logo512.webp",
+      "type": "image/webp",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#ff007e",
+  "background_color": "#ffffff"
+}

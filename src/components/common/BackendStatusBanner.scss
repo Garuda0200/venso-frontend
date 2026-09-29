@@ -1,0 +1,300 @@
+.backend-status-banner {
+  position: fixed;
+  inset: 0;
+  z-index: 1600;
+  display: grid;
+  place-items: center;
+  padding: clamp(18px, 4vw, 48px);
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, rgba(3, 46, 36, 0.94) 0%, rgba(9, 69, 56, 0.9) 42%, rgba(236, 239, 243, 0.94) 100%),
+    radial-gradient(circle at 18% 18%, rgba(255, 151, 30, 0.28), transparent 34%),
+    radial-gradient(circle at 82% 72%, rgba(11, 112, 84, 0.28), transparent 42%);
+  color: #10231e;
+}
+
+.backend-status-banner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: radial-gradient(circle at center, black, transparent 78%);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.backend-status-banner__glow {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(6px);
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.backend-status-banner__glow--one {
+  width: 320px;
+  height: 320px;
+  top: 10%;
+  left: 12%;
+  background: rgba(255, 151, 30, 0.22);
+}
+
+.backend-status-banner__glow--two {
+  width: 420px;
+  height: 420px;
+  right: 8%;
+  bottom: 8%;
+  background: rgba(0, 103, 76, 0.26);
+}
+
+.backend-status-banner__card {
+  position: relative;
+  width: min(920px, 100%);
+  display: grid;
+  grid-template-columns: minmax(220px, 0.78fr) minmax(0, 1.22fr);
+  align-items: stretch;
+  gap: 0;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 34px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow:
+    0 34px 90px rgba(3, 27, 22, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.86);
+  overflow: hidden;
+  backdrop-filter: blur(18px);
+}
+
+.backend-status-banner__visual {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 420px;
+  padding: 34px;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.82), transparent 48%),
+    linear-gradient(160deg, rgba(0, 82, 60, 0.12), rgba(255, 151, 30, 0.2));
+}
+
+.backend-status-banner__visual::before {
+  content: "";
+  position: absolute;
+  inset: 28px;
+  border: 1px solid rgba(0, 82, 60, 0.1);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.backend-status-banner__orb {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(280px, 62vw);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(236, 244, 240, 0.72)),
+    radial-gradient(circle at 30% 20%, rgba(255, 151, 30, 0.24), transparent 44%);
+  box-shadow:
+    0 24px 50px rgba(3, 46, 36, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.backend-status-banner__robot {
+  width: min(230px, 56vw);
+}
+
+.backend-status-banner__robot svg {
+  width: 100%;
+  height: auto;
+  fill: none;
+  stroke: #07563f;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 8;
+  filter: drop-shadow(0 16px 22px rgba(7, 86, 63, 0.16));
+}
+
+.backend-status-banner__robot rect:first-child {
+  fill: #f5faf7;
+}
+
+.backend-status-banner__robot rect:nth-child(2) {
+  fill: #dbeae4;
+}
+
+.backend-status-banner__content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+  padding: clamp(30px, 5vw, 56px);
+}
+
+.backend-status-banner__header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.backend-status-banner__eyebrow,
+.backend-status-banner__live-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.backend-status-banner__eyebrow {
+  background: rgba(0, 82, 60, 0.1);
+  color: #07563f;
+}
+
+.backend-status-banner__live-chip {
+  background: rgba(255, 151, 30, 0.16);
+  color: #9a4d00;
+}
+
+.backend-status-banner__card h1 {
+  margin: 0;
+  max-width: 14ch;
+  color: #071f19;
+  font-size: clamp(2.1rem, 4vw, 4.05rem);
+  line-height: 0.96;
+  letter-spacing: -0.055em;
+}
+
+.backend-status-banner__card p {
+  margin: 0;
+  max-width: 42rem;
+  color: #4f635b;
+  font-size: 1.02rem;
+  font-weight: 600;
+  line-height: 1.7;
+}
+
+.backend-status-banner__status-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.backend-status-banner__status-card {
+  min-height: 74px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  padding: 14px 16px;
+  border: 1px solid rgba(0, 82, 60, 0.12);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(248, 252, 250, 0.96), rgba(240, 248, 245, 0.9));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
+.backend-status-banner__status-card span {
+  color: #72817b;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.backend-status-banner__status-card strong {
+  color: #072b21;
+  font-size: 0.98rem;
+}
+
+.backend-status-banner__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  padding-top: 4px;
+}
+
+.backend-status-banner__actions button {
+  border: 0;
+  border-radius: 999px;
+  padding: 13px 18px;
+  background: linear-gradient(135deg, #006b4f, #008a65);
+  color: #fff;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 12px 26px rgba(0, 107, 79, 0.26);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    filter 0.18s ease;
+}
+
+.backend-status-banner__actions button:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+  box-shadow: 0 16px 32px rgba(0, 107, 79, 0.32);
+}
+
+.backend-status-banner__actions span {
+  color: #6a7b74;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.backend-status-banner__pulse {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 10px;
+  border-radius: 50%;
+  background: #f39a22;
+  box-shadow: 0 0 0 0 rgba(243, 154, 34, 0.46);
+  animation: server-pulse 1.8s ease-out infinite;
+}
+
+@keyframes server-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(243, 154, 34, 0.46);
+  }
+
+  70% {
+    box-shadow: 0 0 0 14px rgba(243, 154, 34, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(243, 154, 34, 0);
+  }
+}
+
+@media (max-width: 820px) {
+  .backend-status-banner__card {
+    grid-template-columns: 1fr;
+    border-radius: 28px;
+  }
+
+  .backend-status-banner__visual {
+    min-height: 250px;
+    padding: 26px;
+  }
+
+  .backend-status-banner__content {
+    padding: 28px 22px 30px;
+  }
+
+  .backend-status-banner__status-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .backend-status-banner__card h1 {
+    max-width: 100%;
+  }
+}

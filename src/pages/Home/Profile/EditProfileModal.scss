@@ -1,0 +1,231 @@
+@import "../../../styles/_variables.scss";
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-container {
+  background-color: white;
+  border-radius: $border-radius-md;
+  box-shadow: $shadow-lg;
+  width: 90%;
+  max-width: 550px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  background: $color-primary;
+  color: white;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+
+    svg {
+      margin-right: 0.5rem;
+    }
+  }
+
+  .close-button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.3rem;
+    border-radius: 50%;
+    transition: $transition-fast;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+
+  .form-group {
+    margin-bottom: 1rem;
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: $color-text-primary;
+      display: flex;
+      align-items: center;
+
+      svg {
+        margin-right: 0.5rem;
+        color: $color-primary;
+      }
+    }
+
+    input {
+      width: 100%;
+      padding: 0.8rem;
+      border: 1px solid $color-border;
+      border-radius: $border-radius-sm;
+      font-size: 1rem;
+      transition: $transition-fast;
+
+      &:focus {
+        outline: none;
+        border-color: $color-primary;
+        box-shadow: 0 0 0 2px rgba($color-primary, 0.2);
+      }
+
+      &.error {
+        border-color: $color-danger;
+        box-shadow: 0 0 0 2px rgba($color-danger, 0.2);
+      }
+
+      &:disabled {
+        background-color: $color-gray-light;
+        cursor: not-allowed;
+      }
+
+      &::placeholder {
+        color: #f8f9fc; // Replace $color-text-light with its actual value
+      }
+    }
+
+    .error-text {
+      color: $color-danger;
+      font-size: 0.85rem;
+      margin-top: 0.3rem;
+      display: block;
+    }
+  }
+
+  .form-row {
+    display: flex;
+    gap: 1rem;
+
+    .form-group {
+      flex: 1;
+    }
+  }
+}
+
+.modal-footer {
+  padding: 1rem 1.5rem;
+  background-color: $color-gray-light;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  border-top: 1px solid $color-border;
+
+  button {
+    padding: 0.8rem 1.2rem;
+    border-radius: $border-radius-sm;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: $transition-fast;
+
+    &:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    svg {
+      font-size: 1rem;
+    }
+  }
+
+  .cancel-button {
+    background-color: white;
+    color: $color-text-primary;
+    border: 1px solid $color-border;
+
+    &:hover:not(:disabled) {
+      background-color: darken(white, 5%);
+      border-color: $color-border-dark;
+    }
+  }
+
+  .save-button {
+    background-color: $color-primary;
+    color: white;
+    border: none;
+
+    &:hover:not(:disabled) {
+      background-color: darken($color-primary, 5%);
+      box-shadow: $shadow-sm;
+      transform: translateY(-1px);
+    }
+  }
+}
+
+// Animations
+.animate-fade-in {
+  animation: fadeIn 0.3s ease forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+// Responsive styles
+@media (max-width: 768px) {
+  .modal-container {
+    width: 95%;
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+}

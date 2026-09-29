@@ -1,0 +1,195 @@
+﻿/* ==========================================================================
+ TARIFA FILTER PANEL - REFACTORIZADO Y COMPACTO
+ ========================================================================== */
+
+.tarifa-filter-panel {
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  margin-top: 8px;
+  transition: all 0.3s ease;
+
+  .filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+
+    .filter-title {
+      margin: 0;
+      font-size: 11px;
+      font-weight: 700;
+      color: #595959;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .clear-filter-btn {
+      background: none;
+      border: none;
+      color: var(--color-primary);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: all 0.2s;
+
+      &:hover {
+        background: var(--color-primary-light);
+        text-decoration: underline;
+      }
+    }
+  }
+
+  .filter-checkboxes {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+
+    .filter-checkbox {
+      position: relative;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      padding: 6px 14px;
+      background: white;
+      border: 1.5px solid #f0f0f0;
+      border-radius: 10px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
+
+      input {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+        height: 0;
+        width: 0;
+      }
+
+      .tarifa-type {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 600;
+        font-size: 13px;
+        color: #8c8c8c;
+        transition: all 0.3s;
+
+        .tarifa-badge {
+          padding: 1px 6px;
+          border-radius: 4px;
+          font-size: 9px;
+          color: white;
+          background: #d9d9d9;
+          transition: background 0.3s;
+        }
+      }
+
+      &:hover {
+        border-color: #d9d9d9;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      }
+
+      // Estilo cuando está checked
+      &:has(input:checked) {
+        border-color: var(--color-primary);
+        background: var(--color-primary-light);
+        box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.12);
+
+        .tarifa-type {
+          color: var(--color-primary);
+
+          &.interna .tarifa-badge {
+            background: var(--color-success);
+          }
+          &.externa .tarifa-badge {
+            background: var(--color-accent);
+          }
+        }
+      }
+    }
+  }
+
+  .filter-active-tags {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px dashed rgba(0, 0, 0, 0.06);
+
+    .filter-tag {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      background: white;
+      border: 1px solid #e8e8e8;
+      border-radius: 16px;
+      color: #595959;
+      font-size: 11px;
+      font-weight: 500;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+      animation: fadeInScale 0.3s ease;
+
+      .tag-badge {
+        font-size: 8px;
+        font-weight: 700;
+        text-transform: uppercase;
+        opacity: 0.8;
+      }
+
+      .tag-close {
+        background: none;
+        border: none;
+        color: #bfbfbf;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 0;
+        font-size: 12px;
+        transition: all 0.2s;
+
+        &:hover {
+          color: var(--color-danger);
+          transform: scale(1.2);
+        }
+      }
+    }
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// Tema oscuro (opcional)
+[data-theme="dark"] {
+  .tarifa-filter-panel {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+
+    .filter-checkbox {
+      background: rgba(0, 0, 0, 0.2);
+      border-color: rgba(255, 255, 255, 0.1);
+
+      .tarifa-type {
+        color: #8c8c8c;
+      }
+
+      &:has(input:checked) {
+        background: var(--color-primary-light);
+        border-color: var(--color-primary);
+      }
+    }
+  }
+}

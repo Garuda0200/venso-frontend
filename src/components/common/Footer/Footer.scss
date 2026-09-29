@@ -1,0 +1,22 @@
+.admin-footer {
+  width: 100%;
+  background: linear-gradient(135deg, #ffffff, #ffffff);
+  text-align: center;
+  padding: 10px 0;
+  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+
+  .footer-text {
+    font-size: 14px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    margin: 0;
+  }
+
+  .footer-icon {
+    color: #e74c3c;
+    font-size: 16px;
+  }
+}

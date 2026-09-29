@@ -1,0 +1,3926 @@
+.ventas-pdf-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.ventas-pdf-modal {
+  background: #f4f6f8;
+  width: min(98vw, 1360px);
+  max-width: 1360px;
+  max-height: 90vh;
+  border-radius: 10px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  color: #333;
+
+  .modal-header {
+    padding: 14px 20px;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e6ea;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .header-content {
+      h2 {
+        margin: 0 0 4px;
+        font-size: 18px;
+        font-weight: 600;
+        color: #222;
+      }
+
+      .voucher-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 12px;
+        color: #666;
+
+        .voucher-code {
+          font-weight: 600;
+          padding: 2px 8px;
+          border-radius: 12px;
+          background: #e6f4ec;
+          color: #277c45;
+        }
+
+        .voucher-date {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+        }
+      }
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      .btn-download-pdf,
+      .btn-save-pdf {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 40px;
+        padding: 0 16px;
+        border-radius: 999px;
+        border: none;
+        cursor: pointer;
+        color: #fff;
+        font-size: 0.85rem;
+        font-weight: 700;
+
+        &:hover:not(:disabled) {
+          transform: translateY(-1px);
+        }
+
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+          box-shadow: none;
+        }
+      }
+
+      .btn-save-pdf {
+        background: linear-gradient(135deg, #0f7a43 0%, #02532f 100%);
+        box-shadow: 0 10px 18px rgba(2, 83, 47, 0.18);
+
+        &:hover:not(:disabled) {
+          box-shadow: 0 14px 24px rgba(2, 83, 47, 0.22);
+        }
+      }
+
+      .voucher-language-selector {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 40px;
+        padding: 4px 8px;
+        border-radius: 999px;
+        border: 1px solid #d9e7df;
+        background: #f6fbf8;
+        color: #0f6d3c;
+        box-shadow: 0 8px 18px rgba(15, 109, 60, 0.08);
+
+        svg {
+          flex: 0 0 auto;
+        }
+      }
+
+      .voucher-language-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        min-height: 28px;
+        padding: 0 9px;
+        border: 1px solid transparent;
+        border-radius: 999px;
+        background: transparent;
+        color: #315342;
+        cursor: pointer;
+        font-size: 0.78rem;
+        font-weight: 800;
+        line-height: 1;
+        transition:
+          background 0.15s ease,
+          color 0.15s ease,
+          border-color 0.15s ease,
+          transform 0.15s ease;
+
+        &:hover:not(:disabled) {
+          background: #e7f5ed;
+          transform: translateY(-1px);
+        }
+
+        &.active {
+          background: #0f7a43;
+          border-color: #0f7a43;
+          color: #ffffff;
+          box-shadow: 0 6px 12px rgba(15, 122, 67, 0.18);
+        }
+
+        &:disabled {
+          cursor: not-allowed;
+          opacity: 0.6;
+        }
+      }
+
+      .voucher-language-btn__flag {
+        font-size: 0.95rem;
+      }
+
+      .voucher-language-status {
+        padding: 0 4px;
+        color: #6b7a70;
+        font-size: 0.72rem;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .btn-download-pdf {
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(135deg, #2b67f6 0%, #1f4fd0 100%);
+        box-shadow: 0 10px 18px rgba(31, 79, 208, 0.18);
+
+        > svg,
+        > span {
+          position: relative;
+          z-index: 1;
+        }
+
+        &::after {
+          content: "";
+          position: absolute;
+          inset: auto 0 0;
+          width: var(--download-progress, 0%);
+          height: 4px;
+          background: rgba(255, 255, 255, 0.62);
+          transition: width 0.18s ease;
+        }
+
+        &.is-loading {
+          background: linear-gradient(135deg, #1f4fd0 0%, #173ea8 100%);
+        }
+
+        &:hover:not(:disabled) {
+          box-shadow: 0 14px 24px rgba(31, 79, 208, 0.22);
+        }
+      }
+
+      .btn-close {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border: 2px solid #e7eaee;
+        background: #ffffff;
+        color: #7a1d1d;
+        cursor: pointer;
+        border-radius: 50%;
+        transition:
+          background 0.15s ease,
+          border-color 0.15s ease,
+          transform 0.15s ease;
+
+        &:hover {
+          background: #fff3f3;
+          border-color: #f0c7c7;
+          transform: translateY(-1px);
+        }
+      }
+    }
+  }
+
+  /* ================== TABS ================== */
+
+  .tabs-navigation {
+    display: flex;
+    gap: 4px;
+    padding: 6px 10px 0;
+    background: #ffffff;
+    border-bottom: 1px solid #dce1e6;
+
+    .tab-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 8px 10px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #555;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s ease;
+
+      svg {
+        font-size: 16px;
+      }
+
+      &.active {
+        color: #277c45;
+        border-bottom-color: #277c45;
+        background: #f5faf7;
+      }
+
+      &:hover:not(.active) {
+        background: #f3f4f6;
+      }
+    }
+  }
+
+  .modal-body {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 14px;
+    padding: 12px 16px 16px;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at top, rgba(39, 124, 69, 0.08), transparent 34%),
+      linear-gradient(180deg, #eef4f1 0%, #e8eff0 100%);
+  }
+
+  .modal-content {
+    min-width: 0;
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+    background: transparent;
+  }
+
+  .pdf-indications-panel {
+    align-self: start;
+    position: sticky;
+    top: 0;
+    max-height: calc(90vh - 118px);
+    overflow-y: auto;
+    margin: 0;
+    padding: 12px 14px;
+    border: 1px solid #d8e7df;
+    border-left: 4px solid #0f7a43;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #ffffff 0%, #f6fbf8 100%);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+
+    &__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+
+      small {
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 700;
+      }
+    }
+
+    &__title {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: #064e2f;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+
+      svg {
+        color: #0f7a43;
+      }
+    }
+
+    &__textarea {
+      width: 100%;
+      min-height: 72px;
+      resize: vertical;
+      border: 1px solid #d4dee8;
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: #ffffff;
+      color: #1f2937;
+      font: inherit;
+      font-size: 13px;
+      line-height: 1.45;
+      outline: none;
+      transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease;
+
+      &:focus {
+        border-color: #0f7a43;
+        box-shadow: 0 0 0 4px rgba(15, 122, 67, 0.12);
+      }
+    }
+  }
+
+  @media (max-width: 1180px) {
+    .modal-body {
+      grid-template-columns: 1fr;
+      overflow-y: auto;
+    }
+
+    .modal-content {
+      overflow: visible;
+    }
+
+    .pdf-indications-panel {
+      order: -1;
+      position: static;
+      max-height: none;
+    }
+  }
+
+  .voucher-print-area {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+
+    .voucher-tab {
+      width: min(100%, 1010px);
+    }
+  }
+
+  .loading-state,
+  .empty-state {
+    padding: 30px 10px;
+    text-align: center;
+    color: #666;
+
+    svg {
+      margin-bottom: 8px;
+      color: #c2cdd8;
+    }
+  }
+
+  /* ================================================================
+ ESTILOS DEL VOUCHER (TAB "VOUCHER")
+ ================================================================ */
+
+  .voucher-tab {
+    .voucher-layout {
+      background: transparent;
+      border-radius: 0;
+      padding: 0;
+      border: 0;
+      width: 100%;
+      font-size: 12px;
+      line-height: 1.4;
+      box-shadow: none;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      position: relative;
+
+      .voucher-page-actions {
+        position: sticky;
+        top: 88px;
+        align-self: flex-start;
+        width: 96px;
+        height: 0;
+        margin-left: max(8px, calc((100% - 794px) / 2 - 104px));
+        transform: translateY(14px);
+        z-index: 20;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        pointer-events: none;
+
+        .voucher-page-actions__button {
+          pointer-events: auto;
+          width: 100%;
+          min-height: 54px;
+          border: 1px solid rgba(0, 99, 59, 0.18);
+          border-radius: 16px;
+          padding: 7px 6px;
+          color: #075f3a;
+          background: rgba(255, 255, 255, 0.97);
+          box-shadow: 0 10px 28px rgba(0, 68, 45, 0.12);
+          font-size: 9.5px;
+          font-weight: 800;
+          line-height: 1.12;
+          text-align: center;
+          cursor: pointer;
+          display: inline-flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+          transition:
+            background 0.16s ease,
+            transform 0.16s ease,
+            box-shadow 0.16s ease;
+
+          &:hover {
+            background: #ecfdf4;
+            transform: translateY(-1px);
+            box-shadow: 0 14px 32px rgba(0, 68, 45, 0.16);
+          }
+
+          &--national {
+            color: #174ea6;
+            border-color: rgba(37, 99, 235, 0.22);
+          }
+
+          &--observaciones {
+            color: #7c3aed;
+            border-color: rgba(124, 58, 237, 0.22);
+          }
+        }
+
+        .voucher-page-actions__icon {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 24px;
+          height: 24px;
+          border-radius: 999px;
+          background: rgba(15, 122, 67, 0.1);
+        }
+
+        .voucher-page-actions__button--national .voucher-page-actions__icon {
+          background: rgba(37, 99, 235, 0.1);
+        }
+
+        .voucher-page-actions__button--observaciones
+          .voucher-page-actions__icon {
+          background: rgba(124, 58, 237, 0.1);
+        }
+
+        .voucher-page-actions__icon-add {
+          position: absolute;
+          right: -3px;
+          bottom: -3px;
+          padding: 1px;
+          border-radius: 999px;
+          background: #ffffff;
+        }
+
+        .voucher-page-actions__switch {
+          pointer-events: auto;
+          width: 100%;
+          min-height: 58px;
+          padding: 7px 6px;
+          border: 1px solid rgba(15, 118, 110, 0.2);
+          border-radius: 16px;
+          background: rgba(255, 255, 255, 0.97);
+          box-shadow: 0 10px 28px rgba(0, 68, 45, 0.12);
+          color: #0f766e;
+          cursor: pointer;
+          display: inline-flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 5px;
+          font-size: 9px;
+          font-weight: 900;
+          line-height: 1.12;
+          text-align: center;
+          transition:
+            background 0.16s ease,
+            transform 0.16s ease,
+            box-shadow 0.16s ease;
+
+          input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+          }
+
+          &:hover {
+            background: #f0fdfa;
+            transform: translateY(-1px);
+            box-shadow: 0 14px 32px rgba(0, 68, 45, 0.16);
+          }
+
+          &.is-active {
+            color: #92400e;
+            border-color: rgba(217, 119, 6, 0.28);
+            background: #fff7ed;
+          }
+        }
+
+        .voucher-page-actions__switch-track {
+          width: 34px;
+          height: 18px;
+          padding: 2px;
+          border-radius: 999px;
+          background: #cbd5e1;
+          display: inline-flex;
+          align-items: center;
+          transition: background 0.16s ease;
+
+          span {
+            width: 14px;
+            height: 14px;
+            border-radius: 999px;
+            background: #ffffff;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2);
+            transform: translateX(0);
+            transition: transform 0.16s ease;
+          }
+        }
+
+        .voucher-page-actions__switch.is-active
+          .voucher-page-actions__switch-track {
+          background: #d97706;
+
+          span {
+            transform: translateX(16px);
+          }
+        }
+      }
+
+      /* TOP HEADER (AGENTE, CODIGO, FECHA) */
+      .voucher-top-header {
+        display: grid;
+        grid-template-columns: 2fr 1.6fr 1.8fr;
+        gap: 8px;
+        margin-bottom: 6px;
+
+        .voucher-agent,
+        .voucher-code,
+        .voucher-date {
+          .label {
+            display: block;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #555;
+          }
+
+          .value {
+            display: block;
+            min-height: 16px;
+            margin-top: 1px;
+            font-weight: 500;
+            color: #222;
+          }
+
+          .voucher-agent-value {
+            padding: 2px 5px;
+            border: 1px dashed transparent;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.58);
+            line-height: 1.35;
+            border-bottom: 1px dashed transparent;
+
+            &:empty::before {
+              content: attr(data-placeholder);
+              color: #9aa6ad;
+            }
+
+            &:hover,
+            &:focus {
+              border-color: rgba(39, 124, 69, 0.34);
+              background: #ffffff;
+              box-shadow: 0 0 0 2px rgba(39, 124, 69, 0.08);
+            }
+          }
+        }
+      }
+
+      /* BARRA PRINCIPAL VERDE */
+      .voucher-main-title {
+        background: #277c45;
+        color: #ffffff;
+        text-align: center;
+        padding: 5px 10px;
+        margin-bottom: 10px;
+        border-radius: 3px;
+
+        h2 {
+          margin: 0;
+          font-size: 16px;
+          letter-spacing: 1px;
+          font-weight: 700;
+        }
+      }
+
+      /* FILA DE MONTOS / SISTEMA PAGO */
+      .voucher-amount-row {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 6px;
+        margin-bottom: 10px;
+
+        .voucher-amount-box {
+          border: 1px solid #dadddf;
+          background: #f7faf9;
+          padding: 5px 6px;
+          border-radius: 2px;
+
+          .label {
+            display: block;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #555;
+          }
+
+          .value {
+            display: block;
+            margin-top: 2px;
+            min-height: 16px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #277c45;
+          }
+
+          .voucher-payment-system {
+            padding: 2px 5px;
+            border: 1px dashed transparent;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.64);
+            border-bottom: 1px dashed transparent;
+
+            &:empty::before {
+              content: attr(data-placeholder);
+              color: #9aa6ad;
+              font-weight: 500;
+            }
+
+            &:hover,
+            &:focus {
+              border-color: rgba(39, 124, 69, 0.34);
+              background: #ffffff;
+              box-shadow: 0 0 0 2px rgba(39, 124, 69, 0.08);
+            }
+          }
+        }
+      }
+
+      /* DATOS GENERALES DEL PAQUETE */
+      .voucher-general-info {
+        margin-bottom: 8px;
+
+        .voucher-row {
+          display: flex;
+          gap: 6px;
+          margin-bottom: 3px;
+
+          .cell {
+            flex: 1;
+            border: 1px solid #dadddf;
+            padding: 4px 6px;
+            border-radius: 2px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+
+            .label {
+              font-size: 10px;
+              font-weight: 600;
+              text-transform: uppercase;
+              color: #555;
+              white-space: nowrap;
+            }
+
+            .value {
+              flex: 1;
+              min-height: 16px;
+              font-size: 12px;
+              font-weight: 500;
+              color: #222;
+            }
+
+            .voucher-package-name {
+              padding: 4px 6px;
+              border: 1px dashed #b8c6bc;
+              border-radius: 3px;
+              background: #f7faf8;
+              color: #1f2933;
+              line-height: 1.35;
+              white-space: normal;
+              outline: none;
+
+              &:empty::before {
+                content: attr(data-placeholder);
+                color: #9aa6ad;
+              }
+
+              &:focus {
+                border-color: #277c45;
+                background: #ffffff;
+                box-shadow: 0 0 0 2px rgba(39, 124, 69, 0.1);
+              }
+            }
+          }
+
+          .cell-full {
+            flex: 1;
+          }
+        }
+      }
+
+      /* CATEGORIA HOTEL / TREN / HABITACION / TIPO INGRESO */
+      .voucher-hotel-train-row {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 6px;
+        margin-bottom: 10px;
+
+        .cell {
+          border: 1px solid #dadddf;
+          padding: 4px 6px;
+          border-radius: 2px;
+          display: grid;
+          grid-template-columns: auto 1fr;
+          row-gap: 4px;
+          column-gap: 6px;
+          align-items: baseline;
+
+          .label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #555;
+            white-space: nowrap;
+          }
+
+          .value {
+            font-size: 10px;
+            font-weight: 500;
+            color: #222;
+          }
+
+          .voucher-inline-note {
+            grid-column: 1 / -1;
+            min-height: 24px;
+            padding: 4px 6px;
+            border: 1px dashed #b8c6bc;
+            border-radius: 3px;
+            background: #f7faf8;
+            color: #1f2933;
+            font-size: 10px;
+            line-height: 1.35;
+            white-space: pre-wrap;
+            outline: none;
+
+            &:empty::before {
+              content: attr(data-placeholder);
+              color: #9aa6ad;
+            }
+
+            &:focus {
+              border-color: #277c45;
+              background: #fff;
+            }
+          }
+
+          .voucher-train-editable {
+            min-height: 16px;
+            padding: 2px 4px;
+            border-radius: 3px;
+            outline: none;
+            white-space: pre-wrap;
+
+            &:empty::before {
+              content: attr(data-placeholder);
+              color: #9aa6ad;
+              font-weight: 400;
+            }
+
+            &:focus {
+              background: #ffffff;
+              box-shadow: inset 0 0 0 1px #277c45;
+            }
+          }
+        }
+      }
+
+      /* Visual A4 page break indicator in preview */
+      .voucher-page-break {
+        position: relative;
+      }
+
+      .voucher-a4-page,
+      .voucher-page-break {
+        position: relative;
+        width: 794px;
+        height: 1123px;
+        min-height: 1123px;
+        max-height: 1123px;
+        margin: 0 auto;
+        padding: 64px 54px 118px !important;
+        box-sizing: border-box;
+        border: 1px solid #cfd9d3 !important;
+        border-radius: 2px;
+        background:
+          linear-gradient(rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.82)),
+          url("/assets/marca_agua.webp") center 52% / 64% auto no-repeat,
+          #ffffff;
+        box-shadow: 0 22px 48px rgba(15, 33, 26, 0.18);
+        overflow: hidden;
+        break-after: page;
+        page-break-after: always;
+
+        &::before,
+        &::after {
+          content: "";
+          position: absolute;
+          left: 0;
+          right: 0;
+          z-index: 0;
+          pointer-events: none;
+          background-repeat: no-repeat;
+          background-position: center;
+          background-size: 100% 100%;
+        }
+
+        &::before {
+          top: 0;
+          height: 42px;
+          background-image: url("/assets/pdfcabezera.webp");
+        }
+
+        &::after {
+          bottom: 0;
+          height: 78px;
+          background-image: url("/assets/dpfpie.webp");
+        }
+
+        > * {
+          position: relative;
+          z-index: 1;
+        }
+
+        .voucher-itinerary-section,
+        .voucher-itinerary-title,
+        .voucher-itinerary-dates,
+        .voucher-amount-box,
+        .voucher-general-info .cell,
+        .voucher-hotel-train-row .cell,
+        .voucher-passenger-box,
+        .flight-box,
+        .flight-empty,
+        .day-title,
+        .day-content,
+        .info-extra-content,
+        .info-pago-box,
+        .info-pago-text,
+        .voucher-observaciones-box,
+        .voucher-observaciones-content,
+        .terminos-content {
+          background-color: rgba(255, 255, 255, 0.7) !important;
+          background-image: none !important;
+          box-shadow: none;
+        }
+
+        .voucher-itinerary-section {
+          border-color: rgba(39, 124, 69, 0.2);
+        }
+      }
+
+      .voucher-a4-page:last-child,
+      .voucher-page-break:last-child {
+        break-after: auto;
+        page-break-after: auto;
+      }
+
+      .voucher-page-break.voucher-section {
+        margin-top: 0 !important;
+        padding-top: 64px !important;
+        padding-bottom: 118px !important;
+      }
+
+      .voucher-section--phones-only {
+        width: 794px;
+        margin: 0 auto;
+        padding: 0 54px 6px !important;
+        box-sizing: border-box;
+        border-top: 0;
+        background: transparent;
+        break-after: auto;
+        page-break-after: auto;
+      }
+
+      .voucher-a4-page--flights {
+        display: flex;
+        flex-direction: column;
+        height: 1123px !important;
+        min-height: 1123px !important;
+        max-height: 1123px !important;
+        padding-bottom: 122px !important;
+        overflow: hidden;
+
+        .voucher-flights-grid {
+          flex: 0 0 auto;
+          align-content: start;
+          margin-top: 0;
+        }
+      }
+
+      .voucher-a4-page--flights-inline {
+        width: 100%;
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        margin-top: 8px;
+        padding: 7px 0 0 !important;
+        border-right: 0 !important;
+        border-bottom: 0 !important;
+        border-left: 0 !important;
+        border-radius: 0;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        break-after: auto;
+        page-break-after: auto;
+
+        &::before,
+        &::after {
+          display: none !important;
+          content: none !important;
+        }
+
+        .voucher-flight-row {
+          width: 100%;
+          break-inside: avoid;
+          page-break-inside: avoid;
+        }
+
+        .voucher-flights-grid {
+          width: 100%;
+          margin-top: 0;
+        }
+      }
+
+      .voucher-a4-page--intro,
+      .voucher-a4-page--passengers {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+      }
+
+      .voucher-section--passengers-continuation {
+        margin-top: 0;
+      }
+
+      .voucher-section--intro-passengers {
+        break-inside: auto;
+        page-break-inside: auto;
+      }
+
+      .voucher-a4-page--itinerary-days,
+      .info-extra-section,
+      .info-pago-section,
+      .terminos-section {
+        padding-bottom: 118px !important;
+      }
+
+      .voucher-a4-page--itinerary-days {
+        padding-top: 52px !important;
+        padding-bottom: 132px !important;
+      }
+
+      .voucher-itinerary-inline {
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px dashed rgba(39, 124, 69, 0.32);
+        min-height: 0;
+
+        .voucher-itinerary-section--page-header {
+          margin-top: 0;
+          margin-bottom: 8px;
+          padding: 8px 10px;
+          border-radius: 10px;
+
+          .voucher-itinerary-title {
+            min-height: 24px;
+            margin-bottom: 6px;
+            padding: 3px 8px;
+            font-size: 10.5px;
+          }
+
+          .voucher-itinerary-dates {
+            margin-bottom: 0;
+            padding: 6px 8px;
+            font-size: 10.5px;
+          }
+        }
+
+        .voucher-itinerary-inline__days {
+          display: flex;
+          flex-direction: column;
+          gap: 7px;
+        }
+
+        .voucher-itinerary-day {
+          padding: 7px 9px;
+          border-radius: 9px;
+          background: rgba(255, 255, 255, 0.82);
+          border: 1px solid rgba(39, 124, 69, 0.18);
+
+          & + .voucher-itinerary-day {
+            margin-top: 0;
+          }
+
+          .day-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+
+            .day-number {
+              font-size: 11px;
+              font-weight: 700;
+              text-transform: uppercase;
+              color: #277c45;
+              letter-spacing: 0.04em;
+              padding-bottom: 3px;
+              border-bottom: 1px solid rgba(39, 124, 69, 0.18);
+            }
+          }
+
+          .day-title {
+            display: block;
+            width: 100%;
+            margin-bottom: 5px;
+            padding: 6px 8px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            background: rgba(244, 250, 246, 0.92);
+            color: #183e2a;
+            font-size: 12.4px;
+            font-weight: 700;
+          }
+
+          .day-content {
+            min-height: 36px;
+            padding: 7px 9px;
+            border-radius: 8px;
+            border: 1px solid #dfe7e1;
+            background: rgba(255, 255, 255, 0.92);
+            color: #222;
+            font-size: 11.7px;
+            line-height: 1.42;
+            white-space: pre-wrap;
+          }
+        }
+      }
+
+      /* SECCIONES GENERALES (PASAJEROS, VUELOS, ITINERARIO) */
+      .voucher-section {
+        margin-top: 14px;
+        padding-top: 10px;
+        border-top: 2px solid #277c45;
+        break-inside: avoid;
+
+        .voucher-section-title {
+          font-size: 12px;
+          font-weight: 700;
+          text-transform: uppercase;
+          margin-bottom: 8px;
+          color: #277c45;
+        }
+
+        .voucher-row {
+          display: flex;
+          gap: 6px;
+          margin-bottom: 6px;
+
+          .cell {
+            flex: 1;
+            border: 1px solid #dadddf;
+            border-radius: 2px;
+            padding: 4px 6px;
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+
+            .label {
+              font-size: 10px;
+              font-weight: 600;
+              text-transform: uppercase;
+              color: #555;
+            }
+
+            .value {
+              flex: 1;
+              font-size: 12px;
+              font-weight: 500;
+              color: #222;
+            }
+          }
+
+          .cell-full {
+            flex: 1;
+          }
+        }
+
+        .voucher-row--phones {
+          margin-top: 8px;
+          margin-bottom: 0;
+
+          .cell {
+            min-height: 26px;
+            padding-top: 3px;
+            padding-bottom: 3px;
+          }
+
+          .voucher-phone-value {
+            min-height: 17px;
+            white-space: pre-wrap;
+            cursor: text;
+
+            &:empty::before {
+              content: attr(data-placeholder);
+              color: #9aa6ad;
+              font-weight: 400;
+            }
+          }
+        }
+      }
+
+      /* GRID DE PASAJEROS */
+      .voucher-passengers-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: start;
+        gap: 8px;
+
+        .voucher-passenger-box {
+          border: 1px solid #dadddf;
+          border-radius: 2px;
+          padding: 4px 6px;
+          position: relative;
+          background: #fbfbfb;
+
+          &.is-child {
+            border-color: #f5a623;
+            background: #fffbf2;
+          }
+
+          &.is-adult {
+            border-color: #277c45;
+            background: #f4fbf6;
+          }
+
+          .pax-type-badge {
+            position: absolute;
+            top: 2px;
+            left: 4px;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 1px 4px;
+            border-radius: 2px;
+            color: #fff;
+            background: #277c45;
+          }
+
+          &.is-child .pax-type-badge {
+            background: #f5a623;
+            color: #222;
+          }
+
+          .pax-number {
+            position: absolute;
+            top: 2px;
+            right: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            color: #999;
+          }
+
+          .pax-row {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+
+            .label {
+              font-size: 10px;
+              font-weight: 600;
+              text-transform: uppercase;
+              color: #555;
+              min-width: 82px;
+            }
+
+            .value {
+              flex: 1;
+              min-height: 15px;
+              font-weight: 500;
+              color: #222;
+            }
+          }
+        }
+      }
+
+      /* VUELOS */
+      .voucher-flights-grid {
+        margin-top: 8px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: start;
+        gap: 8px;
+
+        &.voucher-flights-grid--single {
+          grid-template-columns: minmax(0, 1fr);
+        }
+
+        &.voucher-flights-grid--compact {
+          margin-top: 8px;
+          grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
+
+          .flight-box {
+            padding-top: 5px;
+          }
+
+          .flight-edit-input {
+            height: 21px;
+          }
+        }
+
+        .flight-box {
+          border: 1px solid #dadddf;
+          border-radius: 2px;
+          padding: 6px 6px 4px;
+          background: #fbfbfb;
+
+          .flight-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 3px;
+            color: #277c45;
+          }
+
+          .pax-row {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+            font-size: 12px;
+
+            .label {
+              font-size: 10px;
+              font-weight: 600;
+              text-transform: uppercase;
+              color: #555;
+              min-width: 80px;
+            }
+
+            .value {
+              flex: 1;
+              min-height: 14px;
+              font-weight: 500;
+              color: #222;
+            }
+
+            .flight-edit-input {
+              flex: 1;
+              width: 100%;
+              min-width: 0;
+              height: 24px;
+              padding: 2px 6px;
+              border: 1px solid transparent;
+              border-radius: 5px;
+              background: rgba(255, 255, 255, 0.72);
+              color: #222;
+              font: inherit;
+              font-weight: 500;
+              line-height: 1.2;
+
+              &::placeholder {
+                color: #9aa6ad;
+                font-weight: 400;
+              }
+
+              &:hover {
+                border-color: #d7e3dc;
+                background: #ffffff;
+              }
+
+              &:focus {
+                outline: none;
+                border-color: #277c45;
+                background: #ffffff;
+                box-shadow: 0 0 0 2px rgba(39, 124, 69, 0.1);
+              }
+            }
+
+            .flight-route-edit {
+              flex: 1;
+              min-width: 0;
+              display: grid;
+              grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+              align-items: center;
+              gap: 4px;
+
+              span {
+                color: #64748b;
+                font-size: 10px;
+              }
+            }
+          }
+
+          .flight-sep {
+            border: none;
+            border-top: 1px dashed #d0d6dd;
+            margin: 6px 0;
+          }
+
+          &.flight-box--stacked {
+            padding: 5px 6px 3px;
+
+            .flight-title {
+              margin-bottom: 3px;
+            }
+
+            .pax-row {
+              gap: 3px;
+              font-size: 11.2px;
+
+              .label {
+                min-width: 74px;
+                font-size: 9.3px;
+              }
+
+              .flight-edit-input {
+                height: 20px;
+                padding: 1px 5px;
+              }
+
+              .flight-route-edit {
+                gap: 3px;
+              }
+            }
+
+            .flight-sep {
+              margin: 4px 0;
+            }
+          }
+
+          .flight-empty {
+            font-size: 11px;
+            color: #888;
+            padding: 4px 0;
+            font-style: italic;
+          }
+
+          .flight-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-top: 4px;
+
+            .form-row {
+              display: flex;
+              flex-direction: column;
+              gap: 2px;
+
+              label {
+                font-size: 9px;
+                font-weight: 600;
+                text-transform: uppercase;
+                color: #555;
+              }
+
+              input,
+              select {
+                height: 28px;
+                padding: 2px 6px;
+                font-size: 11px;
+                border: 1px solid #d0d6dd;
+                border-radius: 3px;
+                background: #fff;
+                outline: none;
+                transition: border-color 0.15s;
+
+                &:focus {
+                  border-color: #277c45;
+                }
+              }
+            }
+
+            .form-actions {
+              grid-column: 1 / -1;
+              display: flex;
+              justify-content: flex-end;
+              margin-top: 4px;
+
+              .btn-primary {
+                padding: 5px 14px;
+                font-size: 11px;
+                font-weight: 600;
+                color: #fff;
+                background: #277c45;
+                border: none;
+                border-radius: 3px;
+                cursor: pointer;
+                transition: background 0.15s;
+
+                &:hover {
+                  background: #1f5e35;
+                }
+              }
+            }
+          }
+        }
+
+        .flight-box--intl {
+          border-left: 3px solid #277c45;
+        }
+
+        .flight-box--national {
+          border-left: 3px solid #2563eb;
+
+          .flight-title {
+            color: #2563eb;
+          }
+        }
+      }
+
+      /* ITINERARIO */
+      .voucher-itinerary-section {
+        margin-top: 18px;
+        padding: 16px 18px 18px;
+        border: 1px solid #d9e8de;
+        border-radius: 12px;
+        background: linear-gradient(
+          180deg,
+          #f9fcfa 0%,
+          #ffffff 22%,
+          #ffffff 100%
+        );
+        box-shadow: inset 0 1px 0 rgba(39, 124, 69, 0.06);
+
+        .voucher-itinerary-title {
+          display: inline-flex;
+          align-items: center;
+          min-height: 32px;
+          padding: 4px 10px;
+          font-size: 12px;
+          font-weight: 700;
+          text-transform: uppercase;
+          color: #277c45;
+          margin-bottom: 10px;
+          border-radius: 999px;
+          letter-spacing: 0.08em;
+          background: rgba(39, 124, 69, 0.08);
+        }
+
+        .voucher-itinerary-dates {
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 6px;
+          font-size: 12px;
+          margin-bottom: 8px;
+          padding: 10px 12px;
+          border-radius: 10px;
+          background: #f2f7f4;
+          border: 1px solid #dbe8e0;
+
+          .label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #555;
+          }
+
+          .value {
+            font-weight: 500;
+            color: #222;
+          }
+        }
+
+        .voucher-itinerary-empty {
+          font-size: 12px;
+          color: #777;
+          padding: 6px 0;
+        }
+
+        .voucher-itinerary-list {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+
+          .voucher-itinerary-day {
+            padding: 14px;
+            border-radius: 12px;
+            background: #ffffff;
+            border: 1px solid #dbe5dc;
+            box-shadow: 0 10px 20px rgba(24, 44, 34, 0.04);
+
+            .day-header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 6px;
+
+              .day-number {
+                font-size: 11px;
+                font-weight: 700;
+                text-transform: uppercase;
+                color: #277c45;
+                letter-spacing: 0.05em;
+                padding-bottom: 4px;
+                border-bottom: 1px solid rgba(39, 124, 69, 0.18);
+              }
+            }
+
+            .day-title {
+              display: block;
+              width: 100%;
+              font-size: 11.7px;
+              font-weight: 700;
+              color: #183e2a;
+              margin-bottom: 6px;
+              padding: 8px 10px;
+              border-radius: 10px;
+              background: #f4faf6;
+              border: 1px solid transparent;
+            }
+
+            .day-content {
+              background: #ffffff;
+              border-radius: 10px;
+              border: 1px solid #dfe7e1;
+              padding: 10px 12px;
+              font-size: 11.7px;
+              color: #222;
+              line-height: 1.55;
+              white-space: pre-wrap;
+              min-height: 58px;
+              box-shadow: inset 0 1px 0 rgba(39, 124, 69, 0.03);
+            }
+
+            .editable-field[contenteditable="true"] {
+              transition:
+                border-color 0.18s ease,
+                background 0.18s ease,
+                box-shadow 0.18s ease;
+
+              &:hover {
+                border-color: rgba(39, 124, 69, 0.32);
+              }
+
+              &:focus {
+                outline: none;
+                background: #ffffff;
+                border-color: rgba(39, 124, 69, 0.5);
+                box-shadow: 0 0 0 3px rgba(39, 124, 69, 0.08);
+              }
+            }
+          }
+        }
+      }
+
+      .voucher-itinerary-empty {
+        width: min(794px, 100%);
+        margin: 0 auto;
+        padding: 20px;
+        font-size: 12px;
+        color: #777;
+        text-align: center;
+      }
+
+      .voucher-itinerary-list {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+
+        .voucher-itinerary-day {
+          padding: 8px 10px;
+          border-radius: 10px;
+          background: rgba(255, 255, 255, 0.72);
+          border: 1px solid rgba(39, 124, 69, 0.18);
+          box-shadow: 0 8px 18px rgba(24, 44, 34, 0.04);
+
+          & + .voucher-itinerary-day {
+            margin-top: 7px;
+          }
+
+          .day-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+
+            .day-number {
+              font-size: 11px;
+              font-weight: 700;
+              text-transform: uppercase;
+              color: #277c45;
+              letter-spacing: 0.05em;
+              padding-bottom: 4px;
+              border-bottom: 1px solid rgba(39, 124, 69, 0.18);
+            }
+          }
+
+          .day-title {
+            display: block;
+            width: 100%;
+            font-size: 12.4px;
+            font-weight: 700;
+            color: #183e2a;
+            margin-bottom: 6px;
+            padding: 7px 9px;
+            border-radius: 9px;
+            background: rgba(244, 250, 246, 0.92);
+            border: 1px solid transparent;
+          }
+
+          .day-content {
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 9px;
+            border: 1px solid #dfe7e1;
+            padding: 8px 10px;
+            font-size: 11.4px;
+            color: #222;
+            line-height: 1.48;
+            white-space: pre-wrap;
+            min-height: 36px;
+            box-shadow: inset 0 1px 0 rgba(39, 124, 69, 0.03);
+          }
+
+          .editable-field[contenteditable="true"] {
+            transition:
+              border-color 0.18s ease,
+              background 0.18s ease,
+              box-shadow 0.18s ease;
+
+            &:hover {
+              border-color: rgba(39, 124, 69, 0.32);
+            }
+
+            &:focus {
+              outline: none;
+              background: #ffffff;
+              border-color: rgba(39, 124, 69, 0.5);
+              box-shadow: 0 0 0 3px rgba(39, 124, 69, 0.08);
+            }
+          }
+        }
+      }
+
+      /* ====== INFO EXTRA (Incluye / No incluye) ====== */
+      .info-extra-section {
+        .info-extra-content {
+          background: #ffffff;
+          border-radius: 10px;
+          border: 1px solid #dfe7e1;
+          padding: 8px 10px;
+          font-size: 10.4px;
+          color: #222;
+          line-height: 1.28;
+          white-space: pre-wrap;
+          min-height: 28px;
+          break-inside: avoid;
+
+          .info-extra-subtitle {
+            font-weight: 700;
+            font-size: 14px;
+            color: #183e2a;
+            display: inline;
+            user-select: none;
+          }
+
+          .info-extra-subtitle[contenteditable="false"],
+          .info-extra-subtitle--fixed {
+            cursor: default;
+            -webkit-user-select: none;
+            user-select: none;
+          }
+
+          &.info-extra-content--split {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+          }
+
+          .info-extra-editable-block {
+            min-height: 14px;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            white-space: pre-wrap;
+
+            &:empty::before {
+              content: attr(data-placeholder);
+              color: rgba(24, 62, 42, 0.38);
+              font-weight: 400;
+            }
+
+            &[contenteditable="true"] {
+              cursor: text;
+
+              &:hover {
+                border-color: rgba(39, 124, 69, 0.22);
+              }
+
+              &:focus {
+                outline: none;
+                background: rgba(255, 255, 255, 0.9);
+                border-color: rgba(39, 124, 69, 0.45);
+                box-shadow: 0 0 0 2px rgba(39, 124, 69, 0.08);
+              }
+            }
+          }
+        }
+      }
+
+      .voucher-embedded-section {
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px dashed rgba(39, 124, 69, 0.28);
+      }
+
+      .info-extra-section--with-payment {
+        display: flex;
+        flex-direction: column;
+
+        .info-extra-content {
+          min-height: 0;
+          flex: 0 0 auto;
+        }
+      }
+
+      .info-pago-section--embedded {
+        margin-top: 10px;
+        padding-top: 10px;
+      }
+
+      /* ====== INFO PAGO ====== */
+      .info-pago-section {
+        .info-pago-box {
+          margin-bottom: 12px;
+
+          .info-pago-package-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: #183e2a;
+            padding: 8px 12px;
+            min-height: 36px;
+            border: 2px solid #277c45;
+            border-radius: 8px;
+            background: #f4faf6;
+            text-align: center;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+
+            &[data-empty="true"]::before {
+              content: attr(data-placeholder);
+              color: rgba(24, 62, 42, 0.48);
+              font-weight: 600;
+            }
+
+            &[contenteditable="true"] {
+              cursor: text;
+              transition:
+                border-color 0.18s ease,
+                background 0.18s ease,
+                box-shadow 0.18s ease;
+
+              &:hover {
+                border-color: #1f673a;
+                background: #f8fcf9;
+              }
+
+              &:focus {
+                outline: none;
+                border: 2px solid #277c45;
+                background: #ffffff;
+                box-shadow: 0 0 0 3px rgba(39, 124, 69, 0.1);
+              }
+            }
+          }
+        }
+
+        .info-pago-breakdown {
+          margin-bottom: 8px;
+          padding: 8px;
+          border: 1px solid #cfe1d4;
+          border-radius: 10px;
+          background: linear-gradient(180deg, #fbfffc 0%, #f5faf6 100%);
+          break-inside: avoid;
+
+          .info-pago-breakdown-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 6px;
+            color: #164d31;
+
+            span {
+              font-size: 11px;
+              font-weight: 800;
+              letter-spacing: 0.02em;
+              text-transform: uppercase;
+            }
+
+            small {
+              padding: 2px 7px;
+              border-radius: 999px;
+              background: rgba(39, 124, 69, 0.09);
+              color: #277c45;
+              font-size: 9.6px;
+              font-weight: 700;
+              text-transform: uppercase;
+            }
+          }
+
+          .info-pago-breakdown-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
+            gap: 6px;
+          }
+
+          .info-pago-price-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 7px 9px;
+            border: 1px solid rgba(39, 124, 69, 0.13);
+            border-radius: 8px;
+            background: #ffffff;
+            box-shadow: 0 4px 12px rgba(15, 62, 38, 0.04);
+
+            &--child {
+              border-color: rgba(37, 99, 235, 0.14);
+              background: #fbfdff;
+            }
+          }
+
+          .info-pago-price-main {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+
+            span {
+              color: #183e2a;
+              font-size: 11.1px;
+              font-weight: 800;
+              line-height: 1.22;
+            }
+
+            small {
+              color: #64748b;
+              font-size: 9.8px;
+              font-weight: 650;
+            }
+          }
+
+          .info-pago-price-amount {
+            flex: 0 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 1px;
+            text-align: right;
+
+            strong {
+              color: #082f1b;
+              font-size: 12px;
+              font-weight: 900;
+            }
+
+            small {
+              color: #64748b;
+              font-size: 9.6px;
+              font-weight: 700;
+            }
+          }
+        }
+
+        .info-pago-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 5px 10px;
+          margin-bottom: 8px;
+
+          .info-pago-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 5px 9px;
+            border: 1px solid #dbe5dc;
+            border-radius: 6px;
+            background: #f9fcfa;
+
+            .label {
+              font-size: 11px;
+              font-weight: 600;
+              color: #555;
+              flex-shrink: 0;
+            }
+
+            .value {
+              font-size: 12px;
+              font-weight: 700;
+              color: #222;
+              text-align: right;
+            }
+
+            &--subtotal-final {
+              border-color: #b9e6c9;
+              background: #f0fdf4;
+
+              .label,
+              .value {
+                color: #05603a;
+              }
+            }
+
+            .editable-inline {
+              display: inline;
+              border-bottom: 1px dashed #277c45;
+              min-width: 40px;
+              outline: none;
+              padding: 0 2px;
+
+              &:focus {
+                background: #e8f4ec;
+                border-bottom-color: #02532f;
+              }
+            }
+          }
+        }
+
+        .info-pago-text {
+          background: #ffffff;
+          border-radius: 10px;
+          border: 1px solid #dfe7e1;
+          padding: 10px 12px;
+          font-size: 11.5px;
+          color: #222;
+          line-height: 1.55;
+          white-space: pre-wrap;
+          min-height: 34px;
+        }
+
+        .voucher-observaciones-box {
+          margin-top: 12px;
+          padding: 10px 12px;
+          border: 1px solid #dbe5dc;
+          border-radius: 10px;
+          background: #ffffff;
+          break-inside: avoid;
+
+          &--draft-empty {
+            border-style: dashed;
+            background: #fbfffc;
+          }
+
+          .voucher-observaciones-title {
+            margin-bottom: 6px;
+            color: #183e2a;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0;
+            text-transform: uppercase;
+          }
+
+          .voucher-observaciones-content {
+            min-height: 48px;
+            padding: 8px 9px;
+            border: 1px dashed rgba(39, 124, 69, 0.36);
+            border-radius: 8px;
+            color: #222;
+            font-size: 11.8px;
+            line-height: 1.45;
+            outline: none;
+            white-space: pre-wrap;
+
+            &[data-empty="true"]::before {
+              content: attr(data-placeholder);
+              color: #7c8f83;
+            }
+
+            &:focus {
+              border-color: #277c45;
+              background: #f4faf6;
+            }
+          }
+        }
+      }
+
+      /* ====== TÉRMINOS Y CONDICIONES ====== */
+      .terminos-section {
+        padding-bottom: 18px;
+        break-inside: auto;
+
+        .terminos-content {
+          background: #ffffff;
+          border-radius: 10px;
+          border: 1px solid #dfe7e1;
+          padding: 8px 10px;
+          font-size: 10.5px;
+          color: #333;
+          line-height: 1.28;
+          white-space: pre-wrap;
+          min-height: 40px;
+          padding-bottom: 10px;
+          break-inside: auto;
+
+          .terminos-subtitle {
+            font-weight: 700;
+            font-size: 11.5px;
+            color: #183e2a;
+            display: inline;
+            break-after: avoid;
+          }
+        }
+      }
+
+      .info-pago-section--with-terms {
+        .info-pago-box {
+          margin-bottom: 8px;
+        }
+
+        .info-pago-grid {
+          margin-bottom: 6px;
+        }
+
+        .info-pago-text {
+          padding-top: 8px;
+          padding-bottom: 8px;
+          line-height: 1.42;
+        }
+
+        .voucher-observaciones-box {
+          margin-top: 9px;
+          padding-top: 8px;
+          padding-bottom: 8px;
+
+          .voucher-observaciones-content {
+            min-height: 38px;
+            padding-top: 7px;
+            padding-bottom: 7px;
+            line-height: 1.32;
+          }
+        }
+      }
+
+      .terminos-section--inline {
+        margin-top: 12px !important;
+        padding: 9px 0 0 !important;
+        border-top: 1px dashed rgba(39, 124, 69, 0.3) !important;
+        break-after: auto;
+        page-break-after: auto;
+        break-inside: auto;
+
+        .voucher-section-title {
+          margin-bottom: 5px;
+          font-size: 11.25px;
+          line-height: 1.22;
+        }
+
+        .terminos-content {
+          min-height: 0;
+          padding: 6px 8px 7px;
+          border-radius: 8px;
+          font-size: 10.45px;
+          line-height: 1.25;
+
+          .terminos-subtitle {
+            font-size: 11px;
+          }
+        }
+      }
+
+
+      .voucher-a4-page--flow {
+        display: block;
+        padding-top: 48px !important;
+        padding-bottom: 132px !important;
+        overflow: hidden;
+
+        .voucher-flow-section {
+          display: flex;
+          flex-direction: column;
+          gap: 3px;
+          width: 100%;
+          max-height: 936px;
+          overflow: hidden;
+        }
+
+        .voucher-section {
+          margin-top: 0 !important;
+          padding-top: 5px !important;
+          border-top-width: 1px;
+        }
+
+        .voucher-section + .voucher-section,
+        .voucher-itinerary-section + .voucher-section,
+        .voucher-section + .voucher-itinerary-section {
+          margin-top: 2px !important;
+        }
+
+        .voucher-flights-flow {
+          margin: 0 !important;
+          padding: 0 0 2px !important;
+          border-top: 0 !important;
+          break-inside: avoid;
+          page-break-inside: avoid;
+
+          .voucher-flights-grid {
+            margin-top: 0;
+            gap: 6px;
+          }
+
+          .flight-box {
+            padding: 5px 6px 4px;
+
+            .flight-title {
+              margin-bottom: 2px;
+            }
+
+            .pax-row {
+              line-height: 1.15;
+            }
+          }
+        }
+
+        .voucher-flights-flow--row + .voucher-flights-flow--row,
+        .voucher-flights-flow--row + .voucher-itinerary-section {
+          margin-top: 0 !important;
+        }
+
+        .voucher-itinerary-section--flow {
+          margin-top: 0;
+          padding: 5px 8px 6px;
+          break-inside: avoid;
+          page-break-inside: avoid;
+        }
+
+        .voucher-itinerary-section__days {
+          gap: 2px;
+        }
+
+        .voucher-itinerary-day {
+          padding-top: 3px;
+          padding-bottom: 4px;
+
+          .day-header {
+            margin-bottom: 2px;
+          }
+
+          .day-title {
+            margin-bottom: 1px;
+            font-size: 11.6px;
+            line-height: 1.18;
+          }
+
+          .day-content {
+            font-size: 10.9px;
+            line-height: 1.22;
+          }
+        }
+
+
+        .info-pago-section--flow {
+          padding-bottom: 0 !important;
+
+          .info-pago-title {
+            margin-bottom: 5px;
+          }
+
+          .info-pago-box,
+          .info-pago-text,
+          .voucher-observaciones-box {
+            margin-bottom: 4px;
+          }
+        }
+
+        .info-extra-section--inline {
+          padding-bottom: 0 !important;
+
+          .voucher-section-title {
+            margin-bottom: 4px;
+            font-size: 11px;
+            line-height: 1.18;
+          }
+
+          .info-extra-content {
+            padding: 7px 9px;
+            font-size: 10.55px;
+            line-height: 1.24;
+            min-height: 0;
+
+            .info-extra-subtitle {
+              font-size: 11.6px;
+            }
+
+            .info-extra-editable-block {
+              min-height: 12px;
+            }
+          }
+        }
+
+        .info-pago-section--flow {
+          .voucher-section-title {
+            margin-bottom: 6px;
+            font-size: 11.2px;
+          }
+
+          .info-pago-box {
+            margin-bottom: 7px;
+
+            .info-pago-package-name {
+              padding: 6px 10px;
+              font-size: 12px;
+            }
+          }
+
+          .info-pago-breakdown {
+            margin-bottom: 6px;
+            padding: 6px;
+
+            .info-pago-breakdown-title {
+              margin-bottom: 4px;
+
+              span {
+                font-size: 10.4px;
+              }
+
+              small {
+                font-size: 9px;
+                padding: 1px 6px;
+              }
+            }
+
+            .info-pago-breakdown-list {
+              gap: 4px;
+              grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+            }
+
+            .info-pago-price-row {
+              padding: 5px 7px;
+            }
+
+            .info-pago-price-main {
+              span {
+                font-size: 10.5px;
+              }
+
+              small {
+                font-size: 9px;
+              }
+            }
+
+            .info-pago-price-amount {
+              strong {
+                font-size: 11px;
+              }
+
+              small {
+                font-size: 9px;
+              }
+            }
+          }
+
+          .info-pago-grid {
+            gap: 4px 8px;
+            margin-bottom: 6px;
+
+            .info-pago-row {
+              padding: 4px 7px;
+
+              .label {
+                font-size: 10.7px;
+              }
+
+              .value {
+                font-size: 11.2px;
+              }
+            }
+          }
+
+          .info-pago-text {
+            padding: 7px 9px;
+            font-size: 10.9px;
+            line-height: 1.4;
+            min-height: 0;
+          }
+
+          .voucher-observaciones-box {
+            margin-top: 8px;
+            padding: 7px 9px;
+
+            .voucher-observaciones-title {
+              margin-bottom: 4px;
+              font-size: 10.9px;
+            }
+
+            .voucher-observaciones-content {
+              min-height: 30px;
+              padding: 6px 7px;
+              font-size: 10.7px;
+              line-height: 1.3;
+            }
+          }
+        }
+
+        .terminos-section--inline {
+          margin-top: 0 !important;
+          padding-top: 5px !important;
+          padding-bottom: 0 !important;
+
+          .voucher-section-title {
+            margin-bottom: 4px;
+            font-size: 10.95px;
+          }
+
+          .terminos-content {
+            padding: 4px 7px;
+            font-size: 10.15px;
+            line-height: 1.22;
+            min-height: 0;
+
+            .terminos-subtitle {
+              font-size: 10.85px;
+            }
+          }
+        }
+      }
+
+      .voucher-flow-measure {
+        position: absolute !important;
+        left: -10000px !important;
+        top: 0 !important;
+        width: 686px !important;
+        min-height: 0 !important;
+        height: auto !important;
+        max-height: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        box-shadow: none !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+        overflow: visible !important;
+        z-index: -1;
+
+        &::before,
+        &::after {
+          display: none !important;
+        }
+
+        .voucher-flow-measure-item {
+          width: 100%;
+          margin: 0 0 5px;
+          padding: 0;
+        }
+      }
+
+      /* Itinerario compacto: un solo contenedor por página */
+      .voucher-a4-page--itinerary-days {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        gap: 0;
+        padding-bottom: 132px !important;
+      }
+
+      .voucher-itinerary-section--page-header {
+        margin-top: 5px;
+        padding: 8px 10px 9px;
+        border: 1px solid #d9e8de;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.78);
+        box-shadow: inset 0 1px 0 rgba(39, 124, 69, 0.06);
+
+        &.voucher-itinerary-section--intro,
+        &.voucher-itinerary-section--flights {
+          margin-top: 5px;
+          padding-bottom: 7px;
+        }
+
+        &.voucher-itinerary-section--continued {
+          padding-top: 6px;
+        }
+
+        .voucher-itinerary-title {
+          min-height: 20px;
+          margin-bottom: 4px;
+          padding: 2px 7px;
+          font-size: 10.5px;
+        }
+
+        .voucher-itinerary-dates {
+          margin-bottom: 4px;
+          padding: 4px 7px;
+          font-size: 10.2px;
+        }
+      }
+
+      .voucher-itinerary-section__days {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+      }
+
+      .voucher-itinerary-section--page-header .voucher-itinerary-day,
+      .voucher-itinerary-list .voucher-itinerary-section--page-header .voucher-itinerary-day {
+        margin: 0;
+        padding: 4px 0 5px;
+        border: 0;
+        border-top: 1px dashed rgba(39, 124, 69, 0.22);
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+        break-inside: avoid;
+
+        &:first-child {
+          border-top: 0;
+          padding-top: 0;
+        }
+
+        & + .voucher-itinerary-day {
+          margin-top: 0;
+        }
+
+        .day-header {
+          margin-bottom: 2px;
+
+          .day-number {
+            display: inline-block;
+            padding: 0;
+            border-bottom: 0;
+            font-size: 11.1px;
+            line-height: 1.18;
+          }
+        }
+
+        .day-title {
+          width: 100%;
+          margin-bottom: 1px;
+          padding: 0;
+          border: 1px solid transparent;
+          border-radius: 5px;
+          background: transparent;
+          color: #123c28;
+          font-size: 12.1px;
+          line-height: 1.2;
+          font-weight: 800;
+        }
+
+        .day-content {
+          min-height: 0;
+          padding: 0;
+          border: 1px solid transparent;
+          border-radius: 5px;
+          background: transparent;
+          color: #202020;
+          font-size: 11.35px;
+          line-height: 1.24;
+          box-shadow: none;
+        }
+
+        .editable-field[contenteditable="true"] {
+          &:hover {
+            border-color: rgba(39, 124, 69, 0.2);
+            background: rgba(244, 250, 246, 0.72);
+          }
+
+          &:focus {
+            outline: none;
+            border-color: rgba(39, 124, 69, 0.5);
+            background: #ffffff;
+            box-shadow: 0 0 0 2px rgba(39, 124, 69, 0.08);
+          }
+        }
+      }
+
+      .info-extra-section--inline {
+        margin-top: 6px !important;
+        padding: 5px 0 0 !important;
+        border-top: 1px solid rgba(39, 124, 69, 0.25);
+        break-after: auto;
+        page-break-after: auto;
+        break-inside: avoid;
+
+        .voucher-section-title {
+          margin-bottom: 4px;
+          font-size: 10.85px;
+          line-height: 1.16;
+        }
+
+        .info-extra-content {
+          min-height: 0;
+          padding: 5px 7px;
+          font-size: 9.7px;
+          line-height: 1.17;
+          border-radius: 8px;
+        }
+      }
+
+      .flight-box .flight-item {
+        position: relative;
+
+        &.flight-item--removable {
+          padding-right: 4px;
+        }
+
+        .flight-remove-button {
+          position: absolute;
+          top: -3px;
+          right: -4px;
+          z-index: 4;
+          width: 20px;
+          height: 20px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border: 1px solid rgba(185, 28, 28, 0.18);
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.96);
+          color: #b91c1c;
+          cursor: pointer;
+          opacity: 0;
+          transform: translateY(-2px) scale(0.94);
+          pointer-events: none;
+          transition:
+            opacity 0.15s ease,
+            transform 0.15s ease,
+            background 0.15s ease,
+            border-color 0.15s ease;
+
+          &:hover {
+            background: #fee2e2;
+            border-color: rgba(185, 28, 28, 0.38);
+          }
+        }
+
+        &:hover .flight-remove-button,
+        &:focus-within .flight-remove-button {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+          pointer-events: auto;
+        }
+      }
+
+      /* ====== FLIGHT SUBMODAL ====== */
+      .flight-submodal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        z-index: 1100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .flight-submodal {
+        background: #fff;
+        border-radius: 12px;
+        width: 440px;
+        max-width: 92vw;
+        max-height: 85vh;
+        overflow-y: auto;
+        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.22);
+
+        .flight-submodal-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 14px 18px;
+          border-bottom: 1px solid #e2e6ea;
+
+          h3 {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 700;
+            color: #222;
+          }
+
+          .btn-close-sub {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: #666;
+            padding: 4px;
+            border-radius: 50%;
+
+            &:hover {
+              background: #f1f3f5;
+              color: #222;
+            }
+          }
+        }
+
+        .flight-submodal-body {
+          padding: 16px 18px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+
+          .form-row {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+
+            label {
+              font-size: 11px;
+              font-weight: 600;
+              color: #555;
+              text-transform: uppercase;
+            }
+
+            input {
+              padding: 7px 10px;
+              border: 1px solid #ccc;
+              border-radius: 6px;
+              font-size: 13px;
+              outline: none;
+
+              &:focus {
+                border-color: #277c45;
+                box-shadow: 0 0 0 2px rgba(39, 124, 69, 0.12);
+              }
+            }
+          }
+        }
+
+        .flight-submodal-footer {
+          display: flex;
+          justify-content: flex-end;
+          gap: 8px;
+          padding: 12px 18px;
+          border-top: 1px solid #e2e6ea;
+
+          .btn-secondary {
+            padding: 7px 16px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            background: #fff;
+            font-size: 13px;
+            cursor: pointer;
+            color: #444;
+
+            &:hover {
+              background: #f1f3f5;
+            }
+          }
+
+          .btn-primary {
+            padding: 7px 16px;
+            border-radius: 6px;
+            border: none;
+            background: #277c45;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+
+            &:hover {
+              background: #1f5e35;
+            }
+          }
+        }
+      }
+
+      .btn-sm {
+        min-height: 34px;
+        padding: 0 14px;
+        border: none;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        color: #ffffff;
+        background: linear-gradient(135deg, #0f7a43 0%, #02532f 100%);
+        box-shadow: 0 10px 22px rgba(2, 83, 47, 0.16);
+        cursor: pointer;
+        transition:
+          transform 0.16s ease,
+          box-shadow 0.16s ease,
+          filter 0.16s ease;
+
+        &:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 14px 26px rgba(2, 83, 47, 0.2);
+          filter: saturate(1.05);
+        }
+      }
+
+      .form-actions {
+        margin-top: 8px;
+        text-align: center;
+      }
+    }
+  }
+
+  /* ================================================================
+ OTROS TABS (pasajeros, documentos, pagos, itinerario original)
+ ================================================================ */
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+
+    h3 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 600;
+      color: #222;
+    }
+  }
+
+  /* Pasajeros */
+  .passengers-tab {
+    .passengers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 10px;
+    }
+
+    .passenger-card {
+      background: #ffffff;
+      border-radius: 6px;
+      padding: 8px 10px;
+      border: 1px solid #dde3ea;
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+
+      .passenger-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #e8f4ff;
+        color: #1d6fd8;
+
+        &.child {
+          background: #fff4e5;
+          color: #f59e0b;
+        }
+      }
+
+      .passenger-info {
+        h5 {
+          margin: 0 0 2px;
+          font-size: 13px;
+          font-weight: 600;
+          color: #222;
+        }
+
+        .passenger-type {
+          display: inline-block;
+          margin-bottom: 3px;
+          font-size: 11px;
+          padding: 1px 6px;
+          border-radius: 10px;
+          background: #fff4e5;
+          color: #b45309;
+          font-weight: 500;
+        }
+
+        .info-row {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          font-size: 11px;
+          color: #555;
+
+          & + .info-row {
+            margin-top: 2px;
+          }
+
+          svg {
+            font-size: 13px;
+            flex-shrink: 0;
+          }
+        }
+      }
+    }
+  }
+
+  /* Documentos */
+  .documents-tab {
+    .documents-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .passenger-documents {
+      background: #ffffff;
+      border-radius: 6px;
+      border: 1px solid #dde3ea;
+      padding: 8px 10px;
+
+      .passenger-header {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #222;
+
+        .doc-count {
+          font-size: 11px;
+          font-weight: 500;
+          color: #666;
+        }
+
+        svg {
+          color: #277c45;
+        }
+      }
+
+      .document-category {
+        & + .document-category {
+          margin-top: 8px;
+          padding-top: 6px;
+          border-top: 1px dashed #e1e5ea;
+        }
+
+        h4 {
+          margin: 0 0 4px;
+          font-size: 12px;
+          font-weight: 600;
+          color: #444;
+        }
+
+        .documents-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+          gap: 8px;
+
+          .document-card {
+            background: #f9fafb;
+            border-radius: 6px;
+            border: 1px solid #e1e5ea;
+            cursor: pointer;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+
+            .document-preview {
+              height: 110px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              background: #e5edf5;
+              overflow: hidden;
+
+              img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+              }
+
+              .file-icon {
+                svg {
+                  font-size: 40px;
+                  color: #6b7280;
+                }
+              }
+            }
+
+            .document-info {
+              padding: 4px 6px;
+              font-size: 11px;
+
+              .filename {
+                display: block;
+                font-weight: 500;
+                margin-bottom: 2px;
+              }
+
+              .filesize {
+                display: block;
+                color: #777;
+              }
+            }
+
+            &:hover {
+              border-color: #277c45;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /* Pagos */
+  .payments-tab {
+    .payment-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+
+      .status-icon {
+        font-size: 16px;
+
+        &.paid {
+          color: #16a34a;
+        }
+        &.partial {
+          color: #f97316;
+        }
+        &.pending {
+          color: #ef4444;
+        }
+      }
+
+      .status-text {
+        font-weight: 600;
+        &.pagado,
+        &.paid {
+          color: #16a34a;
+        }
+        &.parcial,
+        &.partial {
+          color: #f97316;
+        }
+        &.pendiente,
+        &.pending {
+          color: #ef4444;
+        }
+      }
+    }
+
+    .payment-summary-card {
+      background: #ffffff;
+      border-radius: 6px;
+      border: 1px solid #dde3ea;
+      padding: 8px 10px;
+      margin-bottom: 10px;
+      font-size: 13px;
+
+      .summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 2px 0;
+
+        &.paid {
+          .value {
+            color: #16a34a;
+            font-weight: 600;
+          }
+        }
+
+        &.pending {
+          .value {
+            color: #ef4444;
+            font-weight: 600;
+          }
+        }
+
+        .label {
+          color: #555;
+        }
+
+        .value {
+          font-weight: 600;
+        }
+      }
+    }
+
+    .payments-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+
+      .payment-item {
+        background: #ffffff;
+        border-radius: 6px;
+        border: 1px solid #dde3ea;
+        padding: 8px 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        .payment-icon {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #e6f4ec;
+          color: #277c45;
+        }
+
+        .payment-info {
+          flex: 1;
+          h5 {
+            margin: 0 0 2px;
+            font-size: 13px;
+            font-weight: 600;
+          }
+
+          .payment-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 11px;
+            color: #666;
+
+            .payment-date {
+              display: inline-flex;
+              align-items: center;
+              gap: 4px;
+            }
+          }
+        }
+
+        .payment-amount {
+          text-align: right;
+          .amount {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 3px;
+          }
+
+          .btn-view {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            border-radius: 999px;
+            border: 1px solid #d1d5db;
+            background: #ffffff;
+            padding: 3px 9px;
+            font-size: 11px;
+            cursor: pointer;
+
+            &:hover {
+              border-color: #277c45;
+              color: #277c45;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /* Itinerario (tab original) */
+  .itinerary-tab {
+    .itinerary-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+
+      .day-section {
+        background: #ffffff;
+        border-radius: 6px;
+        border: 1px solid #dde3ea;
+        padding: 8px 10px;
+
+        .day-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 6px;
+
+          h4 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 600;
+          }
+
+          .day-date {
+            font-size: 11px;
+            color: #666;
+          }
+        }
+
+        .services-list {
+          .service-wrapper {
+            background: #f9fafb;
+            border-radius: 4px;
+            padding: 5px 6px;
+            border: 1px solid #e1e5ea;
+
+            & + .service-wrapper {
+              margin-top: 4px;
+            }
+
+            .service-header-row {
+              display: flex;
+              align-items: center;
+              gap: 5px;
+              margin-bottom: 3px;
+
+              .service-icon {
+                color: #02532f;
+                font-size: 12px;
+                display: flex;
+                align-items: center;
+              }
+
+              .service-name {
+                font-weight: 600;
+                color: #222;
+                font-size: 11px;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /* Preview imagen */
+  .image-preview-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+
+    .image-preview-modal {
+      position: relative;
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 16px;
+      max-width: 90vw;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+
+      .preview-close-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        border-radius: 50%;
+        padding: 3px;
+
+        &:hover {
+          background: rgba(0, 0, 0, 0.06);
+        }
+      }
+
+      .preview-image {
+        max-width: 80vw;
+        max-height: 70vh;
+        object-fit: contain;
+        border-radius: 4px;
+        margin-bottom: 8px;
+      }
+
+      .preview-filename {
+        font-size: 12px;
+        margin-bottom: 6px;
+      }
+
+      .preview-download-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        border: none;
+        background: #277c45;
+        color: #ffffff;
+        font-size: 12px;
+        cursor: pointer;
+        text-decoration: none;
+
+        &:hover {
+          background: #1f6136;
+        }
+      }
+    }
+  }
+}
+
+/* Campos editables en itinerario */
+.editable-field[contenteditable="true"] {
+  border-bottom: 1px dashed #aaa;
+  min-width: 40px;
+  outline: none;
+  border-radius: 2px;
+  padding: 1px 2px;
+  cursor: text;
+
+  &:focus {
+    background: #f0f8f0;
+    border-bottom-color: #02532f;
+  }
+}
+
+@media print {
+  .editable-field[contenteditable="true"] {
+    border-bottom: none;
+    background: transparent;
+  }
+  .btn-save-pdf {
+    display: none !important;
+  }
+}
+
+/* ================== ESTILOS DE IMPRESIÓN ================== */
+@media print {
+  /* Aseguramos que el overlay y el modal se vean */
+  .ventas-pdf-overlay {
+    position: static !important;
+    inset: 0 !important;
+    background: #fff !important;
+  }
+
+  .ventas-pdf-modal {
+    box-shadow: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    position: static !important;
+    transform: none !important;
+  }
+
+  /* Área de contenido del voucher */
+  .voucher-print-area {
+    padding: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+  }
+
+  /* Ocultar botones al imprimir */
+  .btn-close,
+  .btn-save-pdf,
+  .flight-remove-button {
+    display: none !important;
+  }
+
+  /* Intentar evitar cortes feos dentro de bloques grandes */
+  .voucher-page-break {
+    page-break-after: always;
+    break-after: page; /* navegadores nuevos */
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .voucher-page-break:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+
+  .voucher-itinerary-day {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .voucher-itinerary-section {
+    border: none !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    padding: 0 !important;
+  }
+
+  .info-extra-section,
+  .info-pago-section,
+  .terminos-section,
+  .voucher-embedded-section {
+    border: none !important;
+    box-shadow: none !important;
+    background: #fff !important;
+  }
+
+  .flight-submodal-overlay {
+    display: none !important;
+  }
+
+  .form-actions,
+  .voucher-page-actions,
+  .voucher-observaciones-box--draft-empty {
+    display: none !important;
+  }
+}
+
+/* Hide buttons in PDF export shell */
+.pdf-export-shell {
+  width: auto !important;
+  max-width: none !important;
+  padding: 0 !important;
+  background: #ffffff !important;
+
+  .voucher-layout {
+    width: auto !important;
+    margin: 0 !important;
+  }
+
+  .form-actions,
+  .flight-submodal-overlay,
+  .flight-remove-button,
+  .voucher-page-actions,
+  .voucher-observaciones-box--draft-empty {
+    display: none !important;
+  }
+
+  .voucher-a4-page--export-decorated,
+  .voucher-page-break.voucher-a4-page--export-decorated {
+    background: #ffffff !important;
+
+    &::before,
+    &::after {
+      display: none !important;
+      content: none !important;
+    }
+  }
+
+  .voucher-a4-page__decor {
+    display: block !important;
+    position: absolute !important;
+    pointer-events: none !important;
+    user-select: none !important;
+    z-index: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    object-fit: fill;
+  }
+
+  .voucher-a4-page__decor--header {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 42px;
+  }
+
+  .voucher-a4-page__decor--footer {
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 78px;
+  }
+
+  .voucher-a4-page__decor--watermark {
+    top: 30%;
+    left: 18%;
+    width: 64%;
+    height: auto;
+    opacity: 0.18;
+    object-fit: contain;
+  }
+}
+
+
+/* ============================================================================
+   VENSO SERVICE VOUCHER 2026
+   Clean service-voucher paper based on the current Venso operational format.
+   It intentionally removes the legacy watermark, image header and image footer.
+   ============================================================================ */
+.ventas-pdf-modal .voucher-tab .voucher-layout.venso-service-voucher-template {
+  --venso-voucher-magenta: #f129a8;
+  --venso-voucher-magenta-soft: #f7b9ed;
+  --venso-voucher-magenta-faint: #fff2fc;
+  --venso-voucher-ink: #171717;
+  --venso-voucher-grid: #777777;
+  --venso-voucher-grid-soft: #b8b8b8;
+  gap: 18px;
+  color: var(--venso-voucher-ink);
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.28;
+
+  .voucher-a4-page,
+  .voucher-page-break {
+    width: 794px;
+    height: 1123px;
+    min-height: 1123px;
+    max-height: 1123px;
+    padding: 28px 28px 32px !important;
+    border: 1px solid #d5d5d5 !important;
+    border-radius: 0;
+    background: #ffffff !important;
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.13);
+    overflow: hidden;
+
+    &::before,
+    &::after {
+      display: none !important;
+      content: none !important;
+      background: none !important;
+    }
+
+    > * {
+      position: relative;
+      z-index: 1;
+    }
+  }
+
+  .voucher-page-break.voucher-section,
+  .voucher-a4-page--flights,
+  .voucher-a4-page--itinerary-days,
+  .voucher-a4-page--flow,
+  .info-extra-section,
+  .info-pago-section,
+  .terminos-section {
+    padding-top: 28px !important;
+    padding-bottom: 32px !important;
+  }
+
+  .voucher-a4-page--itinerary-days,
+  .voucher-a4-page--flow {
+    padding-top: 24px !important;
+    padding-bottom: 30px !important;
+  }
+
+  .voucher-section--phones-only {
+    width: 100%;
+    padding: 0 !important;
+  }
+
+  .venso-service-sheet-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(220px, 0.8fr);
+    gap: 26px;
+    align-items: start;
+    margin-bottom: 10px;
+    padding: 0 2px 8px;
+    border-bottom: 1px solid #b9b9b9;
+
+    &__identity { min-width: 0; }
+
+    &__logo {
+      display: block;
+      width: 150px;
+      height: auto;
+      margin: 0 0 4px;
+      object-fit: contain;
+    }
+
+    &__voucher {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 6px;
+      color: #111111;
+      font-size: 15px;
+      font-weight: 800;
+      text-transform: uppercase;
+
+      strong { overflow-wrap: anywhere; color: #111111; }
+    }
+
+    &__meta {
+      display: grid;
+      grid-template-columns: 72px minmax(0, 1fr);
+      column-gap: 5px;
+      row-gap: 2px;
+      max-width: 440px;
+      font-size: 9.3px;
+      line-height: 1.25;
+
+      .meta-label { text-align: right; font-weight: 800; }
+      .meta-value { min-width: 0; color: #222222; overflow-wrap: anywhere; }
+      .meta-value--editable {
+        min-height: 13px;
+        padding: 0 2px;
+        border: 1px dashed transparent;
+        border-radius: 2px;
+        outline: none;
+
+        &:hover,
+        &:focus {
+          border-color: rgba(241, 41, 168, 0.4);
+          background: var(--venso-voucher-magenta-faint);
+        }
+      }
+    }
+
+    &__contact {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 0;
+      padding-top: 46px;
+      color: #111111;
+      text-align: center;
+      font-size: 10px;
+      line-height: 1.3;
+
+      strong { margin-bottom: 2px; font-size: 11px; }
+      span { font-weight: 700; }
+      small { margin-top: 21px; color: #333333; font-size: 8.7px; }
+      small + span { font-weight: 800; }
+      span + small:last-child { margin-top: 0; font-size: 8px; font-weight: 500; }
+    }
+
+    &--compact {
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      margin-bottom: 8px;
+      padding-bottom: 7px;
+
+      .venso-service-sheet-header__identity {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .venso-service-sheet-header__logo { width: 86px; margin: 0; }
+      .venso-service-sheet-header__voucher { margin: 0; font-size: 10px; }
+      .venso-service-sheet-header__contact {
+        align-items: flex-end;
+        padding: 0;
+        font-size: 8.5px;
+        text-align: right;
+        strong { font-size: 9px; }
+      }
+    }
+  }
+
+  .voucher-amount-row,
+  .voucher-hotel-train-row { gap: 0; margin-bottom: 7px; }
+
+  .voucher-amount-row .voucher-amount-box,
+  .voucher-general-info .voucher-row .cell,
+  .voucher-hotel-train-row .cell,
+  .voucher-row--phones .cell {
+    margin: 0 -1px -1px 0;
+    padding: 4px 6px;
+    border: 1px solid var(--venso-voucher-grid-soft);
+    border-radius: 0;
+    background: #ffffff;
+    box-shadow: none;
+
+    .label { color: #333333; font-size: 8px; font-weight: 800; }
+    .value { color: #111111; font-size: 9.4px; font-weight: 600; }
+  }
+
+  .voucher-amount-row .voucher-amount-box {
+    background: #fafafa;
+    .value { color: #111111; font-size: 10px; }
+  }
+
+  .voucher-general-info {
+    margin-bottom: 7px;
+    .voucher-row { gap: 0; margin: 0; }
+  }
+
+  .voucher-hotel-train-row .cell {
+    row-gap: 2px;
+    column-gap: 4px;
+    .voucher-inline-note,
+    .voucher-train-editable {
+      min-height: 18px;
+      padding: 2px 3px;
+      border: 1px dashed #c8c8c8;
+      border-radius: 0;
+      background: #ffffff;
+      font-size: 8.7px;
+    }
+  }
+
+  .voucher-section-title,
+  .flight-title,
+  .voucher-itinerary-title {
+    width: 100%;
+    min-height: 0;
+    margin: 0;
+    padding: 4px 6px !important;
+    border: 1px solid #8a6c84 !important;
+    border-radius: 0 !important;
+    background: var(--venso-voucher-magenta-soft) !important;
+    color: #151515 !important;
+    box-shadow: none !important;
+    font-size: 9.4px !important;
+    font-weight: 900 !important;
+    line-height: 1.18 !important;
+    letter-spacing: 0 !important;
+    text-align: left !important;
+    text-transform: uppercase;
+  }
+
+  .voucher-section,
+  .voucher-itinerary-section,
+  .info-extra-section,
+  .info-pago-section,
+  .terminos-section,
+  .voucher-embedded-section {
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .voucher-section--intro-passengers { margin-top: 6px; padding: 0 !important; }
+
+  .voucher-passenger-table {
+    border-right: 1px solid var(--venso-voucher-grid);
+    border-bottom: 1px solid var(--venso-voucher-grid);
+    border-left: 1px solid var(--venso-voucher-grid);
+  }
+
+  .voucher-passenger-table__head,
+  .voucher-passenger-table__row {
+    display: grid;
+    grid-template-columns: minmax(0, 2.25fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.95fr);
+    align-items: stretch;
+  }
+
+  .voucher-passenger-table__head {
+    background: #f8f8f8;
+    font-size: 8.4px;
+    font-weight: 900;
+    text-align: center;
+    text-transform: uppercase;
+    span {
+      padding: 4px 5px;
+      border-right: 1px solid var(--venso-voucher-grid);
+      &:last-child { border-right: 0; }
+    }
+  }
+
+  .voucher-passengers-grid {
+    display: block !important;
+    grid-template-columns: none !important;
+    gap: 0 !important;
+    margin: 0 !important;
+  }
+
+  .voucher-passenger-table__row {
+    min-height: 24px;
+    border-top: 1px dotted var(--venso-voucher-grid);
+    background: #ffffff;
+    font-size: 8.7px;
+    > div {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
+      padding: 3px 5px;
+      border-right: 1px dotted var(--venso-voucher-grid);
+      text-align: center;
+      overflow-wrap: anywhere;
+      &:last-child { border-right: 0; }
+    }
+  }
+
+  .voucher-passenger-table__name {
+    justify-content: flex-start !important;
+    gap: 4px;
+    text-align: left !important;
+    .pax-index { flex: 0 0 auto; color: #666666; font-size: 7.8px; }
+    .pax-name { min-width: 0; font-weight: 700; }
+    .pax-type-badge {
+      flex: 0 0 auto;
+      margin-left: auto;
+      padding: 1px 4px;
+      border: 1px solid #bdbdbd;
+      border-radius: 999px;
+      background: #f5f5f5;
+      color: #555555;
+      font-size: 6.8px;
+      font-weight: 800;
+    }
+  }
+
+  .voucher-passenger-table__document {
+    flex-direction: column;
+    gap: 1px;
+    small { color: #666666; font-size: 6.8px; line-height: 1; }
+  }
+
+  .voucher-a4-page--flights-inline { margin-top: 7px; padding: 0 !important; gap: 5px; }
+  .voucher-flights-grid { gap: 6px !important; margin: 0 !important; }
+
+  .flight-box {
+    overflow: hidden;
+    margin: 0;
+    padding: 0 !important;
+    border: 1px solid var(--venso-voucher-grid) !important;
+    border-radius: 0 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+  }
+
+  .flight-item {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    .flight-sep {
+      grid-column: 1 / -1;
+      width: 100%;
+      margin: 0;
+      border: 0;
+      border-top: 1px dotted var(--venso-voucher-grid);
+    }
+  }
+
+  .flight-edit-row {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    align-content: start;
+    gap: 1px !important;
+    min-width: 0;
+    margin: 0 !important;
+    padding: 3px 4px !important;
+    border-right: 1px dotted var(--venso-voucher-grid);
+    border-bottom: 1px dotted var(--venso-voucher-grid);
+    .label {
+      color: #555555 !important;
+      font-size: 6.8px !important;
+      font-weight: 800 !important;
+      text-transform: uppercase;
+    }
+    .flight-edit-input,
+    .flight-route-edit input {
+      width: 100%;
+      min-width: 0;
+      min-height: 16px;
+      padding: 1px 2px !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      color: #111111;
+      font-size: 8.2px !important;
+      font-weight: 600;
+      box-shadow: none !important;
+    }
+    .flight-route-edit {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      gap: 2px;
+      align-items: center;
+    }
+  }
+
+  .voucher-itinerary-section--page-header {
+    margin: 6px 0 0 !important;
+    padding: 0 !important;
+    border: 1px solid var(--venso-voucher-grid) !important;
+    border-radius: 0 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+  }
+
+  .voucher-itinerary-dates {
+    display: grid !important;
+    grid-template-columns: auto 1fr auto 1fr;
+    gap: 4px !important;
+    margin: 0 !important;
+    padding: 4px 6px !important;
+    border: 0 !important;
+    border-bottom: 1px dotted var(--venso-voucher-grid) !important;
+    border-radius: 0 !important;
+    background: #ffffff !important;
+    color: #222222 !important;
+    font-size: 7.8px !important;
+  }
+
+  .voucher-itinerary-section__days { display: block !important; }
+
+  .voucher-itinerary-day {
+    display: grid;
+    grid-template-columns: 86px minmax(0, 1fr);
+    gap: 0;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-bottom: 1px dotted var(--venso-voucher-grid) !important;
+    border-radius: 0 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    &:last-child { border-bottom: 0 !important; }
+    .day-header {
+      grid-column: 1;
+      grid-row: 1 / span 2;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      margin: 0 !important;
+      padding: 5px 4px !important;
+      border-right: 1px dotted var(--venso-voucher-grid);
+      background: #fafafa !important;
+      .day-number {
+        padding: 0 !important;
+        border: 0 !important;
+        color: #222222 !important;
+        font-size: 7.6px !important;
+        font-weight: 800 !important;
+        text-align: center;
+      }
+    }
+    .day-title,
+    .day-content {
+      grid-column: 2;
+      width: auto !important;
+      min-height: 0 !important;
+      margin: 0 !important;
+      padding: 4px 6px !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      background: #ffffff !important;
+      color: #111111 !important;
+      box-shadow: none !important;
+    }
+    .day-title {
+      border-bottom: 1px dotted #b8b8b8 !important;
+      font-size: 8.8px !important;
+      font-weight: 800 !important;
+    }
+    .day-content { font-size: 8px !important; line-height: 1.32 !important; }
+  }
+
+  .info-extra-content,
+  .info-pago-box,
+  .info-pago-text,
+  .voucher-observaciones-box,
+  .voucher-observaciones-content,
+  .terminos-content {
+    margin: 0 !important;
+    padding: 6px 8px !important;
+    border: 1px solid var(--venso-voucher-grid) !important;
+    border-top: 0 !important;
+    border-radius: 0 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    color: #202020 !important;
+    font-size: 7.8px !important;
+    line-height: 1.32 !important;
+  }
+
+  .info-extra-content--split { gap: 3px !important; }
+  .info-extra-subtitle { color: #111111 !important; font-size: 8.2px !important; font-weight: 900 !important; }
+  .terminos-section .voucher-section-title { margin-top: 6px; }
+  .terminos-content { font-size: 7px !important; line-height: 1.24 !important; }
+  .voucher-flow-section { display: flex; flex-direction: column; gap: 6px; }
+  .voucher-flow-measure { width: 738px !important; }
+  .editable-field:focus { outline: 1px dashed var(--venso-voucher-magenta) !important; outline-offset: -1px; }
+}
+
+.pdf-export-shell .voucher-layout.venso-service-voucher-template {
+  .voucher-a4-page,
+  .voucher-page-break,
+  .voucher-a4-page--export-decorated,
+  .voucher-page-break.voucher-a4-page--export-decorated {
+    border: 0 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    &::before,
+    &::after {
+      display: none !important;
+      content: none !important;
+      background: none !important;
+    }
+  }
+  .voucher-a4-page__decor,
+  .voucher-a4-page__decor--header,
+  .voucher-a4-page__decor--footer,
+  .voucher-a4-page__decor--watermark { display: none !important; }
+}

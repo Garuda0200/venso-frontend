@@ -1,0 +1,192 @@
+.voucher-reserva-card {
+  display: grid;
+  grid-template-columns:
+    minmax(180px, 0.8fr)
+    minmax(270px, 1.2fr)
+    minmax(260px, 1.1fr)
+    minmax(190px, 0.82fr)
+    minmax(72px, auto);
+  grid-template-areas: "identity travel services payment controls";
+  align-items: stretch;
+  width: 100%;
+  min-height: 142px;
+  overflow: hidden;
+  border: 1px solid var(--color-border-light);
+  border-left: 4px solid var(--color-primary);
+  border-radius: var(--radius-xl);
+  background: var(--color-bg-primary);
+  box-shadow: var(--shadow-sm);
+  color: var(--color-text-primary);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+
+  &:hover {
+    border-color: rgba(var(--color-primary-rgb), 0.3);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+
+  &.has-services {
+    border-left-color: var(--color-accent);
+  }
+
+  .voucher-list-section {
+    display: flex;
+    min-width: 0;
+    align-items: stretch;
+    border-right: 1px solid var(--color-border-light);
+    background: var(--color-bg-primary);
+
+    > * {
+      width: 100%;
+    }
+
+    &--identity {
+      grid-area: identity;
+      background: linear-gradient(
+        180deg,
+        rgba(var(--color-primary-rgb), 0.08),
+        var(--color-bg-primary)
+      );
+    }
+
+    &--travel {
+      grid-area: travel;
+    }
+
+    &--services {
+      grid-area: services;
+      background: var(--color-bg-secondary);
+    }
+
+    &--payment {
+      grid-area: payment;
+      background: var(--color-bg-secondary);
+    }
+
+    &--controls {
+      grid-area: controls;
+      display: flex;
+      min-width: 70px;
+      padding: var(--spacing-sm);
+      flex-direction: column;
+      justify-content: center;
+      gap: var(--spacing-sm);
+      border-right: 0;
+      background: var(--color-bg-primary);
+
+      > .quotation-version-trigger--card {
+        width: 100%;
+        min-width: 0;
+      }
+    }
+  }
+
+  .voucher-list-empty-payment {
+    display: flex;
+    min-height: 100%;
+    padding: var(--spacing-md);
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+
+    span {
+      color: var(--color-primary);
+      font-size: 9px;
+      font-weight: var(--font-weight-bold);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    strong {
+      color: var(--color-text-secondary);
+      font-size: var(--font-size-xs);
+      line-height: 1.35;
+    }
+  }
+}
+
+.voucher-reserva-card:has(.delete-confirmation-popover) {
+  position: relative;
+  z-index: 20;
+  overflow: visible;
+}
+
+@media (max-width: 1500px) {
+  .voucher-reserva-card {
+    grid-template-columns:
+      minmax(180px, 0.8fr)
+      minmax(260px, 1.2fr)
+      minmax(240px, 1fr)
+      minmax(180px, 0.8fr);
+    grid-template-areas:
+      "identity travel services payment"
+      "identity controls controls controls";
+
+    .voucher-list-section--controls {
+      min-height: 50px;
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-end;
+      border-top: 1px solid var(--color-border-light);
+
+      > .voucher-actions {
+        flex: 1 1 auto;
+      }
+
+      > .quotation-version-trigger--card {
+        width: auto;
+        min-width: 170px;
+        flex: 0 0 auto;
+      }
+    }
+  }
+}
+
+@media (max-width: 1080px) {
+  .voucher-reserva-card {
+    grid-template-columns: minmax(190px, 0.75fr) minmax(0, 1.25fr);
+    grid-template-areas:
+      "identity travel"
+      "services services"
+      "payment controls";
+
+    .voucher-list-section--identity,
+    .voucher-list-section--travel,
+    .voucher-list-section--services {
+      border-bottom: 1px solid var(--color-border-light);
+    }
+
+    .voucher-list-section--controls {
+      min-height: 100%;
+      flex-direction: column;
+      align-items: stretch;
+      border-top: 0;
+
+      > .quotation-version-trigger--card {
+        width: 100%;
+        min-width: 0;
+      }
+    }
+  }
+}
+
+@media (max-width: 720px) {
+  .voucher-reserva-card {
+    display: flex;
+    flex-direction: column;
+    border-left-width: 0;
+    border-top: 4px solid var(--color-primary);
+
+    .voucher-list-section {
+      border-right: 0;
+      border-bottom: 1px solid var(--color-border-light);
+
+      &--controls {
+        border-bottom: 0;
+      }
+    }
+  }
+}

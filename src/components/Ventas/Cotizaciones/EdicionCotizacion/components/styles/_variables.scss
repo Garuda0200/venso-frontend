@@ -1,0 +1,14 @@
+﻿// ============================================================
+// EdicionCotizacion LOCAL VARIABLES
+// ============================================================
+// DEPRECADO: Este archivo existe solo por compatibilidad.
+// Todos los design tokens viven ahora en :root (index.scss).
+// Para código nuevo usar var(--xxx) directamente.
+// ============================================================
+
+// Redirigimos a las CSS custom properties globales
+// Estos SCSS vars se mantienen solo para archivos que aún los usan.
+@import "../../../../../../styles/_variables.scss";
+
+// Los colores principales ahora se toman de _variables.scss → UI/variables.scss
+// No redefinimos nada aquí para evitar conflictos.

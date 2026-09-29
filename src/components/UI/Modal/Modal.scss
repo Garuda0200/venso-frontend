@@ -1,0 +1,231 @@
+@import "../../../styles/_variables.scss";
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: $z-index-modal;
+  padding: 20px;
+  box-sizing: border-box;
+  backdrop-filter: blur(3px);
+  animation: modalFadeIn 0.2s ease;
+}
+
+.modal-container {
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 40px);
+  animation: modalSlideIn 0.3s ease;
+
+  &.small {
+    max-width: 500px;
+  }
+  &.medium {
+    max-width: 800px;
+  }
+  &.large {
+    max-width: 1100px;
+  }
+  &.x-large {
+    max-width: 1350px;
+  }
+  &.full {
+    max-width: 95%;
+    height: 95vh;
+  }
+}
+
+.modal-header {
+  padding: var(--spacing-md) var(--spacing-base);
+  border-bottom: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(
+    135deg,
+    var(--color-primary) 0%,
+    var(--color-primary-dark) 100%
+  );
+
+  .modal-title {
+    margin: 0;
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--color-text-white);
+  }
+
+  .close-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 22px;
+    color: rgba(255, 255, 255, 0.75);
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    transition: all 0.2s;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: var(--color-text-white);
+    }
+
+    svg {
+      font-size: 22px;
+    }
+  }
+}
+
+.modal-body {
+  padding: var(--spacing-base);
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+.modal-footer {
+  padding: var(--spacing-md) var(--spacing-base);
+  border-top: 1px solid var(--color-border-light);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+  background: var(--gray-100);
+}
+
+.modal-action-btn {
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+
+  &.primary {
+    background: var(--color-primary);
+    color: var(--color-text-white);
+
+    &:hover {
+      background: var(--color-primary-hover);
+    }
+  }
+
+  &.secondary {
+    background: var(--gray-500);
+    color: var(--color-text-white);
+
+    &:hover {
+      background: var(--gray-600);
+    }
+  }
+
+  &.success {
+    background: var(--color-success);
+    color: var(--color-text-white);
+
+    &:hover {
+      filter: brightness(0.9);
+    }
+  }
+
+  &.danger {
+    background: var(--color-danger);
+    color: var(--color-text-white);
+
+    &:hover {
+      filter: brightness(0.9);
+    }
+  }
+
+  &.outlined {
+    background: transparent;
+    border: 1px solid var(--color-primary);
+    color: var(--color-primary);
+
+    &:hover {
+      background: var(--color-primary-light);
+    }
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .button-icon {
+    display: flex;
+    align-items: center;
+  }
+}
+
+// Animations
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalSlideIn {
+  from {
+    transform: translateY(-12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .modal-container {
+    width: 100%;
+
+    &.small,
+    &.medium,
+    &.large {
+      max-width: 95%;
+    }
+  }
+
+  .modal-header {
+    padding: var(--spacing-sm) var(--spacing-md);
+
+    .modal-title {
+      font-size: var(--font-size-md);
+    }
+  }
+
+  .modal-body {
+    padding: var(--spacing-md);
+  }
+
+  .modal-footer {
+    padding: var(--spacing-sm) var(--spacing-md);
+    flex-wrap: wrap;
+
+    .modal-action-btn {
+      flex: 1;
+      min-width: 120px;
+    }
+  }
+}

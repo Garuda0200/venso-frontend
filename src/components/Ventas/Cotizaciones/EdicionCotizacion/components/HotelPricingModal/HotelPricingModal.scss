@@ -1,0 +1,2237 @@
+/* HotelPricingModal — Venso brand theme */
+// Variables: usar var(--xxx) de :root (index.scss). @import mantenido para funciones SCSS.
+@import "../../../../../../styles/_variables.scss";
+
+/* ─── Overlay ─── */
+.hpm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba($gray-900, 0.55);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  z-index: 1400;
+}
+
+/* ─── Modal container ─── */
+.hpm-modal {
+  width: min(1300px, calc(100vw - 18px));
+  max-height: min(94vh, 980px);
+  overflow: hidden;
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--gray-300);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+}
+
+/* ─── Header ─── */
+.hpm-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  background:
+    radial-gradient(circle at top left, rgba(#fff, 0.24), transparent 34%),
+    linear-gradient(135deg, var(--color-tertiary), var(--color-tertiary-dark));
+  color: #fff;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  box-shadow: 0 2px 8px rgba(var(--color-tertiary-rgb), 0.35);
+}
+
+.hpm-header-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px 10px;
+  width: 100%;
+}
+
+.hpm-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  svg {
+    font-size: 25px;
+    color: #fff;
+  }
+
+  .hpm-title-top {
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: 0.1px;
+  }
+
+  .hpm-title-sub {
+    margin-top: 2px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: rgba(#fff, 0.82);
+  }
+}
+
+.hpm-close {
+  border: 0;
+  background: rgba(#fff, 0.15);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  color: #fff;
+  transition: var(--transition-base);
+
+  &:hover {
+    background: rgba(#fff, 0.28);
+  }
+
+  svg {
+    font-size: 18px;
+  }
+}
+
+/* ─── Meta bar (inside header) ─── */
+.hpm-meta-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 9px 20px 12px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: rgba(#fff, 0.94);
+  background: rgba(#000, 0.12);
+  border-top: 1px solid rgba(#fff, 0.18);
+
+  b,
+  strong {
+    color: #fff;
+    font-weight: 800;
+  }
+}
+
+.hpm-meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: rgba(#fff, 0.16);
+  border: 1px solid rgba(#fff, 0.24);
+  box-shadow: inset 0 1px 0 rgba(#fff, 0.16);
+}
+
+.hpm-meta-label {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: rgba(#fff, 0.18);
+  color: rgba(#fff, 0.82);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.hpm-day-chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hpm-day-chip {
+  border: 1px solid var(--gray-300);
+  background: #fff;
+  color: var(--color-text-primary);
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition-base);
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(var(--color-tertiary-rgb), 0.35);
+  }
+
+  &:hover {
+    filter: brightness(0.95);
+  }
+
+  &.active {
+    border-color: var(--color-primary-dark);
+    background: var(--color-primary-dark);
+    color: #fff;
+  }
+
+  &.locked,
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.48;
+    filter: grayscale(0.35);
+  }
+
+  &.locked:hover,
+  &:disabled:hover {
+    filter: grayscale(0.35);
+  }
+}
+
+/* ─── Group management ─── */
+.hpm-group-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  width: 100%;
+}
+
+.hpm-group-tab {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border: 1.5px solid var(--gray-300);
+  background: #fff;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition-base);
+  color: var(--color-text-muted);
+
+  &.active {
+    border-color: var(--group-color, var(--color-primary));
+    background: rgba(0, 0, 0, 0.03);
+    color: var(--color-text-primary);
+  }
+
+  &:hover {
+    border-color: var(--group-color, var(--color-primary));
+  }
+}
+
+.hpm-group-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.hpm-group-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  margin-left: 2px;
+
+  &:hover {
+    color: var(--color-danger, #e74c3c);
+  }
+}
+
+.hpm-group-add {
+  border: 1.5px dashed var(--gray-400);
+  background: transparent;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  transition: var(--transition-base);
+
+  &:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+}
+
+/* ─── Multi-group summary ─── */
+.hpm-groups-summary {
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.hpm-group-summary-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-left: 4px solid transparent;
+  cursor: pointer;
+  font-size: 12px;
+  transition: var(--transition-base);
+  border-bottom: 1px solid var(--gray-100);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: var(--gray-50);
+  }
+
+  &.active {
+    background: rgba(var(--color-primary-rgb), 0.05);
+  }
+}
+
+.hpm-gs-label {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  min-width: 100px;
+}
+
+.hpm-gs-days {
+  color: var(--color-text-muted);
+  flex: 1;
+}
+
+.hpm-gs-mix {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  background: var(--gray-100);
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+
+/* ─── Body ─── */
+.hpm-body {
+  overflow: auto;
+  padding: 14px 16px;
+  background: #fff;
+}
+
+/* ─── Two-panel layout ─── */
+.hpm-body-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+}
+
+.hpm-panel-left {
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.hpm-panel-right {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.hpm-groups-summary {
+  grid-column: 1 / -1;
+}
+
+/* ─── Section label ─── */
+.hpm-section-label {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* ─── Category cards (vertical in left panel) ─── */
+.hpm-cat-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.hpm-cat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-xl);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: left;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.03);
+  position: relative;
+  overflow: hidden;
+
+  &:hover {
+    border-color: rgba(var(--color-primary-rgb), 0.4);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    transform: translateY(-2px);
+  }
+
+  &.active {
+    border-color: var(--color-primary);
+    background: linear-gradient(
+      180deg,
+      rgba(var(--color-primary-rgb), 0.04) 0%,
+      #ffffff 100%
+    );
+    box-shadow:
+      0 0 0 4px rgba(var(--color-primary-rgb), 0.1),
+      0 12px 28px rgba(15, 23, 42, 0.08);
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--color-primary);
+    }
+  }
+
+  .hpm-cat-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .hpm-stars {
+    font-size: 16px;
+    color: #f59e0b; /* Amber 500 */
+    font-weight: 800;
+    letter-spacing: 2px;
+    line-height: 1;
+    text-shadow: 0 1px 2px rgba(245, 158, 11, 0.2);
+  }
+
+  .hpm-cat-active-pill {
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: var(--color-primary);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .hpm-cat-igv-pill {
+    background: #fff7ed;
+    color: #9a3412;
+    border: 1px solid #fed7aa;
+  }
+
+  .hpm-cat-name {
+    font-weight: 800;
+    font-size: 14px;
+    color: var(--color-text-primary);
+    line-height: 1.3;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .hpm-cat-services-base {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--gray-100);
+    color: var(--color-text-secondary);
+    font-size: 11px;
+    font-weight: 600;
+
+    strong {
+      color: var(--color-text-primary);
+      font-size: 13px;
+      font-weight: 800;
+    }
+  }
+
+  .hpm-cat-rooms {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 4px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--gray-200);
+  }
+
+  .hpm-cat-room-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px;
+    border-radius: 8px;
+    background: rgba(var(--color-primary-rgb), 0.03);
+    border: 1px solid rgba(var(--color-primary-rgb), 0.08);
+
+    &--ref {
+      background: var(--gray-50);
+      border-color: var(--gray-200);
+    }
+  }
+
+  .hpm-cat-room-left {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .hpm-cat-room-icon {
+    font-size: 16px;
+    color: var(--color-primary);
+    margin-top: 2px;
+    opacity: 0.8;
+  }
+
+  .hpm-cat-room-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .hpm-cat-room-type {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    line-height: 1.2;
+  }
+
+  .hpm-cat-room-pax {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--color-text-light);
+    text-transform: uppercase;
+  }
+
+  .hpm-cat-room-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+  }
+
+  .hpm-cat-room-total {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--color-primary);
+    line-height: 1.2;
+
+    &--child {
+      color: var(--color-accent, #f97316);
+    }
+  }
+
+  .hpm-cat-room-breakdown {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    font-size: 11px;
+    color: var(--color-text-light);
+    font-weight: 500;
+    line-height: 1.4;
+
+    span {
+      display: block;
+    }
+
+    .child-adult-rate {
+      color: var(--color-accent); /* E.g. orange for converted children */
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    &--child span {
+      color: rgba(var(--color-accent-rgb, 249 115 22), 0.8);
+    }
+  }
+
+  .hpm-cat-room-row--child {
+    background: rgba(249, 115, 22, 0.04);
+    border-color: rgba(249, 115, 22, 0.15);
+  }
+
+  .hpm-cat-room-icon--child {
+    color: var(--color-accent, #f97316);
+  }
+}
+
+/* ─── Room config ─── */
+.hpm-luxury-selector {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(var(--color-primary-rgb), 0.18);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, #fff 0%, var(--color-primary-light) 100%);
+
+  label {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 220px;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+  }
+
+  select {
+    height: 34px;
+    border: 1px solid var(--gray-300);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--color-text-primary);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 0 10px;
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.12);
+    }
+  }
+
+  &__hint {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 0 10px;
+    border-radius: var(--radius-pill);
+    background: #fff;
+    color: var(--color-primary);
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+}
+
+.hpm-room-config {
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-lg);
+  padding: 9px 10px;
+  margin-bottom: 0;
+  background: var(--gray-100);
+}
+
+.hpm-room-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.hpm-room-title {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--color-text-primary);
+}
+
+.btn-sm {
+  font-size: 12px !important;
+  padding: 4px 10px !important;
+}
+
+.hpm-rooms-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: #fff;
+}
+
+.hpm-room-row {
+  display: grid;
+  grid-template-columns: minmax(132px, 1fr) auto minmax(148px, auto);
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border-bottom: 1px solid var(--gray-200);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:nth-child(even) {
+    background: var(--gray-100);
+  }
+
+  .room-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--color-text-primary);
+
+    small {
+      display: inline-flex;
+      align-items: center;
+      height: 22px;
+      padding: 0 7px;
+      border-radius: var(--radius-pill);
+      background: var(--color-primary-light);
+      color: var(--color-primary);
+      font-size: 10px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+  }
+
+  .room-controls {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .pill-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: 1px solid var(--gray-300);
+    background: #fff;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-base);
+    color: var(--color-text-primary);
+
+    &:hover {
+      background: var(--gray-100);
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+    }
+  }
+
+  .room-cnt {
+    width: 44px;
+    height: 26px;
+    padding: 4px;
+    border-radius: 6px;
+    border: 1px solid var(--gray-300);
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+
+    &:focus {
+      border-color: var(--color-primary);
+      outline: none;
+    }
+  }
+
+  .room-price-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .muted-sm {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--color-text-light);
+    text-transform: uppercase;
+  }
+
+  .room-price {
+    width: 68px;
+    padding: 3px 6px;
+    border-radius: 6px;
+    border: 1px solid var(--gray-300);
+    font-size: 13px;
+    text-align: right;
+
+    &:focus {
+      border-color: var(--color-primary);
+      outline: none;
+    }
+  }
+
+  .room-person-total {
+    flex: 0 0 100%;
+    text-align: right;
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--color-text-light);
+
+    &.active {
+      color: var(--color-primary);
+    }
+  }
+}
+
+@media (max-width: 760px) {
+  .hpm-body-panels {
+    flex-direction: column;
+  }
+
+  .hpm-panel-left {
+    width: 100%;
+  }
+
+  .hpm-panel-right {
+    grid-template-columns: 1fr;
+  }
+
+  .hpm-room-row {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+
+    .room-controls,
+    .room-price-wrap {
+      justify-content: space-between;
+    }
+  }
+}
+
+.hpm-warn {
+  color: var(--color-danger);
+  font-weight: 600;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+/* ─── Totals compact ─── */
+.hpm-totals-compact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+
+  b {
+    color: var(--color-text-primary);
+  }
+
+  .total-highlight {
+    font-weight: 700;
+    color: var(--color-text-primary);
+
+    b {
+      color: var(--color-primary);
+    }
+  }
+
+  .grand-highlight {
+    font-weight: 700;
+    color: var(--color-primary);
+
+    b {
+      color: var(--color-primary);
+      font-size: 13px;
+    }
+  }
+}
+
+/* ─── Summary ─── */
+.hpm-room-assignments {
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  background: #f8fafc;
+}
+
+.hpm-room-assignments__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+
+  > div {
+    display: grid;
+    gap: 2px;
+  }
+
+  strong {
+    font-size: 12px;
+    color: var(--color-text-primary);
+  }
+
+  span {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+  }
+}
+
+.hpm-room-assignment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 8px;
+}
+
+.hpm-room-passenger-pool {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+  padding: 8px;
+  border: 1px dashed var(--gray-300);
+  border-radius: var(--radius-md);
+  background: #ffffff;
+}
+
+.hpm-room-assignment-card {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  background: #ffffff;
+
+  &.can-drop {
+    border-style: dashed;
+  }
+
+  &.is-full {
+    background: #f8fafc;
+  }
+
+  &.drop-target {
+    border-color: var(--color-primary);
+    background: rgba(var(--color-primary-rgb, 46, 125, 50), 0.06);
+    box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb, 46, 125, 50), 0.15);
+  }
+}
+
+.hpm-room-assignment-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+
+  strong {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+    color: var(--color-text-primary);
+  }
+
+  span {
+    flex: 0 0 auto;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--color-primary);
+  }
+
+  .hpm-room-igv-pill {
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    color: #9a3412;
+  }
+}
+
+.hpm-room-assignment-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-height: 28px;
+}
+
+.hpm-room-passenger-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  padding: 4px 7px;
+  border: 1px solid rgba(var(--color-primary-rgb, 46, 125, 50), 0.18);
+  border-radius: 999px;
+  background: rgba(var(--color-primary-rgb, 46, 125, 50), 0.06);
+  color: var(--color-text-primary);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  user-select: none;
+
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &.is-child {
+    border-color: rgba(234, 88, 12, 0.25);
+    background: rgba(251, 146, 60, 0.12);
+    color: #9a3412;
+  }
+
+  &.is-dragging {
+    opacity: 0.4;
+    cursor: grabbing;
+  }
+}
+
+.hpm-room-empty {
+  font-size: 11px;
+  color: var(--color-text-light);
+}
+
+.hpm-room-unassigned {
+  margin-top: 8px;
+  padding: 7px 9px;
+  border-radius: var(--radius-sm);
+  background: rgba(220, 38, 38, 0.08);
+  color: #991b1b;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.hpm-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hpm-summary-block {
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-lg);
+  padding: 11px;
+}
+
+.hpm-summary-title {
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--color-text-primary);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Excel Preview container */
+.hpm-excel-preview {
+  overflow: auto;
+  max-height: 420px;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(#eef2f7 1px, transparent 1px),
+    linear-gradient(90deg, #eef2f7 1px, transparent 1px), #fff;
+  background-size: 40px 28px;
+  outline: none;
+  transition: box-shadow 0.15s;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+
+  &--editing {
+    box-shadow: 0 0 0 2px var(--color-primary, #1976d2);
+    border-color: var(--color-primary, #1976d2);
+  }
+
+  & > div {
+    min-width: 960px;
+    margin: 10px;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.1);
+  }
+
+  &--modal {
+    max-height: 320px;
+  }
+}
+
+.hpm-table-wrap {
+  overflow: auto;
+}
+
+.hpm-itin {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    border-bottom: 1px solid var(--gray-200);
+    padding: 8px 10px;
+    font-size: 13px;
+    color: var(--color-text-primary);
+  }
+
+  thead th {
+    position: sticky;
+    top: 0;
+    background: var(--gray-100);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: var(--color-text-muted);
+    z-index: 2;
+    text-align: left;
+  }
+
+  tbody tr:hover {
+    background: var(--gray-100);
+  }
+
+  .center {
+    text-align: center;
+  }
+
+  .strong {
+    font-weight: 700;
+  }
+}
+
+/* ─── Price bars ─── */
+.hpm-price-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hpm-price-bars--summary-end {
+  margin-top: 6px;
+}
+
+.price-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--gray-300);
+  background: #fff;
+  transition: var(--transition-base);
+
+  &.active {
+    border-color: var(--color-primary);
+    background: rgba(var(--color-primary-rgb), 0.05);
+  }
+
+  .left {
+    font-size: 12px;
+    color: var(--color-text-primary);
+  }
+
+  .right {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--color-primary);
+  }
+}
+
+.price-bar--room-detail {
+  border-left: 3px solid var(--color-accent, var(--color-primary));
+  background: rgba(var(--color-primary-rgb, 46, 125, 50), 0.03);
+
+  .left small {
+    font-size: 11px;
+    color: var(--color-text-light);
+    margin-left: 4px;
+  }
+
+  .right small {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--color-text-light);
+    margin-left: 3px;
+  }
+}
+
+.hpm-price-bars--per-room-final {
+  margin-top: 8px;
+  border-top: 1px dashed var(--gray-300);
+  padding-top: 8px;
+}
+
+.hpm-price-bars--cat-card {
+  gap: 4px;
+  margin-top: 0;
+  width: 100%;
+
+  .price-bar {
+    min-height: 44px;
+    padding: 7px 8px;
+    border-radius: var(--radius-md);
+  }
+
+  .price-bar .left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+
+    svg {
+      flex: 0 0 auto;
+      color: var(--color-primary);
+      font-size: 14px;
+    }
+
+    > span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 700;
+    }
+
+    small {
+      flex: 0 0 auto;
+      margin-left: 0;
+      padding: 2px 5px;
+      border-radius: 999px;
+      background: rgba(var(--color-primary-rgb), 0.08);
+      color: var(--color-text-secondary);
+      font-size: 9px;
+      font-weight: 700;
+    }
+  }
+
+  .price-bar .right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 1px;
+    line-height: 1.05;
+
+    strong {
+      font-size: 12px;
+    }
+
+    .room-final-breakdown {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 3px;
+      max-width: 150px;
+
+      small {
+        padding: 1px 4px;
+        border-radius: 999px;
+        background: rgba(var(--color-primary-rgb, 46, 125, 50), 0.07);
+        color: var(--color-text-secondary);
+      }
+    }
+
+    small {
+      color: var(--color-text-light);
+      font-size: 9px;
+      font-weight: 600;
+
+      &.child-adult-rate {
+        color: #9a3412;
+        font-weight: 800;
+      }
+    }
+  }
+}
+
+.price-bar--room-final {
+  border-left: 3px solid var(--color-accent, var(--color-primary));
+  background: rgba(var(--color-primary-rgb, 46, 125, 50), 0.04);
+
+  .left small {
+    font-size: 11px;
+    color: var(--color-text-light);
+    margin-left: 4px;
+  }
+
+  .right strong {
+    color: var(--color-primary);
+  }
+}
+
+.price-bar--grand-total {
+  border-color: var(--color-primary);
+  background: rgba(var(--color-primary-rgb, 46, 125, 50), 0.08);
+  font-weight: 600;
+
+  .right strong {
+    color: var(--color-primary);
+    font-size: 16px;
+  }
+}
+
+.hpm-note {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--color-text-light);
+}
+
+.hpm-child-breakdown {
+  margin-top: 10px;
+  border-top: 1px solid var(--gray-200);
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hpm-child-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--color-text-primary);
+
+  span:last-child {
+    font-weight: 600;
+    text-align: right;
+  }
+}
+
+/* ─── Download row & buttons ─── */
+.hpm-download-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.hpm-download-btn {
+  flex: 1;
+  justify-content: center;
+  font-size: 13px;
+  padding: 10px 18px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(
+    135deg,
+    var(--color-primary),
+    var(--color-primary-light)
+  );
+  border: 1px solid var(--color-primary);
+  color: #fff;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: var(--transition-base);
+
+  &:hover {
+    filter: brightness(0.92);
+  }
+
+  svg {
+    font-size: 18px;
+  }
+
+}
+
+/* ─── Footer ─── */
+.hpm-footer {
+  padding: 12px 18px;
+  border-top: 1px solid var(--gray-200);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  background: var(--gray-100);
+}
+
+.hpm-footer-right {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ─── Shared button styles ─── */
+.btn {
+  border: 1px solid var(--gray-300);
+  background: #fff;
+  padding: 8px 14px;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-primary);
+  transition: var(--transition-base);
+
+  &:hover {
+    background: var(--gray-100);
+    border-color: var(--gray-400);
+  }
+
+  &.primary {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+
+    &:hover {
+      filter: brightness(0.92);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  &.ghost {
+    background: #fff;
+    border: 1px solid var(--color-primary);
+    color: var(--color-primary);
+
+    &:hover {
+      background: rgba(var(--color-primary-rgb), 0.06);
+    }
+
+    &:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      border-color: var(--gray-400);
+      color: var(--color-text-muted);
+    }
+  }
+}
+
+/* ─── Utility classes ─── */
+.muted {
+  color: var(--color-text-muted);
+}
+
+.strong {
+  font-weight: 700;
+}
+
+/* ─── Summary visual refresh ─── */
+.hpm-summary-block {
+  background: var(--color-bg-primary);
+  border-color: var(--color-border-light);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.hpm-summary-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hpm-excel-preview {
+  border-color: var(--color-border);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(var(--gray-200) 1px, transparent 1px),
+    linear-gradient(90deg, var(--gray-200) 1px, transparent 1px),
+    var(--gray-100);
+  background-size: 32px 24px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+
+  & > div {
+    border-radius: 0;
+    box-shadow: 0 12px 28px rgba(58, 59, 69, 0.14);
+  }
+}
+
+.price-bar {
+  border-color: var(--color-border-light);
+  background: var(--gray-100);
+  border-radius: var(--radius-lg);
+
+  &.active {
+    border-color: rgba(var(--color-primary-rgb), 0.35);
+    background: var(--color-primary-light);
+  }
+
+  .left {
+    color: var(--color-text-muted);
+    font-weight: 700;
+  }
+
+  .right {
+    color: var(--color-primary);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.hpm-child-breakdown {
+  border-top-color: var(--color-border-light);
+}
+
+// ─── Children panel inside Hotel Pricing Modal ────────────────────────────────
+// Uses same sr__ classes as SortableService so styles are shared.
+// These rules scope sr__pax / sr__children within .hpm-room-config for specificity.
+.hpm-room-config {
+  .sr__pax {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+
+  .sr__pax-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    border: 1.5px solid transparent;
+    cursor: default;
+
+    &--adult {
+      background: #f0fdf4;
+      color: var(--color-primary, #02522f);
+      border-color: #bbf7d0;
+    }
+
+    &--child {
+      background: #fff7ed;
+      color: #c2410c;
+      border-color: #fed7aa;
+      cursor: pointer;
+      transition: all 0.18s;
+
+      &:hover,
+      &.active {
+        background: #ffedd5;
+        border-color: var(--color-accent, #ff8c00);
+        color: var(--color-accent, #ff8c00);
+      }
+    }
+
+    svg {
+      font-size: 13px;
+    }
+
+    .sr__pax-label {
+      font-weight: 500;
+      opacity: 0.7;
+    }
+
+    .sr__pax-converted {
+      display: inline-flex;
+      align-items: center;
+      background: var(--color-primary, #02522f);
+      color: #fff;
+      border-radius: 10px;
+      padding: 1px 6px;
+      font-size: 9px;
+      font-weight: 800;
+      margin-left: 3px;
+    }
+  }
+
+  // El gestor infantil usa el diseño compartido de ChildrenPanel.scss.
+  // Aquí solo se adapta su encaje dentro del modal de hotel.
+  .sr__children {
+    margin-top: 8px;
+    border: 1px solid rgba(2, 82, 47, 0.16);
+    border-radius: var(--radius-lg);
+    background: #f8fafc;
+    overflow: hidden;
+  }
+
+}
+
+
+/* ─── Readability boost for the pricing editor ─── */
+.hpm-modal {
+  input,
+  select,
+  button,
+  textarea {
+    font-size: 14px;
+  }
+
+  .hpm-room-title,
+  .hpm-child-title,
+  .hpm-config-title,
+  .hpm-summary-title {
+    font-size: 14.5px;
+  }
+
+  .hpm-room-cap,
+  .hpm-room-price-label,
+  .hpm-room-assignment-hint,
+  .hpm-child-hint,
+  .hpm-cat-room-breakdown {
+    font-size: 12px;
+  }
+
+  .hpm-total-line,
+  .hpm-room-row,
+  .hpm-child-pill,
+  .hpm-room-passenger-chip {
+    font-size: 13px;
+  }
+}
+
+
+/* Selector universal de Venso: flujo explícito categoría → hotel → habitaciones. */
+.hpm-hotel-selector {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding: 12px;
+  border: 1px solid rgba(var(--color-primary-rgb), 0.18);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fff 0%, rgba(var(--color-primary-rgb), 0.035) 100%);
+}
+
+.hpm-selection-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+
+  span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 34px;
+    padding: 6px 9px;
+    border: 1px solid var(--gray-200);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--color-text-muted);
+    font-size: 11px;
+    font-weight: 800;
+  }
+
+  b {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--gray-100);
+    color: var(--color-text-muted);
+    font-size: 10px;
+  }
+
+  .is-complete {
+    border-color: rgba(var(--color-primary-rgb), 0.2);
+    color: var(--color-primary-dark);
+
+    b {
+      background: rgba(var(--color-primary-rgb), 0.12);
+      color: var(--color-primary-dark);
+    }
+  }
+
+  .is-active {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    color: #fff;
+
+    b {
+      background: rgba(255, 255, 255, 0.22);
+      color: #fff;
+    }
+  }
+}
+
+.hpm-hotel-selector__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  > div {
+    display: grid;
+    gap: 2px;
+  }
+
+  strong {
+    color: var(--color-text-primary);
+    font-size: 13px;
+  }
+
+  small {
+    color: var(--color-text-secondary);
+    font-size: 10.5px;
+  }
+}
+
+.hpm-hotel-search {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: min(280px, 45%);
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--gray-300);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--color-text-muted);
+
+  &:focus-within {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
+  }
+
+  input {
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--color-text-primary);
+    font-size: 12px;
+  }
+}
+
+.hpm-hotel-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+  max-height: 206px;
+  overflow: auto;
+  padding: 2px;
+}
+
+.hpm-hotel-option {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  min-height: 68px;
+  padding: 9px 10px;
+  border: 1px solid var(--gray-250, var(--gray-300));
+  border-radius: 11px;
+  background: #fff;
+  color: var(--color-text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+
+  &:hover {
+    border-color: rgba(var(--color-primary-rgb), 0.55);
+    transform: translateY(-1px);
+  }
+
+  &.is-selected {
+    border-color: var(--color-primary);
+    background: rgba(var(--color-primary-rgb), 0.075);
+    box-shadow: inset 3px 0 0 var(--color-primary);
+  }
+}
+
+.hpm-hotel-option__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(var(--color-primary-rgb), 0.1);
+  color: var(--color-primary-dark);
+  font-size: 19px;
+}
+
+.hpm-hotel-option__content {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+
+  strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+  }
+
+  small {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    overflow: hidden;
+    color: var(--color-text-secondary);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 10px;
+  }
+}
+
+.hpm-hotel-option__meta {
+  display: grid;
+  justify-items: end;
+  gap: 3px;
+  color: var(--color-text-secondary);
+  font-size: 9.5px;
+  white-space: nowrap;
+
+  b {
+    color: var(--color-primary-dark);
+    font-size: 13px;
+  }
+
+  em {
+    padding: 2px 5px;
+    border-radius: 999px;
+    background: #fff7ed;
+    color: #c2410c;
+    font-style: normal;
+    font-weight: 800;
+  }
+}
+
+.hpm-hotel-options__empty {
+  grid-column: 1 / -1;
+  padding: 18px;
+  border: 1px dashed var(--gray-300);
+  border-radius: 10px;
+  color: var(--color-text-secondary);
+  text-align: center;
+  font-size: 11px;
+}
+
+.hpm-hotel-selector__status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+
+  span {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    gap: 6px;
+    font-size: 11px;
+  }
+
+  strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  small {
+    color: var(--color-text-secondary);
+    font-size: 10px;
+    text-align: right;
+  }
+}
+
+@media (max-width: 760px) {
+  .hpm-selection-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .hpm-hotel-selector__head,
+  .hpm-hotel-selector__status {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .hpm-hotel-search {
+    width: 100%;
+  }
+
+  .hpm-hotel-selector__status small {
+    text-align: left;
+  }
+}
+
+@media (max-width: 520px) {
+  .hpm-hotel-options {
+    grid-template-columns: 1fr;
+  }
+
+  .hpm-hotel-option {
+    grid-template-columns: 34px minmax(0, 1fr);
+  }
+
+  .hpm-hotel-option__meta {
+    grid-column: 2;
+    grid-auto-flow: column;
+    justify-content: start;
+    justify-items: start;
+  }
+}
+
+/* Desglose hotelero por pasajero. Mantiene separado el precio base, IGV y total. */
+.hpm-passenger-pricing {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  background: #fff;
+}
+
+.hpm-passenger-pricing__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+
+  > div {
+    display: grid;
+    gap: 2px;
+  }
+
+  strong {
+    color: var(--color-text-primary);
+    font-size: 12.5px;
+  }
+
+  span,
+  small {
+    color: var(--color-text-secondary);
+    font-size: 10.5px;
+    line-height: 1.35;
+  }
+
+  > small {
+    flex: 0 0 auto;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    font-weight: 800;
+  }
+}
+
+.hpm-passenger-pricing__table {
+  overflow: hidden;
+  border: 1px solid var(--gray-200);
+  border-radius: 9px;
+}
+
+.hpm-passenger-pricing__row {
+  display: grid;
+  grid-template-columns: minmax(170px, 1.35fr) minmax(130px, 1fr) 90px 80px 105px;
+  align-items: center;
+  min-height: 42px;
+  border-bottom: 1px solid var(--gray-200);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  > span,
+  > strong {
+    min-width: 0;
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+
+  > strong {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  > strong.has-igv {
+    color: #b45309;
+  }
+
+  > strong.is-total {
+    color: var(--color-primary);
+    font-size: 12px;
+  }
+
+  > span:nth-child(2) {
+    display: grid;
+    gap: 2px;
+    color: var(--color-text-primary);
+    font-weight: 700;
+  }
+
+  &--header {
+    min-height: 32px;
+    background: var(--gray-100);
+
+    > span {
+      color: var(--color-text-muted);
+      font-size: 9.5px;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    > span:nth-child(n + 3) {
+      text-align: right;
+    }
+  }
+}
+
+.hpm-passenger-pricing__passenger {
+  display: grid;
+  gap: 2px;
+
+  strong {
+    overflow: hidden;
+    color: var(--color-text-primary);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  small {
+    color: var(--color-text-secondary);
+    font-size: 9.5px;
+  }
+}
+
+.hpm-passenger-pricing__igv-note {
+  color: #b45309;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+@media (max-width: 940px) {
+  .hpm-passenger-pricing__table {
+    overflow-x: auto;
+  }
+
+  .hpm-passenger-pricing__row {
+    min-width: 690px;
+  }
+}
+
+/* ─── Venso compact hotel workflow ───────────────────────────────────────
+   La agencia ya fue elegida al crear/editar la cotización. El tarifario no
+   vuelve a pedir ese contexto y prioriza el contenido del hotel. */
+.hpm-header-main {
+  padding: 10px 16px 8px;
+}
+
+.hpm-title {
+  gap: 9px;
+
+  svg {
+    font-size: 21px;
+  }
+
+  .hpm-title-top {
+    font-size: 16px;
+  }
+
+  .hpm-title-sub {
+    margin-top: 1px;
+    font-size: 11.5px;
+  }
+}
+
+.hpm-meta-bar {
+  gap: 8px;
+  padding: 7px 16px 9px;
+}
+
+.hpm-meta-pill {
+  min-height: 29px;
+  padding: 4px 8px;
+  border-radius: 9px;
+  font-size: 12px;
+}
+
+.hpm-meta-label {
+  padding: 2px 6px;
+  font-size: 9.5px;
+}
+
+.hpm-group-bar {
+  gap: 5px;
+}
+
+.hpm-group-tab,
+.hpm-group-add {
+  min-height: 28px;
+  padding: 3px 8px;
+  font-size: 11.5px;
+}
+
+.hpm-day-chip-group {
+  gap: 5px;
+}
+
+.hpm-day-chip {
+  min-height: 27px;
+  padding: 3px 9px;
+  font-size: 11.5px;
+}
+
+/* El flujo se lee de arriba hacia abajo: categoría → hotel → habitación → pax.
+   Forzamos una sola columna incluso en escritorios grandes para evitar que
+   el detalle hotelero y el desglose por pasajero queden comprimidos. */
+.hpm-body-panels {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+.hpm-panel-left,
+.hpm-panel-right {
+  width: 100%;
+  min-width: 0;
+}
+
+.hpm-panel-right {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.hpm-hotel-selector,
+.hpm-room-config,
+.hpm-passenger-pricing,
+.hpm-groups-summary {
+  width: 100%;
+  min-width: 0;
+}
+
+.hpm-hotel-options {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  max-height: 176px;
+}
+
+.hpm-passenger-pricing__table {
+  width: 100%;
+}
+
+/* Assigned hotel rows belong to the operational voucher and are immutable. */
+.hpm-meta-pill--locked {
+  background: rgba(255, 255, 255, 0.22);
+  border-style: dashed;
+
+  svg {
+    flex-shrink: 0;
+  }
+}
+
+.hpm-day-chip.operational-locked {
+  position: relative;
+  opacity: 0.82;
+  filter: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+.hpm-group-remove--locked {
+  cursor: not-allowed;
+  color: var(--color-text-muted);
+  opacity: 0.72;
+
+  svg {
+    font-size: 11px;
+  }
+
+  &:hover {
+    color: var(--color-text-muted);
+  }
+}
+
+.hpm-cat-card.is-locked,
+.hpm-hotel-option.is-locked {
+  cursor: not-allowed;
+  opacity: 0.76;
+}
+
+.hpm-cat-card.is-locked:hover,
+.hpm-hotel-option.is-locked:hover {
+  transform: none;
+}
+
+.hpm-room-config--locked {
+  .hpm-room-price-lock-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    margin: 0 0 8px;
+    padding: 8px 10px;
+    border: 1px dashed rgba(159, 98, 0, 0.4);
+    border-radius: var(--radius-md);
+    background: rgba(255, 174, 0, 0.08);
+    color: #7a5200;
+    font-size: 11px;
+    line-height: 1.35;
+
+    svg {
+      flex: 0 0 auto;
+      margin-top: 1px;
+      font-size: 14px;
+    }
+  }
+
+  .room-controls {
+    button:disabled,
+    input:disabled {
+      cursor: not-allowed;
+      opacity: 0.65;
+    }
+  }
+
+  .room-price-wrap.locked {
+    .room-price-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      color: #7a5200;
+
+      svg {
+        font-size: 11px;
+      }
+    }
+
+    .room-price:disabled {
+      border-color: rgba(122, 82, 0, 0.28);
+      background: var(--gray-100);
+      color: var(--color-text-muted);
+      cursor: not-allowed;
+      opacity: 1;
+    }
+  }
+
+  .hpm-room-passenger-tag:disabled {
+    cursor: not-allowed;
+    opacity: 0.72;
+  }
+}
+
+@media (max-width: 760px) {
+  .hpm-header-main {
+    padding: 9px 12px 7px;
+  }
+
+  .hpm-meta-bar {
+    padding: 6px 12px 8px;
+  }
+
+  .hpm-cat-cards,
+  .hpm-hotel-options {
+    grid-template-columns: 1fr;
+  }
+}

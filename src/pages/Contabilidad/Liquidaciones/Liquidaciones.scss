@@ -1,0 +1,638 @@
+@import "../../../styles/_variables.scss";
+
+.liquidaciones-page {
+  min-height: calc(100vh - 60px);
+  background: $color-background;
+  padding: $spacing-lg;
+
+  &.loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: $spacing-md;
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid $color-border;
+      border-top-color: $color-primary;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    p {
+      color: $color-text-secondary;
+      font-size: $font-size-md;
+    }
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  // Header
+  .page-header {
+    background: white;
+    border-radius: $border-radius-lg;
+    padding: $spacing-xl;
+    margin-bottom: $spacing-lg;
+    box-shadow: $shadow-sm;
+
+    .header-content {
+      .page-title {
+        display: flex;
+        align-items: center;
+        gap: $spacing-sm;
+        font-size: $font-size-xxl;
+        font-weight: 600;
+        color: $color-text-primary;
+        margin: 0 0 $spacing-xs 0;
+
+        .title-icon {
+          color: $color-primary;
+        }
+      }
+
+      .page-subtitle {
+        color: $color-text-secondary;
+        font-size: $font-size-md;
+        margin: 0;
+      }
+    }
+  }
+
+  // Content
+  .page-content {
+    background: white;
+    border-radius: $border-radius-lg;
+    padding: $spacing-xl;
+    box-shadow: $shadow-sm;
+  }
+
+  // ============================================
+  // VISTA DE SERVICIOS
+  // ============================================
+  .liquidaciones-services-view {
+    .filters-section {
+      display: flex;
+      flex-wrap: wrap;
+      gap: $spacing-sm;
+      margin-bottom: $spacing-lg;
+      padding-bottom: $spacing-md;
+      border-bottom: 2px solid $color-border-light;
+
+      .filter-btn {
+        padding: $spacing-sm $spacing-lg;
+        background: $color-gray-light;
+        border: 2px solid transparent;
+        border-radius: $border-radius-pill;
+        color: $color-text-secondary;
+        font-size: $font-size-sm;
+        font-weight: 600;
+        cursor: pointer;
+        transition: $transition-fast;
+
+        &:hover {
+          background: darken($color-gray-light, 5%);
+          transform: translateY(-1px);
+        }
+
+        &.active {
+          background: $color-primary;
+          color: white;
+          border-color: $color-primary;
+          box-shadow: $shadow-sm;
+        }
+      }
+    }
+
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: $spacing-lg;
+
+      @media (max-width: $breakpoint-md) {
+        grid-template-columns: 1fr;
+      }
+
+      .service-card {
+        background: white;
+        border: 2px solid $color-border-light;
+        border-radius: $border-radius-lg;
+        padding: $spacing-lg;
+        cursor: pointer;
+        transition: $transition-fast;
+
+        &:hover {
+          border-color: $color-primary;
+          box-shadow: $shadow-md;
+          transform: translateY(-4px);
+        }
+
+        .service-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: $spacing-md;
+          padding-bottom: $spacing-sm;
+          border-bottom: 2px solid $color-border-light;
+
+          .service-name {
+            font-size: $font-size-lg;
+            font-weight: 600;
+            color: $color-text-primary;
+            margin: 0;
+          }
+
+          .service-type-badge {
+            padding: 4px 12px;
+            background: linear-gradient(
+              135deg,
+              $color-primary 0%,
+              darken($color-primary, 10%) 100%
+            );
+            color: white;
+            border-radius: $border-radius-pill;
+            font-size: $font-size-xs;
+            font-weight: 600;
+            white-space: nowrap;
+          }
+        }
+
+        .service-card-footer {
+          display: flex;
+          justify-content: space-between;
+          gap: $spacing-md;
+          margin-top: $spacing-md;
+          padding-top: $spacing-md;
+          border-top: 2px solid $color-border-light;
+
+          .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+
+            .stat-icon {
+              color: $color-secondary;
+              font-size: $font-size-lg;
+            }
+
+            .stat-value {
+              font-size: $font-size-lg;
+              font-weight: 700;
+              color: $color-text-primary;
+            }
+
+            .stat-label {
+              font-size: $font-size-xs;
+              color: $color-text-secondary;
+              text-align: center;
+            }
+
+            &.total {
+              .stat-icon {
+                color: $color-primary;
+              }
+
+              .stat-value {
+                color: $color-primary;
+                font-size: $font-size-xl;
+              }
+            }
+          }
+        }
+      }
+
+      .empty-state {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: $spacing-xl * 2;
+        text-align: center;
+
+        .empty-icon {
+          font-size: 64px;
+          color: $color-success;
+          margin-bottom: $spacing-lg;
+        }
+
+        h3 {
+          font-size: $font-size-xl;
+          color: $color-text-primary;
+          margin: 0 0 $spacing-sm 0;
+        }
+
+        p {
+          font-size: $font-size-md;
+          color: $color-text-secondary;
+          margin: 0;
+        }
+      }
+    }
+  }
+
+  // ============================================
+  // VISTA DE PAGOS
+  // ============================================
+  .liquidaciones-payments-view {
+    .payments-header {
+      display: flex;
+      align-items: center;
+      gap: $spacing-lg;
+      margin-bottom: $spacing-lg;
+      padding-bottom: $spacing-md;
+      border-bottom: 2px solid $color-border-light;
+
+      .btn-back {
+        display: flex;
+        align-items: center;
+        gap: $spacing-xs;
+        padding: $spacing-sm $spacing-lg;
+        background: white;
+        border: 2px solid $color-border;
+        border-radius: $border-radius-md;
+        color: $color-text-primary;
+        font-size: $font-size-sm;
+        font-weight: 600;
+        cursor: pointer;
+        transition: $transition-fast;
+
+        &:hover {
+          background: $color-gray-light;
+          border-color: $color-primary;
+          transform: translateX(-4px);
+        }
+      }
+
+      .service-info {
+        h2 {
+          font-size: $font-size-xl;
+          font-weight: 600;
+          color: $color-text-primary;
+          margin: 0 0 4px 0;
+        }
+
+        .service-type {
+          display: inline-block;
+          padding: 4px 12px;
+          background: $color-primary;
+          color: white;
+          border-radius: $border-radius-pill;
+          font-size: $font-size-xs;
+          font-weight: 600;
+        }
+      }
+    }
+
+    .selected-service-details {
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      border-radius: $border-radius-md;
+      padding: $spacing-lg;
+      margin-bottom: $spacing-lg;
+      border: 2px solid $color-border-light;
+    }
+
+    .payments-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: $spacing-md;
+      background: $color-gray-light;
+      border-radius: $border-radius-md;
+      margin-bottom: $spacing-lg;
+
+      @media (max-width: $breakpoint-md) {
+        flex-direction: column;
+        gap: $spacing-sm;
+      }
+
+      .toolbar-left {
+        display: flex;
+        align-items: center;
+        gap: $spacing-md;
+
+        .btn-select-all {
+          padding: $spacing-xs $spacing-md;
+          background: white;
+          border: 2px solid $color-border;
+          border-radius: $border-radius-sm;
+          color: $color-text-primary;
+          font-size: $font-size-sm;
+          font-weight: 600;
+          cursor: pointer;
+          transition: $transition-fast;
+
+          &:hover {
+            border-color: $color-primary;
+            color: $color-primary;
+          }
+        }
+
+        .selection-count {
+          font-size: $font-size-sm;
+          color: $color-text-secondary;
+          font-weight: 600;
+        }
+      }
+
+      .toolbar-right {
+        display: flex;
+        align-items: center;
+        gap: $spacing-md;
+
+        .total-selected {
+          padding: $spacing-xs $spacing-md;
+          background: white;
+          border-radius: $border-radius-sm;
+          font-size: $font-size-md;
+          font-weight: 700;
+          color: $color-primary;
+        }
+
+        .btn-liquidar {
+          display: flex;
+          align-items: center;
+          gap: $spacing-xs;
+          padding: $spacing-sm $spacing-lg;
+          background: linear-gradient(
+            135deg,
+            $color-primary 0%,
+            darken($color-primary, 10%) 100%
+          );
+          border: none;
+          border-radius: $border-radius-md;
+          color: white;
+          font-size: $font-size-sm;
+          font-weight: 700;
+          cursor: pointer;
+          transition: $transition-fast;
+          box-shadow: $shadow-sm;
+
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: $shadow-md;
+          }
+
+          &:active {
+            transform: translateY(0);
+          }
+        }
+      }
+    }
+
+    .payments-list {
+      display: flex;
+      flex-direction: column;
+      gap: $spacing-sm;
+      max-height: 600px;
+      overflow-y: auto;
+      padding-right: $spacing-xs;
+
+      // Scrollbar personalizado
+      &::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: $color-gray-light;
+        border-radius: 10px;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: $color-primary;
+        border-radius: 10px;
+
+        &:hover {
+          background: darken($color-primary, 10%);
+        }
+      }
+
+      .payment-item {
+        display: flex;
+        gap: $spacing-md;
+        padding: $spacing-md;
+        background: white;
+        border: 2px solid $color-border-light;
+        border-radius: $border-radius-md;
+        cursor: pointer;
+        transition: $transition-fast;
+
+        &:hover {
+          border-color: $color-primary;
+          box-shadow: $shadow-sm;
+        }
+
+        &.selected {
+          border-color: $color-primary;
+          background: lighten($color-primary, 45%);
+          box-shadow: $shadow-md;
+        }
+
+        .payment-checkbox {
+          display: flex;
+          align-items: center;
+
+          input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: $color-primary;
+          }
+        }
+
+        .payment-content {
+          flex: 1;
+
+          .payment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: $spacing-xs;
+
+            .payment-file {
+              display: flex;
+              align-items: center;
+              gap: $spacing-xs;
+
+              .file-label {
+                font-size: $font-size-xs;
+                color: $color-text-secondary;
+                font-weight: 600;
+              }
+
+              .file-value {
+                font-size: $font-size-sm;
+                font-weight: 700;
+                color: $color-primary;
+                background: rgba($color-primary, 0.1);
+                padding: 2px 8px;
+                border-radius: $border-radius-sm;
+              }
+            }
+
+            .payment-amount {
+              font-size: $font-size-lg;
+              font-weight: 700;
+              color: $color-primary;
+              background: rgba($color-primary, 0.1);
+              padding: 4px 12px;
+              border-radius: $border-radius-pill;
+            }
+          }
+
+          .payment-notes {
+            padding: $spacing-xs;
+            background: #fff3cd;
+            border-left: 3px solid #ffc107;
+            border-radius: $border-radius-sm;
+            font-size: $font-size-xs;
+            color: #856404;
+            margin-bottom: $spacing-xs;
+          }
+
+          .payment-meta {
+            display: flex;
+            gap: $spacing-md;
+            font-size: $font-size-xs;
+            color: $color-text-secondary;
+
+            .meta-item {
+              padding: 2px 8px;
+              background: $color-gray-light;
+              border-radius: $border-radius-sm;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+.payments-table-wrapper {
+  margin-top: 1rem;
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.payments-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  thead {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+
+    th {
+      text-align: left;
+      padding: 0.65rem 0.75rem;
+      font-weight: 600;
+      border-bottom: 2px solid #e2e8f0;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #475569;
+      white-space: nowrap;
+    }
+  }
+
+  tbody tr {
+    cursor: pointer;
+    transition: background 0.15s ease;
+
+    &:nth-child(even) {
+      background: #fafbfc;
+    }
+
+    &:hover {
+      background: #eff6ff;
+    }
+
+    &.selected {
+      background: #dbeafe;
+      border-left: 3px solid #3b82f6;
+    }
+  }
+
+  td {
+    padding: 0.55rem 0.75rem;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+    color: #334155;
+  }
+
+  .date-cell {
+    white-space: nowrap;
+    font-size: 0.82rem;
+    color: #64748b;
+  }
+
+  .pax-cell {
+    text-align: center;
+    font-weight: 500;
+    font-size: 0.82rem;
+  }
+
+  .names-cell {
+    max-width: 180px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.82rem;
+  }
+
+  .detail-cell {
+    font-size: 0.82rem;
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .amount-cell {
+    font-weight: 600;
+    white-space: nowrap;
+    color: #0f172a;
+  }
+
+  .no-payments-cell {
+    text-align: center;
+    padding: 2rem 0.75rem;
+    color: #94a3b8;
+    font-style: italic;
+  }
+
+  .file-value {
+    font-family: "Cascadia Code", "JetBrains Mono", monospace;
+    font-size: 0.8rem;
+    color: #475569;
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  .payment-notes-cell {
+    max-width: 200px;
+  }
+
+  .payment-notes-text {
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+    font-size: 0.8rem;
+    color: #64748b;
+  }
+
+  .muted {
+    color: #cbd5e1;
+  }
+}

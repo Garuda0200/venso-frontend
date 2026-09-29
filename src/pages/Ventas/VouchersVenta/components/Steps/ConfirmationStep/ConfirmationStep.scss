@@ -1,0 +1,192 @@
+@import "../../../../../../styles/_variables.scss";
+@import "../../../../../../styles/mixins.scss";
+
+.confirmation-step {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+
+  .confirmation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px 18px;
+    border: 1px solid #dfe8e3;
+    border-radius: 8px;
+    background: #ffffff;
+
+    .confirmation-title {
+      h2 {
+        margin: 0 0 6px;
+        color: #12362a;
+        font-size: 22px;
+        line-height: 1.2;
+      }
+
+      .confirmation-subtitle {
+        margin: 0;
+        max-width: 760px;
+        color: #65756f;
+        font-size: 13px;
+        line-height: 1.45;
+      }
+    }
+
+    .completion-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex: 0 0 auto;
+      min-height: 36px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+
+      .status-icon {
+        font-size: 19px;
+      }
+
+      &.ready {
+        background: #e8f7ef;
+        color: #08733f;
+      }
+
+      &.not-ready {
+        background: #fff4e6;
+        color: #a24e00;
+      }
+    }
+  }
+
+  .confirmation-content {
+    flex: 1;
+    min-height: 0;
+    overflow: visible;
+    margin: 0;
+    padding: 0;
+    border-radius: 8px;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .confirmation-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+
+    button {
+      min-height: 40px;
+      min-width: 150px;
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-weight: 800;
+      cursor: pointer;
+      transition:
+        transform 0.15s ease,
+        box-shadow 0.15s ease,
+        background-color 0.15s ease;
+
+      &.confirm-button {
+        background: #0b6f47;
+        color: #ffffff;
+
+        &:hover:not(:disabled) {
+          transform: translateY(-1px);
+          box-shadow: 0 8px 18px rgba(11, 111, 71, 0.18);
+          background: #095c3b;
+        }
+
+        &:disabled {
+          background: #c9d2cd;
+          color: #6d7973;
+          cursor: not-allowed;
+        }
+      }
+
+      &.previous-button {
+        background: #ffffff;
+        color: #31443b;
+        border-color: #dfe8e3;
+
+        svg {
+          font-size: 20px;
+        }
+
+        &:hover:not(:disabled) {
+          background: #f4f8f6;
+        }
+      }
+
+      &:disabled {
+        opacity: 0.75;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  .completion-warning,
+  .cotizacion-info-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 8px;
+
+    svg {
+      flex: 0 0 auto;
+      font-size: 22px;
+    }
+
+    h4,
+    p {
+      margin: 0;
+    }
+
+    h4 {
+      margin-bottom: 3px;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    p {
+      font-size: 13px;
+      line-height: 1.45;
+    }
+  }
+
+  .completion-warning {
+    background: #fff4e6;
+    color: #8f4600;
+    border: 1px solid #f3d4ad;
+  }
+
+  .cotizacion-info-warning {
+    background: #eef7ff;
+    color: #195071;
+    border: 1px solid #c8e0f1;
+  }
+}
+
+@media (max-width: 768px) {
+  .confirmation-step {
+    .confirmation-header {
+      flex-direction: column;
+    }
+
+    .confirmation-actions {
+      flex-direction: column;
+
+      button {
+        width: 100%;
+      }
+    }
+  }
+}

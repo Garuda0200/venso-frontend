@@ -1,0 +1,1347 @@
+// SortableService.scss - Premium Minimalist Design
+
+.sr {
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 14px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background: #fff;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: #f8fafc !important;
+    box-shadow: inset 4px 0 0 var(--color-primary);
+  }
+
+  &--capacity-warning {
+    background: #fffbeb !important;
+    box-shadow: inset 4px 0 0 #f59e0b;
+    &:hover {
+      background: #fffbeb !important;
+    }
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr) 125px 120px 150px 110px 76px;
+    align-items: center;
+    min-height: 60px;
+    padding: 8px 0;
+    gap: 4px;
+  }
+
+  &--no-total &__row {
+    grid-template-columns: 32px minmax(0, 1fr) 125px 120px 150px 76px;
+  }
+
+  &__drag {
+    display: flex;
+    justify-content: center;
+    color: #cbd5e1;
+    cursor: grab;
+    opacity: 0;
+    transition: all 0.2s;
+    &:hover {
+      color: #94a3b8;
+    }
+  }
+  &:hover &__drag {
+    opacity: 1;
+  }
+
+  &__info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 8px;
+  }
+
+  &__icon {
+    width: 32px;
+    height: 32px;
+    background: #f1f5f9;
+    border-radius: 10px;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s;
+
+    .sr:hover & {
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      color: var(--color-primary);
+    }
+  }
+
+  &__name {
+    font-weight: 700;
+    color: #1e293b;
+    font-size: 13.5px;
+    letter-spacing: -0.01em;
+  }
+
+  &__details {
+    font-size: 11.5px;
+    color: #94a3b8;
+    font-weight: 500;
+  }
+
+  &__observations {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin: -2px 112px 8px 52px;
+    padding: 6px 10px;
+    border: 1px solid #ede9fe;
+    border-radius: 7px;
+    background: #faf5ff;
+    color: #5b476f;
+    font-size: 12px;
+    line-height: 1.45;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+
+    strong {
+      color: #51366e;
+      font-weight: 800;
+    }
+  }
+
+  &__observations-icon {
+    flex: 0 0 auto;
+    margin-top: 2px;
+    color: #7c3aed;
+    font-size: 14px;
+  }
+
+  // ── Unified detail chips (all service types) ──────────────────────────
+  &__tags {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+    margin-top: 3px;
+  }
+
+  &__tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 5px;
+    padding: 2px 9px;
+    line-height: 1.45;
+    white-space: nowrap;
+
+    &-icon {
+      width: 13px;
+      height: 13px;
+      flex-shrink: 0;
+      opacity: 0.8;
+    }
+
+    // Generic secondary (2nd+ detail) — subtle gray
+    &--secondary {
+      background: #f1f5f9;
+      color: #64748b;
+      border: 1px solid #e2e8f0;
+    }
+
+    // Primary (1st detail) — default, overridden per service type below
+    &--primary {
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+    }
+
+    // Flight-specific named chips
+    &--route {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+    }
+    &--class {
+      background: #f8fafc;
+      color: #64748b;
+      border: 1px solid #e2e8f0;
+    }
+    &--luggage {
+      background: #f0fdf4;
+      color: #16a34a;
+      border: 1px solid #bbf7d0;
+    }
+  }
+
+  // Per service-type primary chip colors (scoped via sr--{type} on container)
+  &--transportes &__tag--primary {
+    background: #f0fdf4;
+    color: #02522f;
+    border-color: #86efac;
+  }
+  &--hoteles &__tag--primary {
+    background: #fff7ed;
+    color: #c2410c;
+    border-color: #fed7aa;
+  }
+  &--trenes &__tag--primary {
+    background: #fffbeb;
+    color: #b45309;
+    border-color: #fde68a;
+  }
+  &--guias &__tag--primary {
+    background: #f0f9ff;
+    color: #0369a1;
+    border-color: #bae6fd;
+  }
+  &--endoses &__tag--primary {
+    background: #faf5ff;
+    color: #7c3aed;
+    border-color: #ddd6fe;
+  }
+  &--restaurantes &__tag--primary {
+    background: #fff1f2;
+    color: #be123c;
+    border-color: #fecdd3;
+  }
+  &--tickets &__tag--primary {
+    background: #f5f3ff;
+    color: #6d28d9;
+    border-color: #ddd6fe;
+  }
+  &--extras &__tag--primary {
+    background: #fefce8;
+    color: #a16207;
+    border-color: #fef08a;
+  }
+
+  // Secondary chips per type — lighter accent
+  &--transportes &__tag--secondary {
+    background: #f0fdf4;
+    color: #166534;
+    border-color: #d1fae5;
+  }
+  &--hoteles &__tag--secondary {
+    background: #fff7ed;
+    color: #9a3412;
+    border-color: #fee2cc;
+  }
+  &--trenes &__tag--secondary {
+    background: #fffbeb;
+    color: #92400e;
+    border-color: #fef3c7;
+  }
+  &--guias &__tag--secondary {
+    background: #f0f9ff;
+    color: #0c4a6e;
+    border-color: #e0f2fe;
+  }
+  &--endoses &__tag--secondary {
+    background: #faf5ff;
+    color: #6b21a8;
+    border-color: #ede9fe;
+  }
+  &--restaurantes &__tag--secondary {
+    background: #fff1f2;
+    color: #9f1239;
+    border-color: #ffe4e6;
+  }
+  &--tickets &__tag--secondary {
+    background: #f5f3ff;
+    color: #5b21b6;
+    border-color: #ede9fe;
+  }
+  &--extras &__tag--secondary {
+    background: #fefce8;
+    color: #854d0e;
+    border-color: #fef9c3;
+  }
+
+  &__badge {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    text-align: center;
+
+    &--hoteles {
+      background: #fff7ed;
+      color: #c2410c;
+    }
+    &--transportes {
+      background: #f0fdf4;
+      color: #02522f;
+    }
+    &--trenes {
+      background: #fffbeb;
+      color: #d97706;
+    }
+    &--guias {
+      background: #ecfeff;
+      color: #0891b2;
+    }
+    &--endoses {
+      background: #fff1f2;
+      color: #e11d48;
+    }
+    &--vuelos {
+      background: #f8fafc;
+      color: #475569;
+    }
+    &--restaurantes {
+      background: #fff1f2;
+      color: #be123c;
+    }
+    &--tickets {
+      background: #f5f3ff;
+      color: #6d28d9;
+    }
+    &--extras {
+      background: #fefce8;
+      color: #a16207;
+    }
+  }
+
+  // ── Column cell alignment ──────────────────────────────────────────────
+  &__type {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  &__total {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding-right: 4px;
+  }
+
+  &__pax-tag {
+    background: #f1f5f9;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+
+    &--adult {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border-color: #dbeafe;
+    }
+    &--child {
+      background: #fff7ed;
+      color: #c2410c;
+      border-color: #ffedd5;
+    }
+  }
+
+  &__price-value {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 700;
+    font-size: 14px;
+    color: #1e293b;
+    padding: 4px 8px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    cursor: pointer;
+    font-variant-numeric: tabular-nums;
+
+    &:hover {
+      background: #f1f5f9;
+      color: var(--color-primary, #02522f);
+    }
+  }
+
+  &__total-value {
+    font-weight: 800;
+    color: var(--color-primary);
+    font-size: 16px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+
+  &__price {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    padding: 0 2px;
+  }
+
+  &__price-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    min-width: 0;
+  }
+
+  &__price-unit,
+  &__price-child small {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  &__price-child,
+  &__price-context,
+  &__igv {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    max-width: 100%;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  &__price-child {
+    gap: 3px;
+    color: #c2410c;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    padding: 3px 7px;
+  }
+
+  &__price-context {
+    color: #02522f;
+    background: #ecfdf5;
+    border: 1px solid #bbf7d0;
+    padding: 3px 7px;
+  }
+
+  &__igv {
+    color: #7c3aed;
+    background: #f5f3ff;
+    border: 1px solid #ddd6fe;
+    padding: 2px 5px;
+  }
+
+  &__price-edit-icon {
+    color: #94a3b8;
+    font-size: 13px;
+    opacity: 0;
+    transition:
+      opacity 0.18s,
+      color 0.18s;
+  }
+
+  &__price-value:hover &__price-edit-icon,
+  &__price-value:focus-visible &__price-edit-icon {
+    color: var(--color-primary, #02522f);
+    opacity: 1;
+  }
+
+  &__edit {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    max-width: 146px;
+    min-height: 34px;
+    padding: 3px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+  }
+
+  &__edit-input {
+    width: 100%;
+    min-width: 0;
+    height: 26px;
+    border: 0;
+    outline: none;
+    padding: 0 5px;
+    color: #0f172a;
+    font-size: 13px;
+    font-weight: 800;
+    background: transparent;
+  }
+
+  &__edit-ok,
+  &__edit-cancel {
+    flex: 0 0 28px;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: 0;
+    cursor: pointer;
+    transition:
+      background 0.18s,
+      color 0.18s,
+      transform 0.18s;
+
+    svg {
+      font-size: 15px;
+    }
+
+    &:hover {
+      transform: translateY(-1px);
+    }
+  }
+
+  &__edit-ok {
+    color: #fff;
+    background: var(--color-primary, #02522f);
+  }
+
+  &__edit-cancel {
+    color: #64748b;
+    background: #f1f5f9;
+
+    &:hover {
+      color: #b91c1c;
+      background: #fee2e2;
+    }
+  }
+
+  &__del {
+    display: flex;
+    gap: 8px;
+    opacity: 1; // Always evident now
+    transition: all 0.2s;
+    margin-left: auto;
+    padding-right: 12px;
+  }
+
+  &__swap-btn,
+  &__del-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #94a3b8;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+
+    svg {
+      font-size: 16px;
+    }
+
+    &:hover {
+      background: #6366f1; // Indigo
+      color: #fff;
+      border-color: #6366f1;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+    }
+  }
+
+  &__del-btn:hover {
+    background: var(--color-danger);
+    border-color: var(--color-danger);
+    box-shadow: 0 4px 12px rgba(231, 74, 59, 0.25);
+  }
+}
+
+// Children Panel Animation
+@keyframes srSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ─── sr__pax extras (converted badge) ────────────────────────────────────────
+.sr__pax {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+}
+
+.sr__pax-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px solid #e2e8f0;
+  cursor: default;
+
+  &--adult {
+    background: #f0fdf4;
+    color: var(--color-primary, #02522f);
+    border-color: #bbf7d0;
+  }
+
+  &--child {
+    background: #fff7ed;
+    color: #c2410c;
+    border-color: #fed7aa;
+    cursor: pointer;
+    transition: all 0.18s;
+
+    &:hover,
+    &.active {
+      background: #ffedd5;
+      border-color: var(--color-accent, #ff8c00);
+      color: var(--color-accent, #ff8c00);
+    }
+  }
+
+  .sr__pax-label {
+    font-weight: 500;
+    opacity: 0.75;
+    font-size: 12px;
+  }
+
+  .sr__pax-converted {
+    display: inline-flex;
+    align-items: center;
+    background: var(--color-primary, #02522f);
+    color: #fff;
+    border-radius: 10px;
+    padding: 1px 7px;
+    font-size: 10px;
+    font-weight: 800;
+    margin-left: 2px;
+    letter-spacing: 0.03em;
+  }
+
+  svg {
+    font-size: 13px;
+  }
+
+  .sr__pax-tag--adult .sr__pax-converted {
+    background: var(--color-primary, #02522f);
+  }
+  .sr__pax-tag--child .sr__pax-converted {
+    background: var(--color-accent, #ff8c00);
+  }
+}
+
+// ─── Children sub-panel styles live in ChildrenPanel.scss ────────────────────
+
+// ─── Fix indigo hover on action buttons ──────────────────────────────────────
+.sr__swap-btn:hover {
+  background: var(--color-primary, #02522f) !important;
+  border-color: var(--color-primary, #02522f) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 12px rgba(2, 82, 47, 0.25) !important;
+}
+
+// Fila especializada para tickets: se renderiza como una tarjeta compacta de
+// entrada + procedencia + beneficiarios, no como una fila genérica de servicio.
+.sr--ticket-card {
+  border-color: rgba(0, 92, 62, 0.18);
+  background: linear-gradient(180deg, #ffffff 0%, #fbfffd 100%);
+
+  .sr-ticket__row {
+    display: grid;
+    grid-template-columns: 34px minmax(220px, 1.2fr) minmax(240px, 1fr) 130px 120px 84px;
+    gap: 0.8rem;
+    align-items: center;
+    padding: 0.78rem 0.8rem;
+  }
+
+  &.sr--no-total .sr-ticket__row {
+    grid-template-columns: 34px minmax(220px, 1.2fr) minmax(240px, 1fr) 130px 84px;
+  }
+
+  .sr-ticket__drag {
+    align-self: stretch;
+  }
+
+  .sr-ticket__eyebrow {
+    color: #00613f;
+    font-size: 0.64rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 0.18rem;
+  }
+
+  .sr-ticket__title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.46rem;
+    min-width: 0;
+  }
+
+  .sr-ticket__icon {
+    background: #e9f8f1;
+    color: #00613f;
+  }
+
+  .sr-ticket__title {
+    color: #0d2438;
+    font-weight: 850;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sr-ticket__tags {
+    margin-top: 0.34rem;
+  }
+
+  .sr-ticket__beneficiaries {
+    display: flex;
+    flex-direction: column;
+    gap: 0.34rem;
+    min-width: 0;
+  }
+
+  .sr-ticket__beneficiary-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+
+  .sr-ticket__empty-beneficiaries {
+    width: fit-content;
+    padding: 0.3rem 0.55rem;
+    border-radius: 999px;
+    background: #fff7ed;
+    color: #9a3412;
+    font-size: 0.72rem;
+    font-weight: 800;
+  }
+
+  .sr-ticket__price-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.28rem;
+  }
+
+  .sr-ticket__unit-price {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    width: 100%;
+    padding: 0.45rem 0.55rem;
+    border: 1px solid #d7e6df;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #0d2438;
+    font-weight: 850;
+    cursor: pointer;
+
+    small {
+      color: #708197;
+      font-size: 0.68rem;
+    }
+  }
+
+  .sr-ticket__child-price {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .sr__children {
+    margin: 0 0.8rem 0.8rem 3rem;
+  }
+
+  .sr-ticket__total span {
+    display: inline-flex;
+    justify-content: flex-end;
+    width: 100%;
+    color: #003f2a;
+    font-weight: 900;
+  }
+
+  .sr-ticket__actions {
+    display: inline-flex;
+    justify-content: flex-end;
+    gap: 0.35rem;
+  }
+}
+
+@media (max-width: 1180px) {
+  .sr__observations {
+    margin-right: 12px;
+  }
+
+  .sr--ticket-card .sr-ticket__row {
+    grid-template-columns: 34px minmax(220px, 1fr) minmax(220px, 1fr) 112px 100px 72px;
+  }
+}
+
+/* ============================================================
+   Venso service row — neutral hierarchy, magenta interaction only
+   ============================================================ */
+.sr {
+  margin: 0;
+  overflow: visible;
+  background: #ffffff;
+  border: 1px solid #e8e1e5;
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(31, 18, 27, 0.025);
+
+  &:last-child {
+    border-bottom: 1px solid #e8e1e5;
+  }
+
+  &:hover {
+    background: #ffffff !important;
+    border-color: #e0c6d3;
+    box-shadow: 0 8px 20px rgba(35, 18, 29, 0.06), inset 3px 0 0 #ff007e;
+  }
+
+  &--capacity-warning {
+    background: #fff7f8 !important;
+    border-color: #f3c3cf;
+    box-shadow: inset 3px 0 0 #c51b48;
+
+    &:hover {
+      background: #fff7f8 !important;
+    }
+  }
+
+  &__row {
+    grid-template-columns: 30px minmax(0, 1fr) 112px 110px 145px 105px 112px;
+    gap: 6px;
+    min-height: 66px;
+    padding: 8px 8px 8px 4px;
+  }
+
+  &--no-total &__row {
+    grid-template-columns: 30px minmax(0, 1fr) 112px 110px 145px 112px;
+  }
+
+  &__drag {
+    color: #c6bbc1;
+    opacity: 0.55;
+
+    &:hover {
+      color: #ff007e;
+    }
+  }
+
+  &:hover &__drag {
+    opacity: 1;
+  }
+
+  &__info {
+    gap: 10px;
+    min-width: 0;
+    padding: 0 6px;
+  }
+
+  &__info-text {
+    min-width: 0;
+  }
+
+  &__icon {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    color: #ffffff;
+    background: #181318;
+    border: 1px solid #181318;
+    border-radius: 10px;
+
+    .sr:hover & {
+      color: #ffffff;
+      background: #2e252b;
+      box-shadow: none;
+    }
+  }
+
+  &__name {
+    overflow: hidden;
+    color: #211b1f;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__bimodal,
+  &__details {
+    color: #8b8187;
+    font-size: 10px;
+  }
+
+  &__tags {
+    gap: 4px;
+    margin-top: 4px;
+  }
+
+  &__tag,
+  &--transportes &__tag--primary,
+  &--hoteles &__tag--primary,
+  &--trenes &__tag--primary,
+  &--guias &__tag--primary,
+  &--endoses &__tag--primary,
+  &--restaurantes &__tag--primary,
+  &--tickets &__tag--primary,
+  &--extras &__tag--primary,
+  &--transportes &__tag--secondary,
+  &--hoteles &__tag--secondary,
+  &--trenes &__tag--secondary,
+  &--guias &__tag--secondary,
+  &--endoses &__tag--secondary,
+  &--restaurantes &__tag--secondary,
+  &--tickets &__tag--secondary,
+  &--extras &__tag--secondary {
+    color: #62585e;
+    background: #f7f4f6;
+    border: 1px solid #e7e0e4;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  &__tag--primary,
+  &__tag--route {
+    color: #8d0046 !important;
+    background: #fff1f8 !important;
+    border-color: #f1bfd7 !important;
+  }
+
+  &__tag--class,
+  &__tag--luggage {
+    color: #62585e;
+    background: #f7f4f6;
+    border-color: #e7e0e4;
+  }
+
+  &__badge,
+  &__badge--hoteles,
+  &__badge--transportes,
+  &__badge--trenes,
+  &__badge--guias,
+  &__badge--endoses,
+  &__badge--vuelos,
+  &__badge--restaurantes,
+  &__badge--tickets,
+  &__badge--extras {
+    min-width: 72px;
+    padding: 5px 8px;
+    color: #5e555a;
+    background: #f5f2f4;
+    border: 1px solid #e7e0e4;
+    border-radius: 8px;
+    font-size: 9px;
+    letter-spacing: 0.055em;
+  }
+
+  &__pax {
+    gap: 3px;
+  }
+
+  &__pax-tag,
+  &__pax-tag--adult,
+  &__pax-tag--child {
+    min-height: 25px;
+    padding: 3px 8px;
+    color: #554c51;
+    background: #f7f4f6;
+    border-color: #e5dde2;
+    border-radius: 8px;
+    font-size: 10px;
+  }
+
+  &__pax-tag--child {
+    color: #95004a;
+    background: #fff1f8;
+    border-color: #f0bdd5;
+
+    &:hover,
+    &.active {
+      color: #ffffff;
+      background: #ff007e;
+      border-color: #ff007e;
+    }
+  }
+
+  &__pax-tag .sr__pax-converted,
+  &__pax-tag--adult .sr__pax-converted,
+  &__pax-tag--child .sr__pax-converted {
+    color: #ffffff;
+    background: #181318;
+  }
+
+  &__price-value {
+    padding: 4px 6px;
+    color: #211b1f;
+    font-size: 13px;
+
+    &:hover {
+      color: #b00058;
+      background: #fff1f8;
+    }
+  }
+
+  &__price-unit,
+  &__price-child small {
+    color: #8b8187;
+    font-size: 9px;
+  }
+
+  &__price-child,
+  &__price-context,
+  &__igv {
+    color: #80536a;
+    background: #faf5f8;
+    border-color: #eadce3;
+    font-size: 9px;
+  }
+
+  &__price-context {
+    color: #62585e;
+    background: #f7f4f6;
+  }
+
+  &__total-value {
+    color: #181318;
+    font-size: 14px;
+  }
+
+  &__edit {
+    border-color: #d9cfd5;
+    box-shadow: 0 8px 20px rgba(31, 18, 27, 0.08);
+  }
+
+  &__edit-ok {
+    background: #181318;
+
+    &:hover {
+      background: #ff007e;
+    }
+  }
+
+  &__del {
+    gap: 5px;
+    justify-content: flex-end;
+    margin-left: 0;
+    padding-right: 2px;
+  }
+
+  &__swap-btn,
+  &__del-btn {
+    width: 30px;
+    height: 30px;
+    color: #857b81;
+    background: #ffffff;
+    border-color: #e3dce0;
+    border-radius: 9px;
+    box-shadow: none;
+  }
+
+  &__swap-btn:hover {
+    color: #ffffff !important;
+    background: #181318 !important;
+    border-color: #181318 !important;
+    box-shadow: 0 7px 14px rgba(24, 19, 24, 0.15) !important;
+  }
+
+  &__del-btn:hover {
+    color: #ffffff;
+    background: #c51b48;
+    border-color: #c51b48;
+    box-shadow: 0 7px 14px rgba(197, 27, 72, 0.16);
+  }
+}
+
+.sr--ticket-card {
+  border-color: #e8e1e5;
+  background: #ffffff;
+
+  .sr-ticket__row {
+    grid-template-columns: 30px minmax(200px, 1.2fr) minmax(220px, 1fr) 120px 105px 112px;
+    gap: 0.55rem;
+    padding: 0.65rem 0.55rem;
+  }
+
+  &.sr--no-total .sr-ticket__row {
+    grid-template-columns: 30px minmax(200px, 1.2fr) minmax(220px, 1fr) 120px 112px;
+  }
+
+  .sr-ticket__eyebrow {
+    color: #a50052;
+  }
+
+  .sr-ticket__icon {
+    color: #ffffff;
+    background: #181318;
+  }
+
+  .sr-ticket__title {
+    color: #211b1f;
+  }
+
+  .sr-ticket__empty-beneficiaries {
+    color: #8f0047;
+    background: #fff1f8;
+  }
+
+  .sr-ticket__unit-price {
+    color: #211b1f;
+    background: #ffffff;
+    border-color: #ded5da;
+
+    &:hover {
+      color: #ad0056;
+      background: #fff4f9;
+      border-color: #efbdd5;
+    }
+  }
+
+  .sr-ticket__total span {
+    color: #181318;
+  }
+}
+
+@media (max-width: 1180px) {
+  .sr:not(.sr--ticket-card) .sr__row,
+  .sr:not(.sr--ticket-card).sr--no-total .sr__row {
+    grid-template-columns: 28px minmax(0, 1fr) 100px 100px 130px 104px;
+  }
+
+  .sr:not(.sr--ticket-card) .sr__total {
+    display: none;
+  }
+
+  .sr--ticket-card .sr-ticket__row,
+  .sr--ticket-card.sr--no-total .sr-ticket__row {
+    grid-template-columns: 28px minmax(190px, 1fr) minmax(180px, 1fr) 110px 104px;
+  }
+
+  .sr--ticket-card .sr-ticket__total {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .sr:not(.sr--ticket-card) .sr__row,
+  .sr:not(.sr--ticket-card).sr--no-total .sr__row {
+    grid-template-columns: 26px minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      "drag info type actions"
+      "drag pax price actions";
+    row-gap: 8px;
+    padding: 10px 8px;
+  }
+
+  .sr:not(.sr--ticket-card) .sr__drag {
+    grid-area: drag;
+  }
+
+  .sr:not(.sr--ticket-card) .sr__info {
+    grid-area: info;
+  }
+
+  .sr:not(.sr--ticket-card) .sr__type {
+    grid-area: type;
+  }
+
+  .sr:not(.sr--ticket-card) .sr__pax {
+    grid-area: pax;
+    align-items: flex-start;
+  }
+
+  .sr:not(.sr--ticket-card) .sr__price {
+    grid-area: price;
+  }
+
+  .sr:not(.sr--ticket-card) .sr__del {
+    grid-area: actions;
+    align-self: stretch;
+    align-items: center;
+  }
+
+  .sr--ticket-card .sr-ticket__row,
+  .sr--ticket-card.sr--no-total .sr-ticket__row {
+    grid-template-columns: 26px minmax(0, 1fr) auto;
+    align-items: start;
+  }
+
+  .sr--ticket-card .sr-ticket__beneficiaries {
+    grid-column: 2 / -1;
+  }
+}
+
+@media (max-width: 620px) {
+  .sr:not(.sr--ticket-card) .sr__row,
+  .sr:not(.sr--ticket-card).sr--no-total .sr__row {
+    grid-template-columns: 22px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "drag info actions"
+      "drag type actions"
+      "drag pax actions"
+      "drag price actions";
+  }
+
+  .sr:not(.sr--ticket-card) .sr__name {
+    white-space: normal;
+  }
+
+  .sr--ticket-card .sr-ticket__row,
+  .sr--ticket-card.sr--no-total .sr-ticket__row {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .sr--ticket-card .sr-ticket__drag {
+    width: 20px;
+  }
+
+  .sr--ticket-card .sr-ticket__main {
+    flex: 1 1 calc(100% - 35px);
+  }
+
+  .sr--ticket-card .sr-ticket__beneficiaries,
+  .sr--ticket-card .sr-ticket__price,
+  .sr--ticket-card .sr-ticket__actions {
+    flex: 1 1 100%;
+  }
+}
+
+/* Compact service rows */
+.sr:not(.sr--ticket-card) {
+  font-size: 12px;
+
+  .sr__row {
+    grid-template-columns: 28px minmax(0, 1fr) 102px 100px 132px 96px 96px;
+    min-height: 48px;
+    gap: 3px;
+    padding: 4px 0;
+  }
+
+  &.sr--no-total .sr__row {
+    grid-template-columns: 28px minmax(0, 1fr) 102px 100px 132px 96px;
+  }
+
+  .sr__info {
+    gap: 7px;
+    padding: 0 5px;
+  }
+
+  .sr__icon {
+    width: 27px;
+    height: 27px;
+    border-radius: 8px;
+    font-size: 13px;
+  }
+
+  .sr__name {
+    font-size: 11px;
+  }
+
+  .sr__tags {
+    gap: 3px;
+    margin-top: 2px;
+  }
+
+  .sr__tag {
+    gap: 2px;
+    padding: 1px 6px;
+    border-radius: 5px;
+    font-size: 9px;
+
+    &-icon {
+      width: 10px;
+      height: 10px;
+    }
+  }
+
+  .sr__badge,
+  .sr__pax-tag {
+    min-height: 24px;
+    padding: 3px 7px;
+    border-radius: 7px;
+    font-size: 8px;
+  }
+
+  .sr__price-value,
+  .sr__total-value {
+    font-size: 12px;
+  }
+
+  .sr__price-child,
+  .sr__price-context,
+  .sr__igv {
+    font-size: 8px;
+  }
+
+  .sr__swap-btn,
+  .sr__del-btn {
+    width: 27px;
+    height: 27px;
+    border-radius: 7px;
+  }
+}
+
+.sr--ticket-card {
+  .sr-ticket__row {
+    min-height: 52px;
+    padding: 0.45rem 0.45rem;
+  }
+
+  .sr-ticket__title {
+    font-size: 11px;
+  }
+
+  .sr-ticket__eyebrow,
+  .sr-ticket__unit-price,
+  .sr-ticket__total {
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 1180px) {
+  .sr:not(.sr--ticket-card) .sr__row,
+  .sr:not(.sr--ticket-card).sr--no-total .sr__row {
+    grid-template-columns: 26px minmax(0, 1fr) 94px 94px 118px 94px;
+  }
+}
+
+// TC comercial manual: Venso no altera precios cotizados hasta una acción explícita.
+.sr__tc-btn {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  border: 1px solid rgba(255, 0, 126, 0.35);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--venso-magenta, #ff007e);
+  font-size: 0.61rem;
+  font-weight: 900;
+}
+
+.sr__tc-btn:hover {
+  background: rgba(255, 0, 126, 0.08);
+  border-color: rgba(255, 0, 126, 0.55);
+}

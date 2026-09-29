@@ -1,0 +1,83 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.modal {
+  background: #fff;
+  padding: 40px;
+  border-radius: 10px;
+  width: 450px;
+  text-align: center;
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
+  font-family: "Arial", sans-serif;
+  animation: scaleUp 0.3s ease-out;
+}
+
+.modal h3 {
+  font-size: 24px;
+  color: #333;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: space-around;
+  gap: 20px;
+}
+
+.modal-button {
+  background: #f17e57;
+  color: white;
+  border: none;
+  padding: 14px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition:
+    background 0.3s ease,
+    transform 0.2s ease;
+  font-weight: 600;
+  width: 140px;
+}
+
+.modal-button:hover {
+  background: #5d4037;
+  transform: translateY(-3px);
+}
+
+.modal-button.cancel {
+  background: #ccc;
+}
+
+.modal-button.cancel:hover {
+  background: #999;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleUp {
+  0% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+  }
+}

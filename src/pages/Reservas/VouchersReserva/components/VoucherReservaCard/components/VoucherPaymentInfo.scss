@@ -1,0 +1,201 @@
+// ============================================
+// VOUCHER PAYMENT INFO — Design System Tokens
+// ============================================
+
+.voucher-payment-info {
+  margin-top: auto;
+  padding: var(--spacing-md);
+  background: var(--color-primary-light);
+  border-top: 1px solid var(--color-border-light);
+
+  .payment-progress {
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--spacing-sm);
+
+      .progress-status {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: var(--font-size-sm);
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: var(--radius-pill);
+
+        svg {
+          font-size: 16px;
+        }
+
+        &.completed {
+          color: var(--color-primary-dark);
+          background: var(--color-primary-light);
+        }
+
+        &.partial {
+          color: var(--color-accent-dark);
+          background: var(--color-accent-light);
+        }
+
+        &.pending {
+          color: var(--color-text-secondary);
+          background: var(--gray-200);
+        }
+
+        &.no-services {
+          color: var(--color-text-light);
+          background: var(--gray-100);
+        }
+      }
+
+      .progress-percentage {
+        font-size: var(--font-size-lg);
+        font-weight: 800;
+        color: var(--color-primary);
+        background: var(--color-primary-light);
+        padding: 4px 10px;
+        border-radius: var(--radius-pill);
+        min-width: 52px;
+        text-align: center;
+      }
+    }
+
+    .progress-bar-container {
+      height: 8px;
+      background: var(--gray-300);
+      border-radius: var(--radius-pill);
+      overflow: hidden;
+      margin-bottom: var(--spacing-sm);
+
+      .progress-bar {
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          var(--color-primary) 0%,
+          var(--color-primary) 100%
+        );
+        border-radius: var(--radius-pill);
+        transition: width 0.5s ease;
+      }
+    }
+
+    .progress-amounts {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: var(--spacing-sm);
+
+      .amount-item {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+
+        .amount-label {
+          font-size: 10px;
+          color: var(--color-text-light);
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.4px;
+        }
+      }
+
+      .paid-amount {
+        font-size: var(--font-size-md);
+        font-weight: 800;
+        color: var(--color-primary-dark);
+      }
+
+      .total-amount {
+        font-size: var(--font-size-md);
+        font-weight: 800;
+        color: var(--color-text-primary);
+        text-align: right;
+      }
+    }
+  }
+}
+
+// List-mode: compact payment strip
+.voucher-reserva-card.list .voucher-payment-info {
+  margin-top: 0;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-top: none;
+  border-left: 1px solid var(--color-border-light);
+  min-width: 180px;
+  max-width: 200px;
+  display: flex;
+  align-items: center;
+
+  .payment-progress {
+    .progress-header {
+      margin-bottom: 4px;
+    }
+
+    .progress-bar-container {
+      margin-bottom: 4px;
+    }
+
+    .progress-amounts {
+      .paid-amount,
+      .total-amount {
+        font-size: var(--font-size-sm);
+      }
+    }
+  }
+}
+
+// Refined list financial cell
+.voucher-reserva-card.list .voucher-list-section--payment .voucher-payment-info {
+  display: flex;
+  min-width: 0;
+  max-width: none;
+  min-height: 100%;
+  margin: 0;
+  padding: 12px;
+  align-items: center;
+  border: 0;
+  background: transparent;
+
+  .payment-progress {
+    width: 100%;
+  }
+
+  .progress-header {
+    margin-bottom: 7px;
+
+    .progress-status {
+      min-width: 0;
+      padding: 4px 7px;
+      font-size: 9px;
+
+      span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+
+    .progress-percentage {
+      min-width: 45px;
+      padding: 3px 7px;
+      font-size: 13px;
+    }
+  }
+
+  .progress-bar-container {
+    height: 6px;
+    margin-bottom: 8px;
+  }
+
+  .progress-amounts {
+    .amount-label {
+      font-size: 8px;
+    }
+
+    .paid-amount,
+    .total-amount {
+      font-size: 11px;
+    }
+  }
+}

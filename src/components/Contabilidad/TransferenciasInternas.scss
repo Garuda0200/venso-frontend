@@ -1,0 +1,43 @@
+@import "../../styles/_variables.scss";
+
+// Variables de colores usando paleta del proyecto
+$primary-gradient: linear-gradient(
+  135deg,
+  $color-primary 0%,
+  $color-primary-dark 100%
+);
+
+// Botón de transferencia
+.btn-transferencia {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: $primary-gradient;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.35);
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  svg {
+    font-size: 16px;
+  }
+}

@@ -1,0 +1,797 @@
+// SortableDay.scss — Premium Minimalist Design
+// Scoped under .days-editor
+
+.days-editor {
+  .day-card {
+    background-color: #ffffff;
+    border-radius: 14px;
+    padding: 0;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    border: 1px solid #edf2f7;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    position: relative;
+
+    &.dragging {
+      opacity: 0.5;
+      transform: scale(0.98);
+      box-shadow: none;
+    }
+
+    &:hover {
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+      border-color: #e2e8f0;
+    }
+  }
+
+  // ── Topbar layout used by SortableDay ──
+  .day-topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    background: #fff;
+    border-bottom: 1px solid #f1f5f9;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: #fbfcfd;
+    }
+
+    .day-drag-handle {
+      display: flex;
+      align-items: center;
+      padding: 6px;
+      cursor: grab;
+      border-radius: 8px;
+      color: #cbd5e1;
+      transition: all 0.2s;
+
+      &:hover {
+        background-color: #f1f5f9;
+        color: #94a3b8;
+      }
+
+      .drag-icon {
+        font-size: 20px;
+      }
+    }
+
+    .day-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #f1f5f9;
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 4px 12px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border: 1px solid #e2e8f0;
+    }
+
+    .day-title-area {
+      flex: 1;
+      min-width: 0;
+
+      .day-title-display {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 8px;
+        border-radius: 8px;
+        transition: all 0.2s;
+
+        &:hover {
+          background-color: #f8fafc;
+          .edit-hint-icon {
+            opacity: 1;
+          }
+        }
+
+        .day-title {
+          font-size: 16px;
+          font-weight: 700;
+          color: #1e293b;
+          letter-spacing: -0.01em;
+
+          &.placeholder {
+            color: #cbd5e1;
+            font-style: italic;
+            font-weight: 500;
+          }
+        }
+
+        .edit-hint-icon {
+          font-size: 14px;
+          color: #94a3b8;
+          opacity: 0;
+          transition: opacity 0.2s;
+        }
+      }
+
+      .day-title-edit-mode {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        animation: dayTitleFadeIn 0.3s ease-out;
+
+        .day-title-input {
+          flex: 1;
+          .smart-combobox-container {
+            border: none;
+          }
+
+          input,
+          textarea {
+            border: 2px solid #6366f1;
+            border-radius: 10px;
+            padding: 8px 14px;
+            font-size: 15px;
+            font-weight: 600;
+            width: 100%;
+            outline: none;
+            background: #fff;
+            color: #1e293b;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.12);
+            transition: all 0.2s;
+
+            &:focus {
+              border-color: #4f46e5;
+              box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2);
+            }
+          }
+        }
+
+        .day-title-edit-actions {
+          display: flex;
+          gap: 6px;
+
+          button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid transparent;
+            font-size: 20px;
+
+            &.save-title-btn {
+              background: #10b981;
+              color: white;
+              box-shadow: 0 4px 10px rgba(16, 185, 129, 0.25);
+
+              &:hover {
+                background: #059669;
+                transform: scale(1.08) translateY(-1px);
+                box-shadow: 0 6px 15px rgba(16, 185, 129, 0.35);
+              }
+
+              &:active {
+                transform: scale(0.95);
+              }
+            }
+
+            &.cancel-title-btn {
+              background: #f1f5f9;
+              color: #64748b;
+              border: 1px solid #e2e8f0;
+
+              &:hover {
+                background: #fef2f2;
+                color: #ef4444;
+                border-color: #fecaca;
+                transform: scale(1.08) translateY(-1px);
+              }
+
+              &:active {
+                transform: scale(0.95);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    @keyframes dayTitleFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-5px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .day-ciudades-inline {
+      display: flex;
+      gap: 6px;
+      margin-left: auto;
+      align-items: center;
+      min-width: 0;
+      max-width: min(44vw, 520px);
+      padding: 4px;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+
+      .ciudades-inline-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        flex: 0 0 auto;
+        padding: 4px 7px;
+        color: #64748b;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .ciudad-icon {
+        color: #0f766e;
+        font-size: 12px;
+      }
+
+      .ciudad-tags-list {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        min-width: 0;
+        overflow-x: auto;
+        scrollbar-width: none;
+
+        &::-webkit-scrollbar {
+          display: none;
+        }
+      }
+
+      .ciudad-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        max-width: 150px;
+        background: #ecfdf5;
+        color: #047857;
+        border: 1px solid #bbf7d0;
+        padding: 4px 5px 4px 9px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1;
+        white-space: nowrap;
+
+        .ciudad-tag__text {
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+      }
+
+      .remove-ciudad-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        flex: 0 0 auto;
+        border: 0;
+        border-radius: 50%;
+        background: rgba(4, 120, 87, 0.1);
+        color: #047857;
+        cursor: pointer;
+        transition:
+          background 0.15s ease,
+          color 0.15s ease,
+          transform 0.15s ease;
+
+        &:hover {
+          background: #dc2626;
+          color: #fff;
+          transform: scale(1.05);
+        }
+      }
+
+      .no-ciudades {
+        color: #94a3b8;
+        font-size: 11px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .add-ciudad-btn {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        flex: 0 0 auto;
+        background: #fff;
+        color: #0f766e;
+        border: 1px solid #99f6e4;
+        padding: 5px 9px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 800;
+        cursor: pointer;
+        transition: all 0.18s ease;
+
+        &:hover {
+          background: #f0fdfa;
+          border-color: #14b8a6;
+          transform: translateY(-1px);
+        }
+      }
+    }
+
+    .day-right-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      .service-count-badge {
+        font-size: 11px;
+        font-weight: 800;
+        color: #94a3b8;
+        background: #f8fafc;
+        padding: 4px 10px;
+        border-radius: 20px;
+        border: 1px solid #e2e8f0;
+      }
+
+      .delete-day-wrapper {
+        position: relative;
+      }
+
+      .delete-day-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        color: #cbd5e1;
+        transition: all 0.2s;
+        border: 1px solid transparent;
+        background: transparent;
+        cursor: pointer;
+
+        &:hover,
+        &.active {
+          background: #fef2f2;
+          color: var(--color-danger, #e74c3c);
+          border-color: #fecaca;
+        }
+
+        &.active {
+          transform: scale(1.1);
+          box-shadow: 0 2px 8px rgba(231, 74, 59, 0.15);
+        }
+
+        svg {
+          font-size: 18px;
+        }
+      }
+
+      // ── Delete popover ────────────────────────────────────────
+      .delete-day-popover {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        z-index: 100;
+        width: 260px;
+        background: #fff;
+        border: 1px solid #fecdd3;
+        border-radius: 14px;
+        padding: 16px;
+        box-shadow:
+          0 10px 30px rgba(0, 0, 0, 0.1),
+          0 4px 12px rgba(225, 29, 72, 0.08);
+        animation: deletePopoverIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+
+        // Arrow
+        &::before {
+          content: "";
+          position: absolute;
+          top: -6px;
+          right: 12px;
+          width: 12px;
+          height: 12px;
+          background: #fff;
+          border: 1px solid #fecdd3;
+          border-right: none;
+          border-bottom: none;
+          transform: rotate(45deg);
+        }
+
+        &__header {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 8px;
+
+          span {
+            font-size: 14px;
+            font-weight: 800;
+            color: #1e293b;
+          }
+        }
+
+        &__icon {
+          color: #f59e0b;
+          font-size: 20px;
+          flex-shrink: 0;
+        }
+
+        &__text {
+          font-size: 12px;
+          color: #64748b;
+          margin: 0 0 14px;
+          line-height: 1.5;
+          font-weight: 500;
+        }
+
+        &__actions {
+          display: flex;
+          gap: 8px;
+          justify-content: flex-end;
+        }
+
+        &__cancel {
+          padding: 7px 16px;
+          border-radius: 10px;
+          border: 1px solid #e2e8f0;
+          background: #f8fafc;
+          color: #64748b;
+          font-size: 12px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.15s;
+
+          &:hover {
+            background: #f1f5f9;
+            color: #475569;
+            border-color: #cbd5e1;
+          }
+        }
+
+        &__confirm {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          padding: 7px 16px;
+          border-radius: 10px;
+          border: none;
+          background: var(--color-danger, #e74c3c);
+          color: #fff;
+          font-size: 12px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.18s;
+          box-shadow: 0 2px 6px rgba(231, 74, 59, 0.2);
+
+          svg {
+            font-size: 14px;
+          }
+
+          &:hover {
+            background: #c0392b;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(231, 74, 59, 0.3);
+          }
+        }
+      }
+
+      @keyframes deletePopoverIn {
+        from {
+          opacity: 0;
+          transform: translateY(-6px) scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+    }
+  }
+
+  .day-content {
+    background: #fff;
+    padding: 0;
+    transition: all 0.3s ease;
+  }
+}
+
+/* ============================================================
+   Venso day card — restrained editorial treatment
+   ============================================================ */
+.days-editor {
+  .day-card {
+    margin-bottom: 0;
+    border: 1px solid #e7e0e4;
+    border-radius: 16px;
+    box-shadow: 0 9px 28px rgba(30, 16, 25, 0.045);
+
+    &:hover {
+      border-color: #dcd1d7;
+      box-shadow: 0 13px 34px rgba(30, 16, 25, 0.07);
+    }
+
+    &.dragging {
+      border-color: #ff80be;
+      box-shadow: 0 16px 34px rgba(255, 0, 126, 0.12);
+    }
+  }
+
+  .day-topbar {
+    min-height: 62px;
+    gap: 10px;
+    padding: 11px 14px;
+    background: #ffffff;
+    border-bottom-color: #ece6e9;
+
+    &:hover {
+      background: #fdfbfc;
+    }
+
+    .day-drag-handle {
+      color: #bbb0b6;
+
+      &:hover {
+        color: #ff007e;
+        background: #fff0f7;
+      }
+    }
+
+    .day-badge {
+      min-width: 52px;
+      color: #ffffff;
+      background: #181318;
+      border-color: #181318;
+      border-radius: 8px;
+      font-size: 9px;
+      letter-spacing: 0.08em;
+    }
+
+    .day-title-area .day-title-display {
+      padding: 5px 7px;
+
+      &:hover {
+        background: #f8f5f7;
+      }
+
+      .day-title {
+        color: #211b1f;
+        font-size: 14px;
+        font-weight: 800;
+
+        &.placeholder {
+          color: #aaa0a6;
+        }
+      }
+
+      .edit-hint-icon {
+        color: #ff007e;
+      }
+    }
+
+    .day-title-area .day-title-edit-mode {
+      .day-title-input input,
+      .day-title-input textarea {
+        border-color: #ff007e;
+        border-radius: 10px;
+        color: #211b1f;
+        box-shadow: 0 0 0 3px rgba(255, 0, 126, 0.09);
+
+        &:focus {
+          border-color: #d9006b;
+          box-shadow: 0 0 0 4px rgba(255, 0, 126, 0.11);
+        }
+      }
+
+      .day-title-edit-actions button.save-title-btn {
+        color: #ffffff;
+        background: #181318;
+        box-shadow: none;
+
+        &:hover {
+          background: #ff007e;
+          box-shadow: 0 7px 15px rgba(255, 0, 126, 0.2);
+        }
+      }
+    }
+
+    .day-ciudades-inline {
+      max-width: min(39vw, 500px);
+      border-color: #e4dce1;
+      background: #faf8f9;
+
+      .ciudades-inline-label,
+      .ciudad-icon {
+        color: #7b7076;
+      }
+
+      .ciudad-tag {
+        color: #5c1a3a;
+        background: #fff1f8;
+        border-color: #f1c5da;
+      }
+
+      .remove-ciudad-btn {
+        color: #a10050;
+        background: rgba(255, 0, 126, 0.09);
+      }
+
+      .add-ciudad-btn {
+        color: #a60053;
+        background: #ffffff;
+        border-color: #efbdd5;
+
+        &:hover {
+          color: #ffffff;
+          background: #ff007e;
+          border-color: #ff007e;
+        }
+      }
+    }
+
+    .day-right-actions {
+      gap: 7px;
+
+      .service-count-badge {
+        color: #756a70;
+        background: #f7f4f6;
+        border-color: #e7e0e4;
+      }
+
+      .delete-day-btn {
+        color: #9e9299;
+        background: #ffffff;
+        border-color: #e6dfe3;
+
+        &:hover,
+        &.active {
+          color: #ffffff;
+          background: #c51b48;
+          border-color: #c51b48;
+        }
+      }
+    }
+  }
+
+  .day-content {
+    background: #ffffff;
+  }
+}
+
+@media (max-width: 980px) {
+  .days-editor .day-topbar {
+    flex-wrap: wrap;
+
+    .day-title-area {
+      min-width: calc(100% - 120px);
+    }
+
+    .day-ciudades-inline {
+      order: 4;
+      width: 100%;
+      max-width: none;
+      margin-left: 42px;
+    }
+  }
+}
+
+@media (max-width: 620px) {
+  .days-editor .day-topbar {
+    padding: 10px;
+
+    .day-title-area {
+      min-width: calc(100% - 102px);
+    }
+
+    .day-ciudades-inline {
+      margin-left: 0;
+    }
+  }
+}
+
+/* Compact day row */
+.days-editor {
+  .day-card {
+    border-radius: 11px;
+    box-shadow: none;
+
+    &:hover,
+    &.dragging {
+      box-shadow: none;
+    }
+  }
+
+  .day-topbar {
+    min-height: 48px;
+    gap: 7px;
+    padding: 7px 9px;
+
+    .day-drag-handle {
+      padding: 3px;
+      border-radius: 6px;
+
+      .drag-icon {
+        font-size: 17px;
+      }
+    }
+
+    .day-badge {
+      min-width: 44px;
+      padding: 3px 7px;
+      border-radius: 7px;
+      font-size: 8px;
+    }
+
+    .day-title-area .day-title-display {
+      gap: 5px;
+      padding: 3px 5px;
+
+      .day-title {
+        font-size: 12px;
+        line-height: 1.25;
+      }
+    }
+
+    .day-ciudades-inline {
+      max-width: min(34vw, 420px);
+      gap: 4px;
+      padding: 3px;
+      border-radius: 8px;
+
+      .ciudades-inline-label {
+        padding: 3px 5px;
+        font-size: 8px;
+      }
+
+      .ciudad-tags-list {
+        gap: 3px;
+      }
+
+      .ciudad-tag {
+        max-width: 125px;
+        padding: 3px 4px 3px 7px;
+        font-size: 9px;
+      }
+
+      .remove-ciudad-btn {
+        width: 16px;
+        height: 16px;
+      }
+
+      .add-ciudad-btn {
+        padding: 4px 7px;
+        font-size: 9px;
+      }
+    }
+
+    .day-right-actions {
+      gap: 5px;
+
+      .service-count-badge {
+        padding: 3px 7px;
+        font-size: 9px;
+      }
+
+      .delete-day-btn {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+
+        svg {
+          font-size: 16px;
+        }
+      }
+    }
+  }
+}

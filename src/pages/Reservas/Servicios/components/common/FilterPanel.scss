@@ -1,0 +1,251 @@
+﻿.filter-panel {
+  background-color: #f8f9fc;
+  border-radius: 8px;
+  border: 1px solid #e3e6f0;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  animation: fadeIn 0.3s ease;
+  overflow: hidden;
+
+  .filter-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background-color: #f1f3fa;
+    border-bottom: 1px solid #e3e6f0;
+
+    h3 {
+      margin: 0;
+      font-size: 16px;
+      color: var(--color-primary);
+    }
+
+    .clear-filters-button {
+      background: none;
+      border: none;
+      color: var(--color-primary);
+      font-size: 14px;
+      cursor: pointer;
+      text-decoration: underline;
+
+      &:hover {
+        color: var(--color-primary-dark);
+      }
+    }
+  }
+
+  .filter-panel-content {
+    padding: 16px;
+  }
+
+  .filter-columns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+
+    .filter-column {
+      flex: 1;
+      min-width: 200px;
+
+      h4 {
+        margin: 0 0 10px 0;
+        font-size: 14px;
+        color: #5a5c69;
+        font-weight: 600;
+      }
+
+      .filter-options {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 220px;
+        overflow-y: auto;
+
+        &.time-filters {
+          gap: 12px;
+
+          .time-filter {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+
+            label {
+              font-size: 13px;
+              color: #6e707e;
+            }
+
+            select {
+              padding: 8px;
+              border: 1px solid #d1d3e2;
+              border-radius: 4px;
+
+              &:focus {
+                outline: none;
+                border-color: #bac8f3;
+                box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Checkbox styling
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 14px;
+    color: #6e707e;
+
+    input[type="checkbox"] {
+      margin-right: 8px;
+      cursor: pointer;
+    }
+
+    .category-star-display {
+      display: flex;
+      align-items: center;
+
+      .star-count {
+        display: flex;
+        align-items: center;
+
+        span {
+          margin-left: 4px;
+        }
+      }
+    }
+
+    .city-name {
+      display: flex;
+      align-items: center;
+    }
+
+    &:hover {
+      color: var(--color-primary);
+    }
+  }
+
+  // Radio button styling
+  .radio-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 14px;
+    color: #6e707e;
+
+    input[type="radio"] {
+      margin-right: 8px;
+      cursor: pointer;
+    }
+
+    .radio-text {
+      display: flex;
+      align-items: center;
+    }
+
+    &:hover {
+      color: var(--color-primary);
+    }
+  }
+}
+
+// Active filters styling
+.active-filters {
+  background-color: #fff;
+  border: 1px solid #e3e6f0;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+
+  .active-filters-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+
+    span {
+      font-weight: 600;
+      color: var(--color-primary);
+      font-size: 14px;
+    }
+
+    .clear-all-button {
+      background: none;
+      border: none;
+      color: #e74a3b;
+      font-size: 13px;
+      cursor: pointer;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+
+  .filter-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    .filter-badge {
+      display: flex;
+      align-items: center;
+      background-color: #eaecf4;
+      border-radius: 20px;
+      padding: 4px 10px;
+      font-size: 13px;
+      color: #5a5c69;
+
+      span {
+        margin-right: 6px;
+      }
+
+      button {
+        background: none;
+        border: none;
+        color: #858796;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        padding: 0;
+        font-size: 14px;
+
+        &:hover {
+          color: #e74a3b;
+        }
+      }
+    }
+  }
+}
+
+.results-summary {
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: #6e707e;
+}
+
+// Animation
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Media queries for responsive design
+@media (max-width: 768px) {
+  .filter-columns {
+    .filter-column {
+      flex: 100%;
+    }
+  }
+}

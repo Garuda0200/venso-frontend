@@ -1,0 +1,344 @@
+﻿// CiudadesSelectorModal.scss - Compact fast city selector
+
+.cs-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: csFadeIn 0.1s ease;
+}
+
+.cs-panel {
+  background: #fff;
+  border-radius: 10px;
+  width: 420px;
+  max-width: 94vw;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+  animation: csSlideUp 0.15s ease;
+  overflow: hidden;
+}
+
+// Header
+.cs-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #02522f, #007b46);
+  color: white;
+
+  &__title {
+    font-size: 16px;
+    font-weight: 700;
+    flex: 1;
+  }
+  &__count {
+    font-size: 13px;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 10px;
+    border-radius: 10px;
+  }
+  &__close {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    transition: background 0.15s;
+    svg {
+      font-size: 18px;
+    }
+    &:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+  }
+}
+
+// Search
+.cs-search {
+  position: relative;
+  padding: 10px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f8fafc;
+
+  &__icon {
+    position: absolute;
+    left: 28px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 18px;
+  }
+  &__input {
+    width: 100%;
+    padding: 8px 12px 8px 36px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    box-sizing: border-box;
+    transition: border-color 0.15s;
+    &:focus {
+      outline: none;
+      border-color: #02522f;
+      box-shadow: 0 0 0 2px rgba(2, 82, 47, 0.1);
+    }
+  }
+}
+
+// Selected tags
+.cs-selected {
+  display: grid;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #ffffff;
+
+  &__label {
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  &__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}
+
+.cs-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+
+  &--active {
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #bbf7d0;
+  }
+
+  &__remove {
+    background: rgba(4, 120, 87, 0.1);
+    border: none;
+    color: #047857;
+    cursor: pointer;
+    padding: 1px;
+    display: flex;
+    align-items: center;
+    border-radius: 50%;
+    transition: all 0.15s ease;
+    svg {
+      font-size: 14px;
+    }
+    &:hover {
+      background: #dc2626;
+      color: white;
+    }
+  }
+}
+
+// Search results
+.cs-results {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 12px 16px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+// Quick select
+.cs-quick {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px;
+
+  &__label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #94a3b8;
+    margin-bottom: 8px;
+  }
+  &__grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}
+
+// City button (shared)
+.cs-city {
+  padding: 5px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.12s;
+  white-space: nowrap;
+
+  &:hover {
+    border-color: #02522f;
+    color: #02522f;
+    background: rgba(2, 82, 47, 0.04);
+  }
+
+  &--custom {
+    border-style: dashed;
+    color: #02522f;
+    font-weight: 600;
+  }
+}
+
+// Footer
+.cs-footer {
+  padding: 10px 16px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+  background: #f8fafc;
+
+  &__done {
+    padding: 7px 24px;
+    background: #02522f;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    &:hover {
+      background: #007b46;
+    }
+  }
+}
+
+// Animations
+@keyframes csFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes csSlideUp {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Venso city selector */
+.cs-overlay {
+  background: rgba(18, 12, 16, 0.58);
+  backdrop-filter: blur(5px);
+}
+
+.cs-panel {
+  width: min(470px, 94vw);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  box-shadow: 0 28px 70px rgba(20, 10, 17, 0.28);
+}
+
+.cs-header {
+  padding: 15px 17px;
+  color: #ffffff;
+  background:
+    radial-gradient(circle at 95% 0%, rgba(255, 0, 126, 0.28), transparent 34%),
+    #181318;
+
+  &__title {
+    font-size: 17px;
+    font-weight: 850;
+  }
+
+  &__count {
+    background: rgba(255, 0, 126, 0.18);
+    border: 1px solid rgba(255, 112, 181, 0.28);
+  }
+}
+
+.cs-search {
+  background: #faf8f9;
+  border-bottom-color: #e8e1e5;
+
+  &__input {
+    border-color: #ded5da;
+    border-radius: 10px;
+
+    &:focus {
+      border-color: #ff007e;
+      box-shadow: 0 0 0 3px rgba(255, 0, 126, 0.09);
+    }
+  }
+}
+
+.cs-selected {
+  border-bottom-color: #e8e1e5;
+}
+
+.cs-tag--active {
+  color: #860043;
+  background: #fff1f8;
+  border-color: #efbfd6;
+}
+
+.cs-tag__remove {
+  color: #9e004f;
+  background: rgba(255, 0, 126, 0.09);
+}
+
+.cs-city {
+  color: #51484d;
+  border-color: #ded6da;
+  border-radius: 8px;
+
+  &:hover,
+  &--custom {
+    color: #a40052;
+    background: #fff3f9;
+    border-color: #efbdd5;
+  }
+}
+
+.cs-footer {
+  background: #faf8f9;
+  border-top-color: #e8e1e5;
+
+  &__done {
+    background: #ff007e;
+    border-radius: 9px;
+
+    &:hover {
+      background: #d9006b;
+    }
+  }
+}

@@ -1,0 +1,254 @@
+@import "../styles/_variables.scss";
+
+/* src/styles/LoadingSpinner.css */
+.loading-spinner-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.8);
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+}
+
+.loading-spinner {
+  text-align: center;
+  padding: 2rem;
+  background-color: white;
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-lg;
+  position: relative;
+  width: 280px;
+  animation: floatIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, $color-primary, $color-secondary);
+    border-radius: $border-radius-lg $border-radius-lg 0 0;
+  }
+
+  .spinner-logo {
+    width: 70px;
+    height: 70px;
+    margin: 0 auto 1.5rem;
+    background: rgba($color-primary, 0.05);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+
+    &::after {
+      content: "";
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 2px solid rgba($color-primary, 0.2);
+      animation: pulse 2s infinite;
+    }
+
+    .spinner-icon {
+      width: 8px;
+      height: 8px;
+      background-color: $color-primary;
+      border-radius: 999px;
+      box-shadow:
+        16px 0 0 rgba($color-primary, 0.42),
+        32px 0 0 $color-secondary;
+      transform: translateX(-16px);
+      animation: dotPulse 1.2s ease-in-out infinite;
+    }
+  }
+
+  .spinner {
+    width: 58px;
+    height: 18px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    margin: 0 auto 20px;
+    position: relative;
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 5px;
+      left: 7px;
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: $color-primary;
+      box-shadow:
+        19px 0 0 rgba($color-primary, 0.42),
+        38px 0 0 #f27c22;
+      animation: dotPulse 1s ease-in-out infinite;
+    }
+  }
+
+  h3 {
+    color: $color-primary;
+    font-size: 1.4rem;
+    margin: 0 0 0.5rem;
+    font-weight: 600;
+  }
+
+  p {
+    font-family: "Arial", sans-serif;
+    font-size: 16px;
+    color: #333;
+    margin: 10px 0;
+    animation: pulse 2s infinite;
+  }
+
+  .progress-track {
+    height: 6px;
+    background-color: $color-gray-light;
+    border-radius: $border-radius-pill;
+    overflow: hidden;
+    margin-top: 1rem;
+    position: relative;
+
+    .progress-bar {
+      position: absolute;
+      height: 100%;
+      width: 30%;
+      background: linear-gradient(90deg, $color-primary, $color-secondary);
+      border-radius: $border-radius-pill;
+      animation: progressMove 1.5s ease-in-out infinite;
+    }
+  }
+
+  .loading-dots {
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      margin: 0 3px;
+      background-color: $color-primary;
+      border-radius: 50%;
+      display: inline-block;
+      animation: dotPulse 1.5s infinite ease-in-out;
+
+      &:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+
+      &:nth-child(3) {
+        animation-delay: 0.4s;
+      }
+    }
+  }
+}
+
+// Decorative elements
+.loading-decoration {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.4;
+  filter: blur(10px);
+  z-index: 0;
+
+  &.circle1 {
+    width: 150px;
+    height: 150px;
+    background-color: rgba($color-primary, 0.2);
+    top: 20%;
+    left: 15%;
+    animation: float 6s infinite alternate;
+  }
+
+  &.circle2 {
+    width: 100px;
+    height: 100px;
+    background-color: rgba($color-secondary, 0.2);
+    bottom: 15%;
+    right: 20%;
+    animation: float 8s infinite alternate-reverse;
+  }
+
+  &.circle3 {
+    width: 80px;
+    height: 80px;
+    background-color: rgba($color-accent, 0.15);
+    bottom: 30%;
+    left: 25%;
+    animation: float 7s infinite alternate;
+  }
+}
+
+@keyframes floatIn {
+  0% {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes dotPulse {
+  0%,
+  100% {
+    transform: scale(0.7);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes progressMove {
+  0% {
+    left: -30%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+@keyframes float {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(10px, 10px);
+  }
+}

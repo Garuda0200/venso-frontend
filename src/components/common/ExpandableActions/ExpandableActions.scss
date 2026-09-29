@@ -1,0 +1,201 @@
+.expandable-actions {
+  --expandable-actions-size: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: var(--expandable-actions-size);
+  isolation: isolate;
+
+  &--compact {
+    --expandable-actions-size: 32px;
+  }
+
+  &__toggle,
+  &__item {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--expandable-actions-size);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    background: var(--color-bg-primary);
+    color: var(--color-text-secondary);
+    font: inherit;
+    cursor: pointer;
+    transition:
+      background 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease,
+      box-shadow 150ms ease,
+      transform 150ms ease;
+  }
+
+  &__panel-header {
+    flex: 1 0 100%;
+    min-width: 0;
+  }
+
+  &__toggle {
+    width: var(--expandable-actions-size);
+    flex: 0 0 var(--expandable-actions-size);
+    padding: 0;
+    border-color: var(--color-border);
+    color: var(--color-accent);
+    box-shadow: var(--shadow-sm);
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    &:hover,
+    &:focus-visible,
+    .is-expanded & {
+      border-color: var(--color-primary);
+      background: var(--color-primary-light);
+      color: var(--color-primary-dark);
+      box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
+    }
+  }
+
+  &__rail {
+    position: fixed;
+    z-index: var(--z-popover);
+    display: flex;
+    width: max-content;
+    max-width: min(560px, calc(100vw - 24px));
+    max-height: min(360px, calc(100vh - 24px));
+    padding: 7px;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 6px;
+    overflow: auto;
+    border: 1px solid var(--color-brand-border);
+    border-radius: var(--radius-xl);
+    background: var(--color-surface-raised);
+    box-shadow: var(--shadow-xl);
+    opacity: 0;
+    transform: translateY(-5px) scale(0.96);
+    transform-origin: var(--expandable-actions-origin, right top);
+    pointer-events: none;
+    will-change: opacity, transform;
+
+    &--top {
+      transform: translateY(5px) scale(0.96);
+    }
+
+    &.is-open {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+      animation: expandable-actions-open 170ms cubic-bezier(0.2, 0.75, 0.2, 1)
+        both;
+    }
+
+    &.is-closing {
+      animation: expandable-actions-close 160ms ease both;
+    }
+  }
+
+  &__item {
+    flex: 0 0 auto;
+    gap: 6px;
+    padding: 0 10px;
+    white-space: nowrap;
+    box-shadow: none;
+
+    &:hover:not(:disabled),
+    &:focus-visible:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+
+    &--primary {
+      border-color: rgba(var(--color-primary-rgb), 0.22);
+      background: var(--color-primary-light);
+      color: var(--color-primary-dark);
+    }
+
+    &--info {
+      border-color: rgba(54, 185, 204, 0.25);
+      background: var(--color-info-light);
+      color: var(--color-info-dark);
+    }
+
+    &--warning {
+      border-color: rgba(246, 194, 62, 0.32);
+      background: var(--color-warning-light);
+      color: var(--color-warning-dark);
+    }
+
+    &--danger {
+      border-color: rgba(231, 74, 59, 0.25);
+      background: var(--color-danger-light);
+      color: var(--color-danger-dark);
+    }
+
+    &--neutral {
+      background: var(--color-bg-primary);
+      color: var(--color-text-secondary);
+    }
+  }
+
+  &__icon {
+    display: inline-flex;
+    flex: 0 0 auto;
+
+    svg {
+      width: 17px;
+      height: 17px;
+    }
+  }
+
+  &__label {
+    max-width: 180px;
+    overflow: hidden;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    text-overflow: ellipsis;
+  }
+}
+
+@keyframes expandable-actions-open {
+  from {
+    opacity: 0;
+    transform: translateY(-5px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes expandable-actions-close {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+  }
+}
+
+@media (max-width: 560px) {
+  .expandable-actions__rail {
+    width: calc(100vw - 24px);
+    justify-content: stretch;
+
+    .expandable-actions__item {
+      flex: 1 1 140px;
+    }
+  }
+}

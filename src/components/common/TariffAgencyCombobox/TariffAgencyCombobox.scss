@@ -1,0 +1,99 @@
+.tariff-agency-combobox {
+  position: relative;
+  min-width: 220px;
+  color: #1c1520;
+}
+
+.tariff-agency-combobox .tac-label {
+  display: block;
+  margin-bottom: 6px;
+  color: #6f6671;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tariff-agency-combobox .tac-trigger {
+  width: 100%;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 11px;
+  border: 1px solid #ddd7de;
+  border-radius: 12px;
+  background: #fff;
+  color: #1c1520;
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.tariff-agency-combobox .tac-trigger > span {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tariff-agency-combobox .tac-trigger > svg:first-child { color: #ec007a; }
+.tariff-agency-combobox .tac-chevron { color: #817783; transition: transform .18s ease; }
+.tariff-agency-combobox.open .tac-chevron { transform: rotate(180deg); }
+.tariff-agency-combobox .tac-trigger:hover,
+.tariff-agency-combobox.open .tac-trigger { border-color: #ec007a; box-shadow: 0 0 0 3px rgba(236,0,122,.08); }
+
+.tariff-agency-combobox.compact { min-width: 190px; }
+.tariff-agency-combobox.compact .tac-trigger { min-height: 34px; padding: 6px 9px; border-radius: 10px; font-size: .8rem; }
+
+.tariff-agency-combobox .tac-menu {
+  position: absolute;
+  z-index: 10020;
+  top: calc(100% + 7px);
+  left: 0;
+  width: max(100%, 280px);
+  max-height: 285px;
+  overflow: auto;
+  padding: 7px;
+  border: 1px solid #eadce4;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 18px 45px rgba(28,21,32,.18);
+}
+
+.tariff-agency-combobox .tac-menu > button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 24px minmax(0,1fr) 18px;
+  align-items: center;
+  gap: 8px;
+  padding: 9px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #1c1520;
+  cursor: pointer;
+  text-align: left;
+}
+
+.tariff-agency-combobox .tac-menu > button:hover { background: #fff0f7; }
+.tariff-agency-combobox .tac-menu > button.selected { background: #fce4f0; color: #b8005c; }
+.tariff-agency-combobox .tac-menu > button > svg { color: #ec007a; }
+.tariff-agency-combobox .tac-menu span { min-width: 0; display: flex; flex-direction: column; }
+.tariff-agency-combobox .tac-menu strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .82rem; }
+.tariff-agency-combobox .tac-menu small { color: #8b818d; font-size: .68rem; }
+
+.tariff-agency-combobox .tac-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.tariff-agency-combobox .tac-chips > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: #fff0f7;
+  color: #b8005c;
+  font-size: .68rem;
+  font-weight: 750;
+}
+.tariff-agency-combobox .tac-chips button { display: inline-flex; border: 0; background: transparent; color: inherit; cursor: pointer; padding: 0; }

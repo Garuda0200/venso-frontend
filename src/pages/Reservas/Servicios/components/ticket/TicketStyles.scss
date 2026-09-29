@@ -1,0 +1,483 @@
+﻿// Extracted from Servicios.scss: ticket manager and ticket form styles
+.servicios-container {
+  .tickets-manager {
+    padding: 0 0 24px 0;
+    margin-top: 20px;
+
+    .header-title {
+      display: flex;
+      align-items: center;
+
+      .title-icon {
+        font-size: 24px;
+        margin-right: 12px;
+        color: var(--color-primary);
+      }
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .tickets-grouped-view {
+      margin-top: 20px;
+
+      .grouped-controls {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+
+      .button-sm {
+        padding: 6px 12px;
+        font-size: 13px;
+      }
+    }
+
+    .procedencia-badge,
+    .usuario-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+
+      .badge-icon {
+        font-size: 14px;
+        color: var(--color-primary);
+      }
+    }
+
+    .usuario-badge-container {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .edad-info {
+      display: block;
+      margin-top: 4px;
+      font-size: 12px;
+      color: #666;
+      font-style: italic;
+    }
+
+    .badge.small {
+      font-size: 10px;
+      padding: 2px 6px;
+    }
+
+    // Tarifa modal styles
+    .tarifa-ticket-info {
+      padding: 16px;
+      background-color: var(--color-bg-light);
+      border-radius: 8px;
+      margin-bottom: 20px;
+
+      .tarifa-ticket-main {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+
+        .ticket-icon {
+          font-size: 20px;
+          margin-right: 10px;
+          color: var(--color-primary);
+        }
+
+        .ticket-title {
+          margin: 0;
+          font-size: 18px;
+          font-weight: 600;
+        }
+      }
+
+      .tarifa-ticket-details {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+
+        .detail-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+
+          .detail-icon {
+            color: var(--color-primary);
+            font-size: 14px;
+          }
+        }
+      }
+    }
+
+    // Responsive adjustments
+    @media (max-width: 768px) {
+      .header-with-actions {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+
+        .header-actions {
+          width: 100%;
+          justify-content: space-between;
+        }
+      }
+
+      .tarifa-ticket-details {
+        flex-direction: column;
+        gap: 8px;
+      }
+    }
+  }
+
+  .ticket-form {
+    .quick-add-container {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+
+      .quick-add-btn {
+        display: inline-flex;
+        align-items: center;
+        background-color: #fff0d9;
+        border: 1px solid #ffd591;
+        color: #d46b08;
+        border-radius: 4px;
+        padding: 4px 10px;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        svg {
+          margin-right: 6px;
+        }
+
+        &:hover {
+          background-color: #ffe7ba;
+        }
+
+        &:active {
+          background-color: #ffd591;
+        }
+
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+      }
+
+      .form-text {
+        font-size: 12px;
+        color: #777;
+      }
+    }
+
+    .duplicate-warning {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background-color: #fff2e8;
+      border: 1px solid #ffccc7;
+      border-radius: 4px;
+      margin-bottom: 16px;
+      color: #d4380d;
+      font-size: 14px;
+
+      .warning-icon {
+        color: var(--color-danger);
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+    }
+
+    .combinations-info {
+      margin-top: 20px;
+      margin-bottom: 20px;
+      padding: 16px;
+      background-color: var(--color-primary-light);
+      border: 1px solid #d1e9ff;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(var(--color-primary-rgb), 0.08);
+
+      h4 {
+        margin-top: 0;
+        margin-bottom: 16px;
+        font-size: 16px;
+        color: var(--color-primary-dark);
+        font-weight: 500;
+        position: relative;
+        display: flex;
+        align-items: center;
+
+        &:before {
+          content: "";
+          width: 4px;
+          height: 16px;
+          background-color: var(--color-primary);
+          margin-right: 8px;
+          border-radius: 2px;
+        }
+      }
+
+      .combinations-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+
+        .combination-item {
+          display: flex;
+          align-items: center;
+          padding: 8px 12px;
+          background-color: white;
+          border-radius: 8px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+          transition: all 0.2s ease;
+
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.12);
+          }
+
+          .check-icon {
+            color: var(--color-success);
+            margin-right: 8px;
+            font-size: 14px;
+          }
+
+          .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            margin: 0 2px;
+          }
+
+          span:not(.badge) {
+            margin: 0 4px;
+            color: #666;
+          }
+        }
+      }
+    }
+  }
+
+  // Improve form interactivity with better focus styles and pointer events
+  .ticket-form,
+  .habitacion-form {
+    // Improve select controls visibility and interactivity
+    select.form-control {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--color-border);
+      border-radius: 4px;
+      font-size: 14px;
+      background-color: white;
+      cursor: pointer;
+      color: #333;
+      appearance: auto; // Use browser default appearance
+
+      &:focus {
+        border-color: var(--color-primary-hover);
+        box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.2);
+        outline: none;
+      }
+
+      &.error {
+        border-color: var(--color-danger);
+      }
+
+      &:disabled {
+        background-color: var(--color-bg-secondary);
+        cursor: not-allowed;
+        color: #999;
+      }
+
+      option {
+        color: #333;
+        background: white;
+
+        &:disabled {
+          color: #999;
+        }
+      }
+    }
+
+    // Keep z-index control to ensure select dropdown is visible
+    .form-group {
+      position: relative;
+      z-index: 10;
+
+      &:hover {
+        z-index: 20;
+      }
+
+      select,
+      input {
+        z-index: inherit;
+      }
+    }
+  }
+
+  .ticket-form {
+    // ...existing code...
+
+    // Category badges for ticket filtering
+    .category-badges-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+      align-items: center;
+      margin-top: 12px;
+      position: relative;
+
+      .category-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 13px;
+        border: 1px solid #e8e8e8;
+        background-color: var(--color-bg-secondary);
+        color: #666;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-width: 40px;
+        height: 32px;
+
+        &:hover {
+          background-color: #e8e8e8;
+          transform: translateY(-2px);
+        }
+
+        &.active {
+          background-color: var(--color-primary);
+          color: white;
+          border-color: var(--color-primary);
+          box-shadow: 0 2px 6px rgba(var(--color-primary-rgb), 0.2);
+        }
+
+        // Star badge specific styling
+        &.star-badge {
+          min-width: 32px;
+          padding: 6px 10px;
+
+          .badge-icon {
+            font-size: 12px;
+            color: var(--color-accent);
+          }
+
+          &.active .badge-icon {
+            color: white;
+          }
+        }
+
+        // Specific category styling
+        &.luxury-hotel {
+          background-color: #f6ffed;
+          border-color: #b7eb8f;
+          color: var(--color-success);
+
+          &.active {
+            background-color: var(--color-success);
+            color: white;
+            border-color: var(--color-success);
+          }
+        }
+
+        &.premium-hotel {
+          background-color: var(--color-primary-light);
+          border-color: rgba(var(--color-primary-rgb), 0.24);
+          color: var(--color-primary);
+
+          &.active {
+            background-color: var(--color-primary);
+            color: white;
+            border-color: var(--color-primary);
+          }
+        }
+
+        &.standard-hotel {
+          background-color: #e6fffb;
+          border-color: #87e8de;
+          color: #13c2c2;
+
+          &.active {
+            background-color: #13c2c2;
+            color: white;
+            border-color: #13c2c2;
+          }
+        }
+
+        &.budget-hotel,
+        &.basic-hotel {
+          background-color: #f9f0ff;
+          border-color: #d3adf7;
+          color: #722ed1;
+
+          &.active {
+            background-color: #722ed1;
+            color: white;
+            border-color: #722ed1;
+          }
+        }
+      }
+
+      // Badge groups
+      .category-badge-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-right: 16px;
+        align-items: center;
+
+        .group-title {
+          font-size: 13px;
+          color: #666;
+          margin-right: 8px;
+          white-space: nowrap;
+        }
+
+        // Add a separator line before each group except first
+        &:not(:first-child) {
+          position: relative;
+          padding-left: 16px;
+
+          &::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 4px;
+            height: calc(100% - 8px);
+            width: 1px;
+            background-color: #ddd;
+          }
+        }
+
+        // Make sure mobile layout works correctly
+        @media (max-width: 580px) {
+          margin-bottom: 10px;
+          margin-right: 0;
+          width: 100%;
+
+          &:not(:first-child) {
+            padding-left: 0;
+
+            &::before {
+              display: none;
+            }
+          }
+
+          .group-title {
+            width: 100%;
+            margin-bottom: 6px;
+          }
+        }
+      }
+    }
+  }
+}
