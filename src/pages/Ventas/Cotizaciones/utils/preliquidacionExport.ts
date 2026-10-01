@@ -87,11 +87,15 @@ const normalizePages = (pageElements: unknown): HTMLElement[] => {
 export const capturePreLiquidacionPages = async (
   pageElements: unknown,
 ): Promise<PageImageCapture[]> => {
-  const pages = normalizePages(pageElements);
+  let pages = normalizePages(pageElements);
   if (!pages.length) throw new Error("No hay páginas de preliquidación para exportar");
 
   await Promise.all(pages.map(waitForImages));
   await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  // Loading the logo can change measured pagination. Re-read the live pages
+  // rather than exporting the initial (possibly incomplete) node list.
+  pages = normalizePages(pageElements);
+  await Promise.all(pages.map(waitForImages));
 
   return Promise.all(
     pages.map(async (page) => ({

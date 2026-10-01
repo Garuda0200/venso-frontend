@@ -16,6 +16,8 @@ import contabilidadService from "../../../services/contabilidadService";
 import { getAgencies, getPrimaryAgency } from "../../../services/agencyService";
 import * as cotizacionService from "../../Ventas/Cotizaciones/hooks/cotizacionService";
 import Modal from "../../../components/UI/Modal/Modal";
+import TicketPaymentBreakdown from "../../../components/Contabilidad/shared/TicketPaymentBreakdown";
+import { groupPaymentServiceSections, ticketPaymentDetailText } from "./utils/ticketPaymentPresentation";
 import {
   flattenQuoteServices,
   normalizeCurrency,
@@ -34,6 +36,14 @@ const extractArrayResponse = (response: any): any[] => {
 
 const money = (amount: number, currency: string) =>
   `${normalizeCurrency(currency) === "soles" ? "S/" : "US$"} ${roundMoney(amount).toFixed(2)}`;
+
+const escapeReportHtml = (value: unknown) => String(value ?? "")
+  .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+  .replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+
+const serviceDetailHtml = (row: any, showName: boolean) =>
+  `${showName ? escapeReportHtml(row.serviceName) : ""}${ticketPaymentDetailText(row).split("\n")
+    .filter(Boolean).map((line) => `<small style="display:block">${escapeReportHtml(line)}</small>`).join("")}`;
 
 const startOfCurrentMonth = () => {
   const now = new Date();
@@ -290,7 +300,7 @@ export function GestionPagosServicios() {
         file: row.voucherCode,
         agency: row.agencyName,
         pax: row.pax,
-        service: row.serviceName,
+        service: [row.serviceName, ticketPaymentDetailText(row)].filter(Boolean).join("\n"),
         currency: row.currency === "soles" ? "PEN" : "USD",
         cost: row.quotedTotal,
         providerStatus: statusLabel(row.requestSummary.status),
@@ -313,6 +323,7 @@ export function GestionPagosServicios() {
       row.font = { bold: true };
     });
     sheet.getColumn(7).numFmt = "0.00";
+    sheet.getColumn(5).alignment = { wrapText: true, vertical: "middle" };
     sheet.views = [{ state: "frozen", ySplit: 5 }];
     return sheet;
   };
@@ -391,7 +402,7 @@ export function GestionPagosServicios() {
         agency: row.agencyName,
         pax: row.pax,
         provider: row.providerName,
-        service: row.serviceName,
+        service: [row.serviceName, ticketPaymentDetailText(row)].filter(Boolean).join("\n"),
         currency: row.currency === "soles" ? "PEN" : "USD",
         cost: row.quotedTotal,
         providerPaid: row.requestSummary.paid,
@@ -403,6 +414,7 @@ export function GestionPagosServicios() {
       });
     });
     [8, 9, 10, 12, 13].forEach((column) => { ledger.getColumn(column).numFmt = "0.00"; });
+    ledger.getColumn(6).alignment = { wrapText: true, vertical: "middle" };
     ledger.views = [{ state: "frozen", ySplit: 4 }];
 
     providers.forEach((provider) => addProviderWorkbookSheet(workbook, provider));
@@ -426,11 +438,13 @@ export function GestionPagosServicios() {
   const printProvider = (provider: any) => {
     const popup = window.open("", "_blank", "width=1150,height=780");
     if (!popup) return;
-    const rowsHtml = provider.rows.map((row: any) => `<tr>
-      <td>${row.serviceDate || "-"}</td><td>${row.voucherCode}</td><td>${row.agencyName}</td><td>${row.pax}</td>
-      <td>${row.serviceName}</td><td>${money(row.quotedTotal, row.currency)}</td>
+    const rowsHtml = groupPaymentServiceSections(provider.rows).map((section) =>
+      `${section.isTicket ? `<tr><td colspan="8"><strong>${escapeReportHtml(section.rows[0].voucherCode)} · Día ${section.rows[0].dayNumber} · ${escapeReportHtml(section.title)}</strong></td></tr>` : ""}${section.rows.map((row: any) => `<tr>
+      <td>${escapeReportHtml(row.serviceDate || "-")}</td><td>${escapeReportHtml(row.voucherCode)}</td><td>${escapeReportHtml(row.agencyName)}</td><td>${row.pax}</td>
+      <td>${serviceDetailHtml(row, !section.isTicket)}</td><td>${money(row.quotedTotal, row.currency)}</td>
       <td>${statusLabel(row.requestSummary.status)}</td><td>${collectionLabel(row.collection.status, row.payerScope)}</td>
-    </tr>`).join("");
+    </tr>`).join("")}`,
+    ).join("");
     const totalsHtml = Object.entries(provider.totals).map(([currency, total]: [string, any]) =>
       `<div><span>${currency === "soles" ? "SOLES" : "DÓLARES"}</span><strong>${money(total.quoted, currency)}</strong><small>Pagado proveedor ${money(total.paid, currency)} · pendiente ${money(total.pending, currency)}</small></div>`,
     ).join("");
@@ -518,14 +532,19 @@ export function GestionPagosServicios() {
           <div className="provider-document">
             <header><div><span>DOCUMENTO DE COBRANZA</span><h3>{selectedProvider.providerName}</h3></div><div><strong>{dateFrom}</strong><span>al {dateTo}</span></div></header>
             <div className="provider-document__table"><table><thead><tr><th>Fecha</th><th>File</th><th>Agencia</th><th>Pax</th><th>Servicio</th><th>Costo</th><th>Proveedor</th><th>Cobro del file</th></tr></thead><tbody>
-              {selectedProvider.rows.map((row: any, index: number) => (
+              {groupPaymentServiceSections(selectedProvider.rows).map((section) => (
+                <React.Fragment key={section.key}>
+                  {section.isTicket && <tr className="payment-ticket-section"><td colSpan={8}><strong>{section.rows[0].voucherCode} · Día {section.rows[0].dayNumber} · {section.title}</strong></td></tr>}
+                  {section.rows.map((row: any, index: number) => (
                 <tr key={`${row.quoteId}-${row.serviceId}-${index}`}>
                   <td>{row.serviceDate || "-"}</td><td><strong>{row.voucherCode}</strong><small>{row.quoteTitle}</small></td>
                   <td>{row.agencyName}</td><td>{row.pax}</td>
-                  <td>{row.serviceName}</td><td>{money(row.quotedTotal, row.currency)}</td>
+                  <td>{!section.isTicket && row.serviceName}<TicketPaymentBreakdown row={row} /></td><td>{money(row.quotedTotal, row.currency)}</td>
                   <td><span className={`report-status ${row.requestSummary.status}`}>{statusLabel(row.requestSummary.status)}</span><small>{row.requestSummary.paid > 0 ? `Liquidado ${money(row.requestSummary.paid, row.currency)}` : "Sin egreso liquidado"}</small></td>
                   <td><span className={`report-status ${row.collection.status}`}>{collectionLabel(row.collection.status, row.payerScope)}</span><small>{row.collection.total > 0 ? `${money(row.collection.paid, "dolares")} / ${money(row.collection.total, "dolares")}` : "Sin total comercial"}</small></td>
                 </tr>
+                  ))}
+                </React.Fragment>
               ))}
             </tbody></table></div>
           </div>

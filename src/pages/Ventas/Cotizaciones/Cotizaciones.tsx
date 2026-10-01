@@ -56,6 +56,7 @@ import pasajeroService from "../../../services/pasajeroService";
 import { getAgencyById } from "../../../services/agencyService";
 import AgencyPaymentReportModal from "../../../components/Contabilidad/AgencyPaymentReportModal";
 import VoucherMediaManagerModal from "./components/VoucherMediaManagerModal";
+import PreLiquidacionModal from "./components/PreLiquidacionModal";
 
 // Importar directamente la versión final del componente
 import EdicionCotizacion from "../../../components/Ventas/Cotizaciones/EdicionCotizacion";
@@ -512,6 +513,8 @@ const Cotizaciones = () => {
   // Informativo de pago disponible tanto para Venso principal como para agencias externas.
   const [agencyPaymentCotizacion, setAgencyPaymentCotizacion] = useState(null);
   const [voucherMediaCotizacion, setVoucherMediaCotizacion] = useState(null);
+  const [preLiquidacionCotizacion, setPreLiquidacionCotizacion] = useState(null);
+  const preLiquidacionRequest = useRef(0);
 
   // Dynamic agency selector for every new quotation.
   const [showBusinessTypeModal, setShowBusinessTypeModal] = useState(false);
@@ -2006,6 +2009,17 @@ const Cotizaciones = () => {
     setShowSummaryModal(true);
   };
 
+  const handleShowPreLiquidacion = async (sourceCotizacion) => {
+    const request = ++preLiquidacionRequest.current;
+    try {
+      const quotation = await buildSummaryDataForCotizacion(sourceCotizacion, { skipCache: true });
+      if (request === preLiquidacionRequest.current) setPreLiquidacionCotizacion(quotation);
+    } catch (error) {
+      console.error("No se pudo abrir la preliquidación", error);
+      if (request === preLiquidacionRequest.current) showError("No se pudo cargar la preliquidación. Intenta nuevamente.");
+    }
+  };
+
   // Simplified total calculation using the new structure
   const calculateTotalFinal = (cotizacion) => {
     // Check if the cotizacion object is properly formed
@@ -2805,6 +2819,7 @@ const Cotizaciones = () => {
           postSaleRequestsByCotizacion={postSaleRequestsByCotizacion}
           onDuplicateModel={handleDuplicarModeloWithAuth}
           onSummary={handleShowSummary}
+          onPreLiquidacion={handleShowPreLiquidacion}
           onAgencyPayment={(cotizacion) => setAgencyPaymentCotizacion(cotizacion)}
           onVoucherMedia={(cotizacion) => setVoucherMediaCotizacion(cotizacion)}
           loadSummaryPricingData={buildSummaryDataForCotizacion}
@@ -2886,6 +2901,22 @@ const Cotizaciones = () => {
           uploadedBy={currentSellerDni}
           onChanged={async () => {
             await fetchCotizaciones();
+          }}
+        />
+      )}
+
+      {preLiquidacionCotizacion && (
+        <PreLiquidacionModal
+          isOpen
+          readOnly
+          onClose={() => { preLiquidacionRequest.current += 1; setPreLiquidacionCotizacion(null); }}
+          value={preLiquidacionCotizacion.preliquidacion}
+          quotation={preLiquidacionCotizacion}
+          peopleDetails={preLiquidacionCotizacion.peopleDetails}
+          defaults={{
+            code: preLiquidacionCotizacion.voucher_code || preLiquidacionCotizacion.id || "",
+            program: preLiquidacionCotizacion.titulo || preLiquidacionCotizacion.title || "",
+            agency: preLiquidacionCotizacion.agency_name || preLiquidacionCotizacion.agencia_nombre || "VENSO TOURS",
           }}
         />
       )}

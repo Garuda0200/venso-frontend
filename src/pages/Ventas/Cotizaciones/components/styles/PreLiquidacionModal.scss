@@ -785,6 +785,23 @@
   font-weight: 700;
 }
 
+.preliq__fields { border: 0; padding: 0; margin: 0; min-width: 0; }
+.preliq__daily-summary {
+  width: 100%; border-collapse: collapse; font-size: 12px;
+  th, td { padding: 10px 8px; border-bottom: 1px solid #eee5eb; text-align: left; }
+  th:last-child, td:last-child { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  thead { color: #776372; font-size: 10px; }
+  tfoot { background: #fff1f8; color: #b00056; }
+}
+.preliq-doc__liquidation--days {
+  th:first-child, td:first-child { width: 42px; }
+  th:nth-child(2), td:nth-child(2) { width: auto; text-align: left; white-space: normal; }
+  th:last-child, td:last-child { width: 125px; text-align: right; white-space: nowrap; }
+  .preliq-doc__total-row td:first-child { text-align: right; }
+  .preliq-doc__liquidation-title th { width: auto; text-align: center; }
+  .preliq-doc__total-row td:last-child { background: #fff0f7; border: 1px solid #111; }
+}
+
 @media (max-width: 1240px) {
   .preliq__workspace {
     grid-template-columns: minmax(440px, 0.9fr) minmax(600px, 1.1fr);

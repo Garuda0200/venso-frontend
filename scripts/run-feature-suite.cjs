@@ -9,6 +9,8 @@ const testSuites = [
   {
     name: "shared infrastructure",
     tests: [
+      "src/components/common/__tests__/backendStatusBanner.test.js",
+      "src/tests/envExamples.test.js",
       "src/utils/__tests__/csrfToken.test.js",
       "src/utils/__tests__/idempotency.test.js",
       "src/utils/__tests__/packageFeeUtils.test.js",
@@ -20,6 +22,7 @@ const testSuites = [
   {
     name: "ventas / cotizaciones",
     tests: [
+      "src/pages/Ventas/Cotizaciones/utils/__tests__/preliquidacionQuotation.test.js",
       "src/pages/Ventas/Cotizaciones/utils/__tests__/cotizacionIgv.test.js",
       "src/pages/Ventas/Cotizaciones/utils/__tests__/cotizacionListState.test.js",
       "src/pages/Ventas/Cotizaciones/utils/__tests__/postSaleEditState.test.js",
@@ -29,6 +32,8 @@ const testSuites = [
       "src/components/Ventas/Cotizaciones/EdicionCotizacion/components/DaysEditor/utils/__tests__/endosePricingPolicy.test.js",
       "src/components/Ventas/Cotizaciones/EdicionCotizacion/components/DaysEditor/utils/__tests__/ticketChildPricing.test.js",
       "src/components/Ventas/Cotizaciones/EdicionCotizacion/components/ServicePicker/utils/__tests__/tariffContext.test.js",
+      "src/components/Ventas/Cotizaciones/EdicionCotizacion/components/ServicePicker/utils/__tests__/catalogueFilters.test.js",
+      "src/components/Ventas/Cotizaciones/EdicionCotizacion/components/DaysEditor/utils/__tests__/endoseCapacityFlow.test.js",
       "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/editorRenderOptimization.test.js",
       "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/externalChildPricing.test.js",
       "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/groupedHotelPersistence.test.js",
@@ -38,11 +43,14 @@ const testSuites = [
       "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/ticketTariffGrouping.test.js",
       "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/vensoPdfCanvaDesign.test.js",
       "src/pages/Ventas/VouchersVenta/utils/__tests__/voucherFinancials.test.js",
+      "src/pages/Ventas/VouchersVenta/utils/__tests__/salesPdfPresentation.test.js",
+      "src/pages/Ventas/VouchersVenta/utils/__tests__/voucherPdfLayout.test.js",
     ],
   },
   {
     name: "reservas",
     tests: [
+      "src/pages/Reservas/Servicios/utils/__tests__/cataloguePresentation.test.js",
       "src/pages/Reservas/Calendario/utils/__tests__/bibliaActivityMapper.test.js",
       "src/pages/Reservas/Calendario/utils/__tests__/bibliaEditableValueSource.test.js",
       "src/pages/Reservas/Calendario/utils/__tests__/bibliaFileLinkPlacementSource.test.js",
@@ -60,6 +68,7 @@ const testSuites = [
     name: "contabilidad e integración",
     tests: [
       "src/pages/Contabilidad/Reportes/utils/__tests__/paymentReportUtils.test.js",
+      "src/pages/Contabilidad/Reportes/utils/__tests__/ticketPaymentPresentation.test.js",
       "src/tests/magicParityVenso.test.js",
     ],
   },

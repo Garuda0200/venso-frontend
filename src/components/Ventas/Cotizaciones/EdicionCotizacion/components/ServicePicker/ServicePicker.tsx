@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
   FaSearch,
   FaFilter,
@@ -13,6 +13,8 @@ import { MdClose } from "react-icons/md";
 import ServiceCategoryButtons from "./components/ServiceCategoryButtons/ServiceCategoryButtons";
 import ChildServicePanel from "./components/ChildServicePanel/ChildServicePanel";
 import ExtraServiceModal from "./components/ExtraServiceModal/ExtraServiceModal";
+import ServicePickerFilters from "./components/ServicePickerFilters";
+import { filterCatalogue, quotationPickerPax } from "./utils/catalogueFilters";
 
 import { createAxiosInstance } from "../../../../../../utils/axiosInstance";
 import { getParentId, getServiceDisplayName } from "./utils/serviceTypes";
@@ -25,6 +27,8 @@ import useServicePickerCache, {
 } from "./hooks/useServicePickerCache";
 
 import "./ServicePicker.scss";
+import "./components/ServicePickerFilters.scss";
+import "./components/TrainPickerDetails.scss";
 
 const CURRENT_TARIFF_YEAR = new Date().getFullYear();
 const TARIFF_YEAR_OPTIONS = Array.from(
@@ -157,7 +161,20 @@ const ServicePicker = ({
   const [loading, setLoading] = useState({});
   const [error, setError] = useState({});
   const [childSearchTerm, setChildSearchTerm] = useState("");
-  const [passengerCapacity, setPassengerCapacity] = useState(0);
+  const quotationPax = quotationPickerPax(peopleDetails, passengerSelection, totalPassengers);
+  const [passengerCapacity, setPassengerCapacity] = useState(() => quotationPax);
+  const [providerIds, setProviderIds] = useState<string[]>([]);
+  const [catalogueFacetFilters, setCatalogueFacetFilters] = useState<Record<string, string>>({});
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => searchInputRef.current?.focus());
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+  useEffect(() => {
+    setProviderIds([]);
+    setCatalogueFacetFilters({});
+    setPassengerCapacity(quotationPax);
+  }, [activeCategory, quotationPax]);
   const [tariffYear, setTariffYear] = useState(CURRENT_TARIFF_YEAR);
 
   // Hook de cache para servicios
@@ -292,6 +309,7 @@ const ServicePicker = ({
     filters,
     filteredChildServices,
     updateFilters,
+    clearFilters,
     activeFilterCount,
     // Props para filtros del itinerario
     itineraryMatchingServices,
@@ -306,6 +324,10 @@ const ServicePicker = ({
     platform,
     [],
   );
+
+  const displayedChildServices = useMemo(() => filterCatalogue(
+    filteredChildServices, activeCategory, currentParentServices, providerIds, catalogueFacetFilters,
+  ), [filteredChildServices, activeCategory, currentParentServices, providerIds, catalogueFacetFilters]);
 
   // SIMPLIFICADO: Ya no necesitamos filtro adicional porque useUnifiedFilters maneja todo
   // El problema era que estábamos filtrando dos veces y el segundo filtro no tenía los datos correctos
@@ -851,8 +873,7 @@ const ServicePicker = ({
     }
   };
 
-  // ServicePicker de Venso no expone un selector de proveedores. Los datos
-  // padre solo se conservan internamente para reconstruir el servicio elegido.
+  // Provider filters only narrow the catalogue; reconstruct the complete parent on selection.
   const selectedParent = null;
 
   // FUNCIÓN PARA MANEJAR SELECCIÓN DE TRENES CON LÓGICA IDA-VUELTA Y BIMODAL
@@ -1600,9 +1621,9 @@ const ServicePicker = ({
         cleanChildService =
           service.movilidad ||
           service.habitacion ||
+          service.tour ||
           service.guia ||
           service.endose ||
-          service.tour ||
           service.vagon ||
           service;
       }
@@ -1786,6 +1807,7 @@ const ServicePicker = ({
               <label htmlFor="service-picker-tariff-year">Año</label>
               <select
                 id="service-picker-tariff-year"
+                aria-label="Año de las tarifas"
                 value={tariffYear}
                 onChange={(event) => {
                   setTariffYear(Number(event.target.value));
@@ -1809,6 +1831,9 @@ const ServicePicker = ({
               <div className="search-box-compact">
                 <FaSearch className="search-icon" />
                 <input
+                  ref={searchInputRef}
+                  autoFocus
+                  aria-label="Buscar servicios"
                   type="text"
                   className="search-input-compact"
                   placeholder={`Buscar ${getServiceDisplayName(activeCategory).toLowerCase()}...`}
@@ -1984,6 +2009,26 @@ const ServicePicker = ({
         <div className="service-picker-scrollable-content">
           {/* Área Principal de Servicios */}
           <div className="services-main-area">
+            <ServicePickerFilters
+              key={activeCategory}
+              category={activeCategory}
+              parents={currentParentServices}
+              services={currentChildServices}
+              providerIds={providerIds}
+              facets={catalogueFacetFilters}
+              capacity={passengerCapacity}
+              quotationPax={quotationPax}
+              onProvidersChange={setProviderIds}
+              onFacetsChange={setCatalogueFacetFilters}
+              onCapacityChange={setPassengerCapacity}
+              onReset={() => {
+                setProviderIds([]);
+                setCatalogueFacetFilters({});
+                setPassengerCapacity(quotationPax);
+                setChildSearchTerm("");
+                clearFilters();
+              }}
+            />
             {/* Panel de Servicios Hijo + Tarifas */}
             <div className="child-services-section">
               <div className="section-header">
@@ -2005,7 +2050,7 @@ const ServicePicker = ({
                     childServices[`${activeCategory}_all`]?.length > 0)) ? (
                   <>
                     <ChildServicePanel
-                      services={filteredChildServices}
+                      services={displayedChildServices}
                       parentService={null}
                       selectedParents={[]}
                       category={currentCategory}

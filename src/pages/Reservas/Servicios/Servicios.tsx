@@ -21,6 +21,7 @@ import "./components/common/ServiciosForms.scss";
 import "./components/common/ServiciosFilters.scss";
 import "./components/common/ServiciosPremiumLayout.scss";
 import "./components/common/ServiciosDomainCards.scss";
+import "./components/common/ServiciosWorkspace.scss";
 
 import {
   FaBuilding,
@@ -217,7 +218,7 @@ const Servicios = () => {
           <span className="services-agency-hero__eyebrow">
             {activeEntity ? `CATÁLOGO / ${activeEntity.name.toUpperCase()}` : "CATÁLOGOS VENSO"}
           </span>
-          <h1>{activeEntity?.name || "Servicios por agencia"}</h1>
+          <h1>{activeEntity?.name || "Servicios y tarifas"}</h1>
           <p>
             {activeEntity
               ? `${activeEntity.description} · ${selectedAgency?.name || "Catálogo activo"}`
@@ -256,45 +257,50 @@ const Servicios = () => {
 
       {agencyError && <div className="services-agency-error">{agencyError}</div>}
 
-      {activeView && (
-        <div className="tabs-header-premium tabs-header-premium--focused">
-          <div className="tabs-wrapper">
-            {entidades.map((entity) => (
-              <button
-                type="button"
-                key={entity.id}
-                className={`tab-item-premium ${activeView === entity.id ? "active" : ""}`}
-                onClick={() => setActiveView(entity.id)}
-              >
-                <span className="tab-icon">{entity.icon}</span>
-                <span className="tab-text">{entity.name}</span>
-              </button>
-            ))}
-          </div>
-          <button
-            className="exit-btn"
-            onClick={() => setActiveView(null)}
-            title="Volver al catálogo"
-          >
-            <FaTimes /> <span>Cerrar</span>
-          </button>
-        </div>
-      )}
-
-      <div className="main-content-servicios">
-        {agencyLoading ? (
-          <div className="services-agency-loading">Preparando catálogos por agencia…</div>
-        ) : !selectedAgencyId ? (
-          <AgencyManager
-            selectedAgencyId={selectedAgencyId}
-            onSelectAgency={selectAgency}
-            onAgenciesChanged={handleAgenciesChanged}
-          />
-        ) : !activeView ? (
-          <EntidadIconView entidades={entidades} onSelectEntidad={setActiveView} />
-        ) : (
-          <div className="entity-view-wrapper">{renderActiveView()}</div>
+      <div className={`services-workspace ${activeView ? "services-workspace--focused" : ""}`}>
+        {activeView && (
+          <nav className="tabs-header-premium tabs-header-premium--focused" aria-label="Catálogos de servicios">
+            <span className="services-navigation-label">CATÁLOGOS</span>
+            <div className="tabs-wrapper">
+              {entidades.map((entity) => (
+                <button
+                  type="button"
+                  key={entity.id}
+                  className={`tab-item-premium ${activeView === entity.id ? "active" : ""}`}
+                  onClick={() => setActiveView(entity.id)}
+                  aria-current={activeView === entity.id ? "page" : undefined}
+                >
+                  <span className="tab-icon">{entity.icon}</span>
+                  <span className="tab-text">{entity.name}</span>
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="exit-btn"
+              onClick={() => setActiveView(null)}
+              title="Volver al catálogo"
+            >
+              <FaTimes /> <span>Ver todos</span>
+            </button>
+          </nav>
         )}
+
+        <div className="main-content-servicios">
+          {agencyLoading ? (
+            <div className="services-agency-loading">Preparando catálogos por agencia…</div>
+          ) : !selectedAgencyId ? (
+            <AgencyManager
+              selectedAgencyId={selectedAgencyId}
+              onSelectAgency={selectAgency}
+              onAgenciesChanged={handleAgenciesChanged}
+            />
+          ) : !activeView ? (
+            <EntidadIconView entidades={entidades} onSelectEntidad={setActiveView} />
+          ) : (
+            <div className="entity-view-wrapper">{renderActiveView()}</div>
+          )}
+        </div>
       </div>
     </div>
   );

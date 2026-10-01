@@ -1,0 +1,5 @@
+.payment-ticket-section td { background:var(--color-surface-accent); color:var(--color-primary-dark); border-left:3px solid var(--color-primary); }
+.ticket-payment-breakdown { display:grid; gap:.35rem; margin:.4rem 0; font-size:.75rem; }
+.ticket-payment-breakdown__tariff { display:flex; flex-wrap:wrap; align-items:center; gap:.35rem .65rem; padding:.35rem .5rem; border-left:2px solid var(--color-brand-border); background:var(--color-bg-secondary); }
+.ticket-payment-breakdown__tariff > span:first-child { flex:1 1 150px; }
+.ticket-payment-breakdown__tariff > strong { white-space:nowrap; }

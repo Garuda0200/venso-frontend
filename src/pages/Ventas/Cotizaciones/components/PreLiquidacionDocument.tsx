@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import PreLiquidacionDailyTable from "./PreLiquidacionDailyTable";
+import { paginatePreLiquidacionRows } from "../utils/preliquidacionPagination";
 import {
   calculatePreLiquidacionTotal,
   normalizePreLiquidacion,
@@ -19,6 +21,7 @@ const MONTHS_ES = [
   "NOV",
   "DIC",
 ];
+const useDocumentLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 const parseDateParts = (value: unknown) => {
   const raw = String(value || "").trim();
@@ -79,14 +82,43 @@ const PreLiquidacionDocument = React.forwardRef<HTMLDivElement, PreLiquidacionDo
     const total = calculatePreLiquidacionTotal(normalized);
     const totalMoney = moneyParts(total, normalized.currency);
     const notes = splitLines(normalized.notes);
+    const rootRef = useRef<HTMLDivElement | null>(null);
+    const [dailyPages, setDailyPages] = useState<number[][] | null>(null);
+    const days = normalized.quotationSummary?.days || [];
+    const dataKey = JSON.stringify(normalized);
+    const [measuredKey, setMeasuredKey] = useState("");
+    const pages = measuredKey === dataKey && dailyPages
+      ? dailyPages
+      : [days.map((_, index) => index)];
+    const measureDays = () => {
+      const first = rootRef.current?.querySelector<HTMLElement>(".preliq-document-page--one");
+      const table = first?.querySelector<HTMLElement>(".preliq-doc__liquidation--days");
+      const head = table?.querySelector("thead");
+      const last = first?.querySelector(".preliq-doc__deadline");
+      if (!first || !table || !head || !last || !days.length) return;
+      const rowHeights = new Map(Array.from(rootRef.current!.querySelectorAll<HTMLElement>("[data-preliq-day]"))
+        .map((row) => [row.dataset.preliqDay, row.getBoundingClientRect().height]));
+      const tail = last.getBoundingClientRect().bottom - table.getBoundingClientRect().bottom;
+      // Reserve the total row on every page so the last page always has room.
+      const firstBudget = first.getBoundingClientRect().bottom - 36 - head.getBoundingClientRect().bottom - tail - 28;
+      const next = paginatePreLiquidacionRows(days.map((day) => rowHeights.get(day.id) || 18), firstBudget, 860);
+      setDailyPages((current) => JSON.stringify(current) === JSON.stringify(next) ? current : next);
+      setMeasuredKey(dataKey);
+    };
+    useDocumentLayoutEffect(measureDays, [dataKey]);
 
     return (
-      <div className="preliq-document" ref={ref}>
+      <div className="preliq-document" ref={(element) => {
+        rootRef.current = element;
+        if (typeof ref === "function") ref(element);
+        else if (ref) ref.current = element;
+      }}>
         <section className="preliq-document-page preliq-document-page--one" data-preliquidacion-page="1">
           <img
             className="preliq-doc__logo"
             src="/brand/logo-principal-color.webp"
             alt="Venso Tours"
+            onLoad={measureDays}
           />
 
           <h1>LIQUIDACIÓN:</h1>
@@ -142,7 +174,9 @@ const PreLiquidacionDocument = React.forwardRef<HTMLDivElement, PreLiquidacionDo
             <LabeledBlock label="NO INCLUYE"><div className="preliq-doc__multiline">{normalized.notIncluded}</div></LabeledBlock>
           </div>
 
-          <table className="preliq-doc__liquidation">
+          {normalized.quotationSummary ? (
+            <PreLiquidacionDailyTable days={pages[0].map((index) => days[index])} total={total} showTotal={pages.length === 1} empty={!days.length} />
+          ) : <table className="preliq-doc__liquidation">
             <thead>
               <tr className="preliq-doc__liquidation-title"><th colSpan={4}>LIQUIDACION</th></tr>
               <tr>
@@ -175,7 +209,7 @@ const PreLiquidacionDocument = React.forwardRef<HTMLDivElement, PreLiquidacionDo
                 <td>{totalMoney.symbol} {totalMoney.amount} {normalized.currency}</td>
               </tr>
             </tbody>
-          </table>
+          </table>}
 
           <div className="preliq-doc__notices">
             {notes.map((line, index) => <span key={`${line}-${index}`}>{line}</span>)}
@@ -186,7 +220,15 @@ const PreLiquidacionDocument = React.forwardRef<HTMLDivElement, PreLiquidacionDo
           </div>
         </section>
 
-        <section className="preliq-document-page preliq-document-page--two" data-preliquidacion-page="2">
+        {pages.slice(1).map((indices, pageIndex) => (
+          <section key={pageIndex} className="preliq-document-page preliq-document-page--one" data-preliquidacion-page={pageIndex + 2}>
+            <img className="preliq-doc__logo" src="/brand/logo-principal-color.webp" alt="Venso Tours" />
+            <h1>PRELIQUIDACIÓN · {normalized.code}</h1>
+            <PreLiquidacionDailyTable days={indices.map((index) => days[index])} total={total} showTotal={pageIndex === pages.length - 2} />
+          </section>
+        ))}
+
+        <section className="preliq-document-page preliq-document-page--two" data-preliquidacion-page={pages.length + 1}>
           <img
             className="preliq-doc__logo"
             src="/brand/logo-principal-color.webp"

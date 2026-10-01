@@ -69,5 +69,4 @@ yarn.lock
 /fly.toml
 /nginx.conf
 /docs/DEPLOY_FLY_FRONTEND.md
-/.env.example
 /*.zip

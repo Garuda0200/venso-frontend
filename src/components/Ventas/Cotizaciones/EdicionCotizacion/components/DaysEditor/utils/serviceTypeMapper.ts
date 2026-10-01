@@ -83,7 +83,7 @@ export const PARENT_CHILD_SERVICES = {
     childIdField: "id_tipotour",
     parentNameField: "nombre_agencia",
     childTypeField: "tipo_guiado",
-    hasCapacity: false,
+    hasCapacity: true,
     hasIGV: false,
     parentFields: ["nombre_agencia", "tipo_tour", "zona"],
     childFields: ["tipo_guiado", "idioma", "observaciones", "capacidad", "estado"],

@@ -6755,9 +6755,10 @@ export function EdicionCotizacion({
         value={preliquidacion}
         onSave={setPreliquidacion}
         peopleDetails={peopleDetails}
+        quotation={cotizacionPreviewData}
         defaults={{
-          code: editingCotizacion?.id || "",
-          program: formData?.titulo || editingCotizacion?.titulo || "",
+          code: voucherCode.trim() || editingCotizacion?.id || "",
+          program: titulo || editingCotizacion?.titulo || "",
           agency: effectiveAgencyName,
           counter: currentUserFullName,
         }}

@@ -48,6 +48,7 @@ import {
   serviceNeedsQuotationExchangeRate,
 } from "../../../../utils/serviceExchangeRate";
 import { getServicePricingSnapshot } from "../../../../utils/servicePricingRuntime";
+import { getTourCapacity } from "../../../../utils/unifiedServiceManager";
 import {
   formatTicketPassengerLabel,
   getTicketEntrada,
@@ -384,10 +385,11 @@ const SortableService = React.memo(({
   // Tickets with procedencia use an explicit nationality filter; when it returns
   // zero passengers, keep the count at 0 instead of falling back to all pax.
   const childCount = childIds.length;
+  const tourCapacity = serviceType === "endoses" ? getTourCapacity(service) : null;
   const adultCount =
     adultIds.length > 0
       ? adultIds.length
-      : ticketProcedenciaFilter
+      : ticketProcedenciaFilter || (tourCapacity != null && Array.isArray(service.assignedPassengerIds))
         ? 0
         : Math.max(0, totalPassengers - childCount);
   const childPriceMap = beneficiarySnapshot.childPriceMap;
@@ -724,13 +726,16 @@ const SortableService = React.memo(({
     );
   }
 
-  // ── Transport capacity conflict check ──
+  // Capacity is checked against this service's beneficiaries, not the whole quotation.
   const isTransport = serviceType === "transportes";
   const vehicleCapacity = isTransport
     ? parseInt(service?.childService?.nro_pasajeros) || 0
-    : 0;
+    : tourCapacity || 0;
+  const occupiedSeats = Array.isArray(service.assignedPassengerIds)
+    ? new Set(service.assignedPassengerIds).size
+    : beneficiarySnapshot.selectedIds.length || totalPassengers;
   const hasCapacityConflict =
-    isTransport && vehicleCapacity > 0 && vehicleCapacity < totalPassengers;
+    vehicleCapacity > 0 && vehicleCapacity < occupiedSeats;
 
   return (
     <div
@@ -739,7 +744,7 @@ const SortableService = React.memo(({
       className={`sr sr--${serviceType} ${hideServiceTotal ? "sr--no-total" : ""} ${isDragging ? "sr--dragging" : ""} ${isReturnOnly ? "sr--return" : ""} ${hasCapacityConflict ? "sr--capacity-warning" : ""}`}
       title={
         hasCapacityConflict
-          ? ` Capacidad: ${vehicleCapacity} pax — Se requieren ${totalPassengers}`
+          ? `Capacidad: ${vehicleCapacity} pax — Se requieren ${occupiedSeats}`
           : undefined
       }
     >
@@ -811,6 +816,7 @@ const SortableService = React.memo(({
         </div>
 
         <div className="sr__pax">
+          {tourCapacity != null && <span className="sr__pax-tag" title="Capacidad máxima del tour; incluye adultos y niños"><MdGroup /> Máx. {tourCapacity}</span>}
           {adultCount > 0 && (
             <span
               className="sr__pax-tag sr__pax-tag--adult"

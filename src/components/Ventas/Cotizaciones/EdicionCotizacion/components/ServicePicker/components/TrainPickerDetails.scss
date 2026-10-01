@@ -1,0 +1,8 @@
+.venso-train-details {
+  display: flex; flex-direction: column; gap: 9px; width: 100%; min-width: 0;
+  &__provider { color: #b00059; font-size: 11px; }
+  &__route { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; color: #31212c; font-size: 12px; font-weight: 600; svg { color: #e60072; } }
+  &__schedule { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; font-size: 11px; color: #786773; strong { color: #211820; margin-left: 4px; } }
+  &__tags { display: flex; flex-wrap: wrap; gap: 6px; > span { display: inline-flex; align-items: center; gap: 5px; border: 1px solid #f3d8e5; background: #fff4f9; color: #8e174f; border-radius: 7px; padding: 4px 7px; font-size: 10px; } }
+  &__extras { border-top: 1px solid #f0e6eb; padding-top: 7px; font-size: 11px; color: #6b5662; overflow-wrap: anywhere; }
+}

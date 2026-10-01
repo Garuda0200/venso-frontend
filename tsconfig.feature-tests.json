@@ -2,6 +2,7 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "CommonJS",
+    "jsx": "react-jsx",
     "moduleResolution": "Node",
     "rootDir": ".",
     "outDir": ".tmp-feature-tests",
@@ -16,6 +17,15 @@
     ]
   },
   "include": [
+    "src/tests/envExamples.test.ts",
+    "src/components/Ventas/Cotizaciones/EdicionCotizacion/components/ServicePicker/utils/__tests__/catalogueFilters.test.tsx",
+    "src/components/Ventas/Cotizaciones/EdicionCotizacion/components/DaysEditor/utils/__tests__/endoseCapacityFlow.test.ts",
+    "src/pages/Ventas/Cotizaciones/utils/__tests__/preliquidacionQuotation.test.tsx",
+    "src/pages/Reservas/Servicios/utils/__tests__/cataloguePresentation.test.tsx",
+    "src/pages/Ventas/VouchersVenta/utils/__tests__/voucherPdfLayout.test.ts",
+    "src/components/common/__tests__/backendStatusBanner.test.tsx",
+    "src/pages/Contabilidad/Reportes/utils/__tests__/ticketPaymentPresentation.test.ts",
+    "src/pages/Ventas/VouchersVenta/utils/__tests__/salesPdfPresentation.test.ts",
     "src/pages/Ventas/Cotizaciones/utils/__tests__/postSaleEditState.test.ts",
     "src/pages/Ventas/Cotizaciones/utils/__tests__/cotizacionIgv.test.ts",
     "src/pages/Ventas/Cotizaciones/utils/__tests__/cotizacionListState.test.ts",

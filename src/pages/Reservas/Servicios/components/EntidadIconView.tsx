@@ -1,16 +1,24 @@
-const EntidadIconView = ({ entidades, onSelectEntidad }) => {
+import type { ReactNode } from "react";
+
+interface EntidadIconViewProps {
+  entidades: Array<{ id: string; name: string; description: string; icon: ReactNode }>;
+  onSelectEntidad: (id: string) => void;
+}
+
+const EntidadIconView = ({ entidades, onSelectEntidad }: EntidadIconViewProps) => {
   return (
     <div className="entity-grid">
       {entidades.map((entidad) => (
-        <div
+        <button
+          type="button"
           key={entidad.id}
           className="entity-card"
           onClick={() => onSelectEntidad(entidad.id)}
         >
-          <div className="icon-container">{entidad.icon}</div>
-          <h3>{entidad.name}</h3>
-          <p>{entidad.description}</p>
-        </div>
+          <span className="icon-container" aria-hidden="true">{entidad.icon}</span>
+          <span className="entity-card__copy"><strong>{entidad.name}</strong><span>{entidad.description}</span></span>
+          <span className="entity-card__arrow" aria-hidden="true">→</span>
+        </button>
       ))}
     </div>
   );

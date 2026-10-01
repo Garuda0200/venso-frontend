@@ -1,0 +1,23 @@
+.venso-picker-filters {
+  flex: 0 0 250px; min-width: 0; overflow: auto; padding: 18px; background: #fff;
+  border-right: 1px solid #eadfe5; color: #211820; display: flex; flex-direction: column; gap: 16px;
+  header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  h3 { margin: 0; font-size: 14px; display: flex; align-items: center; gap: 8px; svg { color: #ff0080; } }
+  button { color: #b00059; background: #fff0f7; border: 1px solid #ffd2e6; border-radius: 8px; padding: 6px 8px; cursor: pointer; font-size: 11px; }
+  &__toggle { display: none; }
+  &__body { display: flex; flex-direction: column; gap: 16px; > label { display: flex; flex-direction: column; gap: 7px; font-size: 12px; font-weight: 600; } }
+  select, input[type="number"] { min-width: 0; width: 100%; background: #faf7f9; color: #211820; border: 1px solid #e6dce2; border-radius: 9px; padding: 9px; font: inherit; }
+  &__capacity div { display: flex; align-items: center; gap: 8px; }
+  fieldset { border: 0; padding: 0; margin: 0; }
+  legend { font-size: 12px; font-weight: 700; margin-bottom: 10px; }
+  &__provider { display: flex; align-items: start; gap: 8px; padding: 8px 0; font-size: 12px; cursor: pointer; overflow-wrap: anywhere; input { accent-color: #ff0080; margin-top: 2px; flex-shrink: 0; } }
+  :focus-visible { outline: 2px solid #ff0080; outline-offset: 2px; }
+}
+@media (max-width: 1200px) {
+  .venso-picker-filters { flex-basis: auto; max-height: 230px; flex-shrink: 0; border-right: 0; border-bottom: 1px solid #eadfe5;
+    &__toggle { display: inline-block; }
+    &__body { display: none; &.is-expanded { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    fieldset { grid-column: 1 / -1; display: flex; gap: 12px; flex-wrap: wrap; }
+  }
+}
+@media (max-width: 600px) { .venso-picker-filters { padding: 12px; &__body.is-expanded { grid-template-columns: repeat(2, minmax(0, 1fr)); } } }

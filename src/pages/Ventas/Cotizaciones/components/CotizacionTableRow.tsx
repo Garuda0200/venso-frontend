@@ -64,6 +64,7 @@ const CotizacionTableRow = ({
   onDuplicateModel,
   onSummary,
   onAgencyPayment,
+  onPreLiquidacion,
   onVoucherMedia,
   onViewServices,
   onVoucher,
@@ -208,6 +209,10 @@ const CotizacionTableRow = ({
   }, []);
 
   const actionItems: ExpandableActionItem[] = [];
+
+  if (onPreLiquidacion) {
+    actionItems.push({ key: "preliquidacion", label: "Ver preliquidación", icon: <MdReceiptLong />, onClick: onPreLiquidacion, tone: "info" });
+  }
 
   if (isInactive) {
     if (onSummary) {

@@ -20,6 +20,12 @@ import {
   roundMoney,
 } from "../../pages/Contabilidad/Reportes/utils/paymentReportUtils";
 import "./AgencyPaymentReportModal.scss";
+import TicketPaymentBreakdown from "./shared/TicketPaymentBreakdown";
+import {
+  groupPaymentServiceSections,
+  ticketPaymentDetailText,
+  ticketPaymentTariffs,
+} from "../../pages/Contabilidad/Reportes/utils/ticketPaymentPresentation";
 
 interface AgencyPaymentReportModalProps {
   isOpen: boolean;
@@ -54,6 +60,10 @@ const escapeHtml = (value: unknown) =>
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+
+const reportServiceHtml = (row: any, showName = true) =>
+  `${showName ? `<strong>${escapeHtml(row.serviceName)}</strong>` : ""}${ticketPaymentDetailText(row)
+    .split("\n").filter(Boolean).map((line) => `<small>${escapeHtml(line)}</small>`).join("")}`;
 
 const getPrimaryColor = () => {
   if (typeof window === "undefined") return "#ff007e";
@@ -334,9 +344,9 @@ const AgencyPaymentReportModal: React.FC<AgencyPaymentReportModalProps> = ({
         agency: agency?.name || "Agencia",
         pax: row.pax,
         provider: row.providerName,
-        service: row.serviceName,
+        service: [row.serviceName, ticketPaymentDetailText(row)].filter(Boolean).join("\n"),
         currency: row.currency === "soles" ? "PEN" : "USD",
-        unitAgency: row.unitWithCommission,
+        unitAgency: ticketPaymentTariffs(row).length > 1 ? "" : row.unitWithCommission,
         total: row.totalWithCommission,
       });
     });
@@ -376,18 +386,28 @@ const AgencyPaymentReportModal: React.FC<AgencyPaymentReportModalProps> = ({
       header.values = ["SERVICIO", "PAX", "MONEDA", "PRECIO / PAX AGENCIA", "TOTAL AGENCIA"];
       styleExcelHeader(header, primaryArgb);
       cursor += 1;
-      dayGroup.rows.forEach((row) => {
+      groupPaymentServiceSections(dayGroup.rows).forEach((section) => {
+        if (section.isTicket) {
+          sheet.mergeCells(`A${cursor}:E${cursor}`);
+          sheet.getCell(`A${cursor}`).value = section.title;
+          sheet.getCell(`A${cursor}`).font = { bold: true, color: { argb: primaryArgb } };
+          cursor += 1;
+        }
+        section.rows.forEach((row) => {
         const current = sheet.getRow(cursor);
         current.values = [
-          row.serviceName,
+          [section.isTicket ? "" : row.serviceName, ticketPaymentDetailText(row)].filter(Boolean).join("\n"),
           row.pax,
           row.currency === "soles" ? "PEN" : "USD",
-          row.unitWithCommission,
+          ticketPaymentTariffs(row).length > 1 ? "" : row.unitWithCommission,
           row.totalWithCommission,
         ];
         current.getCell(4).numFmt = "#,##0";
         current.getCell(5).numFmt = "#,##0";
+        current.getCell(1).alignment = { wrapText: true, vertical: "middle" };
+        current.height = Math.max(24, ticketPaymentTariffs(row).length * 30);
         cursor += 1;
+        });
       });
       cursor += 1;
     });
@@ -509,7 +529,15 @@ const AgencyPaymentReportModal: React.FC<AgencyPaymentReportModalProps> = ({
 
     const leadPax = getLeadPaxLabel(quote, reportCode);
     let rowNumber = 13;
-    provider.rows.forEach((row: any) => {
+    provider.dayGroups.forEach((dayGroup: any) => {
+      groupPaymentServiceSections(dayGroup.rows).forEach((section) => {
+        if (section.isTicket) {
+          sheet.mergeCells(`B${rowNumber}:I${rowNumber}`);
+          sheet.getCell(`B${rowNumber}`).value = `Día ${dayGroup.dayNumber} · ${section.title}`;
+          sheet.getCell(`B${rowNumber}`).font = { bold: true, color: { argb: primaryArgb } };
+          rowNumber += 1;
+        }
+        section.rows.forEach((row: any) => {
       const excelRow = sheet.getRow(rowNumber++);
       excelRow.values = [
         "",
@@ -517,7 +545,7 @@ const AgencyPaymentReportModal: React.FC<AgencyPaymentReportModalProps> = ({
         reportCode,
         row.pax,
         leadPax,
-        `Día ${row.dayNumber} · ${row.serviceName}`,
+        [section.isTicket ? "" : `Día ${row.dayNumber} · ${row.serviceName}`, ticketPaymentDetailText(row)].filter(Boolean).join("\n"),
         row.currency === "soles" ? row.totalWithCommission : "",
         row.currency === "dolares" ? row.totalWithCommission : "",
         requestStatusLabel(row.requestSummary.status),
@@ -534,6 +562,9 @@ const AgencyPaymentReportModal: React.FC<AgencyPaymentReportModalProps> = ({
       }
       excelRow.getCell(7).numFmt = '"S/" #,##0';
       excelRow.getCell(8).numFmt = '"US$" #,##0';
+      excelRow.height = Math.max(25, ticketPaymentTariffs(row).length * 38);
+        });
+      });
     });
 
     const totalRow = sheet.getRow(rowNumber + 1);
@@ -590,10 +621,10 @@ const AgencyPaymentReportModal: React.FC<AgencyPaymentReportModalProps> = ({
     const daysHtml = agencyDayGroups
       .map(
         (dayGroup) => `<section class="day"><div class="day-head"><strong>DÍA ${dayGroup.dayNumber}</strong><span>${escapeHtml(dayGroup.dayTitle)} · ${escapeHtml(formatDisplayDate(dayGroup.serviceDate))}</span></div>
-          <table><thead><tr><th>SERVICIO</th><th>PAX</th><th>MONEDA</th><th>PRECIO / PAX AGENCIA</th><th>TOTAL AGENCIA</th></tr></thead><tbody>${dayGroup.rows
-            .map(
-              (row) => `<tr><td><strong>${escapeHtml(row.serviceName)}</strong><small>${escapeHtml(row.providerName)}</small></td><td>${row.pax}</td><td>${row.currency === "soles" ? "PEN" : "USD"}</td><td>${moneyLabel(row.unitWithCommission, row.currency)}</td><td><strong>${moneyLabel(row.totalWithCommission, row.currency)}</strong></td></tr>`,
-            )
+          <table><thead><tr><th>SERVICIO</th><th>PAX</th><th>MONEDA</th><th>PRECIO / PAX AGENCIA</th><th>TOTAL AGENCIA</th></tr></thead><tbody>${groupPaymentServiceSections(dayGroup.rows)
+            .map((section) => `${section.isTicket ? `<tr><td colspan="5"><strong>${escapeHtml(section.title)}</strong></td></tr>` : ""}${section.rows.map(
+              (row) => `<tr><td>${reportServiceHtml(row, !section.isTicket)}<small>${escapeHtml(row.providerName)}</small></td><td>${row.pax}</td><td>${row.currency === "soles" ? "PEN" : "USD"}</td><td>${ticketPaymentTariffs(row).length > 1 ? "Tarifas por pasajero" : moneyLabel(row.unitWithCommission, row.currency)}</td><td><strong>${moneyLabel(row.totalWithCommission, row.currency)}</strong></td></tr>`,
+            ).join("")}`)
             .join("")}</tbody></table></section>`,
       )
       .join("");
@@ -624,10 +655,12 @@ const AgencyPaymentReportModal: React.FC<AgencyPaymentReportModalProps> = ({
     const leadPax = getLeadPaxLabel(quote, reportCode);
     const documents = providerGroups
       .map((provider) => {
-        const body = provider.rows
-          .map(
-            (row: any) => `<tr><td>${escapeHtml(formatDisplayDate(row.serviceDate))}</td><td>${escapeHtml(reportCode)}</td><td>${row.pax}</td><td>${escapeHtml(leadPax)}</td><td>Día ${row.dayNumber} · ${escapeHtml(row.serviceName)}</td><td>${row.currency === "soles" ? moneyLabel(row.totalWithCommission, row.currency) : ""}</td><td>${row.currency === "dolares" ? moneyLabel(row.totalWithCommission, row.currency) : ""}</td><td>${requestStatusLabel(row.requestSummary.status)}</td></tr>`,
-          )
+        const body = provider.dayGroups
+          .map((dayGroup: any) => groupPaymentServiceSections(dayGroup.rows).map((section) =>
+            `${section.isTicket ? `<tr><td colspan="8"><strong>Día ${dayGroup.dayNumber} · ${escapeHtml(section.title)}</strong></td></tr>` : ""}${section.rows.map(
+              (row: any) => `<tr><td>${escapeHtml(formatDisplayDate(row.serviceDate))}</td><td>${escapeHtml(reportCode)}</td><td>${row.pax}</td><td>${escapeHtml(leadPax)}</td><td>${reportServiceHtml(row, !section.isTicket)}</td><td>${row.currency === "soles" ? moneyLabel(row.totalWithCommission, row.currency) : ""}</td><td>${row.currency === "dolares" ? moneyLabel(row.totalWithCommission, row.currency) : ""}</td><td>${requestStatusLabel(row.requestSummary.status)}</td></tr>`,
+            ).join("")}`,
+          ).join(""))
           .join("");
         return `<article class="kelly-doc"><header class="brand"><img src="${BRAND.assets.logoColor}" alt="${BRAND.name}"/><div class="contact"><strong>DOCUMENTO DE COBRANZA</strong><span>${VENSO_CONTACT.address}</span><span>Telf.: ${VENSO_CONTACT.phones}</span><span>Email: ${VENSO_CONTACT.email}</span><span>${VENSO_CONTACT.website}</span></div></header><div class="identity"><div><h2>${escapeHtml(provider.providerName)}</h2><small>FILE ${escapeHtml(reportCode)}</small></div><div class="date-box"><span>Día<b>${dateParts.day}</b></span><span>Mes<b>${dateParts.month}</b></span><span>Año<b>${dateParts.year}</b></span></div></div><table><thead><tr><th>FECHA</th><th>FILE</th><th>CANT</th><th>PAX</th><th>SERVICIO</th><th>SOLES</th><th>DÓLARES</th><th>ESTADO</th></tr></thead><tbody>${body}<tr class="total"><td colspan="5">TOTAL</td><td>${provider.totals.soles.commercial ? moneyLabel(provider.totals.soles.commercial, "soles") : ""}</td><td>${provider.totals.dolares.commercial ? moneyLabel(provider.totals.dolares.commercial, "dolares") : ""}</td><td>${requestStatusLabel(provider.status)}</td></tr></tbody></table><div class="status">${requestStatusLabel(provider.status)}</div></article>`;
       })
@@ -719,17 +752,25 @@ const AgencyPaymentReportModal: React.FC<AgencyPaymentReportModalProps> = ({
                             <tr className="venso-kelly-document__day-row">
                               <td colSpan={8}>Día {dayGroup.dayNumber} · {dayGroup.dayTitle} · {formatDisplayDate(dayGroup.serviceDate)}</td>
                             </tr>
-                            {dayGroup.rows.map((row: any, rowIndex: number) => (
+                            {groupPaymentServiceSections(dayGroup.rows).map((section) => (
+                              <Fragment key={section.key}>
+                                {section.isTicket && <tr className="payment-ticket-section"><td colSpan={8}><strong>{section.title}</strong></td></tr>}
+                                {section.rows.map((row: any, rowIndex: number) => (
                               <tr key={`${row.serviceId ?? rowIndex}-${row.serviceOrder}`}>
                                 <td>{formatDisplayDate(row.serviceDate)}</td>
                                 <td>{reportCode}</td>
                                 <td>{row.pax}</td>
                                 <td>{leadPax}</td>
-                                <td><strong>{row.serviceName}</strong><small>{row.serviceType}</small></td>
+                                <td>
+                                  {!section.isTicket && <><strong>{row.serviceName}</strong><small>{row.serviceType}</small></>}
+                                  <TicketPaymentBreakdown row={row} />
+                                </td>
                                 <td>{row.currency === "soles" ? moneyLabel(row.totalWithCommission, row.currency) : "—"}</td>
                                 <td>{row.currency === "dolares" ? moneyLabel(row.totalWithCommission, row.currency) : "—"}</td>
                                 <td><span className={`venso-payment-status venso-payment-status--${row.requestSummary.status}`}>{requestStatusLabel(row.requestSummary.status)}</span></td>
                               </tr>
+                                ))}
+                              </Fragment>
                             ))}
                           </Fragment>
                         ))}
@@ -780,16 +821,23 @@ const AgencyPaymentReportModal: React.FC<AgencyPaymentReportModalProps> = ({
                       </tr>
                     </thead>
                     <tbody>
-                      {dayGroup.rows.map((row, index) => {
+                      {groupPaymentServiceSections(dayGroup.rows).map((section) => (
+                        <Fragment key={section.key}>
+                          {section.isTicket && <tr className="payment-ticket-section"><td colSpan={6}><strong>{section.title}</strong></td></tr>}
+                          {section.rows.map((row, index) => {
                         const rowKey = `${row.dayNumber}-${row.daySource}-${row.serviceId ?? index}-${row.serviceOrder}`;
                         const isExpanded = expandedRows.has(rowKey);
                         return (
                           <Fragment key={rowKey}>
                             <tr>
-                              <td><strong>{row.serviceName}</strong><small>{row.providerName}</small></td>
+                              <td>
+                                {!section.isTicket && <strong>{row.serviceName}</strong>}
+                                <small>{row.providerName}</small>
+                                <TicketPaymentBreakdown row={row} />
+                              </td>
                               <td>{row.pax}</td>
                               <td>{row.currency === "soles" ? "PEN" : "USD"}</td>
-                              <td className="agency-payment-report__agency-price"><strong>{moneyLabel(row.unitWithCommission, row.currency)}</strong></td>
+                              <td className="agency-payment-report__agency-price"><strong>{ticketPaymentTariffs(row).length > 1 ? "Tarifas por pasajero" : moneyLabel(row.unitWithCommission, row.currency)}</strong></td>
                               <td><strong>{moneyLabel(row.totalWithCommission, row.currency)}</strong></td>
                               <td>
                                 <button
@@ -830,7 +878,9 @@ const AgencyPaymentReportModal: React.FC<AgencyPaymentReportModalProps> = ({
                             )}
                           </Fragment>
                         );
-                      })}
+                          })}
+                        </Fragment>
+                      ))}
                     </tbody>
                   </table>
                 </div>

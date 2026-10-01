@@ -18,6 +18,7 @@ import {
   preparePreLiquidacionExports,
 } from "../utils/preliquidacionExport";
 import PreLiquidacionDocument from "./PreLiquidacionDocument";
+import { buildPreLiquidacionQuotationSummary } from "../utils/preliquidacionQuotation";
 import "./styles/PreLiquidacionModal.scss";
 
 const money = (value: any, currency = "USD") =>
@@ -71,6 +72,8 @@ const PreLiquidacionModal = ({
   onSave,
   defaults = {},
   peopleDetails,
+  quotation,
+  readOnly = false,
 }: any) => {
   const [draft, setDraft] = useState(() => normalizePreLiquidacion(value, defaults));
   const [exportingPdf, setExportingPdf] = useState(false);
@@ -84,6 +87,8 @@ const PreLiquidacionModal = ({
   useEffect(() => {
     if (isOpen) {
       const normalized = normalizePreLiquidacion(value, defaults);
+      normalized.code ||= String(defaults.code || "");
+      normalized.program ||= String(defaults.program || "");
       setDraft(
         normalizePreLiquidacion(
           normalized.passengersSnapshot.length
@@ -100,9 +105,13 @@ const PreLiquidacionModal = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultsFingerprint, isOpen, quotePassengers, value]);
 
+  const quotationSummary = useMemo(
+    () => quotation ? buildPreLiquidacionQuotationSummary(quotation) : null,
+    [quotation],
+  );
   const documentData = useMemo(
-    () => normalizePreLiquidacion(draft, defaults),
-    [draft, defaults],
+    () => normalizePreLiquidacion(quotationSummary ? { ...draft, quotationSummary, currency: "USD" } : draft, defaults),
+    [draft, defaults, quotationSummary],
   );
   const total = useMemo(() => calculatePreLiquidacionTotal(documentData), [documentData]);
 
@@ -129,7 +138,7 @@ const PreLiquidacionModal = ({
       idleId = requestIdle(
         () => {
           if (!active) return;
-          preparePreLiquidacionExports(documentData, getDocumentPages())
+          preparePreLiquidacionExports(documentData, getDocumentPages)
             .then(() => active && setPrepared(true))
             .catch((error) => {
               if (active) console.warn("No fue posible precalentar la preliquidación.", error);
@@ -184,7 +193,7 @@ const PreLiquidacionModal = ({
       ),
     }));
 
-  const save = () => onSave?.(documentData);
+  const save = () => { if (!readOnly) onSave?.(documentData); };
 
   const runExport = async (format: "pdf" | "word") => {
     if (exportingPdf || exportingWord) return;
@@ -194,9 +203,9 @@ const PreLiquidacionModal = ({
       const pages = getDocumentPages();
       if (!pages.length) throw new Error("La vista previa todavía no está lista");
       if (format === "pdf") {
-        await exportPreLiquidacionPdf(documentData, pages);
+        await exportPreLiquidacionPdf(documentData, getDocumentPages);
       } else {
-        await exportPreLiquidacionWord(documentData, pages);
+        await exportPreLiquidacionWord(documentData, getDocumentPages);
       }
       setPrepared(true);
     } catch (error: any) {
@@ -213,9 +222,9 @@ const PreLiquidacionModal = ({
         <header className="preliq__header">
           <div>
             <span className="preliq__eyebrow">VENSO TOURS · PRELIQUIDACIÓN</span>
-            <h3>Editor de liquidación</h3>
+            <h3>{readOnly ? "Preliquidación de cotización" : "Editor de preliquidación"}</h3>
             <p>
-              Formato oficial de 2 páginas · Total {money(total, draft.currency)}
+              Total cotizado {money(total, documentData.currency)}
               {prepared ? " · exportación preparada" : ""}
             </p>
           </div>
@@ -226,6 +235,7 @@ const PreLiquidacionModal = ({
 
         <div className="preliq__workspace">
           <div className="preliq__editor">
+            <fieldset className="preliq__fields" disabled={readOnly}>
             <section className="preliq__panel">
               <div className="preliq__panel-title">
                 <div><span>01</span><h4>Cabecera</h4></div>
@@ -251,7 +261,7 @@ const PreLiquidacionModal = ({
                 ))}
                 <label>
                   Moneda
-                  <select value={draft.currency} onChange={(e) => set("currency", e.target.value)}>
+                  <select value={documentData.currency} disabled={Boolean(documentData.quotationSummary)} onChange={(e) => set("currency", e.target.value)}>
                     <option value="USD">USD</option>
                     <option value="PEN">PEN</option>
                   </select>
@@ -379,7 +389,21 @@ const PreLiquidacionModal = ({
               ))}
             </section>
 
-            <section className="preliq__panel">
+            {documentData.quotationSummary ? (
+              <section className="preliq__panel">
+                <div className="preliq__panel-title"><div><span>04</span><h4>Cotizado por día</h4></div></div>
+                <table className="preliq__daily-summary">
+                  <thead><tr><th>Día</th><th>Itinerario</th><th>Total</th></tr></thead>
+                  <tbody>
+                    {documentData.quotationSummary.days.map((day) => (
+                      <tr key={day.id}><td>{day.dayNumber}</td><td>{day.title || "Sin título"}</td><td>{money(day.total)}</td></tr>
+                    ))}
+                  </tbody>
+                  <tfoot><tr><th colSpan={2}>Total final de la cotización</th><th>{money(total)}</th></tr></tfoot>
+                </table>
+                {!documentData.quotationSummary.days.length && <p>La cotización aún no tiene días registrados.</p>}
+              </section>
+            ) : <section className="preliq__panel">
               <div className="preliq__section-title">
                 <div className="preliq__panel-title preliq__panel-title--inline">
                   <div><span>04</span><h4>Liquidación</h4></div>
@@ -439,12 +463,12 @@ const PreLiquidacionModal = ({
                   </button>
                 </div>
               ))}
-            </section>
+            </section>}
 
             <section className="preliq__panel">
               <div className="preliq__panel-title">
                 <div><span>05</span><h4>Pagos y tarjetas</h4></div>
-                <small>Contenido editable de la página 2</small>
+                <small>Condiciones del documento</small>
               </div>
               <div className="preliq__grid preliq__grid--bank">
                 {[
@@ -489,7 +513,7 @@ const PreLiquidacionModal = ({
             <details className="preliq__panel preliq__internal">
               <summary>
                 <strong>Cronograma interno del pax</strong>
-                <span>No modifica el formato visual de las 2 páginas</span>
+                <span>No se imprime en el documento</span>
               </summary>
               <div className="preliq__section-title">
                 <p>Se conserva para el flujo de cobranzas del voucher.</p>
@@ -526,11 +550,12 @@ const PreLiquidacionModal = ({
                 </div>
               ))}
             </details>
+            </fieldset>
           </div>
 
           <aside className="preliq__preview-pane">
             <div className="preliq__preview-head">
-              <div><span>VISTA PREVIA</span><strong>Formato oficial · 2 páginas</strong></div>
+              <div><span>VISTA PREVIA</span><strong>Formato A4 · paginación automática</strong></div>
               <small>La descarga PDF y Word usa exactamente estas páginas.</small>
             </div>
             <div className="preliq__preview-scroll">
@@ -543,7 +568,7 @@ const PreLiquidacionModal = ({
 
         <footer className="preliq__footer">
           <div className="preliq__footer-copy">
-            <strong>{money(total, draft.currency)}</strong>
+            <strong>{money(total, documentData.currency)}</strong>
             <span>{documentData.passengersSnapshot.length} pasajero{documentData.passengersSnapshot.length === 1 ? "" : "s"} en el documento</span>
           </div>
           <div className="preliq__footer-actions">
@@ -553,9 +578,9 @@ const PreLiquidacionModal = ({
             <button className="preliq__download preliq__download--word" type="button" disabled={exportingPdf || exportingWord} onClick={() => runExport("word")}>
               <MdDescription /> {exportingWord ? "Generando Word..." : "Descargar Word"}
             </button>
-            <button className="preliq__save" type="button" onClick={() => { save(); onClose?.(); }}>
+            {!readOnly && <button className="preliq__save" type="button" onClick={() => { save(); onClose?.(); }}>
               <MdSave /> Guardar preliquidación
-            </button>
+            </button>}
           </div>
         </footer>
       </div>

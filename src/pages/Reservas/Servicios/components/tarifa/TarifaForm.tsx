@@ -357,7 +357,7 @@ const TarifaForm = ({
         </label>
       </div>
 
-      <div className="tf__group">
+      <div className="tf__group tf__visibility-scope">
         <span className="tf__group-label">Visibilidad</span>
         <div className="tf__visibility" role="group" aria-label="Visibilidad de tarifa">
           {TIPOS_TARIFA_EDITABLES.map((type) => {
@@ -369,6 +369,7 @@ const TarifaForm = ({
                 className={formData.tipo_tarifa === type ? "active" : ""}
                 onClick={() => selectTariffType(type)}
                 disabled={isSubmitting}
+                aria-pressed={formData.tipo_tarifa === type}
               >
                 <span className="tf__visibility-icon">
                   {confidential ? <FaEyeSlash /> : <FaEye />}
@@ -455,6 +456,8 @@ const TarifaForm = ({
               type="button"
               className={formData.moneda === "dolares" ? "active" : ""}
               onClick={() => switchCurrency("dolares")}
+              disabled={isSubmitting}
+              aria-pressed={formData.moneda === "dolares"}
             >
               $ USD
             </button>
@@ -462,6 +465,8 @@ const TarifaForm = ({
               type="button"
               className={formData.moneda === "soles" ? "active" : ""}
               onClick={() => switchCurrency("soles")}
+              disabled={isSubmitting}
+              aria-pressed={formData.moneda === "soles"}
             >
               S/ PEN
             </button>
@@ -471,6 +476,8 @@ const TarifaForm = ({
             type="button"
             className={`tf__unique-toggle ${formData.precio_unico ? "active" : ""}`}
             onClick={toggleUniquePrice}
+            disabled={isSubmitting}
+            aria-pressed={formData.precio_unico}
           >
             {formData.precio_unico ? "Único" : "Compartido / privado"}
           </button>

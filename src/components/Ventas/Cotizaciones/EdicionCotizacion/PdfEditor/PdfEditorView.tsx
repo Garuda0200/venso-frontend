@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useState, useRef, memo } from "react";
 import { useMemo } from "react";
+import LanguageFlag from "../../../../common/LanguageFlag/LanguageFlag";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../../../context/AuthContext";
 import { flushSync } from "react-dom";
@@ -115,9 +116,9 @@ const areSameCategoryKeys = (left = [], right = []) =>
   left.every((value, index) => String(value) === String(right[index]));
 
 const IDIOMAS = [
-  { code: "es", label: "ES", flag: "🇪🇸" },
-  { code: "en", label: "EN", flag: "🇺🇸" },
-  { code: "pt", label: "PT", flag: "🇧🇷" },
+  { code: "es", label: "Español" },
+  { code: "en", label: "English" },
+  { code: "pt", label: "Português" },
 ];
 
 const LAYOUTS = [
@@ -1303,8 +1304,11 @@ export default function PdfEditorView() {
               onClick={() => handleIdiomaChange(lang.code)}
               disabled={translating}
               title={lang.label}
+              aria-label={lang.label}
+              aria-pressed={idioma === lang.code}
+              type="button"
             >
-              {lang.flag} {lang.label}
+              <LanguageFlag code={lang.code} />
             </button>
           ))}
           {translating && <span className="idioma-loading"></span>}

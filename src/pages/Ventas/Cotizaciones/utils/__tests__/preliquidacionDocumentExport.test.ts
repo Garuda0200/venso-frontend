@@ -95,7 +95,8 @@ const pdfCotizacionSource = source("src/components/Ventas/Cotizaciones/EdicionCo
 const pdfPreviewSource = source("src/components/Ventas/Cotizaciones/PdfPreviewModal/PdfPreviewModal.tsx");
 const preliqScss = source("src/pages/Ventas/Cotizaciones/components/styles/PreLiquidacionModal.scss");
 
-assert.equal((documentSource.match(/data-preliquidacion-page=/g) || []).length, 2);
+assert.equal((documentSource.match(/data-preliquidacion-page=/g) || []).length, 3);
+assert.match(documentSource, /pages\.slice\(1\)/);
 assert.match(documentSource, /Nº PAX/);
 assert.match(documentSource, /DNI \/ PASSPORT/);
 assert.match(documentSource, /TIPO HABITACIÓN/);

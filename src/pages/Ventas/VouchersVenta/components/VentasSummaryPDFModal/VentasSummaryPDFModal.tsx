@@ -21,7 +21,6 @@ import { toCanvas } from "html-to-image";
 import { PDFDocument } from "pdf-lib";
 import { toast } from "react-toastify";
 import { voucherVentaService } from "../../../../../services/voucherVentaService";
-import contabilidadService from "../../../../../services/contabilidadService";
 import pasajeroService from "../../../../../services/pasajeroService";
 import voucherDocumentService from "../../../../../services/voucherDocumentService";
 import { repairMojibakeText } from "../../../../../components/Ventas/Cotizaciones/EdicionCotizacion/utils/hotelDetallePayload";
@@ -31,14 +30,10 @@ import {
   parseLocalDate,
   toIsoDate,
 } from "../../../../../components/Ventas/Cotizaciones/EdicionCotizacion/utils/formatters";
-import { buildSummaryContentPricingModel } from "../../../../../components/Ventas/Cotizaciones/EdicionCotizacion/utils/summaryContentPricingParts";
-import { buildSummaryPricingPresentation } from "../../../../../components/Ventas/Cotizaciones/EdicionCotizacion/utils/summaryPricingCore";
 import { hydrateCotizacionPricingContext } from "../../../Cotizaciones/utils/cotizacionPricingContext";
-import {
-  filterVoucherPaymentMovements,
-  getQuoteTravelDates,
-  summarizeVoucherFinancials,
-} from "../../utils/voucherFinancials";
+import { getQuoteTravelDates } from "../../utils/voucherFinancials";
+import { buildVoucherTitleBlocks, packMeasuredVoucherFlow } from "../../utils/voucherPdfLayout";
+import LanguageFlag from "../../../../../components/common/LanguageFlag/LanguageFlag";
 import "./VentasSummaryPDFModal.scss";
 
 /* ======================= DEFAULT TEXTS ======================= */
@@ -114,12 +109,10 @@ Nota: A todos los precios, cargos y penalidades indicados se les adicionará la 
 
 Este es un resumen de las políticas principales. Las condiciones completas están disponibles en nuestra oficina, a solicitud del pasajero y en nuestra página web: https://vensotours.com/`;
 
-const DEFAULT_PAGO_TEXT = `Este monto lo podrá pagar en la ciudad de Cusco, en efectivo con billetes en buen estado, en caso haga uso de su tarjeta de crédito, debe tener en cuenta que se le hará una recarga del 5.5% al monto a pagar.`;
-
 const VOUCHER_LANGUAGES = [
-  { code: "es", label: "ES", name: "Español", flag: "🇪🇸" },
-  { code: "en", label: "EN", name: "English", flag: "🇺🇸" },
-  { code: "pt", label: "PT", name: "Português", flag: "🇧🇷" },
+  { code: "es", name: "Español" },
+  { code: "en", name: "English" },
+  { code: "pt", name: "Português" },
 ];
 
 const VOUCHER_LANG_PAIRS = { en: "es|en", pt: "es|pt" };
@@ -230,10 +223,6 @@ const VOUCHER_LABELS = {
     code: "Código:",
     emissionDate: "Fecha de emisión:",
     serviceVoucher: "VOUCHER DE SERVICIO",
-    totalPackageAmount: "Monto total paquete:",
-    paidAmount: "Monto pagado:",
-    pendingAmount: "Monto pendiente:",
-    paymentSystem: "Sistema de pago:",
     bookingCode: "Código de reserva:",
     passengerName: "Nombre del pasajero:",
     tourStartDate: "Fecha de inicio del tour:",
@@ -290,26 +279,12 @@ const VOUCHER_LABELS = {
     itinerary: "ITINERARIO",
     noItinerary: "No hay itinerario disponible.",
     includesTitle: "INCLUYE / NO INCLUYE",
-    paymentInfo: "INFORMACIÓN DE PAGO",
     touristPackage: "Paquete turístico",
-    priceBreakdownTitle: "Precios por persona",
-    adultPrice: "Precio por adulto",
-    childPrice: "Precio por niño",
-    adultRoomPrice: "Adulto en habitación",
-    childRoomPrice: "Niño en habitación",
-    perPerson: "por persona",
-    passengersShort: "pax",
-    amountSent: "Monto enviado:",
-    voucherTotal: "Total del voucher:",
-    balanceToPayIn: "Saldo a pagar en",
     observations: "OBSERVACIONES",
     observationsPlaceholder: "Agregar observaciones del voucher",
     addObservations: "Observaciones",
     addInternationalFlightButton: "Vuelo internacional",
     addNationalFlightButton: "Vuelo interno",
-    showPaymentTotals: "Detalle pax",
-    paymentTotalsHint: "Mostrar u ocultar el detalle de pax sin cambiar el precio por persona",
-    unitPrice: "Unitario",
     termsTitle: "TÉRMINOS Y CONDICIONES",
     pdfIndications: "Indicaciones del PDF",
     pdfIndicationsPlaceholder: "Escribe indicaciones internas para este PDF. No aparecerán en el voucher exportado.",
@@ -328,10 +303,6 @@ const VOUCHER_LABELS = {
     code: "Code:",
     emissionDate: "Issue date:",
     serviceVoucher: "SERVICE VOUCHER",
-    totalPackageAmount: "Total package amount:",
-    paidAmount: "Amount paid:",
-    pendingAmount: "Pending amount:",
-    paymentSystem: "Payment system:",
     bookingCode: "Booking code:",
     passengerName: "Passenger name:",
     tourStartDate: "Tour start date:",
@@ -388,26 +359,12 @@ const VOUCHER_LABELS = {
     itinerary: "ITINERARY",
     noItinerary: "No itinerary available.",
     includesTitle: "INCLUDES / DOES NOT INCLUDE",
-    paymentInfo: "PAYMENT INFORMATION",
     touristPackage: "Tour package",
-    priceBreakdownTitle: "Prices per person",
-    adultPrice: "Price per adult",
-    childPrice: "Price per child",
-    adultRoomPrice: "Adult in room",
-    childRoomPrice: "Child in room",
-    perPerson: "per person",
-    passengersShort: "pax",
-    amountSent: "Amount sent:",
-    voucherTotal: "Voucher total:",
-    balanceToPayIn: "Balance to pay in",
     observations: "OBSERVATIONS",
     observationsPlaceholder: "Add voucher observations",
     addObservations: "Observations",
     addInternationalFlightButton: "International flight",
     addNationalFlightButton: "Domestic flight",
-    showPaymentTotals: "Pax detail",
-    paymentTotalsHint: "Show or hide pax detail without changing the per-person price",
-    unitPrice: "Unit",
     termsTitle: "TERMS AND CONDITIONS",
     pdfIndications: "PDF notes",
     pdfIndicationsPlaceholder: "Write internal notes for this PDF. They will not appear in the exported voucher.",
@@ -426,10 +383,6 @@ const VOUCHER_LABELS = {
     code: "Código:",
     emissionDate: "Data de emissão:",
     serviceVoucher: "VOUCHER DE SERVIÇO",
-    totalPackageAmount: "Valor total do pacote:",
-    paidAmount: "Valor pago:",
-    pendingAmount: "Valor pendente:",
-    paymentSystem: "Sistema de pagamento:",
     bookingCode: "Código da reserva:",
     passengerName: "Nome do passageiro:",
     tourStartDate: "Data de início do tour:",
@@ -486,26 +439,12 @@ const VOUCHER_LABELS = {
     itinerary: "ITINERÁRIO",
     noItinerary: "Não há itinerário disponível.",
     includesTitle: "INCLUI / NÃO INCLUI",
-    paymentInfo: "INFORMAÇÕES DE PAGAMENTO",
     touristPackage: "Pacote turístico",
-    priceBreakdownTitle: "Preços por pessoa",
-    adultPrice: "Preço por adulto",
-    childPrice: "Preço por criança",
-    adultRoomPrice: "Adulto em quarto",
-    childRoomPrice: "Criança em quarto",
-    perPerson: "por pessoa",
-    passengersShort: "pax",
-    amountSent: "Valor enviado:",
-    voucherTotal: "Total do voucher:",
-    balanceToPayIn: "Saldo a pagar em",
     observations: "OBSERVAÇÕES",
     observationsPlaceholder: "Adicionar observações do voucher",
     addObservations: "Observações",
     addInternationalFlightButton: "Voo internacional",
     addNationalFlightButton: "Voo interno",
-    showPaymentTotals: "Detalhe pax",
-    paymentTotalsHint: "Mostrar ou ocultar o detalhe de pax sem alterar o preço por pessoa",
-    unitPrice: "Unitário",
     termsTitle: "TERMOS E CONDIÇÕES",
     pdfIndications: "Indicações do PDF",
     pdfIndicationsPlaceholder: "Escreva indicações internas para este PDF. Elas não aparecerão no voucher exportado.",
@@ -986,8 +925,6 @@ const buildDatosPdfFromItinerary = (voucherData) => ({
   general: {
     packageName: "",
     travelAgent: voucherData?.created_by_name || voucherData?.created_by || "",
-    paymentSystem:
-      voucherData?.metodo_pago || voucherData?.payment_method || "",
     passengerPhone: "",
     emergencyPhone: "",
   },
@@ -1000,11 +937,6 @@ const buildDatosPdfFromItinerary = (voucherData) => ({
     tipoIngresoExtra: "",
     trenTipo: "",
     trenRuta: "",
-  },
-  info_pago: {
-    packageName: getVoucherPackageTitle(voucherData),
-    lugarPago: "Cusco",
-    textoPago: DEFAULT_PAGO_TEXT,
   },
   info_extra: DEFAULT_INFO_EXTRA,
   indicaciones_pdf: "",
@@ -1203,29 +1135,23 @@ const translateDatosPdfSnapshot = async (datosPdf = {}, targetLang) => {
 
   const [
     packageName,
-    paymentSystem,
     itineraryTitle,
     translatedDays,
     habitacionExtra,
     tipoIngresoExtra,
     trenTipo,
     trenRuta,
-    paymentPackageName,
-    textoPago,
     infoExtra,
     terminosCondiciones,
     observaciones,
   ] = await Promise.all([
     translateVoucherText(clean.general?.packageName || "", targetLang),
-    translateVoucherText(clean.general?.paymentSystem || "", targetLang),
     translateVoucherText(itinerary.title || VOUCHER_LABELS.es.itinerary, targetLang),
     Promise.all(days.map((day) => translateVoucherDay(day, targetLang))),
     translateVoucherText(clean.hotel_train?.habitacionExtra || "", targetLang),
     translateVoucherText(clean.hotel_train?.tipoIngresoExtra || "", targetLang),
     translateVoucherText(clean.hotel_train?.trenTipo || "", targetLang),
     translateVoucherText(clean.hotel_train?.trenRuta || "", targetLang),
-    translateVoucherText(clean.info_pago?.packageName || "", targetLang),
-    translateVoucherText(clean.info_pago?.textoPago || DEFAULT_PAGO_TEXT, targetLang),
     translateInfoExtraText(clean.info_extra || DEFAULT_INFO_EXTRA, targetLang),
     translateVoucherText(clean.terminos_condiciones || DEFAULT_TERMINOS, targetLang),
     translateVoucherText(clean.observaciones || "", targetLang),
@@ -1236,7 +1162,6 @@ const translateDatosPdfSnapshot = async (datosPdf = {}, targetLang) => {
     general: {
       ...(clean.general || {}),
       packageName,
-      paymentSystem,
     },
     itinerary: {
       ...itinerary,
@@ -1249,11 +1174,6 @@ const translateDatosPdfSnapshot = async (datosPdf = {}, targetLang) => {
       tipoIngresoExtra,
       trenTipo,
       trenRuta,
-    },
-    info_pago: {
-      ...(clean.info_pago || {}),
-      packageName: paymentPackageName,
-      textoPago,
     },
     info_extra: infoExtra,
     terminos_condiciones: terminosCondiciones,
@@ -1409,19 +1329,6 @@ const normalizeDatosPdfItinerary = (itinerary, voucherData) => {
   return getFallbackItineraryFromVoucherData(voucherData);
 };
 
-const normalizeDatosPdfInfoPago = (infoPago, voucherData) => {
-  const normalized =
-    infoPago && typeof infoPago === "object" && !Array.isArray(infoPago)
-      ? { ...infoPago }
-      : {};
-
-  if (!Object.prototype.hasOwnProperty.call(normalized, "packageName")) {
-    normalized.packageName = getVoucherPackageTitle(voucherData);
-  }
-
-  return normalized;
-};
-
 const normalizeDatosPdf = (rawDatosPdf, voucherData) => {
   const parsedDatosPdf = parseDatosPdf(rawDatosPdf);
 
@@ -1448,10 +1355,6 @@ const normalizeDatosPdf = (rawDatosPdf, voucherData) => {
         typeof parsedDatosPdf.hotel_train === "object"
           ? parsedDatosPdf.hotel_train
           : {},
-      info_pago: normalizeDatosPdfInfoPago(
-        parsedDatosPdf.info_pago,
-        voucherData,
-      ),
       indicaciones_pdf: String(
         parsedDatosPdf.indicaciones_pdf ??
           parsedDatosPdf.indicacionesPdf ??
@@ -1467,10 +1370,6 @@ const normalizeDatosPdf = (rawDatosPdf, voucherData) => {
     ...legacyDatosPdf,
     itinerary: normalizeDatosPdfItinerary(
       legacyDatosPdf.itinerary,
-      voucherData,
-    ),
-    info_pago: normalizeDatosPdfInfoPago(
-      legacyDatosPdf.info_pago,
       voucherData,
     ),
   };
@@ -1508,13 +1407,6 @@ const applyDatosPdfChange = (
 
   if (scope === "info_extra") {
     next.info_extra = value;
-  }
-
-  if (scope === "info_pago") {
-    next.info_pago = {
-      ...(currentDatosPdf?.info_pago || {}),
-      [field]: value,
-    };
   }
 
   if (scope === "general") {
@@ -2068,7 +1960,7 @@ const estimateVoucherTextUnits = (text = "", charsPerLine = 82) =>
     }, 0);
 
 // Presupuesto visual por hoja A4. Todas las secciones posteriores a vuelos
-// (itinerario, incluye/no incluye, pago y términos) se empaquetan en un mismo
+// (itinerario, incluye/no incluye, observaciones y términos) se empaquetan en un mismo
 // flujo por unidades visuales. Así se aprovecha el espacio restante de cada
 // hoja, pero el contenido que ya no entra pasa completo a la siguiente página.
 const ITINERARY_HEADER_UNITS = 4.8;
@@ -2078,10 +1970,6 @@ const ITINERARY_CONTENT_CHUNK_UNITS = 14;
 const INFO_EXTRA_PAGE_UNITS = 54;
 const INFO_EXTRA_INLINE_MAX_UNITS = 0;
 const INFO_EXTRA_INLINE_MIN_UNITS = 999;
-const INFO_EXTRA_WITH_PAYMENT_UNITS = 0;
-const INFO_EXTRA_WITH_PAYMENT_AND_TERMS_UNITS = 0;
-const INFO_PAGO_PAGE_UNITS = 62;
-const INFO_PAGO_WITH_TERMS_GAP_UNITS = 4;
 const TERMINOS_PAGE_UNITS = 58;
 const TERMINOS_INLINE_MAX_UNITS = 0;
 const TERMINOS_INLINE_MIN_UNITS = 999;
@@ -2093,7 +1981,7 @@ const PDF_FLOW_PAGE_UNITS = 118;
 const PDF_FLOW_PAGE_MIN_REMAINING_UNITS = 1.6;
 const PDF_FLOW_ITINERARY_HEADER_UNITS = 4.6;
 const PDF_FLOW_CONTENT_HEIGHT_PX = 936;
-const PDF_FLOW_PAGE_GAP_PX = 5;
+const PDF_FLOW_PAGE_GAP_PX = 6;
 const INFO_EXTRA_FLOW_CHUNK_UNITS = 86;
 const TERMINOS_FLOW_CHUNK_UNITS = 82;
 
@@ -2517,30 +2405,6 @@ const getTerminosSectionUnits = (text = "") => {
   );
 };
 
-const getInfoPagoSectionUnits = ({
-  title = "",
-  textoPago = "",
-  observaciones = "",
-  childrenCount = 0,
-  hasSubtotal = false,
-} = {}) => {
-  const titleUnits = estimateVoucherTextUnits(title || "Paquete turístico", 54);
-  const paymentTextUnits = getEstimatedTextUnits(textoPago || "", 70);
-  const hasObservaciones = Boolean(observaciones?.trim());
-  const observacionesUnits = hasObservaciones
-    ? getEstimatedTextUnits(observaciones, 74)
-    : 0;
-
-  return (
-    18.5 +
-    titleUnits * 0.9 +
-    paymentTextUnits * 1.05 +
-    (hasObservaciones ? Math.max(3.2, observacionesUnits * 0.95) : 0) +
-    (childrenCount > 0 ? 1.1 : 0) +
-    (hasSubtotal ? 1 : 0)
-  );
-};
-
 const getPdfFlowItemSafeUnits = (item = {}) => {
   const baseUnits = Math.max(1, Number(item.units) || 1);
 
@@ -2562,10 +2426,6 @@ const getPdfFlowItemSafeUnits = (item = {}) => {
 
   if (item.type === "terminos") {
     return baseUnits + (hasTerminosSummaryBlock(item.pageText) ? 2.3 : 1.2);
-  }
-
-  if (item.type === "payment") {
-    return baseUnits + 1.3;
   }
 
   return baseUnits;
@@ -2735,38 +2595,12 @@ const getPdfFlowItemSignature = (item = {}) => {
   });
 };
 
-const buildMeasuredPdfFlowPages = (items = [], heights = []) => {
-  const pages = [];
-  let currentItems = [];
-  let currentHeight = 0;
-
-  const pushPage = () => {
-    if (!currentItems.length) return;
-    pages.push({ items: currentItems });
-    currentItems = [];
-    currentHeight = 0;
-  };
-
-  items.forEach((item, index) => {
-    const measuredHeight = Number(heights[index]) || 0;
-    const itemHeight = Math.max(1, measuredHeight);
-    const gapHeight = currentItems.length > 0 ? PDF_FLOW_PAGE_GAP_PX : 0;
-
-    if (
-      currentItems.length > 0 &&
-      currentHeight + gapHeight + itemHeight > PDF_FLOW_CONTENT_HEIGHT_PX
-    ) {
-      pushPage();
-    }
-
-    const appliedGap = currentItems.length > 0 ? PDF_FLOW_PAGE_GAP_PX : 0;
-    currentItems.push(item);
-    currentHeight += appliedGap + itemHeight;
+const buildMeasuredPdfFlowPages = (items = [], heights = [], introHeight = 0) =>
+  packMeasuredVoucherFlow(items, heights, {
+    introHeight,
+    pageHeight: PDF_FLOW_CONTENT_HEIGHT_PX,
+    gap: PDF_FLOW_PAGE_GAP_PX,
   });
-
-  pushPage();
-  return pages;
-};
 
 const getTextOffsetInNode = (root, targetNode, targetOffset) => {
   if (!root || !targetNode || !root.contains(targetNode)) return 0;
@@ -2914,7 +2748,6 @@ const VoucherView = ({
   voucher,
   voucherData,
   passengers,
-  paymentSummary,
   externalFlights = [],
   onAddInternationalFlight,
   onAddNationalFlight,
@@ -2946,7 +2779,6 @@ const VoucherView = ({
     useState(false);
   const packageNameRef = useRef(null);
   const travelAgentRef = useRef(null);
-  const paymentSystemRef = useRef(null);
   const passengerPhoneRef = useRef(null);
   const emergencyPhoneRef = useRef(null);
   const trainTypeRef = useRef(null);
@@ -2959,9 +2791,6 @@ const VoucherView = ({
       voucherData?.created_by_name ??
       voucher?.created_by ??
       "",
-  );
-  const paymentSystemText = normalizeMojibakeText(
-    datosPdf?.general?.paymentSystem ?? paymentSummary.metodoPago ?? "",
   );
   const passengerPhoneText = normalizeMojibakeText(
     hasOwn(datosPdf?.general, "passengerPhone")
@@ -3011,15 +2840,6 @@ const VoucherView = ({
       element.textContent = travelAgentName;
     }
   }, [travelAgentName]);
-
-  useEffect(() => {
-    const element = paymentSystemRef.current;
-    if (!element || document.activeElement === element) return;
-
-    if (element.textContent !== paymentSystemText) {
-      element.textContent = paymentSystemText;
-    }
-  }, [paymentSystemText]);
 
   useEffect(() => {
     syncEditableTextRef(passengerPhoneRef, passengerPhoneText);
@@ -3228,20 +3048,6 @@ const VoucherView = ({
   const formattedEndDate = endDateValue
     ? formatVoucherLongDate(endDateValue, idioma)
     : formattedStartDate;
-
-  const derivedFinancialSummary = summarizeVoucherFinancials({
-    voucher: voucherData,
-    cotizacion: cot,
-  });
-  const totalCotizacion = Math.max(
-    0,
-    Number(paymentSummary?.totalCotizacion ?? derivedFinancialSummary.totalFinal) || 0,
-  );
-  const totalPagado = Math.max(
-    0,
-    Number(paymentSummary?.totalPagado ?? derivedFinancialSummary.totalPaid) || 0,
-  );
-  const pendiente = Math.max(0, totalCotizacion - totalPagado);
 
   const allDays = getMergedVoucherItineraryDays(voucherData);
   // Attach computed day date to each service so extractFlightInfo can use it
@@ -3526,245 +3332,6 @@ const VoucherView = ({
     childPassengersForPricing.length ||
       Number(pCount.children || cot.num_children || cot.numChildren || 0),
   );
-  const nn = (value) =>
-    typeof value === "number" ? value : Number.parseFloat(value) || 0;
-  const round2 = (value) =>
-    Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100;
-  const formatUsdSmart = (value) => {
-    const safeValue = round2(Math.max(0, Number(value || 0)));
-    const formatted = Number.isInteger(safeValue)
-      ? safeValue.toLocaleString("en-US", { maximumFractionDigits: 0 })
-      : safeValue.toLocaleString("en-US", {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        });
-
-    return `USD ${formatted}`;
-  };
-
-  const paymentSummaryPricingModel = buildSummaryContentPricingModel(cot);
-  const visibleSummaryParts = Array.isArray(paymentSummaryPricingModel.parts)
-    ? paymentSummaryPricingModel.parts
-    : [];
-  const visibleSummaryGrandTotal = round2(
-    paymentSummaryPricingModel.roundedTotal || 0,
-  );
-  const authoritativeTotal =
-    totalCotizacion ||
-    visibleSummaryGrandTotal ||
-    paymentSummary.totalCotizacion ||
-    nn(cot.total_final ?? cot.totalFinal) ||
-    0;
-
-  const rawAdditionalCosts = (() => {
-    const raw = cot.additionalCosts || cot.additionalcosts || {};
-    if (raw && typeof raw === "object" && !Array.isArray(raw)) return raw;
-    if (typeof raw !== "string" || !raw.trim()) return {};
-    try {
-      const parsed = JSON.parse(raw);
-      return parsed && typeof parsed === "object" && !Array.isArray(parsed)
-        ? parsed
-        : {};
-    } catch {
-      return {};
-    }
-  })();
-  const storedSubtotalWithoutExternal = nn(
-    cot.subtotal_final ??
-      cot.subtotalFinal ??
-      rawAdditionalCosts.subtotalFinal ??
-      rawAdditionalCosts.subtotal_final ??
-      rawAdditionalCosts.commissionableSubtotal ??
-      rawAdditionalCosts.commissionable_subtotal ??
-      paymentSummary.subtotalCotizacion,
-  );
-  const coreSubtotalWithoutExternal = visibleSummaryParts.reduce(
-    (sum, part) => {
-      const beneficiaries = Math.max(
-        1,
-        nn(part?.beneficiaries ?? part?.count ?? part?.pax),
-      );
-      const valueWithoutExternal = Math.max(
-        0,
-        nn(part?.value) - nn(part?.external),
-      );
-      return sum + Math.ceil(valueWithoutExternal) * beneficiaries;
-    },
-    0,
-  );
-  const subtotalSinItinerarioExterno = Math.max(
-    0,
-    storedSubtotalWithoutExternal || coreSubtotalWithoutExternal,
-  );
-
-  const firstAdultPart = visibleSummaryParts.find(
-    (part) => part?.audience !== "child",
-  );
-  const firstChildPart = visibleSummaryParts.find(
-    (part) => part?.audience === "child",
-  );
-  const precioAdulto = nn(
-    firstAdultPart?.displayValue ?? firstAdultPart?.value,
-  );
-  const precioNino = nn(
-    firstChildPart?.displayValue ?? firstChildPart?.value,
-  );
-
-  const titleCasePaymentRoomLabel = (value = "") =>
-    String(value || "")
-      .split(/(\s+|\/|\+)/)
-      .map((part) => {
-        if (/^\s+$|^\/$|^\+$/.test(part)) return part === "+" ? " / " : part;
-        if (!part.trim()) return part;
-        return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
-      })
-      .join("")
-      .replace(/\s*\/\s*/g, " / ")
-      .replace(/\s{2,}/g, " ")
-      .trim();
-
-  const normalizePaymentRoomLabel = (value = "") => {
-    const normalized = normalizeMojibakeText(value)
-      .replace(/[_:]+/g, " ")
-      .replace(/[-–—]+/g, " ")
-      .replace(/\s*c\/a\b/gi, " ")
-      .replace(/\s*\((?:\d+(?:\.\d+)?)\)\s*$/g, " ")
-      .replace(/\b(?:por\s+)?(?:adultos?|adults?|niñ(?:os|as|o|a)|ninos?|children|child|crianças?|criancas?|criança|crianca)\b/gi, " ")
-      .replace(/\b(?:habitaci[oó]n|habitacion|room|quarto)\b/gi, " ")
-      .replace(/\b(?:summary|unified|converted|adult|child|hotel|total|fallback)\b/gi, " ")
-      .replace(/\s{2,}/g, " ")
-      .trim();
-
-    if (!normalized) return "";
-
-    const lower = normalized
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase();
-    const hasSimple = /\b(simple|single|individual)\b/.test(lower);
-    const hasDouble = /\b(doble|double|twin)\b/.test(lower);
-    const hasMatrimonial = /\b(matrimonial|matrimony)\b/.test(lower);
-    const hasTriple = /\b(triple)\b/.test(lower);
-    const hasFamily = /\b(familiar|family|familial)\b/.test(lower);
-    const hasQuad = /\b(cuadruple|quadruple|quad|cuarto)\b/.test(lower);
-
-    if (hasFamily) return "Familiar";
-    if (hasQuad) return "Cuádruple";
-    if (hasTriple) return "Triple";
-    if (hasDouble && hasMatrimonial) return "Doble / Matrimonial";
-    if (hasDouble) return "Doble";
-    if (hasMatrimonial) return "Matrimonial";
-    if (hasSimple) return "Simple";
-
-    return titleCasePaymentRoomLabel(normalized);
-  };
-
-  const translatePaymentRoomLabel = (roomLabel = "") => {
-    const label = normalizePaymentRoomLabel(roomLabel);
-    if (!label) return "";
-
-    const replacements =
-      idioma === "en"
-        ? {
-            Simple: "Single",
-            Doble: "Double",
-            Matrimonial: "Matrimonial",
-            Triple: "Triple",
-            Familiar: "Family",
-            Cuádruple: "Quadruple",
-          }
-        : idioma === "pt"
-          ? {
-              Simple: "Simples",
-              Doble: "Duplo",
-              Matrimonial: "Matrimonial",
-              Triple: "Triplo",
-              Familiar: "Familiar",
-              Cuádruple: "Quádruplo",
-            }
-          : null;
-
-    if (!replacements) return label;
-
-    return label
-      .split(" / ")
-      .map((part) => replacements[part] || part)
-      .join(" / ");
-  };
-
-  // La información de pago consume directamente la presentación canónica del
-  // mismo core que alimenta ac__summary-calc y pax-price-check. No se vuelven a
-  // inferir habitaciones desde el voucher ni se redistribuye el total vendido.
-  const paymentPricingPresentation = buildSummaryPricingPresentation(
-    paymentSummaryPricingModel,
-  );
-  const paymentBreakdownRowsFromCore = paymentPricingPresentation.columns.flatMap(
-    (column) =>
-      [
-        column.adult
-          ? {
-              key: `${column.key}-adult`,
-              label: `${labels.adultRoomPrice} ${translatePaymentRoomLabel(column.label)}`,
-              kind: "adult",
-              unitValue: column.adult.displayValue,
-              beneficiaries: column.adult.beneficiaries,
-              lineTotal: column.adult.lineTotal,
-            }
-          : null,
-        column.child
-          ? {
-              key: `${column.key}-child`,
-              label: `${labels.childRoomPrice} ${translatePaymentRoomLabel(column.label)}`,
-              kind: "child",
-              unitValue: column.child.displayValue,
-              beneficiaries: column.child.beneficiaries,
-              lineTotal: column.child.lineTotal,
-            }
-          : null,
-      ].filter(Boolean),
-  );
-  const paymentBreakdownRows = paymentBreakdownRowsFromCore.length
-    ? paymentBreakdownRowsFromCore
-    : [
-        {
-          key: "adult-fallback",
-          label: labels.adultPrice,
-          kind: "adult",
-          unitValue: Math.ceil(precioAdulto),
-          beneficiaries: adultsCount,
-          lineTotal: Math.ceil(precioAdulto) * adultsCount,
-        },
-        childrenCount > 0 && precioNino > 0
-          ? {
-              key: "child-fallback",
-              label: labels.childPrice,
-              kind: "child",
-              unitValue: Math.ceil(precioNino),
-              beneficiaries: childrenCount,
-              lineTotal: Math.ceil(precioNino) * childrenCount,
-            }
-          : null,
-      ].filter((row) => row && row.unitValue > 0);
-
-  const montoEnviado = paymentSummary.totalPagado || totalPagado;
-
-  // ——— Beneficiarios con costo > 0
-  const totalBeneficiarios = Math.max(
-    1,
-    passengers.length ||
-      Number(cot.cantidadpersonas || cot.cantidadPersonas) ||
-      adultsCount + childrenCount,
-  );
-  const saldoPagar = paymentSummary.pendiente ?? pendiente;
-  const infoPagoPackageName = normalizeMojibakeText(
-    hasOwn(datosPdf?.info_pago, "packageName")
-      ? datosPdf?.info_pago?.packageName
-      : getVoucherPackageTitle(voucherData) || labels.touristPackage,
-  );
-  const lugarPago = datosPdf?.info_pago?.lugarPago ?? "Cusco";
-  const textoPago = normalizeMojibakeText(
-    datosPdf?.info_pago?.textoPago ?? DEFAULT_PAGO_TEXT,
-  );
   // ——— Info Extra & Terminos
   const infoExtraText = ensureInfoExtraLockedSubtitles(
     normalizeMojibakeText(datosPdf?.info_extra ?? DEFAULT_INFO_EXTRA),
@@ -3805,13 +3372,9 @@ const VoucherView = ({
         createdAt,
         packageName,
         travelAgentName,
-        paymentSystemText,
         mainPassengerFullName,
         formattedStartDate,
         formattedEndDate,
-        totalCotizacion,
-        totalPagado,
-        pendiente,
         hotelNombre,
         hotelCategoria,
         hotelTipoHab,
@@ -3831,13 +3394,9 @@ const VoucherView = ({
       createdAt,
       packageName,
       travelAgentName,
-      paymentSystemText,
       mainPassengerFullName,
       formattedStartDate,
       formattedEndDate,
-      totalCotizacion,
-      totalPagado,
-      pendiente,
       hotelNombre,
       hotelCategoria,
       hotelTipoHab,
@@ -4036,36 +3595,15 @@ const VoucherView = ({
     normalizedInlineFlightRowCount,
   ]);
 
-  const itineraryPageData = itineraryDays.flatMap((persistedDay, idx) => {
-    const day = allDays[idx] || { numero: idx + 1 };
-    const fullContent = normalizeEditableNewlines(persistedDay?.content ?? "");
-    const contentChunks = paginateEditableTextContent(fullContent, {
-      maxUnits: ITINERARY_CONTENT_CHUNK_UNITS,
-      charsPerLine: 74,
-      orphanMinUnits: 3,
-    });
-
-    return contentChunks.map((contentChunk, chunkIndex) => ({
-      day,
-      idx,
-      dayDate: formatVoucherLongDate(addDaysToDate(itineraryBaseDate, idx), idioma),
-      title: String(persistedDay?.title ?? ""),
-      content: contentChunk.text,
-      fullContent,
-      contentStart: contentChunk.start,
-      contentEnd: contentChunk.end,
-      chunkIndex,
-      totalChunks: contentChunks.length,
-    }));
-  });
-  // La primera página ya contiene datos generales, pasajeros, teléfonos y
-  // eventualmente vuelos compactos. Ese alto varía bastante por voucher;
-  // por seguridad no se incrusta itinerario ahí, evitando que el primer día
-  // invada el footer cuando los datos reales ocupan más de lo estimado.
+  const itineraryPageData = buildVoucherTitleBlocks(itineraryDays, allDays, (idx) =>
+    formatVoucherLongDate(addDaysToDate(itineraryBaseDate, idx), idioma),
+  );
+  // Los presupuestos estimativos no insertan días en la introducción.
+  // El flujo medido más abajo aprovecha únicamente su espacio libre real,
+  // después de los datos generales, pasajeros, teléfonos y vuelos compactos.
   const introInlineItineraryBudget = 0;
-  // El itinerario se pagina en el flujo A4 medido. No lo incrustamos en la
-  // última página de vuelos porque ese cálculo era estimativo y generaba hojas
-  // con uno o dos días arriba y demasiado espacio vacío antes del footer.
+  // Los vuelos restantes comparten el mismo flujo A4 medido con el itinerario;
+  // no necesitan una hoja exclusiva basada en estimaciones.
   const flightInlineItineraryBudget = 0;
   const introItinerarySelection = takeItineraryBlocksForUnits(
     itineraryPageData,
@@ -4147,74 +3685,10 @@ const VoucherView = ({
     if (hasObservacionesText) setShowObservacionesEditor(true);
   }, [hasObservacionesText]);
 
-  const estimatedObservacionesUnits = hasObservacionesText
-    ? 8 + Math.max(4, getEstimatedTextUnits(observacionesText, 84))
-    : 0;
-  const estimatedInfoPagoUnits =
-    30 +
-    getEstimatedTextUnits(cot.titulo || "Paquete turístico", 66) +
-    getEstimatedTextUnits(textoPago, 78) * 1.35 +
-    estimatedObservacionesUnits;
-
-  const lastDedicatedInfoExtraText =
-    infoExtraDedicatedPages[infoExtraDedicatedPages.length - 1] || "";
-  const lastInfoExtraUnits = getInfoExtraTextUnits(
-    lastDedicatedInfoExtraText,
-    94,
-  );
-  const shouldMergeInfoPagoWithInfoExtra =
-    infoExtraDedicatedPages.length > 0 &&
-    lastInfoExtraUnits + estimatedInfoPagoUnits <=
-      INFO_EXTRA_WITH_PAYMENT_UNITS;
-
-  const mergedPaymentTermsBudget = shouldMergeInfoPagoWithInfoExtra
-    ? Math.min(
-        TERMINOS_INLINE_MAX_UNITS,
-        Math.max(
-          0,
-          INFO_EXTRA_WITH_PAYMENT_AND_TERMS_UNITS -
-            lastInfoExtraUnits -
-            estimatedInfoPagoUnits -
-            INFO_PAGO_WITH_TERMS_GAP_UNITS,
-        ),
-      )
-    : 0;
-  const standalonePaymentTermsBudget = !shouldMergeInfoPagoWithInfoExtra
-    ? Math.min(
-        TERMINOS_INLINE_MAX_UNITS,
-        Math.max(
-          0,
-          INFO_PAGO_PAGE_UNITS -
-            estimatedInfoPagoUnits -
-            INFO_PAGO_WITH_TERMS_GAP_UNITS,
-        ),
-      )
-    : 0;
-  const inlineTerminosCandidate = takeTerminosPrefixForUnits(terminosText, {
-    maxUnits: shouldMergeInfoPagoWithInfoExtra
-      ? mergedPaymentTermsBudget
-      : standalonePaymentTermsBudget,
+  const terminosPages = paginateTerminosContent(terminosText, {
+    maxUnits: TERMINOS_PAGE_UNITS,
     charsPerLine: 102,
-    minUnits: TERMINOS_INLINE_MIN_UNITS,
   });
-  const terminosInlineText = inlineTerminosCandidate.selected.trim()
-    ? inlineTerminosCandidate.selected
-    : "";
-  const terminosRemainingText = terminosInlineText
-    ? inlineTerminosCandidate.remaining
-    : terminosText;
-  const terminosDedicatedPages = terminosRemainingText.trim()
-    ? paginateTerminosContent(terminosRemainingText, {
-        maxUnits: TERMINOS_PAGE_UNITS,
-        charsPerLine: 102,
-      })
-    : [];
-  const terminosPages = terminosInlineText
-    ? [terminosInlineText, ...terminosDedicatedPages]
-    : terminosDedicatedPages.length > 0
-      ? terminosDedicatedPages
-      : [terminosText];
-  const terminosDedicatedPageOffset = terminosInlineText ? 1 : 0;
 
   const infoExtraFlowPages = paginateInfoExtraContent(infoExtraText, {
     maxUnits: INFO_EXTRA_FLOW_CHUNK_UNITS,
@@ -4224,9 +3698,6 @@ const VoucherView = ({
     maxUnits: TERMINOS_FLOW_CHUNK_UNITS,
     charsPerLine: 92,
   });
-  const hasSubtotalSinItinerarioExterno =
-    subtotalSinItinerarioExterno > 0 &&
-    subtotalSinItinerarioExterno < authoritativeTotal;
   const pdfFlowItems = [
     ...(shouldPlaceFlightsInPdfFlow
       ? flowFlightRows.map((row) => ({
@@ -4261,16 +3732,10 @@ const VoucherView = ({
       pageIndex,
       units: getInfoExtraSectionUnits(pageText),
     })),
-    {
-      type: "payment",
-      units: getInfoPagoSectionUnits({
-        title: cot.titulo || "Paquete turístico",
-        textoPago,
-        observaciones: observacionesText,
-        childrenCount,
-        hasSubtotal: hasSubtotalSinItinerarioExterno,
-      }),
-    },
+    ...(hasObservacionesText || showObservacionesEditor ? [{
+      type: "observaciones",
+      units: 8 + Math.max(4, getEstimatedTextUnits(observacionesText, 84)),
+    }] : []),
     ...terminosFlowBlocks.map((pageText, blockIndex) => ({
       type: "terminos",
       pageText,
@@ -4281,6 +3746,7 @@ const VoucherView = ({
   const fallbackPdfFlowPages = packPdfFlowItems(pdfFlowItems);
   const pdfFlowSignature = pdfFlowItems.map(getPdfFlowItemSignature).join("¶");
   const flowMeasureRef = useRef(null);
+  const introFlowStartRef = useRef<HTMLDivElement>(null);
   const [measuredPdfFlowPages, setMeasuredPdfFlowPages] = useState(null);
 
   useLayoutEffect(() => {
@@ -4295,7 +3761,9 @@ const VoucherView = ({
     setMeasuredPdfFlowPages(null);
 
     let frameId = 0;
-    frameId = window.requestAnimationFrame(() => {
+    let disposed = false;
+    const measureFlow = () => {
+      if (disposed) return;
       const measuredItems = Array.from(
         node.querySelectorAll("[data-flow-measure-item='true']"),
       );
@@ -4308,14 +3776,36 @@ const VoucherView = ({
         return;
       }
 
-      setMeasuredPdfFlowPages(buildMeasuredPdfFlowPages(pdfFlowItems, heights));
+      const tail = introFlowStartRef.current;
+      const introPage = tail?.closest(".voucher-a4-page");
+      const availableHeight = tail && introPage
+        ? Math.max(0, introPage.getBoundingClientRect().bottom
+          - Number.parseFloat(window.getComputedStyle(introPage).paddingBottom || "0")
+          - tail.getBoundingClientRect().top - 20)
+        : 0;
+      setMeasuredPdfFlowPages(buildMeasuredPdfFlowPages(pdfFlowItems, heights, availableHeight));
+    };
+    frameId = window.requestAnimationFrame(measureFlow);
+    // Web fonts can change row heights after the first layout calculation.
+    document.fonts?.ready.then(() => {
+      if (disposed) return;
+      window.cancelAnimationFrame(frameId);
+      frameId = window.requestAnimationFrame(measureFlow);
     });
 
-    return () => window.cancelAnimationFrame(frameId);
-  }, [pdfFlowSignature]);
+    return () => {
+      disposed = true;
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [pdfFlowSignature, passengerPaginationSignature, normalizedPassengerPageSizes.join(","), normalizedInlineFlightRowCount]);
 
-  const effectivePdfFlowPages = measuredPdfFlowPages || fallbackPdfFlowPages;
-  const terminosFlowPageTexts = effectivePdfFlowPages
+  const introPdfFlowItems = measuredPdfFlowPages?.introItems || [];
+  const introHasItinerary = introPdfFlowItems.some((item) => item.type === "itinerary-day");
+  const effectivePdfFlowPages = measuredPdfFlowPages?.pages || fallbackPdfFlowPages;
+  const terminosFlowPageTexts = [
+    ...(introPdfFlowItems.length ? [{ items: introPdfFlowItems }] : []),
+    ...effectivePdfFlowPages,
+  ]
     .map((page) =>
       page.items
         .filter((item) => item.type === "terminos")
@@ -4343,47 +3833,6 @@ const VoucherView = ({
     });
   };
 
-  const handleDayChunkTouch = (
-    dayIndex,
-    fullContent,
-    contentStart,
-    contentEnd,
-    value,
-  ) => {
-    const mergedValue = replaceEditableTextRange(
-      fullContent,
-      contentStart,
-      contentEnd,
-      value,
-    );
-    onDatosPdfTouch?.({
-      scope: "day",
-      index: dayIndex,
-      field: "content",
-      value: mergedValue,
-    });
-  };
-
-  const handleDayChunkChange = (
-    dayIndex,
-    fullContent,
-    contentStart,
-    contentEnd,
-    value,
-  ) => {
-    const mergedValue = replaceEditableTextRange(
-      fullContent,
-      contentStart,
-      contentEnd,
-      value,
-    );
-    onDatosPdfChange?.({
-      scope: "day",
-      index: dayIndex,
-      field: "content",
-      value: mergedValue,
-    });
-  };
 
   const handleEditableInput = (event, callback) => {
     const element = event.currentTarget;
@@ -4475,178 +3924,6 @@ const VoucherView = ({
     </div>
     );
   };
-
-  const renderInfoPagoContent = ({ embedded = false } = {}) => (
-    <>
-      <div className="voucher-section-title">{labels.paymentInfo}</div>
-
-      <div className="info-pago-box">
-        <div
-          className="info-pago-package-name editable-field"
-          contentEditable={!!onDatosPdfChange}
-          suppressContentEditableWarning
-          role="textbox"
-          aria-label={labels.packageName}
-          data-placeholder={labels.packageNamePlaceholder}
-          ref={(node) => syncEditableTextElement(node, infoPagoPackageName)}
-          onFocus={(event) => {
-            event.currentTarget.dataset.editing = "true";
-          }}
-          onKeyDown={handleEditableSingleLineKeyDown}
-          onPaste={handleEditableSingleLinePaste}
-          onInput={(event) => {
-            const nextValue = normalizeEditableSingleLine(
-              event.currentTarget.textContent ?? "",
-            );
-            event.currentTarget.dataset.empty = nextValue.trim()
-              ? "false"
-              : "true";
-            handleEditableInput(event, () =>
-              onDatosPdfTouch?.({
-                scope: "info_pago",
-                field: "packageName",
-                value: nextValue,
-              }),
-            );
-          }}
-          onBlur={(event) => {
-            const nextValue = normalizeEditableSingleLine(
-              event.currentTarget.textContent ?? "",
-            );
-            delete event.currentTarget.dataset.editing;
-            event.currentTarget.dataset.empty = nextValue.trim()
-              ? "false"
-              : "true";
-            onDatosPdfChange?.({
-              scope: "info_pago",
-              field: "packageName",
-              value: nextValue,
-            });
-          }}
-        />
-      </div>
-
-      <div className="info-pago-breakdown">
-        <div className="info-pago-breakdown-title">
-          <span>{labels.priceBreakdownTitle}</span>
-          <small>{labels.perPerson}</small>
-        </div>
-        <div className="info-pago-breakdown-list">
-          {paymentBreakdownRows.map((row) => {
-            const amountToDisplay = row.unitValue;
-            const detailBeneficiaries = Math.max(1, Number(row.beneficiaries) || 1);
-
-            return (
-              <div
-                className={`info-pago-price-row info-pago-price-row--${row.kind}`}
-                key={row.key}
-              >
-                <div className="info-pago-price-main">
-                  <span>{row.label}</span>
-                  <small>{detailBeneficiaries} {labels.passengersShort}</small>
-                </div>
-                <div className="info-pago-price-amount">
-                  <strong>{formatUsdSmart(amountToDisplay)}</strong>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="info-pago-grid">
-        <div className="info-pago-row">
-          <span className="label">{labels.amountSent}</span>
-          <span className="value">{formatUsdSmart(montoEnviado)}</span>
-        </div>
-        <div className="info-pago-row">
-          <span className="label">{labels.voucherTotal}</span>
-          <span className="value">
-            {formatUsdSmart(authoritativeTotal)}
-          </span>
-        </div>
-        <div className="info-pago-row">
-          <span className="label">
-            {labels.balanceToPayIn}{" "}
-            <span
-              className="editable-field editable-inline"
-              contentEditable={!!onDatosPdfChange}
-              suppressContentEditableWarning
-              role="textbox"
-              aria-label={labels.balanceToPayIn}
-              data-placeholder="Cusco"
-              ref={(node) => syncEditableTextElement(node, lugarPago)}
-              onFocus={(event) => {
-                event.currentTarget.dataset.editing = "true";
-              }}
-              onKeyDown={handleEditableSingleLineKeyDown}
-              onPaste={handleEditableSingleLinePaste}
-              onInput={(event) => {
-                const nextValue = normalizeEditableSingleLine(
-                  event.currentTarget.textContent ?? "",
-                );
-                handleEditableInput(event, () =>
-                  onDatosPdfTouch?.({
-                    scope: "info_pago",
-                    field: "lugarPago",
-                    value: nextValue || "Cusco",
-                  }),
-                );
-              }}
-              onBlur={(event) => {
-                const nextValue = normalizeEditableSingleLine(
-                  event.currentTarget.textContent ?? "",
-                );
-                delete event.currentTarget.dataset.editing;
-                onDatosPdfChange?.({
-                  scope: "info_pago",
-                  field: "lugarPago",
-                  value: nextValue || "Cusco",
-                });
-              }}
-            />
-            :
-          </span>
-          <span className="value">{formatUsdSmart(saldoPagar)}</span>
-        </div>
-      </div>
-
-      <div
-        className="info-pago-text editable-field"
-        contentEditable={!!onDatosPdfChange}
-        suppressContentEditableWarning
-        style={{ whiteSpace: "pre-wrap" }}
-        role="textbox"
-        aria-multiline="true"
-        ref={(node) => syncEditableTextElement(node, textoPago)}
-        onFocus={(event) => {
-          event.currentTarget.dataset.editing = "true";
-        }}
-        onKeyDown={handleEditableMultilineKeyDown}
-        onPaste={handleEditablePlainTextPaste}
-        onInput={(e) =>
-          handleEditableInput(e, () =>
-            onDatosPdfTouch?.({
-              scope: "info_pago",
-              field: "textoPago",
-              value: normalizeEditableNewlines(
-                e.currentTarget.textContent ?? "",
-              ),
-            }),
-          )
-        }
-        onBlur={(e) => {
-          delete e.currentTarget.dataset.editing;
-          onDatosPdfChange?.({
-            scope: "info_pago",
-            field: "textoPago",
-            value: normalizeEditableNewlines(e.currentTarget.textContent ?? ""),
-          });
-        }}
-        data-embedded={embedded ? "true" : undefined}
-      />
-    </>
-  );
 
   const renderVoucherPhoneRow = () => (
     <div
@@ -4968,12 +4245,6 @@ const VoucherView = ({
         {datosPdf?.itinerary?.title ?? labels.itinerary}
       </div>
 
-      <div className="voucher-itinerary-dates">
-        <span className="label">{labels.fromDate}</span>
-        <span className="value">{formattedStartDate}</span>
-        <span className="label">{labels.toDate}</span>
-        <span className="value">{formattedEndDate}</span>
-      </div>
     </>
   );
 
@@ -5021,50 +4292,6 @@ const VoucherView = ({
             value: e.currentTarget.textContent || "",
           });
           delete e.currentTarget.dataset.editing;
-        }}
-      />
-      <div
-        className="day-content editable-field"
-        contentEditable={!!onDatosPdfChange}
-        suppressContentEditableWarning
-        style={{ whiteSpace: "pre-wrap" }}
-        ref={(node) => {
-          if (!node || node.dataset.editing === "true") return;
-          const expectedContent = normalizeEditableNewlines(
-            block.content ?? "",
-          );
-          if (node.textContent !== expectedContent) {
-            node.textContent = expectedContent;
-          }
-        }}
-        onFocus={(e) => {
-          e.currentTarget.dataset.editing = "true";
-        }}
-        onKeyDown={handleEditableMultilineKeyDown}
-        onPaste={handleEditablePlainTextPaste}
-        onInput={(e) =>
-          handleEditableInput(e, () =>
-            handleDayChunkTouch(
-              block.idx,
-              block.fullContent,
-              block.contentStart,
-              block.contentEnd,
-              normalizeEditableNewlines(e.currentTarget.textContent ?? ""),
-            ),
-          )
-        }
-        onBlur={(e) => {
-          const nextValue = normalizeEditableNewlines(
-            e.currentTarget.textContent ?? "",
-          );
-          delete e.currentTarget.dataset.editing;
-          handleDayChunkChange(
-            block.idx,
-            block.fullContent,
-            block.contentStart,
-            block.contentEnd,
-            nextValue,
-          );
         }}
       />
     </div>
@@ -5130,8 +4357,6 @@ const VoucherView = ({
     pageIndex,
     chunks = infoExtraPages,
     inline = false,
-    withPayment = false,
-    inlineTerminosText = "",
   }) => {
     const infoExtraBlocks = splitInfoExtraEditableBlocks(pageText);
 
@@ -5176,7 +4401,7 @@ const VoucherView = ({
       <div
         className={`voucher-section info-extra-section${
           inline ? " info-extra-section--inline" : " voucher-page-break"
-        }${withPayment ? " info-extra-section--with-payment" : ""}`}
+        }`}
       >
         <div className="voucher-section-title">
           {labels.includesTitle}
@@ -5203,19 +4428,6 @@ const VoucherView = ({
           })}
         </div>
 
-        {withPayment && (
-          <div className="voucher-embedded-section info-pago-section info-pago-section--embedded">
-            {renderInfoPagoContent({ embedded: true })}
-            {renderObservacionesContent({ embedded: true })}
-            {inlineTerminosText &&
-              renderTerminosSection({
-                pageText: inlineTerminosText,
-                pageIndex: 0,
-                chunks: terminosPages,
-                inline: true,
-              })}
-          </div>
-        )}
       </div>
     );
   };
@@ -5241,13 +4453,8 @@ const VoucherView = ({
         chunks: infoExtraFlowPages,
         inline: true,
       });
-    } else if (item.type === "payment") {
-      node = (
-        <div className="voucher-section info-pago-section info-pago-section--flow">
-          {renderInfoPagoContent()}
-          {renderObservacionesContent()}
-        </div>
-      );
+    } else if (item.type === "observaciones") {
+      node = <div className="voucher-section">{renderObservacionesContent()}</div>;
     } else if (item.type === "terminos") {
       node = renderTerminosSection({
         pageText: item.pageText,
@@ -5271,7 +4478,7 @@ const VoucherView = ({
     );
   };
 
-  const renderPdfFlowPage = (
+  const renderPdfFlowContent = (
     page,
     {
       flowPageIndex,
@@ -5357,13 +4564,9 @@ const VoucherView = ({
         return;
       }
 
-      if (item.type === "payment") {
+      if (item.type === "observaciones") {
         content.push(
-          <div
-            key={`flow-payment-${flowPageIndex}-${itemIndex}`}
-            className="voucher-section info-pago-section info-pago-section--flow"
-          >
-            {renderInfoPagoContent()}
+          <div key={`flow-observaciones-${flowPageIndex}-${itemIndex}`} className="voucher-section">
             {renderObservacionesContent()}
           </div>,
         );
@@ -5373,16 +4576,24 @@ const VoucherView = ({
     flushItinerary();
     flushTerminos();
 
-    return (
-      <div
-        key={`pdf-flow-page-${flowPageIndex}`}
-        className="voucher-a4-page voucher-a4-page--itinerary-days voucher-a4-page--flow"
-      >
-        {renderVensoServicePageHeader({ compact: true })}
-        <div className="voucher-flow-section">{content}</div>
-      </div>
-    );
+    return <div className="voucher-flow-section">{content}</div>;
   };
+
+  const renderPdfFlowPage = (page, options) => (
+    <div key={`pdf-flow-page-${options.flowPageIndex}`} className="voucher-a4-page voucher-a4-page--itinerary-days voucher-a4-page--flow">
+      {renderVensoServicePageHeader({ compact: true })}
+      {renderPdfFlowContent(page, options)}
+    </div>
+  );
+
+  const renderIntroFlow = () => (
+    <>
+      <div ref={introFlowStartRef} className="voucher-intro-flow-start" />
+      {introPdfFlowItems.length > 0 && renderPdfFlowContent({ items: introPdfFlowItems }, {
+        flowPageIndex: "intro", showFirstItineraryHeader: true, terminosPageIndex: 0,
+      })}
+    </>
+  );
 
   const renderPassengerCard = (pax, globalIndex) => {
     const isChild =
@@ -5647,54 +4858,6 @@ const VoucherView = ({
       >
         {renderVensoServicePageHeader({ compact: false })}
 
-        {/* Montos */}
-        <div className="voucher-amount-row">
-          <div className="voucher-amount-box">
-            <div className="label">{labels.totalPackageAmount}</div>
-            <div className="value">
-              {totalCotizacion ? `$ ${totalCotizacion.toFixed(2)}` : ""}
-            </div>
-          </div>
-          <div className="voucher-amount-box">
-            <div className="label">{labels.paidAmount}</div>
-            <div className="value">
-              {totalPagado ? `$ ${totalPagado.toFixed(2)}` : ""}
-            </div>
-          </div>
-          <div className="voucher-amount-box">
-            <div className="label">{labels.pendingAmount}</div>
-            <div className="value">
-              {pendiente ? `$ ${pendiente.toFixed(2)}` : ""}
-            </div>
-          </div>
-          <div className="voucher-amount-box">
-            <div className="label">{labels.paymentSystem}</div>
-            <div
-              ref={paymentSystemRef}
-              className="value voucher-payment-system editable-field"
-              contentEditable={!!onDatosPdfChange}
-              suppressContentEditableWarning
-              data-placeholder={labels.paymentSystem.replace(/:$/, "")}
-              onInput={(e) =>
-                handleEditableInput(e, () =>
-                  onDatosPdfTouch?.({
-                    scope: "general",
-                    field: "paymentSystem",
-                    value: e.currentTarget.textContent || "",
-                  }),
-                )
-              }
-              onBlur={(e) =>
-                onDatosPdfChange?.({
-                  scope: "general",
-                  field: "paymentSystem",
-                  value: e.currentTarget.textContent || "",
-                })
-              }
-            />
-          </div>
-        </div>
-
         {/* Datos generales */}
         <div className="voucher-general-info">
           <div className="voucher-row">
@@ -5865,6 +5028,7 @@ const VoucherView = ({
             pageIndex: 0,
             includeTrailingContent: passengerPages.length === 1,
           })}
+        {passengerPages.length <= 1 && renderIntroFlow()}
       </div>
 
       {passengerPages.slice(1).map((pagePassengers, continuationIndex) => {
@@ -5884,11 +5048,12 @@ const VoucherView = ({
               pageIndex,
               includeTrailingContent: pageIndex === passengerPages.length - 1,
             })}
+            {pageIndex === passengerPages.length - 1 && renderIntroFlow()}
           </div>
         );
       })}
 
-      {/* FLUJO PAGINADO: itinerario + incluye/no incluye + pago + términos */}
+      {/* FLUJO PAGINADO: itinerario + incluye/no incluye + observaciones + términos */}
       {itineraryPageData.length === 0 && (
         <div className="voucher-itinerary-empty">
           {labels.noItinerary}
@@ -5904,8 +5069,8 @@ const VoucherView = ({
       </div>
 
       {(() => {
-        let flowItineraryHeaderRendered = hasInlineItineraryHeader;
-        let flowTerminosPageIndex = 0;
+        let flowItineraryHeaderRendered = hasInlineItineraryHeader || introHasItinerary;
+        let flowTerminosPageIndex = introPdfFlowItems.some((item) => item.type === "terminos") ? 1 : 0;
 
         return effectivePdfFlowPages.map((page, flowPageIndex) => {
           const hasItineraryItems = page.items.some(
@@ -5948,10 +5113,6 @@ const VentasSummaryPDFModal = ({
   const [voucherData, setVoucherData] = useState(null);
   const [passengers, setPassengers] = useState([]);
   const [documents, setDocuments] = useState([]);
-  const [movimientos, setMovimientos] = useState([]);
-  const [loadingMovimientos, setLoadingMovimientos] = useState(false);
-  const [showMovimientoPreview, setShowMovimientoPreview] = useState(false);
-  const [selectedMovimiento, setSelectedMovimiento] = useState(null);
   const [activeTab, setActiveTab] = useState("voucher");
   const [previewImage, setPreviewImage] = useState(null);
   const [showImagePreview, setShowImagePreview] = useState(false);
@@ -5985,11 +5146,10 @@ const VentasSummaryPDFModal = ({
             passengers,
             externalFlights,
             datosPdf,
-            movimientos,
           }),
         ),
       ].join("@@"),
-    [voucher?.id, voucherData, passengers, externalFlights, datosPdf, movimientos],
+    [voucher?.id, voucherData, passengers, externalFlights, datosPdf],
   );
 
   useEffect(() => {
@@ -6454,64 +5614,6 @@ const VentasSummaryPDFModal = ({
     loadAllData();
   }, [isOpen, voucher?.id]);
 
-  // Cargar movimientos (pagos)
-  useEffect(() => {
-    if (!isOpen || !voucher?.id) return;
-
-    const loadMovimientos = async () => {
-      setLoadingMovimientos(true);
-      try {
-        const response = await contabilidadService.getMovimientos();
-        setMovimientos(
-          filterVoucherPaymentMovements(response.data || [], voucher),
-        );
-      } catch (error) {
-        console.error("Error cargando movimientos:", error);
-        setMovimientos([]);
-      } finally {
-        setLoadingMovimientos(false);
-      }
-    };
-
-    loadMovimientos();
-  }, [isOpen, voucher?.id]);
-
-  // Totales derivados exclusivamente de cotización + movimientos.
-  const paymentSummary = useMemo(() => {
-    const summary = summarizeVoucherFinancials({
-      voucher: voucherData || voucher,
-      cotizacion: voucherData?.cotizacion_data || voucher?.cotizacion_data,
-      movimientos,
-    });
-    const subtotalCotizacion = parseFloat(
-      voucherData?.cotizacion_data?.subtotal_final ||
-        voucherData?.cotizacion_data?.subtotalFinal ||
-        voucherData?.cotizacion_data?.additionalcosts?.subtotalFinal ||
-        voucherData?.cotizacion_data?.additionalCosts?.subtotalFinal ||
-        voucherData?.cotizacion_data?.additionalcosts?.commissionableSubtotal ||
-        voucherData?.cotizacion_data?.additionalCosts?.commissionableSubtotal ||
-        0,
-    );
-    const metodoPago =
-      movimientos.length > 0 ? movimientos[0].metodo_pago || "" : "";
-
-    return {
-      totalPagado: summary.totalPaid,
-      totalCotizacion: summary.totalFinal,
-      subtotalCotizacion: Number.isFinite(subtotalCotizacion)
-        ? subtotalCotizacion
-        : 0,
-      pendiente: summary.remainingAmount,
-      estado:
-        summary.paymentStatus === "completed"
-          ? "Pagado"
-          : summary.paymentStatus === "partial"
-            ? "Parcial"
-            : "Pendiente",
-      metodoPago,
-    };
-  }, [movimientos, voucherData, voucher]);
-
   const buildExternalFlightPayload = (
     flightFlat = {},
     procedencia = "nacional",
@@ -6876,11 +5978,10 @@ const VentasSummaryPDFModal = ({
                   onClick={() => handleVoucherIdiomaChange(language.code)}
                   disabled={changingIdioma || loading || savingPdf}
                   title={language.name}
+                  aria-label={language.name}
+                  aria-pressed={currentIdioma === language.code}
                 >
-                  <span className="voucher-language-btn__flag">
-                    {language.flag}
-                  </span>
-                  <span>{language.label}</span>
+                  <LanguageFlag code={language.code} />
                 </button>
               ))}
               {changingIdioma && (
@@ -6936,7 +6037,6 @@ const VentasSummaryPDFModal = ({
                   voucher={voucher}
                   voucherData={voucherData}
                   passengers={passengers}
-                  paymentSummary={paymentSummary}
                   externalFlights={externalFlights}
                   onAddInternationalFlight={handleAddInternationalFlight}
                   onAddNationalFlight={handleAddNationalFlight}

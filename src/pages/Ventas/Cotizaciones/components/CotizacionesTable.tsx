@@ -21,6 +21,7 @@ const CotizacionesTable = ({
   onDuplicateModel,
   onSummary,
   onAgencyPayment,
+  onPreLiquidacion,
   onVoucherMedia,
   onViewServices,
   onVoucher,
@@ -127,6 +128,7 @@ const CotizacionesTable = ({
               }
               onDuplicateModel={() => onDuplicateModel(cotizacion)}
               onSummary={() => onSummary(cotizacion)}
+              onPreLiquidacion={onPreLiquidacion ? () => onPreLiquidacion(cotizacion) : undefined}
               onAgencyPayment={
                 onAgencyPayment ? () => onAgencyPayment(cotizacion) : undefined
               }

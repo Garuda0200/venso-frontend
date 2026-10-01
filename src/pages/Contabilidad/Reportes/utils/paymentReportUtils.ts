@@ -1,4 +1,5 @@
 import { serviceHasPeruvianBeneficiary } from "../../../../components/Ventas/Cotizaciones/EdicionCotizacion/utils/igvUtils";
+import { isReportTicket, reportTicketName } from "./ticketPaymentPresentation";
 
 export type CurrencyKey = "soles" | "dolares";
 
@@ -49,6 +50,8 @@ export const resolveProviderId = (service: any): number | null => {
 
 export const resolveProviderName = (service: any): string => {
   const parent = getOperationalParent(service);
+  // Las entradas son standalone: el nombre de la entrada identifica el destino del pago.
+  if (isReportTicket(service) && resolveProviderId(service) == null) return reportTicketName(service);
   return firstText(
     parent.nombre,
     parent.nombre_empresa,
@@ -67,6 +70,7 @@ export const resolveProviderName = (service: any): string => {
 };
 
 export const resolveServiceName = (service: any): string => {
+  if (isReportTicket(service)) return reportTicketName(service);
   const child = getOperationalChild(service);
   const parent = getOperationalParent(service);
   return firstText(
@@ -185,10 +189,12 @@ export const resolveServiceCommercialBase = (
 ): ServiceCommercialBaseBreakdown => {
   const adultEntries = getAdultBeneficiaries(service);
   const childEntries = getChildBeneficiaries(service);
+  const rawAdultEntries = service?.beneficiariosAdultos ?? service?.beneficiarios_adultos;
+  const hasExplicitTicketAdults = isReportTicket(service) && rawAdultEntries != null;
   const convertedChildCount = adultEntries.filter(isConvertedChildBeneficiary).length;
   const actualAdultCount = adultEntries.length > 0
     ? Math.max(0, adultEntries.length - convertedChildCount)
-    : Math.max(1, Math.trunc(toNumber(fallbackPax) || 1) - childEntries.length);
+    : hasExplicitTicketAdults ? 0 : Math.max(1, Math.trunc(toNumber(fallbackPax) || 1) - childEntries.length);
   const explicitChildCount = childEntries.length;
   const adultRatedCount = Math.max(
     1,
@@ -246,6 +252,7 @@ export const resolveServiceCommercialBase = (
         flatTotal,
         service?.tariff?.basePrice,
       )
+    : hasExplicitTicketAdults && adultEntries.length === 0 ? 0
     : flatTotal > 0
       ? flatTotal
       : roundMoney(unit * (divided ? 1 : adultRatedCount));
@@ -256,7 +263,7 @@ export const resolveServiceCommercialBase = (
 
   const effectiveActualAdultCount = adultEntries.length > 0
     ? actualAdultCount
-    : adultRatedCount;
+    : hasExplicitTicketAdults ? 0 : adultRatedCount;
   const adultPax = Math.max(0, effectiveActualAdultCount);
   const childPax = Math.max(0, convertedChildCount + explicitChildCount);
   const resolvedPax = Math.max(1, adultPax + childPax || toNumber(fallbackPax) || 1);

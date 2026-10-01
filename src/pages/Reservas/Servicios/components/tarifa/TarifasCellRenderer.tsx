@@ -10,7 +10,6 @@ import {
   FaUserTie,
   FaUsers,
 } from "react-icons/fa";
-import { formatCurrency } from "../../utils/formatters";
 import {
   createTarifa,
   deleteTarifa,
@@ -23,6 +22,7 @@ import Modal from "../Modal";
 import DeleteConfirmation from "../DeleteConfirmation";
 import TarifaClonePopover from "./TarifaClonePopover";
 import TarifaFormPopover from "./TarifaFormPopover";
+import TarifaPriceSummary from "./TarifaPriceSummary";
 import "./TarifasCellRenderer.scss";
 
 /**
@@ -163,14 +163,7 @@ const TarifasCellRenderer = ({
 
   const renderTarifa = (tarifa) => {
     const isProtected = Boolean(tarifa.is_protected_by_voucher);
-    const symbol = tarifa.moneda === "soles" ? "S/" : "$";
     const tempLabel = tarifa.tiene_temporada ? tarifa.temporada : "std";
-    const sharedPrice = Number.parseFloat(tarifa.precio_compartido);
-    const privatePrice = tarifa.precio_unico
-      ? sharedPrice
-      : Number.parseFloat(tarifa.precio_privado);
-    const minPrice = Math.min(sharedPrice, privatePrice);
-    const maxPrice = Math.max(sharedPrice, privatePrice);
     const exchangeRate =
       tarifa.moneda === "soles" && tarifa.tasa_cambio
         ? Number.parseFloat(tarifa.tasa_cambio).toFixed(2)
@@ -202,10 +195,11 @@ const TarifasCellRenderer = ({
             ) : (
               <FaCalendarAlt />
             )}
-            <span>{tempLabel.substring(0, 3)}</span>
+            <span>{tarifa.tiene_temporada ? tarifa.temporada : "Estándar"}</span>
           </span>
 
-          <span className={`cell-badge moneda ${tarifa.moneda}`}>{symbol}</span>
+          <span className={`cell-badge moneda ${tarifa.moneda}`}>{tarifa.moneda === "soles" ? "PEN" : "USD"}</span>
+          {isProtected && <span className="cell-badge protected-label" title="Vinculada a un voucher; no puede eliminarse">Protegida</span>}
 
           {exchangeRate && (
             <span
@@ -219,11 +213,7 @@ const TarifasCellRenderer = ({
         </div>
 
         <div className="cell-precio">
-          <span className={tarifa.precio_unico ? "precio-single" : "precio-range"}>
-            {tarifa.precio_unico
-              ? formatCurrency(minPrice, symbol)
-              : `${formatCurrency(minPrice, symbol)} - ${formatCurrency(maxPrice, symbol)}`}
-          </span>
+          <TarifaPriceSummary tarifa={tarifa} />
         </div>
 
         <div className="cell-tarifa-actions" onClick={(event) => event.stopPropagation()}>

@@ -1,3 +1,5 @@
+import { normalizePreLiquidacionQuotationSummary, type PreLiquidacionQuotationSummary } from "./preliquidacionMoney";
+
 export interface PreLiquidacionLineItem {
   id: string;
   description: string;
@@ -41,6 +43,7 @@ export interface PreLiquidacionData {
   paymentDeadline: string;
   currency: "USD" | "PEN";
   lineItems: PreLiquidacionLineItem[];
+  quotationSummary?: PreLiquidacionQuotationSummary | null;
   paymentSchedule: PreLiquidacionPayment[];
   passengersSnapshot: PreLiquidacionPassenger[];
   paymentTerms: {
@@ -96,8 +99,9 @@ export const defaultPreLiquidacion = (
     text(defaults.notes) ||
     "ENVIAR DOCUMENTOS DE IDENTIDAD LO MÁS LEGIBLE POSIBLE Y VIGENTE A LA FECHA DE VIAJE.\nNO SE ACEPTAN DOCUMENTOS CADUCADOS.\nNÚMERO DE CONTACTO DE UNO DE LOS PASAJEROS.",
   paymentDeadline: text(defaults.paymentDeadline),
-  currency: defaults.currency === "PEN" ? "PEN" : "USD",
+  currency: normalizePreLiquidacionQuotationSummary(defaults.quotationSummary) ? "USD" : defaults.currency === "PEN" ? "PEN" : "USD",
   lineItems: array<PreLiquidacionLineItem>(defaults.lineItems),
+  quotationSummary: normalizePreLiquidacionQuotationSummary(defaults.quotationSummary),
   paymentSchedule: array<PreLiquidacionPayment>(defaults.paymentSchedule),
   passengersSnapshot: array<PreLiquidacionPassenger>(defaults.passengersSnapshot),
   paymentTerms: {
@@ -173,7 +177,7 @@ export const normalizePreLiquidacion = (
     paymentDeadline: text(
       source.paymentDeadline ?? source.fecha_pago_total ?? base.paymentDeadline,
     ),
-    currency: String(source.currency ?? source.moneda ?? base.currency).toUpperCase() === "PEN"
+    currency: base.quotationSummary ? "USD" : String(source.currency ?? source.moneda ?? base.currency).toUpperCase() === "PEN"
       ? "PEN"
       : "USD",
     lineItems: lineItemsSource.map((item: any, index: number) => {
@@ -283,7 +287,7 @@ export const normalizePreLiquidacion = (
 };
 
 export const calculatePreLiquidacionTotal = (value: any) =>
-  Math.round(
+  normalizePreLiquidacion(value).quotationSummary?.total ?? Math.round(
     normalizePreLiquidacion(value).lineItems.reduce(
       (sum, item) => sum + nonNegativeNumber(item.total),
       0,

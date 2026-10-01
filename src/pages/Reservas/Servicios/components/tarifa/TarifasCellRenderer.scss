@@ -9,6 +9,14 @@ $temp-baja: $color-info;
 $temp-std: #6b7280;
 $tasa-color: #d97706;
 
+.cell-price-summary {
+  display: grid;
+  gap: 5px;
+  &__entry { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+  span { color: #82717d; font-size: 10px; white-space: nowrap; }
+  strong { color: #33242d; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+}
+
 .cell-tarifas-manager {
   display: grid;
   gap: 7px;
@@ -155,7 +163,7 @@ $tasa-color: #d97706;
 
   .cell-tipo-group {
     display: grid;
-    grid-template-columns: 92px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     align-items: start;
     gap: 7px;
     padding: 7px;
@@ -210,11 +218,11 @@ $tasa-color: #d97706;
 
   .cell-tarifa-item {
     display: grid;
-    grid-template-columns: minmax(95px, auto) minmax(105px, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
     gap: 8px;
-    min-height: 42px;
-    padding: 6px 7px;
+    min-height: 64px;
+    padding: 10px;
     border: 1px solid rgba($color-border, 0.58);
     border-radius: $border-radius-md;
     background: $color-bg-secondary;
@@ -232,6 +240,7 @@ $tasa-color: #d97706;
     }
 
     .cell-badges {
+      grid-column: 1 / -1;
       display: flex;
       align-items: center;
       flex-wrap: wrap;
@@ -271,19 +280,19 @@ $tasa-color: #d97706;
         }
 
         &.moneda {
-          width: 24px;
+          width: auto;
           height: 24px;
           min-height: 24px;
-          padding: 0;
-          color: white;
+          padding: 0 6px;
+          color: #5c4554;
           font-size: 10px;
 
           &.soles {
-            background: $soles-color;
+            background: #f0ebef;
           }
 
           &.dolares {
-            background: $dolares-color;
+            background: #f0ebef;
           }
         }
 
@@ -293,6 +302,7 @@ $tasa-color: #d97706;
           color: $tasa-color;
         }
       }
+      .protected-label { color: #766776; background: #ede7ec; }
     }
 
     .cell-precio {
@@ -326,8 +336,8 @@ $tasa-color: #d97706;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 28px;
-      height: 28px;
+      width: 32px;
+      height: 32px;
       padding: 0;
       border: 1px solid rgba($color-border, 0.82);
       border-radius: $border-radius-md;

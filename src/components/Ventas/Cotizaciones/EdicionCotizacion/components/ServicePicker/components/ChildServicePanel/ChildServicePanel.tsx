@@ -1,4 +1,6 @@
 import React from "react";
+import { catalogueParentId, catalogueProviderName, filterCatalogueCapacity } from "../../utils/catalogueFilters";
+import TrainPickerDetails from "../TrainPickerDetails";
 import {
   FaBed,
   FaCar,
@@ -677,20 +679,7 @@ const ChildServicePanel = ({
     // Filtro de capacidad (nro_pasajeros) para transportes — capacidad mínima
     // suficiente, ordenadas de menor a mayor para mostrar primero la superior
     // más cercana (ej: 3 pax -> 4 pax; 5 pax -> 13 pax).
-    if (passengerCapacity > 0 && category?.id === "transportes") {
-      result = result
-        .filter((s) => {
-          const sCap = parseInt(s.nro_pasajeros || s.movilidad?.nro_pasajeros);
-          return !isNaN(sCap) && sCap >= passengerCapacity;
-        })
-        .sort((a, b) => {
-          const capA =
-            parseInt(a.nro_pasajeros || a.movilidad?.nro_pasajeros) || 0;
-          const capB =
-            parseInt(b.nro_pasajeros || b.movilidad?.nro_pasajeros) || 0;
-          return capA - capB;
-        });
-    }
+    result = filterCatalogueCapacity(result, category?.id, passengerCapacity);
 
     if (!childSearchTermProp || !childSearchTermProp.trim()) return result;
     const normalizedSearch = childSearchTermProp
@@ -916,43 +905,6 @@ const ChildServicePanel = ({
     wagonType = wagonType.replace(/\s+\d+\s*$/g, ""); // Remover " 5" al final (trailing number)
 
     return wagonType.trim();
-  };
-
-  /**
-   * Obtener la ruta de un vagón individual (lugar_salida → lugar_destino)
-   */
-  const getWagonRoute = (wagon) => {
-    const lugarSalida = wagon.lugar_salida || wagon.vagon?.lugar_salida;
-    const lugarDestino = wagon.lugar_destino || wagon.vagon?.lugar_destino;
-
-    if (lugarSalida && lugarDestino) {
-      return `${lugarSalida} → ${lugarDestino}`;
-    }
-    return null;
-  };
-
-  const getWagonBimodal = (wagon) => {
-    const rawValue = wagon.es_bimodal ?? wagon.vagon?.es_bimodal;
-    const normalizedValue =
-      typeof rawValue === "string" ? rawValue.trim().toLowerCase() : rawValue;
-    const isBimodal =
-      normalizedValue === true ||
-      normalizedValue === 1 ||
-      normalizedValue === "1" ||
-      normalizedValue === "true" ||
-      normalizedValue === "si" ||
-      normalizedValue === "sí";
-
-    return isBimodal ? "Bimodal" : "No bimodal";
-  };
-
-  const getWagonInfo = (wagon) => {
-    const horaSalida = wagon.hora_salida || wagon.vagon?.hora_salida;
-    const horaLlegada = wagon.hora_llegada || wagon.vagon?.hora_llegada;
-    return {
-      horarios:
-        horaSalida && horaLlegada ? `${horaSalida} - ${horaLlegada}` : null,
-    };
   };
 
   /**
@@ -1292,6 +1244,10 @@ const ChildServicePanel = ({
       return getId(a) - getId(b);
     });
 
+    if (passengerCapacity > 0 && ["transportes", "endoses"].includes(category?.id)) {
+      return filterCatalogueCapacity(sorted, category.id, passengerCapacity);
+    }
+
     const isVensoGuias = category?.id === "guias" && platform === "venso";
     if (
       !isVensoGuias &&
@@ -1312,7 +1268,7 @@ const ChildServicePanel = ({
       const gb = getGroupKey(b);
       return String(ga).localeCompare(String(gb));
     });
-  }, [searchFilteredServices, category?.id, selectedParents.length]);
+  }, [searchFilteredServices, category?.id, selectedParents.length, passengerCapacity, platform]);
 
 
   const ticketEntryGroups = React.useMemo(() => {
@@ -1955,36 +1911,9 @@ const ChildServicePanel = ({
                             })()}
                           {category?.id === "trenes" &&
                             (() => {
-                              const wagonInfo = getWagonInfo(base);
+                              const provider = parentServices.find(parent => catalogueParentId(parent, "trenes") === catalogueParentId(base, "trenes"));
                               return (
-                                <>
-                                  {getWagonRoute(base) && (
-                                    <span className="route-value">
-                                      <FaRoute
-                                        style={{
-                                          fontSize: "0.82rem",
-                                          marginRight: 3,
-                                        }}
-                                      />
-                                      {getWagonRoute(base)}
-                                    </span>
-                                  )}
-                                  <span className="route-detail">
-                                    {getWagonBimodal(base)}
-                                  </span>
-                                  {wagonInfo.horarios && (
-                                    <span className="route-detail">
-                                      <MdSchedule
-                                        style={{
-                                          fontSize: "0.82rem",
-                                          marginRight: 3,
-                                          verticalAlign: "middle",
-                                        }}
-                                      />
-                                      {wagonInfo.horarios}
-                                    </span>
-                                  )}
-                                </>
+                                <TrainPickerDetails wagon={base} providerName={provider ? catalogueProviderName(provider) : ""} />
                               );
                             })()}
                           {category?.id === "vuelos" &&
