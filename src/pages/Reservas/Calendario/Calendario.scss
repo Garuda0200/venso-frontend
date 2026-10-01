@@ -446,6 +446,23 @@
   font-weight: 700;
 }
 
+.biblia-sync-notice {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 1rem;
+  padding: .85rem 1rem;
+  border: 1px solid #efd5ad;
+  border-radius: 12px;
+  background: #fff8ef;
+  color: #72511d;
+  summary { cursor: pointer; font-weight: 600; }
+  ul { margin: .6rem 0 0; padding-left: 1.2rem; }
+  li + li { margin-top: .35rem; }
+  button { border: 0; background: transparent; color: inherit; cursor: pointer; padding: .15rem; }
+}
+
 @keyframes biblia-spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 1100px) {

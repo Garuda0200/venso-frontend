@@ -56,6 +56,7 @@ const testSuites = [
       "src/pages/Reservas/Calendario/utils/__tests__/bibliaFileLinkPlacementSource.test.js",
       "src/pages/Reservas/Calendario/utils/__tests__/bibliaPopoverPosition.test.js",
       "src/pages/Reservas/Calendario/utils/__tests__/bibliaQuotationCreation.test.js",
+      "src/pages/Reservas/Calendario/utils/__tests__/bibliaSyncFeedback.test.js",
       "src/pages/Reservas/Calendario/utils/__tests__/bibliaResponsiveSource.test.js",
       "src/pages/Reservas/Calendario/utils/__tests__/bibliaSingleDayViewSource.test.js",
       "src/pages/Reservas/VouchersReserva/components/ReservaServiceEditor/utils/__tests__/assignedBeneficiaries.test.js",

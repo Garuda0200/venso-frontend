@@ -47,6 +47,7 @@ import { useAuth } from "../../../context/AuthContext";
 import SourceVoucherPreviewModal from "../../Ventas/Cotizaciones/components/SourceVoucherPreviewModal";
 import VentasSummaryPDFModal from "../../Ventas/VouchersVenta/components/VentasSummaryPDFModal/VentasSummaryPDFModal";
 import { bibliaActivityService } from "./services/bibliaActivityService";
+import { getBibliaSaveError, getBibliaSyncWarnings } from "./utils/bibliaSyncFeedback";
 import { bibliaCatalogService, isBibliaCatalogField } from "./services/bibliaCatalogService";
 import {
   BIBLIA_EMPTY_VALUE,
@@ -487,6 +488,7 @@ const Calendario = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [syncWarnings, setSyncWarnings] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
   const [colorActivityId, setColorActivityId] = useState<string | null>(null);
@@ -593,15 +595,17 @@ const Calendario = () => {
     setError("");
     setQuotations((current) => current.map((quote) => String(quote.id) === quotationId ? { ...quote, biblia_actividades: records } : quote));
     try {
-      await bibliaActivityService.saveQuotationOverrides(quotationId, records);
+      const result = await bibliaActivityService.saveQuotationOverrides(quotationId, records);
+      setSyncWarnings(getBibliaSyncWarnings(result));
+      if (records.some((record) => record.syncQuotation)) await loadActivities(true);
     } catch (saveError) {
       setQuotations(previous);
-      setError("No se pudo guardar el cambio de la Biblia. Se restauró el valor anterior.");
+      setError(getBibliaSaveError(saveError, "No se pudo guardar el cambio de la Biblia. Se restauró el valor anterior."));
       throw saveError;
     } finally {
       setSaving(false);
     }
-  }, [quotations]);
+  }, [quotations, loadActivities]);
 
   const persistStandaloneRecord = useCallback(async (
     activity: BibliaActivity,
@@ -621,15 +625,19 @@ const Calendario = () => {
       ? { ...item, cotizacion_id: nextQuotationId, actividad: record }
       : item));
     try {
-      await bibliaActivityService.updateStandaloneActivity(standaloneId, nextQuotationId, record);
+      const result = await bibliaActivityService.updateStandaloneActivity(standaloneId, nextQuotationId, record);
+      setSyncWarnings(getBibliaSyncWarnings(result));
+      setStandaloneRecords((current) => current.map((item) => String(item.id) === standaloneId
+        ? { ...item, cotizacion_id: nextQuotationId, actividad: result?.actividad || record } : item));
+      if (nextQuotationId || currentOuter.cotizacion_id) await loadActivities(true);
     } catch (saveError) {
       setStandaloneRecords(previous);
-      setError("No se pudo guardar la actividad independiente. Se restauró el valor anterior.");
+      setError(getBibliaSaveError(saveError, "No se pudo guardar la actividad independiente. Se restauró el valor anterior."));
       throw saveError;
     } finally {
       setSaving(false);
     }
-  }, [standaloneRecords]);
+  }, [standaloneRecords, loadActivities]);
 
   const commitActivityChanges = useCallback(async (activity: BibliaActivity, changes: Partial<BibliaActivity>) => {
     const record = materializeBibliaOverride(activity, changes);
@@ -949,8 +957,10 @@ const Calendario = () => {
     });
     record.file = getBibliaQuotationVoucherCode(quotation) || quotationId;
     if (quotation && Number(baseRecord.pax || 0) === 0 && Number(template.pax || 0) > 0) record.pax = Number(template.pax);
-    await persistStandaloneRecord(activity, record, quotationId).catch(() => undefined);
-    closeQuotationLinkPopover();
+    try {
+      await persistStandaloneRecord(activity, record, quotationId);
+      closeQuotationLinkPopover();
+    } catch { /* Mantiene abierto el vínculo para corregir el dato indicado por el backend. */ }
   }, [closeQuotationLinkPopover, persistStandaloneRecord, quotations]);
 
   const openQuotationCreation = useCallback((activity: BibliaActivity) => {
@@ -971,10 +981,11 @@ const Calendario = () => {
     setCreatingQuotationRequestId(activity.id);
     setError("");
     try {
-      await bibliaActivityService.createQuotationFromStandaloneActivity(activity.standaloneRecordId, {
+      const result = await bibliaActivityService.createQuotationFromStandaloneActivity(activity.standaloneRecordId, {
         voucherCode,
         title: newQuotationTitle.trim() || undefined,
       });
+      setSyncWarnings(getBibliaSyncWarnings(result));
       closeQuotationLinkPopover();
       await loadActivities(true);
     } catch (createError) {
@@ -1459,6 +1470,12 @@ const Calendario = () => {
 
       {saving && <div className="biblia-saving">Guardando cambios operativos…</div>}
       {error && <div className="biblia-error">{error}</div>}
+      {syncWarnings.length > 0 && <aside className="biblia-sync-notice" role="status">
+        <details><summary>Vinculación guardada · {syncWarnings.length} pendientes por revisar</summary>
+          <ul>{syncWarnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>
+        </details>
+        <button type="button" aria-label="Cerrar avisos de vinculación" onClick={() => setSyncWarnings([])}><MdClose /></button>
+      </aside>}
       <main className="biblia-content">{viewMode === "month" ? renderMonth() : renderDay()}</main>
 
       {pendingDelete && isSuperAdmin && (

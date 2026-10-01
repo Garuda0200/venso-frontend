@@ -17,6 +17,7 @@
     ]
   },
   "include": [
+    "src/pages/Reservas/Calendario/utils/__tests__/bibliaSyncFeedback.test.ts",
     "src/tests/envExamples.test.ts",
     "src/components/Ventas/Cotizaciones/EdicionCotizacion/components/ServicePicker/utils/__tests__/catalogueFilters.test.tsx",
     "src/components/Ventas/Cotizaciones/EdicionCotizacion/components/DaysEditor/utils/__tests__/endoseCapacityFlow.test.ts",
