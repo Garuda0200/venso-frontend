@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => ({
   },
   server: {
     port: 3000,
-    open: true,
+    open: false,
     proxy: {
       // Igual que Nginx en Fly: el wake público del SPA se traduce al health
       // raíz del backend, mientras el resto de /api conserva su prefijo.
