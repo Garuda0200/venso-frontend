@@ -69,6 +69,48 @@ test("detalle de vagón conserva extras, horarios parciales y bimodal; no invent
   assert.equal(details.extras, "Snack y bebida");
   assert.equal(trainPickerDetails({}).bimodal, null);
 });
+test("frecuencia del vagón procede del tren proveedor sin modificar el catálogo", () => {
+  const wagon = { vagon: { id_tren: 2, tipo_tren: "Expedition", hora_salida: "07:00:00" } };
+  const provider = { id_tren: 2, nombre_empresa: "PeruRail", frecuencia: "  Diaria  " };
+  const before = JSON.stringify({ wagon, provider });
+  assert.equal(trainPickerDetails(wagon, provider).frequency, "Diaria");
+  assert.equal(JSON.stringify({ wagon, provider }), before);
+});
+test("frecuencia admite tren embebido, parentService y filas planas", () => {
+  for (const item of [
+    { vagon: { tipo_tren: "Expedition" }, tren: { frecuencia: "Diaria" } },
+    { childService: { tipo_tren: "Expedition" }, parentService: { frecuencia: "Diaria" } },
+    { vagon: { tipo_tren: "Expedition", tren: { frecuencia: "Diaria" } } },
+    { vagon: { tipo_tren: "Expedition", frecuencia: "Diaria" } },
+    { tipo_tren: "Expedition", frecuencia: "Diaria" },
+  ]) {
+    assert.equal(trainPickerDetails(item).frequency, "Diaria");
+  }
+});
+test("frecuencia del proveedor actual prevalece sobre un snapshot antiguo", () => {
+  const item = { vagon: { frecuencia: "Antigua" }, tren: { frecuencia: "Otra" } };
+  assert.equal(trainPickerDetails(item, { frecuencia: "Lunes y viernes" }).frequency, "Lunes y viernes");
+});
+test("tarjeta lista frecuencia con ruta y horarios sin interpretar HTML", () => {
+  const html = renderToStaticMarkup(<TrainPickerDetails
+    wagon={{ vagon: { tipo_tren: "Vistadome", lugar_salida: "Ollantaytambo", lugar_destino: "Machu Picchu", hora_salida: "07:00:00" } }}
+    provider={{ frecuencia: "<script>Diaria</script>" }} providerName="PeruRail"
+  />);
+  assert.match(html, /<strong>Frecuencia:<\/strong>/);
+  assert.match(html, /&lt;script&gt;Diaria&lt;\/script&gt;/);
+  assert.match(html, /PeruRail/);
+  assert.match(html, /Vistadome/);
+  assert.match(html, /07:00/);
+  assert.doesNotMatch(html, /<script>/);
+});
+test("sin frecuencia válida no aparece una etiqueta vacía ni un valor inventado", () => {
+  for (const frequency of [undefined, null, "", "  ", 0, {}]) {
+    const provider = { frecuencia: frequency };
+    assert.equal(trainPickerDetails({}, provider).frequency, "");
+    const html = renderToStaticMarkup(<TrainPickerDetails wagon={{}} provider={provider} />);
+    assert.doesNotMatch(html, /Frecuencia:/);
+  }
+});
 test("panel accesible muestra proveedor y capacidad de la cotización sin ocultar selección", () => {
   const html = renderToStaticMarkup(<ServicePickerFilters category="endoses" parents={[{ id_endose: 7, nombre_agencia: "Agencia Andina" }]} services={[{ tour: { idioma: "Español", id_endose: 7 } }]} providerIds={["7"]} facets={{}} capacity={5} quotationPax={5} onProvidersChange={() => {}} onFacetsChange={() => {}} onCapacityChange={() => {}} onReset={() => {}} />);
   assert.match(html, /aria-label="Filtros de servicios"/);

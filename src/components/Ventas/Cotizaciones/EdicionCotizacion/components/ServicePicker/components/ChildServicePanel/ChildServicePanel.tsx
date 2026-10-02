@@ -1913,7 +1913,7 @@ const ChildServicePanel = ({
                             (() => {
                               const provider = parentServices.find(parent => catalogueParentId(parent, "trenes") === catalogueParentId(base, "trenes"));
                               return (
-                                <TrainPickerDetails wagon={base} providerName={provider ? catalogueProviderName(provider) : ""} />
+                                <TrainPickerDetails wagon={base} provider={provider} providerName={provider ? catalogueProviderName(provider) : ""} />
                               );
                             })()}
                           {category?.id === "vuelos" &&
