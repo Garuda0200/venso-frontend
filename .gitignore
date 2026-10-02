@@ -18,8 +18,7 @@
 .env.local
 NUL
 
-# El código fuente de despliegue (Dockerfile, fly.toml y nginx.conf) debe quedar
-# visible en Git. Solo los overrides locales se mantienen sin seguimiento.
+# Overrides locales; la infraestructura privada se excluye más abajo.
 /.env
 .env.*
 !.env.example
@@ -71,3 +70,32 @@ yarn.lock
 /docs/DEPLOY_FLY_FRONTEND.md
 /scripts/Deploy-VensoFly.ps1
 /*.zip
+
+# Documentación privada: conservar en disco, fuera del repositorio de código.
+# Se aplica también a subcarpetas, anexos de docs y README junto al código.
+docs/
+documentation/
+documentacion/
+contexts/
+contextos/
+manuals/
+manuales/
+*.md
+*.mdx
+*.rst
+*.adoc
+*.asciidoc
+*.typ
+*.tex
+*.pdf
+*.doc
+*.docx
+*.odt
+*.rtf
+*.ppt
+*.pptx
+README*
+CHANGELOG*
+CONTRIBUTING*
+ARCHITECTURE*
+INSTALL*

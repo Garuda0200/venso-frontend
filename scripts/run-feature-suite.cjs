@@ -31,6 +31,7 @@ const testSuites = [
       "src/pages/Ventas/Cotizaciones/utils/__tests__/voucherPreliquidacion.test.js",
       "src/components/Ventas/Cotizaciones/EdicionCotizacion/components/DaysEditor/utils/__tests__/endosePricingPolicy.test.js",
       "src/components/Ventas/Cotizaciones/EdicionCotizacion/components/DaysEditor/utils/__tests__/ticketChildPricing.test.js",
+      "src/components/Ventas/Cotizaciones/EdicionCotizacion/components/DaysEditor/components/SortableService/__tests__/ticketBeneficiarySummary.test.js",
       "src/components/Ventas/Cotizaciones/EdicionCotizacion/components/ServicePicker/utils/__tests__/tariffContext.test.js",
       "src/components/Ventas/Cotizaciones/EdicionCotizacion/components/ServicePicker/utils/__tests__/catalogueFilters.test.js",
       "src/components/Ventas/Cotizaciones/EdicionCotizacion/components/DaysEditor/utils/__tests__/endoseCapacityFlow.test.js",

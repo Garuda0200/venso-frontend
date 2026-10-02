@@ -63,6 +63,7 @@ import {
 } from "../../utils/serviceTypeMapper";
 
 import ChildrenPanel from "./ChildrenPanel";
+import TicketBeneficiarySummary from "./TicketBeneficiarySummary";
 import { getServiceObservations } from "../../utils/serviceObservations";
 import "./SortableService.scss";
 
@@ -478,22 +479,6 @@ const SortableService = React.memo(({
     ? normalizeTicketProcedencia(getTicketProcedencia(service))
     : "";
   const ticketTipoUsuario = rawTicketTipoUsuario;
-  const renderTicketBeneficiaryTags = (ids = [], kind = "adult") =>
-    ids.length > 0 ? (
-      <div className={`sr-ticket__beneficiary-group sr-ticket__beneficiary-group--${kind}`}>
-        {ids.map((id) => (
-          <span
-            key={id}
-            className={`sr__pax-tag sr__pax-tag--${kind === "child" ? "child" : "adult"}`}
-            title={id}
-          >
-            {kind === "child" ? <FaChild /> : <FaUser />}
-            {formatTicketPassengerLabel(id)}
-          </span>
-        ))}
-      </div>
-    ) : null;
-
   const ticketChildPriceEntries = isTicketStudentRow
     ? []
     : Object.entries(pricingSnapshot.children || {}).filter(
@@ -524,6 +509,8 @@ const SortableService = React.memo(({
           if (!isVoucherLinked) setShowChildPanel(!showChildPanel);
         }}
         disabled={isVoucherLinked}
+        aria-expanded={showChildPanel}
+        aria-label={`Niños de la entrada: ${ticketAllManagedChildIds.length}. ${isVoucherLinked ? "Sólo lectura" : "Gestionar tarifas"}`}
         title={
           isVoucherLinked
             ? "Vinculado a voucher — beneficiarios bloqueados"
@@ -577,18 +564,13 @@ const SortableService = React.memo(({
             </div>
           </div>
 
-          <div className="sr-ticket__beneficiaries">
-            {displayAdultIds.length > 0 || ticketAllManagedChildIds.length > 0 ? (
-              <>
-                {renderTicketBeneficiaryTags(displayAdultIds, "adult")}
-                {renderTicketChildControl()}
-              </>
-            ) : (
-              <span className="sr-ticket__empty-beneficiaries">
-                Sin beneficiarios por procedencia
-              </span>
-            )}
-          </div>
+          <TicketBeneficiarySummary
+            adultIds={adultIds}
+            studentChildIds={ticketStudentChildIds}
+            convertedChildIds={convertedChildIds}
+            isStudentRow={isTicketStudentRow}
+            childControl={renderTicketChildControl()}
+          />
 
           <div className="sr-ticket__price">
             {isEditing ? (

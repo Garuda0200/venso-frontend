@@ -49,6 +49,7 @@
     "src/components/Ventas/Cotizaciones/EdicionCotizacion/components/ServicePicker/utils/__tests__/tariffContext.test.ts",
     "src/components/Ventas/Cotizaciones/EdicionCotizacion/components/DaysEditor/utils/__tests__/endosePricingPolicy.test.ts",
     "src/components/Ventas/Cotizaciones/EdicionCotizacion/components/DaysEditor/utils/__tests__/ticketChildPricing.test.ts",
+    "src/components/Ventas/Cotizaciones/EdicionCotizacion/components/DaysEditor/components/SortableService/__tests__/ticketBeneficiarySummary.test.tsx",
     "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/ticketTariffGrouping.test.ts",
     "src/utils/__tests__/packageFeeUtils.test.ts",
     "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/groupedHotelPersistence.test.ts",

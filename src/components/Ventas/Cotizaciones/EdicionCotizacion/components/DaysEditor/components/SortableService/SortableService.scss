@@ -709,15 +709,22 @@
 
   .sr-ticket__beneficiaries {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 0.34rem;
     min-width: 0;
-  }
 
-  .sr-ticket__beneficiary-group {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.3rem;
+    .sr__pax-tag {
+      flex: 0 0 auto;
+      width: fit-content;
+      max-width: 100%;
+      white-space: nowrap;
+    }
+
+    span.sr__pax-tag--child {
+      cursor: default;
+    }
   }
 
   .sr-ticket__empty-beneficiaries {
