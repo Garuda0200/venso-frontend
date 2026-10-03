@@ -1,4 +1,5 @@
 import { createAxiosInstance } from "../utils/axiosInstance";
+import { invalidateAgenciesCache } from "../utils/cacheInvalidation";
 
 export type AgencyBusinessType = "B2C" | "B2B";
 export type AgencyTariffType = "externa" | "interna" | "cotizacion";
@@ -61,6 +62,7 @@ export const createAgency = async (
   input: CreateAgencyInput,
 ): Promise<Agency> => {
   const response = await api().post("/turismo/agencias", input);
+  invalidateAgenciesCache();
   return unwrap<Agency>(response);
 };
 
@@ -69,5 +71,6 @@ export const updateAgency = async (
   input: Partial<CreateAgencyInput>,
 ): Promise<Agency> => {
   const response = await api().put(`/turismo/agencias/${id}`, input);
+  invalidateAgenciesCache();
   return unwrap<Agency>(response);
 };

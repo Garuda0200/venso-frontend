@@ -15,6 +15,7 @@ const testSuites = [
       "src/utils/__tests__/idempotency.test.js",
       "src/utils/__tests__/packageFeeUtils.test.js",
       "src/utils/__tests__/pendingPayments.test.js",
+      "src/utils/__tests__/quotationAgencyGroups.test.js",
       "src/components/common/Sidebar/__tests__/sidebarAccess.test.js",
       "src/pages/Admin/Users/components/__tests__/commissionUiVisibility.test.js",
     ],
@@ -64,11 +65,14 @@ const testSuites = [
       "src/pages/Reservas/VouchersReserva/components/ReservaServiceEditor/utils/__tests__/validationState.test.js",
       "src/pages/Reservas/VouchersReserva/utils/__tests__/reservationVoucherRender.test.js",
       "src/pages/Reservas/VouchersReserva/utils/__tests__/specializedPaymentGroups.test.js",
+      "src/pages/Reservas/VouchersReserva/utils/__tests__/reservationPaymentManagement.test.js",
     ],
   },
   {
     name: "contabilidad e integración",
     tests: [
+      "src/services/__tests__/pendingPaymentService.test.js",
+      "src/pages/Contabilidad/Liquidaciones/domain/__tests__/pendingPaymentGroups.test.js",
       "src/pages/Contabilidad/Reportes/utils/__tests__/paymentReportUtils.test.js",
       "src/pages/Contabilidad/Reportes/utils/__tests__/ticketPaymentPresentation.test.js",
       "src/tests/magicParityVenso.test.js",

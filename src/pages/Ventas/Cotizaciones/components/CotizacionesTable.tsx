@@ -1,6 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import CotizacionTableRow from "./CotizacionTableRow";
 import PredecesoresExpander from "./PredecesoresExpander";
+import { useAgencyDirectory } from "../../../../hooks/useAgencyDirectory";
+import { paginateQuotationAgencyGroups } from "../../../../utils/quotationAgencyGroups";
+import { AgencyGroupLabel } from "../../../../components/common/AgencyGroups/AgencyGroups";
+import "../../../../components/common/AgencyGroups/AgencyGroups.scss";
 import "./styles/CotizacionesTable.scss";
 
 const CotizacionesTable = ({
@@ -47,6 +51,7 @@ const CotizacionesTable = ({
   const [historyCotizacion, setHistoryCotizacion] = useState(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
+  const { data: agencies = [] } = useAgencyDirectory();
   const normalizedCotizaciones = Array.isArray(cotizaciones) ? cotizaciones : [];
   const openCotizaciones = useMemo(
     () => normalizedCotizaciones.filter((item) => item.tiene_voucher !== true),
@@ -59,10 +64,10 @@ const CotizacionesTable = ({
   const visibleCotizaciones =
     quotationStatus === "sold" ? soldCotizaciones : openCotizaciones;
   const pageCount = Math.max(1, Math.ceil(visibleCotizaciones.length / pageSize));
-  const pagedCotizaciones = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return visibleCotizaciones.slice(start, start + pageSize);
-  }, [page, pageSize, visibleCotizaciones]);
+  const pagedGroups = useMemo(
+    () => paginateQuotationAgencyGroups(visibleCotizaciones, agencies, page, pageSize),
+    [page, pageSize, visibleCotizaciones, agencies],
+  );
 
   useEffect(() => {
     setPage(1);
@@ -103,8 +108,14 @@ const CotizacionesTable = ({
             <th className="col-acciones">Acciones</th>
           </tr>
         </thead>
-        <tbody>
-          {pagedCotizaciones.map((cotizacion) => (
+          {pagedGroups.map((group) => (
+            <tbody key={group.key} aria-label={group.name}>
+              <tr className="quotation-agency-row">
+                <th scope="rowgroup" colSpan={showAuditColumn ? 4 : 3}>
+                  <AgencyGroupLabel name={group.name} count={group.items.length} totalCount={group.totalCount} noun="cotizaciones" />
+                </th>
+              </tr>
+              {group.items.map((cotizacion) => (
             <CotizacionTableRow
               key={cotizacion.id || cotizacion.fecha}
               cotizacion={cotizacion}
@@ -157,15 +168,18 @@ const CotizacionesTable = ({
               onCancelDelete={onCancelDelete}
               loadSummaryPricingData={loadSummaryPricingData}
             />
+              ))}
+            </tbody>
           ))}
           {visibleCotizaciones.length === 0 && (
+            <tbody>
             <tr>
               <td colSpan={showAuditColumn ? 4 : 3} className="empty-quotation-state">
                 No hay cotizaciones en esta categoría.
               </td>
             </tr>
+            </tbody>
           )}
-        </tbody>
         </table>
         {visibleCotizaciones.length > 0 && (
           <div className="quotation-pagination" aria-label="Paginación de cotizaciones">

@@ -26,5 +26,10 @@ test("resuelve el snapshot operativo asignado para el egreso", () => {
   assert.equal(assignment.service.parentService.nombre_empresa, "Hotel Operativo");
   assert.equal(assignment.assignedParentId, 91);
   assert.equal(matchesPendingPaymentSearch(request, "operativo vns"), true);
-  assert.equal(formatPendingPaymentAmount(request), "S/ 84.50");
+  assert.equal(formatPendingPaymentAmount(request), "$ 84.50");
+});
+
+test("el importe de la solicitud no hereda la moneda de la tarifa cotizada", () => {
+  assert.equal(formatPendingPaymentAmount({ ...request, currency: "USD" }), "$ 84.50");
+  assert.equal(formatPendingPaymentAmount({ ...request, currency: "PEN" }), "S/ 84.50");
 });

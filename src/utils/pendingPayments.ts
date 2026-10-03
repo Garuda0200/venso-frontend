@@ -115,11 +115,10 @@ export const matchesPendingPaymentSearch = (request: any, query: string) => {
 };
 
 export const resolvePendingPaymentCurrency = (request: any = {}) => {
-  const raw = request?.service_data || {};
-  return String(firstDefined(
-    request.currency, raw.assigned_moneda, raw.assignedMoneda,
-    raw.assignedService?.moneda, raw.assigned_service?.moneda, raw.moneda, "USD",
-  )).toUpperCase();
+  // amount está normalizado en USD en Reservas; la moneda de la tarifa no es
+  // la moneda de la solicitud. Solo una moneda explícita puede sobrescribirla.
+  const currency = String(firstDefined(request.currency, request.moneda, "USD")).toUpperCase();
+  return currency === "SOLES" ? "PEN" : currency === "DOLARES" ? "USD" : currency;
 };
 
 export const formatPendingPaymentAmount = (request: any = {}) => {

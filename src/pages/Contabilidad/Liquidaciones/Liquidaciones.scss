@@ -1,5 +1,16 @@
 @import "../../../styles/_variables.scss";
 
+.pending-payments-refresh {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+  button { border: 1px solid $color-border; border-radius: 10px; padding: 10px 14px; background: white; color: $color-primary; font-weight: 600; cursor: pointer; }
+  button:disabled { opacity: .6; cursor: wait; }
+  [role="alert"] { margin: 0; color: $color-danger; }
+}
+
 .liquidaciones-page {
   min-height: calc(100vh - 60px);
   background: $color-background;

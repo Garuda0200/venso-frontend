@@ -3,12 +3,10 @@
   border-radius: 14px;
 
   .modal-header {
-    position: sticky;
-    top: 0;
-    z-index: 30;
+    flex: 0 0 auto;
     min-height: 46px;
     padding: 10px 16px;
-    background: #075c3e !important;
+    background: linear-gradient(110deg, #1b151b, #5a153e) !important;
 
     .modal-title {
       color: #fff !important;
@@ -24,6 +22,9 @@
   }
 
   .modal-body {
+    display: flex;
+    min-height: 0;
+    overflow: hidden;
     padding: 0 !important;
     background: #f5f7f9;
   }
@@ -31,24 +32,39 @@
 
 .payment-management-modal {
   .payment-management-content {
-    display: grid;
-    gap: 12px;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-height: 0;
     max-height: min(74vh, 760px);
-    padding: 14px;
-    overflow-y: auto;
+    overflow: hidden;
   }
 
-  .payment-management-sticky-tools {
-    position: sticky;
-    top: 0;
-    z-index: 20;
+  .payment-management-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: grid;
+    align-content: start;
+    gap: 12px;
+    padding: 14px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+
+  .payment-management-overview {
     display: grid;
     gap: 12px;
-    margin: -14px -14px 0;
-    padding: 14px;
-    border-bottom: 1px solid #dce4e9;
-    background: #f5f7f9;
-    box-shadow: 0 5px 12px rgba(26, 45, 59, 0.08);
+  }
+
+  .payment-load-error {
+    padding: 10px 12px;
+    border: 1px solid #edc590;
+    border-radius: 8px;
+    color: #7e5415;
+    background: #fff8ed;
+    font-size: 12px;
+    button { margin-left: 8px; cursor: pointer; }
   }
 
   .payment-summary-strip {
@@ -139,14 +155,18 @@
   }
 
   .batch-request-bar {
+    flex: 0 0 auto;
+    margin: 0;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto auto;
     gap: 12px;
     align-items: center;
     padding: 9px 10px;
-    border: 1px solid #cfe0d8;
-    border-radius: 9px;
-    background: #f4faf7;
+    border: 0;
+    border-top: 1px solid #e7dae3;
+    border-radius: 0;
+    background: #fff;
+    box-shadow: 0 -3px 14px rgba(65, 19, 49, 0.05);
   }
 
   .batch-select-all {
@@ -162,7 +182,7 @@
     input {
       width: 15px;
       height: 15px;
-      accent-color: #075c3e;
+      accent-color: #d90070;
     }
   }
 
@@ -187,16 +207,16 @@
     justify-content: center;
     min-height: 32px;
     padding: 6px 11px;
-    border: 1px solid #075c3e;
+    border: 1px solid #d90070;
     border-radius: 7px;
-    background: #075c3e;
+    background: #d90070;
     color: #fff;
     font-size: 11px;
     font-weight: 750;
     cursor: pointer;
 
     &:hover:not(:disabled) {
-      background: #064c34;
+      background: #ba0060;
     }
 
     &:disabled {
@@ -564,14 +584,12 @@
   }
 
   .payment-management-modal {
-    .payment-management-content {
+    .payment-management-scroll {
       padding: 9px;
     }
 
-    .payment-management-sticky-tools {
+    .payment-management-overview {
       gap: 8px;
-      margin: -9px -9px 0;
-      padding: 9px;
     }
 
     .payment-summary-strip {
@@ -632,7 +650,17 @@
   padding: 10px 12px;
   background: linear-gradient(135deg, #fff0f9 0%, #fff 72%);
   border-bottom: 1px solid #f1c8e1;
+  cursor: pointer;
+  list-style: none;
+  &::-webkit-details-marker { display: none; }
+  &::after { content: "+"; color: #a02672; font-size: 20px; font-weight: 700; }
+  &:focus-visible { outline: 2px solid #ff007e; outline-offset: -3px; }
 }
+
+.payment-management-modal .ticket-charge-document[open] > summary::after { content: "−"; }
+.payment-management-modal .ticket-charge-document__passenger { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 12px; font-size: 11px; }
+.payment-management-modal .ticket-charge-document__passenger small { color: #73808c; }
+.payment-management-modal .ticket-charge-document__columns { background: #fcf8fa; font-size: 10px; }
 
 .payment-management-modal .ticket-charge-document__header > div:first-child {
   display: grid;
@@ -660,7 +688,8 @@
 .payment-management-modal .ticket-charge-document__total {
   display: grid;
   gap: 2px;
-  min-width: 120px;
+  min-width: 0;
+  margin-left: auto;
   text-align: right;
 }
 
@@ -691,4 +720,10 @@
 @media (max-width: 720px) {
   .payment-management-modal .ticket-charge-document__line { grid-template-columns: 30px minmax(0, 1fr) 80px; }
   .payment-management-modal .ticket-charge-document__line em { display: none; }
+}
+
+@media (max-height: 540px) {
+  .payment-management-modal .payment-management-content { max-height: calc(100dvh - 110px); }
+  .payment-management-modal .payment-summary-strip { gap: 4px; }
+  .payment-management-modal .summary-chip { min-height: 30px; padding: 4px 7px; }
 }

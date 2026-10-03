@@ -1,0 +1,54 @@
+.quotation-agency-groups {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+  width: 100%;
+
+  > section { min-width: 0; }
+}
+
+.quotation-agency-group-header {
+  margin-bottom: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border-light, #e9e1e6);
+  border-radius: 10px;
+  background: var(--color-bg-secondary, #fcf8fa);
+  h3 { margin: 0; font: inherit; }
+}
+
+.quotation-agency-label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  color: var(--color-text-primary, #1b171b);
+  font-size: 13px;
+  font-weight: 700;
+
+  > svg { flex-shrink: 0; font-size: 18px; color: var(--venso-magenta, #ff007e); }
+  &__name { min-width: 0; overflow-wrap: anywhere; }
+  &__count {
+    margin-left: auto;
+    flex-shrink: 0;
+    padding: 3px 9px;
+    border-radius: 20px;
+    background: var(--color-bg-primary, #fff);
+    color: var(--color-text-secondary, #756c73);
+    font-size: 11px;
+    font-weight: 600;
+  }
+}
+
+.cotizaciones-table tbody > tr.quotation-agency-row {
+  display: block;
+  padding: 10px 16px;
+  background: var(--color-bg-secondary, #fcf8fa);
+  border-bottom: 1px solid var(--color-border-light, #e9e1e6);
+
+  > th { display: block; padding: 0; text-align: left; }
+}
+
+@media (max-width: 480px) {
+  .quotation-agency-label { flex-wrap: wrap; }
+  .quotation-agency-label__count { margin-left: 0; }
+}

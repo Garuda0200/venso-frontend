@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
 import {
   FaArrowLeft,
@@ -6,97 +6,27 @@ import {
   FaMoneyBillWave,
   FaFileInvoiceDollar,
 } from "react-icons/fa";
-import axiosInstance from "../../../utils/axiosInstance";
+import { usePendingPaymentRequests } from "../../../hooks/usePendingPaymentRequests";
+import { resolvePendingPaymentAssignment, resolvePendingPaymentCurrency } from "../../../utils/pendingPayments";
+import { buildPendingPaymentGroups, reconcilePendingPaymentSelection } from "./domain/pendingPaymentGroups";
 import ServiceDetailedInfo from "../../../components/Ventas/Cotizaciones/EdicionCotizacion/components/DaysEditor/components/ServiceDetailedInfo/ServiceDetailedInfo";
 import PagoLoteForm from "../../../components/Contabilidad/LiquidacionForm";
 import { DateRangeFilter } from "./components/DateRangeFilter";
 import { DateFilterDomain } from "./domain/DateFilterDomain";
 import { formatCurrency } from "../../../utils/formatters";
-import {
-  resolveAssignedPaymentServiceData,
-} from "../../../utils/paymentFacturacion";
 import "./Liquidaciones.scss";
 import { voucherReservaService } from "../../../services/voucherReservaService";
 import { pasajeroService } from "../../../services/pasajeroService";
 
-const firstDefinedId = (...values) =>
-  values.find(
-    (value) => value !== undefined && value !== null && value !== "",
-  );
-
-const resolveParentEntityId = (parentService = {}) =>
-  firstDefinedId(
-    parentService.id_hotel,
-    parentService.id_vuelo,
-    parentService.id_tren,
-    parentService.id_transporte,
-    parentService.id_guia,
-    parentService.guia?.id_guia,
-    parentService.id_endose,
-    parentService.id_restaurant,
-    parentService.id_restaurante,
-    parentService.id_ticket,
-    parentService.id,
-  );
-
-const resolveChildEntityId = (childService = {}) =>
-  firstDefinedId(
-    childService.id_habitacion,
-    childService.idtipo_vuelo,
-    childService.tipo_vuelo?.idtipo_vuelo,
-    childService.id_vagon,
-    childService.vagon?.id_vagon,
-    childService.id_movilidad,
-    childService.movilidad?.id_movilidad,
-    childService.id_ruta,
-    childService.ruta?.id_ruta,
-    childService.id_tipotour,
-    childService.tour?.id_tipotour,
-    childService.id_restaurante,
-    childService.restaurante?.id_restaurante,
-    childService.restaurant?.id_restaurante,
-    childService.id_ticket,
-    childService.ticket?.id_ticket,
-    childService.tickets?.id_ticket,
-    childService.id,
-  );
-
-const resolveAssignedServiceIdentity = (
-  rawServiceData = {},
-  assignedServiceData = {},
-) => {
-  const assignedWrapper =
-    rawServiceData.assignedService || rawServiceData.assigned_service || {};
-  const parentId = firstDefinedId(
-    rawServiceData.assignedParentId,
-    rawServiceData.assigned_parent_id,
-    assignedWrapper.assignedParentId,
-    assignedWrapper.assigned_parent_id,
-    assignedWrapper.parentId,
-    assignedWrapper.parent_id,
-    resolveParentEntityId(assignedServiceData.parentService),
-  );
-  const childId = firstDefinedId(
-    rawServiceData.assignedChildId,
-    rawServiceData.assigned_child_id,
-    assignedWrapper.assignedChildId,
-    assignedWrapper.assigned_child_id,
-    assignedWrapper.childId,
-    assignedWrapper.child_id,
-    resolveChildEntityId(assignedServiceData.childService),
-  );
-
-  return { parentId, childId };
-};
+const EMPTY_REQUESTS: any[] = [];
 
 export function PagosLote() {
   const [view, setView] = useState("services"); // 'services' or 'payments'
-  const [services, setServices] = useState([]);
-  const [filteredServices, setFilteredServices] = useState([]);
-  const [selectedService, setSelectedService] = useState(null);
-  const [paymentRequests, setPaymentRequests] = useState([]);
-  const [selectedPayments, setSelectedPayments] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const pending = usePendingPaymentRequests();
+  const allPaymentRequests = pending.data ?? EMPTY_REQUESTS;
+  const loading = pending.isLoading;
+  const [selectedServiceKey, setSelectedServiceKey] = useState<string | null>(null);
+  const [selectedPaymentIds, setSelectedPaymentIds] = useState<string[]>([]);
   const [selectedTypeFilter, setSelectedTypeFilter] = useState("all");
 
   const [pasajeros, setPasajeros] = useState({});
@@ -105,33 +35,34 @@ export function PagosLote() {
   // Filtro de fechas
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
-  const [allPaymentRequests, setAllPaymentRequests] = useState([]);
+
 
   const [showPagoLoteModal, setShowPagoLoteModal] = useState(false);
 
+  const invalidDateRange = Boolean(startDate && endDate && startDate > endDate);
+  const services = useMemo(() => {
+    if (invalidDateRange) return [];
+    const filter = DateFilterDomain.createDateRangeFilter(startDate, endDate);
+    return buildPendingPaymentGroups(DateFilterDomain.applyDateFilter(allPaymentRequests, filter), getServiceName);
+  }, [allPaymentRequests, startDate, endDate, invalidDateRange]);
+  const filteredServices = useMemo(() => selectedTypeFilter === "all" ? services :
+    services.filter((service) => service.tipo === selectedTypeFilter), [services, selectedTypeFilter]);
+  const selectedService = services.find((service) => service.serviceKey === selectedServiceKey) || null;
+  const paymentRequests = useMemo(() => selectedService?.paymentRequests || [], [selectedService]);
+  const selectedPayments = useMemo(() => reconcilePendingPaymentSelection(paymentRequests, selectedPaymentIds),
+    [paymentRequests, selectedPaymentIds]);
+
   useEffect(() => {
-    loadPendingServices();
-
-    const handlePagoLoteRegistrado = () => {
-      console.log("Refrescando pagos por lote después del registro");
-      loadPendingServices();
-    };
-
-    window.addEventListener("paymentRequestPaid", handlePagoLoteRegistrado);
-
-    return () => {
-      window.removeEventListener("paymentRequestPaid", handlePagoLoteRegistrado);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Re-aplicar filtros cuando cambien las fechas
-  useEffect(() => {
-    if (allPaymentRequests.length > 0) {
-      loadPendingServices();
+    if (!pending.isSuccess) return;
+    if (selectedPaymentIds.some((id) => !selectedPayments.some((payment) => String(payment.id) === id))) {
+      setSelectedPaymentIds(selectedPayments.map((payment) => String(payment.id)));
+      setShowPagoLoteModal(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startDate, endDate]);
+    if (selectedServiceKey && !selectedService) {
+      setSelectedServiceKey(null);
+      setView("services");
+    }
+  }, [pending.isSuccess, selectedServiceKey, selectedService, selectedPaymentIds, selectedPayments]);
 
   // Cuando cambie la lista de paymentRequests (por seleccionar servicio), cargar los vouchers correspondientes
   useEffect(() => {
@@ -227,244 +158,35 @@ export function PagosLote() {
   /**
    * Cargar servicios únicos con payment_requests pendientes
    */
-  const loadPendingServices = async () => {
-    setLoading(true);
-    try {
-      const response = await axiosInstance.get(
-        "/turismo/vouchers-reserva/payment-requests/pending",
-      );
-
-      if (response.data && response.data.success) {
-        const pendingPayments = response.data.data || [];
-
-        console.log(
-          " Payment requests pendientes (sin filtrar):",
-          pendingPayments,
-        );
-
-        setAllPaymentRequests(pendingPayments);
-
-        const dateFilter = DateFilterDomain.createDateRangeFilter(
-          startDate,
-          endDate,
-        );
-        const filteredPayments = DateFilterDomain.applyDateFilter(
-          pendingPayments,
-          dateFilter,
-        );
-
-        console.log(
-          " Payment requests después de filtro:",
-          filteredPayments.length,
-        );
-
-        const serviciosMap = new Map();
-
-        const isExtraService = (serviceData = {}) => {
-          const parentService = serviceData.parentService || {};
-          const childService = serviceData.childService || {};
-          const typeService = String(
-            parentService.typeService || serviceData.typeService || "",
-          ).toLowerCase();
-
-          return (
-            typeService === "extras" ||
-            Boolean(
-              childService.servicio_extra ||
-                childService.extra ||
-                parentService.id_extra ||
-                parentService.id_servicio_extra,
-            )
-          );
-        };
-
-        const getResolvedTypeService = (serviceData = {}) => {
-          const parentService = serviceData.parentService || {};
-          const childService = serviceData.childService || {};
-          const explicitType = String(
-            parentService.typeService || serviceData.typeService || "",
-          ).toLowerCase();
-
-          if (explicitType) return explicitType;
-          if (
-            childService.ticket ||
-            childService.tickets ||
-            childService.id_ticket ||
-            parentService.id_ticket
-          ) {
-            return "tickets";
-          }
-          if (
-            childService.restaurante ||
-            childService.restaurant ||
-            childService.id_restaurante ||
-            parentService.id_restaurante ||
-            parentService.id_restaurant
-          ) {
-            return "restaurantes";
-          }
-
-          return "unknown";
-        };
-
-        filteredPayments.forEach((pr) => {
-          const rawServiceData = pr.service_data;
-          const serviceData = resolveAssignedPaymentServiceData(rawServiceData);
-
-          if (!serviceData) {
-            console.warn(" Payment request sin service_data:", pr.id);
-            return;
-          }
-
-          if (isExtraService(serviceData)) {
-            console.log(
-              " Excluyendo servicio extra de liquidaciones:",
-              pr.id,
-              serviceData,
-            );
-            return;
-          }
-
-          const parentService = serviceData.parentService || {};
-          const childService = serviceData.childService || {};
-          const typeService = getResolvedTypeService(serviceData);
-          const { parentId, childId } = resolveAssignedServiceIdentity(
-            rawServiceData,
-            serviceData,
-          );
-          const assignmentKey =
-            parentId !== undefined || childId !== undefined
-              ? `parent-${parentId ?? "none"}-child-${childId ?? "none"}`
-              : `request-${pr.itinerario_servicio_id || pr.id}`;
-          const serviceKey = `${typeService}-${assignmentKey}`;
-
-          if (!serviciosMap.has(serviceKey)) {
-            const nombre = getServiceName(serviceData);
-
-            serviciosMap.set(serviceKey, {
-              serviceKey,
-              serviceData,
-              categoryId:
-                serviceData.tariff?.tipo_tarifa ||
-                serviceData.tipo_tarifa ||
-                determineCategory(serviceData),
-              nombre,
-              tipo: typeService,
-              totalPendiente: 0,
-              cantidadPagos: 0,
-              paymentRequests: [],
-            });
-          }
-
-          const servicio = serviciosMap.get(serviceKey);
-          servicio.paymentRequests.push(pr);
-          servicio.cantidadPagos++;
-          servicio.totalPendiente += parseFloat(pr.amount || 0);
-        });
-
-        const serviciosArray = Array.from(serviciosMap.values());
-        console.log(" Servicios agrupados:", serviciosArray.length);
-
-        setServices(serviciosArray);
-        setFilteredServices(serviciosArray);
-
-        // Si estamos en vista de pagos, mantener actualizado el servicio seleccionado
-        if (selectedService) {
-          const updated = serviciosArray.find(
-            (s) => s.serviceKey === selectedService.serviceKey,
-          );
-          if (updated) {
-            setSelectedService(updated);
-            if (view === "payments") {
-              setPaymentRequests(updated.paymentRequests || []);
-              setSelectedPayments((prev) =>
-                prev.filter((sp) =>
-                  (updated.paymentRequests || []).some((p) => p.id === sp.id),
-                ),
-              );
-            }
-          } else {
-            // El servicio ya no tiene pagos en el rango → volver a vista de servicios
-            setSelectedService(null);
-            setPaymentRequests([]);
-            setSelectedPayments([]);
-            setView("services");
-          }
-        }
-
-        setLoading(false);
-      } else {
-        toast.error("Error al cargar servicios pendientes");
-        setLoading(false);
-      }
-    } catch (error) {
-      console.error("Error cargando servicios:", error);
-      toast.error("Error al cargar los servicios pendientes");
-      setLoading(false);
-    }
-  };
-
-  const determineCategory = (serviceData) => {
-    const parentService = serviceData.parentService || {};
-    const typeService = parentService.typeService || "unknown";
-
-    const categoryMap = {
-      hoteles: "hoteles",
-      guias: "guias",
-      transportes: "transportes",
-      restaurantes: "restaurantes",
-      atractivos: "atractivos",
-    };
-
-    return categoryMap[typeService] || "otros";
-  };
-
-  const handleTypeFilterChange = (typeService) => {
-    setSelectedTypeFilter(typeService);
-
-    if (typeService === "all") {
-      setFilteredServices(services);
-    } else {
-      const filtered = services.filter((s) => s.tipo === typeService);
-      setFilteredServices(filtered);
-    }
-  };
+  const handleTypeFilterChange = (typeService) => setSelectedTypeFilter(typeService);
 
   const handleSelectService = (service) => {
     console.log(" Servicio seleccionado:", service);
-    setSelectedService(service);
-    setPaymentRequests(service.paymentRequests || []);
-    setSelectedPayments([]);
+    setSelectedServiceKey(service.serviceKey);
+    setSelectedPaymentIds([]);
     setView("payments");
   };
 
   const handleBackToServices = () => {
     setView("services");
-    setSelectedService(null);
-    setPaymentRequests([]);
-    setSelectedPayments([]);
+    setSelectedServiceKey(null);
+    setSelectedPaymentIds([]);
   };
 
   const handleTogglePayment = (payment) => {
-    setSelectedPayments((prev) => {
-      const exists = prev.find((p) => p.id === payment.id);
-      if (exists) {
-        return prev.filter((p) => p.id !== payment.id);
-      } else {
-        return [...prev, payment];
-      }
-    });
+    if (pending.isFetching || pending.isError) return;
+    const id = String(payment.id);
+    setSelectedPaymentIds((prev) => prev.includes(id) ? prev.filter((value) => value !== id) : [...prev, id]);
   };
 
   const handleSelectAll = () => {
-    if (selectedPayments.length === paymentRequests.length) {
-      setSelectedPayments([]);
-    } else {
-      setSelectedPayments([...paymentRequests]);
-    }
+    if (pending.isFetching || pending.isError) return;
+    setSelectedPaymentIds(selectedPayments.length === paymentRequests.length ? [] :
+      paymentRequests.map((payment) => String(payment.id)));
   };
 
   const handleOpenPagoLote = () => {
+    if (pending.isFetching || pending.isError) return;
     if (selectedPayments.length === 0) {
       toast.warning("Seleccione al menos un pago para procesar");
       return;
@@ -474,8 +196,8 @@ export function PagosLote() {
 
   const handlePagoLoteSuccess = () => {
     setShowPagoLoteModal(false);
-    setSelectedPayments([]);
-    loadPendingServices();
+    setSelectedPaymentIds([]);
+    void pending.refetch();
     toast.success("Pago por lote registrado exitosamente");
   };
 
@@ -518,6 +240,7 @@ export function PagosLote() {
       restaurantes: "Restaurantes",
       tickets: "Tickets",
       atractivos: "Atractivos",
+      extras: "Extras",
       unknown: "Otros",
     };
     return labels[type] || type;
@@ -780,9 +503,7 @@ export function PagosLote() {
                   <span className="stat-value">
                     {formatCurrency(
                       service.totalPendiente,
-                      service.serviceData?.tariff?.moneda ||
-                        service.serviceData?.moneda ||
-                        "soles",
+                      service.currency,
                     )}
                   </span>
                   <span className="stat-label">Total pendiente</span>
@@ -807,9 +528,6 @@ export function PagosLote() {
     const totalSelected = selectedPayments.reduce(
       (sum, p) => sum + parseFloat(p.amount || 0),
       0,
-    );
-    const selectedPaymentService = resolveAssignedPaymentServiceData(
-      selectedPayments[0]?.service_data,
     );
 
     return (
@@ -865,14 +583,13 @@ export function PagosLote() {
                   Total:{" "}
                   {formatCurrency(
                     totalSelected,
-                    selectedPaymentService?.tariff?.moneda ||
-                      selectedPaymentService?.moneda ||
-                      "soles",
+                    selectedService?.currency || "USD",
                   )}
                 </span>
                 <button
                   className="btn-liquidar"
                   onClick={handleOpenPagoLote}
+                  disabled={pending.isFetching || pending.isError}
                 >
                   <FaMoneyBillWave /> Procesar lote
                 </button>
@@ -918,12 +635,9 @@ export function PagosLote() {
                   (p) => p.id === payment.id,
                 );
                 const assignedPaymentService =
-                  resolveAssignedPaymentServiceData(payment.service_data);
+                  resolvePendingPaymentAssignment(payment).service;
 
-                const monedaPayment =
-                  assignedPaymentService?.tariff?.moneda ||
-                  assignedPaymentService?.moneda ||
-                  (payment.moneda === "USD" ? "dolares" : "soles");
+                const monedaPayment = resolvePendingPaymentCurrency(payment);
 
                 const servicioDetalle =
                   getServiceName(assignedPaymentService) || "-";
@@ -1016,8 +730,15 @@ export function PagosLote() {
         </div>
       </div>
 
+      <div className="pending-payments-refresh">
+        <button type="button" className="filter-btn" disabled={pending.isFetching} onClick={() => void pending.refetch()}>
+          {pending.isFetching ? "Actualizando…" : "Actualizar pendientes"}
+        </button>
+        {pending.isError && <p role="alert">No se pudieron comprobar los pagos pendientes. Reintente antes de procesar un lote.</p>}
+        {invalidDateRange && <p role="alert">La fecha inicial no puede ser posterior a la fecha final.</p>}
+      </div>
       <div className="page-content">
-        {view === "services" ? renderServicesView() : renderPaymentsView()}
+        {!pending.isError && (view === "services" ? renderServicesView() : renderPaymentsView())}
       </div>
 
       {showPagoLoteModal && (
@@ -1026,6 +747,7 @@ export function PagosLote() {
           onClose={() => setShowPagoLoteModal(false)}
           onSuccess={handlePagoLoteSuccess}
           selectedPayments={selectedPayments}
+          pendingValidation={pending.isFetching || pending.isError}
         />
       )}
     </div>

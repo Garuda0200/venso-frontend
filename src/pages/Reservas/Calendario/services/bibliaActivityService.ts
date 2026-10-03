@@ -1,4 +1,5 @@
 import { createApiInstance } from "../../../../utils/apiUtils";
+import { invalidateAgenciesCache, invalidateCotizacionGraphCache } from "../../../../utils/cacheInvalidation";
 
 const BASE_URL = "/turismo/cotizaciones";
 const getApi = () => createApiInstance(true);
@@ -72,6 +73,8 @@ export const bibliaActivityService = {
       `${BASE_URL}/biblia-actividades/independientes/${encodeURIComponent(id)}/cotizacion`,
       payload,
     );
+    invalidateAgenciesCache();
+    invalidateCotizacionGraphCache();
     return response?.data?.data ?? response?.data;
   },
 

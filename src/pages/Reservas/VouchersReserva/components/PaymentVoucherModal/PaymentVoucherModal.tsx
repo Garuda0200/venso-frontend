@@ -21,6 +21,7 @@ import {
   resolveServiceType,
 } from "../../utils/serviceAssignment";
 import "./PaymentVoucherModal.scss";
+import { getPaymentServiceId, getAssignedPaymentAmount } from "../../utils/reservationPaymentManagement";
 
 const TYPE_LABELS = {
   hoteles: "Hotel",
@@ -49,24 +50,8 @@ const TYPE_LABELS = {
   tour: "Tour",
 };
 
-const getServiceId = (service = {}) =>
-  service?.servicioId ||
-  service?.itinerario_servicio_id ||
-  service?.assignedService?.servicioId ||
-  service?.assignedService?.itinerario_servicio_id ||
-  null;
-
-const getServiceAmount = (service = {}) => {
-  const tariff = getAssignedTariff(service);
-  return parseFloat(
-    tariff?.precio_original_with_child_extras ||
-      tariff?.precio_original ||
-      service?.assignedService?.precio ||
-      service?.assigned_precio_total ||
-      service?.assignedPrecioTotal ||
-      0,
-  );
-};
+const getServiceId = getPaymentServiceId;
+const getServiceAmount = getAssignedPaymentAmount;
 
 const getServiceName = (service = {}) => {
   const parent = getAssignedParentService(service);
@@ -187,12 +172,17 @@ const PaymentVoucherModal = ({
   }, [show, isBatch, primaryItem?.serviceId, deadline]);
 
   const handleStatusLoaded = useCallback((paymentRequest) => {
-    setHasPaymentRequest(!!paymentRequest);
+    setHasPaymentRequest(paymentRequest === undefined ? null : !!paymentRequest);
   }, []);
 
   const handleSubmitPayment = async () => {
+    if (isSubmitting || hasPaymentRequest !== false) return;
+    if (!voucherReservaId || enrichedItems.length > 100) {
+      toast.error("Verifica la reserva y selecciona como máximo 100 servicios");
+      return;
+    }
     const invalidItem = enrichedItems.find(
-      (item) => !item.serviceId || !item.amount || item.amount <= 0,
+      (item) => !item.serviceId || !Number.isFinite(item.amount) || item.amount <= 0,
     );
 
     if (invalidItem) {
@@ -321,7 +311,7 @@ const PaymentVoucherModal = ({
       )}
 
       {!isBatch && (
-        <div className={`pvm-status-wrap${hasPaymentRequest ? "" : " hidden"}`}>
+        <div className={`pvm-status-wrap${hasPaymentRequest === false ? " hidden" : ""}`}>
           <PaymentRequestManager
             ref={paymentManagerRef}
             voucherReservaId={voucherReservaId}
@@ -392,13 +382,6 @@ const PaymentVoucherModal = ({
               )}
             </button>
           </div>
-        </div>
-      )}
-
-      {hasPaymentRequest === null && (
-        <div className="pvm-loading">
-          <div className="spinner" />
-          <span>Verificando estado...</span>
         </div>
       )}
 

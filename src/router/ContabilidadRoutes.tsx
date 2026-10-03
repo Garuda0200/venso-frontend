@@ -28,6 +28,7 @@ export function ContabilidadRoutes() {
       />
       <Route path="/caja" element={loadLayout(ContabilidadLayout, Caja)} />
       <Route path="/movimientos" element={loadLayout(ContabilidadLayout, Files)} />
+      <Route path="/egresos" element={<Navigate to="/contabilidad/movimientos" replace />} />
       <Route path="/files" element={<Navigate to="/contabilidad/movimientos" replace />} />
       <Route path="/pagos-lote" element={loadLayout(ContabilidadLayout, PagosLote)} />
       <Route path="/liquidaciones" element={<Navigate to="/contabilidad/pagos-lote" replace />} />

@@ -27,6 +27,7 @@ import { invalidateGetCache } from "../../../../../utils/axiosInstance";
 import contabilidadService from "../../../../../services/contabilidadService";
 import ServiceDetailedInfo from "../../../../../components/Ventas/Cotizaciones/EdicionCotizacion/components/DaysEditor/components/ServiceDetailedInfo/ServiceDetailedInfo";
 import "./PaymentRequestManager.scss";
+import { getOperationalPaymentRequest } from "../../utils/reservationPaymentManagement";
 
 const PENDING_PAYMENT_REFRESH_MS = 60000;
 
@@ -45,6 +46,7 @@ const PaymentRequestManager = forwardRef(
     const [paymentRequest, setPaymentRequest] = useState(null);
     const [movimiento, setMovimiento] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
     const [loadingMovimiento, setLoadingMovimiento] = useState(false);
     const hasFetchedOnce = React.useRef(false);
 
@@ -77,6 +79,8 @@ const PaymentRequestManager = forwardRef(
     }));
 
     const fetchPaymentRequest = async () => {
+      setLoadError(false);
+      onStatusLoaded?.(undefined);
       if (!hasFetchedOnce.current) {
         setLoading(true);
       }
@@ -86,9 +90,11 @@ const PaymentRequestManager = forwardRef(
           servicioId,
         );
 
-        if (response && response.success && response.data) {
-          setPaymentRequest(response.data);
-          onStatusLoaded?.(response.data);
+        if (!response?.success) throw new Error("No se pudo verificar el estado de pago");
+        const current = getOperationalPaymentRequest({ paymentRequest: response.data });
+        if (current) {
+          setPaymentRequest(current);
+          onStatusLoaded?.(current);
 
           // Si está pagado y tiene movimiento_id, cargar el movimiento
           if (response.data.status === "paid" && response.data.movimiento_id) {
@@ -100,7 +106,7 @@ const PaymentRequestManager = forwardRef(
         }
       } catch (error) {
         console.error("Error al cargar solicitud de pago:", error);
-        setPaymentRequest(null);
+        setLoadError(true);
       } finally {
         setLoading(false);
         hasFetchedOnce.current = true;
@@ -179,6 +185,12 @@ const PaymentRequestManager = forwardRef(
     }
 
     // Si NO hay solicitud de pago, no renderizar nada (el padre muestra el formulario)
+    if (loadError) {
+      return <div className="payment-request-manager" role="alert">
+        <span>No se pudo verificar el estado de pago.</span>
+        <button type="button" onClick={fetchPaymentRequest}>Reintentar</button>
+      </div>;
+    }
     if (!paymentRequest) {
       return null;
     }

@@ -561,11 +561,11 @@ const NotificationBell = () => {
 
   // Detectar si una notificación es una solicitud de pago
   const isPaymentRequest = useCallback((notification) => {
-    const contextData = notification.datos_contexto || {};
+    const contextData = normalizeNotificationContext(notification);
     // FIX: usar payment_request_id en vez de service_data
     // El backend NO envía service_data en la notificación; sí envía payment_request_id
     const isPayment =
-      contextData.type === "pago_solicitado" && contextData.payment_request_id;
+      (contextData.type === "pago_solicitado" || contextData.type === "pagos_solicitados_batch") && contextData.payment_request_id;
 
     return isPayment;
   }, []);
@@ -684,10 +684,17 @@ const NotificationBell = () => {
     setRejectionReason("");
   }, []);
 
-  // Manejar pago desde notificación (navegar a contabilidad/egresos con datos pre-cargados)
+  // Los lotes se revisan en el listado fresco; no se paga el primer ID del lote.
   const handlePayFromNotification = useCallback(
     async (notification) => {
-      const contextData = notification.datos_contexto || {};
+      const contextData = normalizeNotificationContext(notification);
+
+      if (contextData.type === "pagos_solicitados_batch") {
+        await markNotificationRead(notification);
+        setShowPendingPaymentsModal(true);
+        setShowDropdown(false);
+        return;
+      }
 
       // Marcar notificación como leída
       if (!notification.leida) {
@@ -759,7 +766,7 @@ const NotificationBell = () => {
       // Cerrar dropdown
       setShowDropdown(false);
     },
-    [markAsRead],
+    [markAsRead, markNotificationRead],
   );
 
   // Manejar pago completado desde notificación (usar service_data de la notificación)

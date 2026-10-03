@@ -132,6 +132,11 @@ export const invalidateCotizacionesCache = ({ refetchType = "active" } = {}) => 
   queryClient.invalidateQueries({ queryKey: queryKeys.cotizaciones.all, refetchType });
 };
 
+export const invalidateAgenciesCache = () => {
+  invalidateGetCache("/turismo/agencias");
+  queryClient.invalidateQueries({ queryKey: ["turismo", "agencias"] });
+};
+
 /**
  * Invalida todo el caché de vouchers (venta + reserva).
  */

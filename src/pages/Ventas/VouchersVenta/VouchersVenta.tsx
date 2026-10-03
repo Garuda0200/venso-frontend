@@ -29,6 +29,9 @@ import { useNotifications } from "../../../hooks/useNotifications";
 import { canViewAllVouchers } from "../../../utils/permissions";
 import AgencyPaymentReportModal from "../../../components/Contabilidad/AgencyPaymentReportModal";
 import VoucherMediaManagerModal from "../Cotizaciones/components/VoucherMediaManagerModal";
+import { useAgencyDirectory } from "../../../hooks/useAgencyDirectory";
+import AgencyGroups from "../../../components/common/AgencyGroups/AgencyGroups";
+import "../../../components/common/AgencyGroups/AgencyGroups.scss";
 import "./VouchersVenta.scss";
 
 const getVoucherCotizacion = (voucher = {}) =>
@@ -88,6 +91,7 @@ const VouchersVenta = () => {
   const location = useLocation();
   const { auth, user } = useAuth();
   const queryClientInstance = useQueryClient();
+  const { data: agencies = [] } = useAgencyDirectory();
   const currentSellerDni = getCurrentSellerDni(auth, user);
   const canScopeBySeller = canViewAllVouchers(user || auth);
 
@@ -840,8 +844,7 @@ const VouchersVenta = () => {
                           </header>
 
                           {isMonthExpanded && (
-                            <div className="vouchers-sale-list">
-                              {monthGroup.vouchers.map((voucher) => {
+                            <AgencyGroups items={monthGroup.vouchers} agencies={agencies} listClassName="vouchers-sale-list" renderItem={(voucher) => {
                                 const roleToPass =
                                   auth?.role !== undefined
                                     ? auth.role
@@ -881,8 +884,7 @@ const VouchersVenta = () => {
                                     allVouchers={vouchers}
                                   />
                                 );
-                              })}
-                            </div>
+                              }} />
                           )}
                         </section>
                       );

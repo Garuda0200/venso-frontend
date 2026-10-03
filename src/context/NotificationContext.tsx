@@ -563,6 +563,7 @@ export const NotificationProvider = ({ children, apiBaseUrl }) => {
 
           if (
             (contextData.type === "pago_solicitado" ||
+              contextData.type === "pagos_solicitados_batch" ||
               contextData.type === "pago_solicitado_confirmacion") &&
             contextData.payment_request_id
           ) {

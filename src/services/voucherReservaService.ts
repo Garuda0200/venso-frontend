@@ -238,7 +238,7 @@ export const voucherReservaService = {
   },
 
   // Get a specific reservation voucher by ID WITH RELATIONS (voucher venta + cotización)
-  getVoucherReservaWithRelationsById: async (id) => {
+  getVoucherReservaWithRelationsById: async (id, options = {}) => {
     try {
       // Ensure ID is provided
       if (!id) {
@@ -247,6 +247,7 @@ export const voucherReservaService = {
 
       const response = await api.get(
         `/turismo/vouchers-reserva/with-relations/${id}`,
+        { _skipDedup: Boolean(options.skipCache || options._skipDedup) },
       );
 
       // La respuesta debe incluir: voucher_data, cotizacion_data, assigned_itinerary
@@ -319,6 +320,7 @@ export const voucherReservaService = {
       const response = await api.get(
         "/turismo/vouchers-reserva/payment-request",
         {
+          _skipDedup: true,
           params: {
             voucher_reserva_id: voucherReservaId,
             itinerario_servicio_id: itinerarioServicioId,
@@ -384,6 +386,9 @@ export const voucherReservaService = {
       );
 
       // La respuesta puede ser un array directo o estar envuelta en data
+      if (options.skipCache && !Array.isArray(response.data) && !Array.isArray(response.data?.data)) {
+        throw new Error("Respuesta de estado de pagos inválida");
+      }
       const paymentRequests = Array.isArray(response.data)
         ? response.data
         : response.data?.data && Array.isArray(response.data.data)
@@ -397,7 +402,7 @@ export const voucherReservaService = {
         error,
       );
       // Si el endpoint no existe o retorna 404, retornar array vacío
-      if (error.response?.status === 404) {
+      if (error.response?.status === 404 && !options.skipCache) {
         return [];
       }
       throw error;

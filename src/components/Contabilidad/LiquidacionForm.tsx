@@ -15,6 +15,7 @@ import FileDropZone from "../common/FileDropZone/FileDropZone";
 
 import { formatCurrency } from "../../utils/formatters";
 import { paymentRequestService } from "../../services/paymentRequestService";
+import { validatePendingPaymentBatch } from "../../services/pendingPaymentService";
 import { voucherVentaService } from "../../services/voucherVentaService";
 import {
   inferPaymentServiceType,
@@ -30,6 +31,7 @@ const PagoLoteForm = ({
   onClose,
   onSuccess,
   selectedPayments = [],
+  pendingValidation = false,
 }) => {
   const [loading, setLoading] = useState(false);
   const [validated, setValidated] = useState(false);
@@ -39,6 +41,7 @@ const PagoLoteForm = ({
   const { uploadFile, deleteFile, isUploading, uploadProgress, uploadError } =
     useFileUpload();
   const { getCurrentUser } = useAuth();
+  const selectedPaymentSignature = JSON.stringify(selectedPayments.map((payment) => [payment.id, payment.amount]));
   const currentUser = getCurrentUser();
 
   const [formData, setFormData] = useState({
@@ -65,7 +68,11 @@ const PagoLoteForm = ({
     if (isOpen) {
       resetForm();
       loadSaldos();
+    }
+  }, [isOpen]);
 
+  useEffect(() => {
+    if (isOpen) {
       // Calcular monto total y descripción automática
       if (selectedPayments.length > 0) {
         const montoTotal = selectedPayments.reduce((sum, p) => {
@@ -85,13 +92,13 @@ const PagoLoteForm = ({
 
         setFormData((prev) => ({
           ...prev,
-          descripcion: `Pago por lote de ${selectedPayments.length} servicio(s)`,
+          descripcion: prev.descripcion || `Pago por lote de ${selectedPayments.length} servicio(s)`,
           monto: montoTotalRedondeado,
           contexto_pago: contextoPago,
         }));
       }
     }
-  }, [isOpen, selectedPayments]);
+  }, [isOpen, selectedPaymentSignature]);
 
   const resetForm = () => {
     setFormData({
@@ -361,6 +368,10 @@ const PagoLoteForm = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (pendingValidation || loading) {
+      toast.warning("Espere a que se comprueben los pagos pendientes.");
+      return;
+    }
     setValidated(true);
 
     // Validación básica
@@ -408,6 +419,9 @@ const PagoLoteForm = ({
     setLoading(true);
 
     try {
+      // Comprobar antes de subir evidencias o registrar movimientos. Otro usuario
+      // pudo pagar/cancelar el pedido mientras este formulario estaba abierto.
+      await validatePendingPaymentBatch(selectedPayments);
       // 1. Subir archivos pendientes a Tigris
       const pendingFiles = evidencias.filter(
         (ev) => ev.isPending && ev.fileObject,
@@ -687,7 +701,7 @@ const PagoLoteForm = ({
           ),
       variant: "success",
       icon: <FaSave />,
-      disabled: loading || isUploading,
+      disabled: loading || isUploading || pendingValidation,
     },
   ];
 

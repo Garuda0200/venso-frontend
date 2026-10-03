@@ -47,6 +47,10 @@ import {
   mergeItineraryDaysByNumber,
 } from "./utils/serviceAssignment";
 import { buildReservationVoucherMap } from "./utils/reservationVoucherRender";
+import { useAgencyDirectory } from "../../../hooks/useAgencyDirectory";
+import AgencyGroups from "../../../components/common/AgencyGroups/AgencyGroups";
+import { getQuotationAgency } from "../../../utils/quotationAgencyGroups";
+import "../../../components/common/AgencyGroups/AgencyGroups.scss";
 import {
   createClientResourceId,
   createIdempotencyKey,
@@ -54,6 +58,7 @@ import {
 
 const VouchersReserva = () => {
   const { auth } = useAuth();
+  const { data: agencies = [] } = useAgencyDirectory();
   const [searchParams, setSearchParams] = useSearchParams();
   const isMounted = useRef(true);
 
@@ -660,6 +665,10 @@ const VouchersReserva = () => {
     setSelectedVoucherForPayments({
       ...voucher.reservationVoucher,
       voucher_code_venta: voucher.voucher_code, // El voucher_code del voucher de venta
+      voucherId: voucher.id,
+      cotizacionData: getVoucherCotizacionData(voucher),
+      passengerData: voucher.passengerData || voucher.passenger_data,
+      agency_name: getQuotationAgency(voucher, agencies).name,
     });
     setShowPaymentManagement(true);
     document.body.style.overflow = "hidden";
@@ -1278,8 +1287,7 @@ const VouchersReserva = () => {
                             </header>
 
                             {isMonthExpanded && (
-                              <div className="vouchers-grid">
-                                {monthGroup.vouchers.map((voucher) => (
+                              <AgencyGroups items={monthGroup.vouchers} agencies={agencies} listClassName="vouchers-grid" renderItem={(voucher) => (
                                   <VoucherReservaCard
                                     key={voucher.id}
                                     voucher={voucher}
@@ -1302,8 +1310,7 @@ const VouchersReserva = () => {
                                     allVouchers={vouchers}
                                     viewMode={viewMode}
                                   />
-                                ))}
-                              </div>
+                                )} />
                             )}
                           </section>
                         );

@@ -19,6 +19,7 @@ import {
 
 import contabilidadService from "../../../services/contabilidadService";
 import MovimientoForm from "../../../components/Contabilidad/MovimientoForm";
+import PendingPaymentsAccess from "../../../components/Contabilidad/PendingPaymentsAccess";
 import { voucherVentaService } from "../../../services/voucherVentaService";
 import voucherReservaService from "../../../services/voucherReservaService";
 
@@ -219,7 +220,7 @@ export function Files() {
     });
 
     return sortedYears;
-  }, [movimientos]);
+  }, [movimientos, exchangeRate]);
 
   const toggleFileExpand = (voucherCode) => {
     setExpandedFiles((prev) => {
@@ -392,7 +393,10 @@ export function Files() {
           {totalFiles === 1 ? "file encontrado" : "files encontrados"} • TC{" "}
           {exchangeRate}
         </p>
-        <button type="button" className="btn-add" onClick={openMovementTypeSelector}><FaPlus /> Nuevo movimiento</button>
+        <div className="movements-page-actions">
+          <button type="button" className="btn-add" onClick={openMovementTypeSelector}><FaPlus /> Nuevo movimiento</button>
+          <PendingPaymentsAccess onPaymentSaved={() => void loadMovimientos()} />
+        </div>
       </div>
 
       {yearlyData.length === 0 ? (

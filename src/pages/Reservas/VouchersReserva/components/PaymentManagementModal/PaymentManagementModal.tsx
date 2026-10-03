@@ -29,64 +29,27 @@ import {
   getAssignedParentService,
   getAssignedTariff,
   hasAssignedService,
-  mergeItineraryDaysByNumber,
   resolveServiceType,
 } from "../../utils/serviceAssignment";
 import {
   getSpecializedPaymentGroups,
   getSpecializedServiceType,
 } from "../../utils/specializedPaymentGroups";
+import {
+  normalizePaymentItinerary,
+  enrichPaymentItinerary,
+  getAssignedPaymentAmount,
+  getAssignedTicketQuantity,
+  getPaymentServiceId,
+  getOperationalPaymentRequest,
+  canRequestReservationPayment,
+  buildReservationPaymentCandidates,
+} from "../../utils/reservationPaymentManagement";
+import TicketChargeSummary from "./TicketChargeSummary";
+import PaymentBatchBar from "./PaymentBatchBar";
 import "./PaymentManagementModal.scss";
 
-const normalizeItinerary = (itinerary) => {
-  if (!Array.isArray(itinerary)) return [];
-  const normalized = itinerary.map((day) => ({
-    ...day,
-    servicios: (day.servicios || []).map((service) => {
-      if (!service.isAssigned) return service;
-
-      const normalized = { ...service };
-
-      // Direccion 1: wrapper → flat (si assignedService existe pero flat fields no)
-      if (normalized.assignedService && !normalized.assignedParentService) {
-        normalized.assignedParentService =
-          normalized.assignedService.parentService || null;
-        normalized.assignedChildService =
-          normalized.assignedService.childService || null;
-        normalized.assignedTariff =
-          normalized.assignedService.tariff || normalized.tariff || null;
-      }
-
-      // Direccion 2: flat → wrapper (si flat fields existen pero assignedService no)
-      if (
-        !normalized.assignedService &&
-        (normalized.assignedParentService || normalized.assignedChildService)
-      ) {
-        normalized.assignedService = {
-          parentService: normalized.assignedParentService || null,
-          childService: normalized.assignedChildService || null,
-          tariff: normalized.assignedTariff || normalized.tariff || null,
-          typeService: normalized.typeService,
-          hora: normalized.hora || "",
-          payment_deadline: normalized.payment_deadline || null,
-          passengerSelection: normalized.passengerSelection || null,
-        };
-      }
-
-      const resolvedTypeService = resolveServiceType(normalized);
-
-      if (resolvedTypeService) {
-        normalized.typeService = resolvedTypeService;
-        if (normalized.assignedService) {
-          normalized.assignedService.typeService = resolvedTypeService;
-        }
-      }
-
-      return normalized;
-    }),
-  }));
-  return mergeItineraryDaysByNumber(normalized);
-};
+const normalizeItinerary = normalizePaymentItinerary;
 
 const generatePaymentDescription = (serviceData, voucherCode) => {
   // Si no hay service_data, usar el formato antiguo
@@ -207,6 +170,8 @@ const PaymentManagementModal = ({
   const [paymentRequests, setPaymentRequests] = useState([]);
   const [principalPax, setPrincipalPax] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [paymentLoadError, setPaymentLoadError] = useState(false);
+  const [refreshingPayments, setRefreshingPayments] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPaymentRequest, setSelectedPaymentRequest] = useState(null);
   const [specializedPaymentType, setSpecializedPaymentType] = useState<string | null>(null);
@@ -246,6 +211,7 @@ const PaymentManagementModal = ({
     if (!isOpen) {
       initialLoadDone.current = false;
       setLoading(true);
+      setSelectedServiceKeys(new Set());
     }
   }, [isOpen, voucherReserva]);
 
@@ -295,6 +261,7 @@ const PaymentManagementModal = ({
 
       if (isForThisVoucher) {
         invalidateReservaAssignmentGraphCache();
+        setRefreshingPayments(true);
         // Direct invocation to bypass useEffect dependency chain without
         // reopening or showing the initial full-screen loader.
         setTimeout(() => loadVoucherDataRef.current?.(), 150);
@@ -330,6 +297,8 @@ const PaymentManagementModal = ({
   }, []);
 
   const loadVoucherData = async () => {
+    setRefreshingPayments(true);
+    setPaymentLoadError(false);
     try {
       // Only show full loading spinner on initial load, not on refreshes
       if (!initialLoadDone.current) {
@@ -337,7 +306,7 @@ const PaymentManagementModal = ({
       }
 
       const voucherVentaId =
-        voucherReserva.voucherId || voucherReserva.voucher_id;
+        voucherReserva.voucherId || voucherReserva.voucher_id || voucherReserva.voucher_venta_id;
       const voucherReservaId =
         voucherReserva.reservationVoucher?.id ||
         voucherReserva.id ||
@@ -351,6 +320,7 @@ const PaymentManagementModal = ({
           const normalizedItinerary =
             await voucherReservaService.getItinerarioByVoucherVenta(
               voucherVentaId,
+              { skipCache: true },
             );
           if (
             Array.isArray(normalizedItinerary) &&
@@ -371,7 +341,7 @@ const PaymentManagementModal = ({
         try {
           const response =
             await voucherReservaService.getVoucherReservaWithRelationsById(
-              voucherReservaId,
+              voucherReservaId, { skipCache: true },
             );
           const freshData = response?.data;
           if (freshData?.assigned_itinerary || freshData?.assignedItinerary) {
@@ -420,32 +390,22 @@ const PaymentManagementModal = ({
         try {
           const allRequests =
             await voucherReservaService.getPaymentRequestsByVoucherReservaId(
-              voucherReservaId,
+              voucherReservaId, { skipCache: true },
             );
           if (Array.isArray(allRequests) && allRequests.length > 0) {
             // Only match active (non-cancelled) payment requests to services
-            const activeRequests = allRequests.filter(
-              (pr) => pr.status !== "cancelled",
-            );
+            const activeRequests = allRequests.filter(pr => getOperationalPaymentRequest({ paymentRequest: pr }));
             // Merge payment requests into itinerary services by itinerario_servicio_id
-            const enriched = itinerary.map((day) => ({
-              ...day,
-              servicios: (day.servicios || []).map((service) => {
-                if (!service.isAssigned || !service.servicioId) return service;
-                const match = activeRequests.find(
-                  (pr) => pr.itinerario_servicio_id === service.servicioId,
-                );
-                return match ? { ...service, paymentRequest: match } : service;
-              }),
-            }));
+            const enriched = enrichPaymentItinerary(itinerary, activeRequests);
             setAssignedItinerary(enriched);
             setPaymentRequests(activeRequests);
           } else {
-            setAssignedItinerary(itinerary);
+            setAssignedItinerary(enrichPaymentItinerary(itinerary, []));
             setPaymentRequests([]);
           }
         } catch (prError) {
           console.warn("Error cargando payment requests:", prError);
+          setPaymentLoadError(true);
           setAssignedItinerary(itinerary);
           setPaymentRequests([]);
         }
@@ -455,9 +415,11 @@ const PaymentManagementModal = ({
       }
     } catch (error) {
       console.error("Error cargando datos del voucher:", error);
+      setPaymentLoadError(true);
       toast.error("Error al cargar los datos del voucher");
     } finally {
       setLoading(false);
+      setRefreshingPayments(false);
       initialLoadDone.current = true;
     }
   };
@@ -588,7 +550,7 @@ const PaymentManagementModal = ({
 
   // Obtener payment request de un servicio específico
   const getServicePaymentRequest = useCallback((service) => {
-    return service?.paymentRequest || null;
+    return getOperationalPaymentRequest(service);
   }, []);
 
   const formatPaymentCurrency = useCallback((amount) => {
@@ -638,66 +600,15 @@ const PaymentManagementModal = ({
   }, []);
 
   const getDirectPaymentAmount = useCallback((service) => {
-    const tariff = getAssignedTariff(service);
-    return parseFloat(
-      tariff?.precio_original_with_child_extras ||
-        tariff?.precio_original ||
-        service?.assignedService?.precio ||
-        service?.assigned_precio_total ||
-        service?.assignedPrecioTotal ||
-        0,
-    );
+    return getAssignedPaymentAmount(service);
   }, []);
 
   const getServiceSelectionKey = useCallback((service) => {
-    const serviceId =
-      service?.servicioId ||
-      service?.itinerario_servicio_id ||
-      service?.assignedService?.servicioId ||
-      service?.assignedService?.itinerario_servicio_id;
+    const serviceId = getPaymentServiceId(service);
     return serviceId ? String(serviceId) : null;
   }, []);
 
-  const batchCandidates = useMemo(() => {
-    const candidates = [];
-
-    assignedItinerary.forEach((day, dayIndex) => {
-      (day.servicios || []).forEach((service, serviceIndex) => {
-        const key = getServiceSelectionKey(service);
-        const paymentRequest = getServicePaymentRequest(service);
-        const amount = getDirectPaymentAmount(service);
-        const isSpecializedPayment = ["vuelos", "tickets"].includes(getSpecializedServiceType(service));
-        const canRequest =
-          key &&
-          hasAssignedService(service) &&
-          !paymentRequest &&
-          !canPayDirectlyByReservas(service) &&
-          !isSpecializedPayment &&
-          amount > 0;
-
-        if (canRequest) {
-          candidates.push({
-            key,
-            service,
-            dayIndex,
-            serviceIndex,
-            dayNumber: day.numero,
-            dayTitle: day.titulo || "Sin título",
-            amount,
-          });
-        }
-      });
-    });
-
-    return candidates;
-  }, [
-    assignedItinerary,
-    canPayDirectlyByReservas,
-    getDirectPaymentAmount,
-    getServicePaymentRequest,
-    getServiceSelectionKey,
-    getSpecializedServiceType,
-  ]);
+  const batchCandidates = useMemo(() => paymentLoadError ? [] : buildReservationPaymentCandidates(assignedItinerary), [assignedItinerary, paymentLoadError]);
 
   const batchCandidateKeySignature = batchCandidates
     .map((candidate) => candidate.key)
@@ -730,9 +641,9 @@ const PaymentManagementModal = ({
   const selectedBatchTotal = useMemo(
     () =>
       selectedBatchItems.reduce(
-        (total, candidate) => total + candidate.amount,
+        (total, candidate) => total + Math.round(candidate.amount * 100),
         0,
-      ),
+      ) / 100,
     [selectedBatchItems],
   );
 
@@ -745,41 +656,11 @@ const PaymentManagementModal = ({
 
         const tariff = getAssignedTariff(service) || {};
         const child = getAssignedChildService(service) || {};
-        const beneficiaries =
-          service?.assignedService?.passengerSelection ||
-          service?.assignedService?.passenger_selection ||
-          service?.passengerSelection ||
-          service?.passenger_selection ||
-          null;
-        const adults =
-          service?.assignedBeneficiariosAdultos ||
-          service?.assigned_beneficiarios_adultos ||
-          service?.assignedService?.beneficiariosAdultos ||
-          service?.assignedService?.beneficiarios_adultos ||
-          service?.beneficiariosAdultos ||
-          service?.beneficiarios_adultos ||
-          [];
-        const children =
-          service?.assignedBeneficiariosNinos ||
-          service?.assigned_beneficiarios_ninos ||
-          service?.assignedService?.beneficiariosNinos ||
-          service?.assignedService?.beneficiarios_ninos ||
-          service?.beneficiariosNinos ||
-          service?.beneficiarios_ninos ||
-          [];
-        const explicitCount = Number(beneficiaries?.count || beneficiaries?.cantidad || 0);
-        const quantity = Math.max(
-          1,
-          explicitCount ||
-            (Array.isArray(adults) ? adults.length : 0) +
-              (Array.isArray(children) ? children.length : 0),
-        );
+        const quantity = getAssignedTicketQuantity(service);
         const total = getDirectPaymentAmount(service);
         const unit = Number(
-          tariff?.precio ||
-            service?.assignedPrecioServicio ||
-            service?.assigned_precio_servicio ||
-            (quantity > 0 ? total / quantity : total) ||
+          service?.assignedPrecioServicio ?? tariff?.precio ??
+            (quantity > 0 ? total / quantity : 0) ??
             0,
         );
         const ticket = child?.ticket || child?.tickets || child;
@@ -1155,8 +1036,8 @@ const PaymentManagementModal = ({
 
   // Solicitar pago para un servicio - abre el popover compacto
   const handleRequestPayment = (day, dayIndex, service, serviceIndex) => {
-    if (!hasAssignedService(service)) {
-      toast.error("No hay servicio asignado para solicitar pago");
+    if (paymentLoadError || refreshingPayments || !canRequestReservationPayment(service)) {
+      toast.error("Actualiza el estado y selecciona un servicio disponible para solicitar pago");
       return;
     }
 
@@ -1172,8 +1053,13 @@ const PaymentManagementModal = ({
   };
 
   const handleRequestSelectedPayments = () => {
+    if (paymentLoadError || refreshingPayments) return;
     if (selectedBatchItems.length === 0) {
       toast.info("Selecciona al menos un servicio");
+      return;
+    }
+    if (selectedBatchItems.length > 100) {
+      toast.info("Selecciona como máximo 100 servicios por lote");
       return;
     }
 
@@ -1274,12 +1160,13 @@ const PaymentManagementModal = ({
         className="payment-management-modal"
       >
         <div className="payment-management-content">
-          <div className="payment-management-sticky-tools">
+          <div className="payment-management-scroll">
+          <div className="payment-management-overview">
             {(specializedFlightGroups.length > 0 || specializedTicketGroups.length > 0) && (
               <div className="linked-service-payment-tools">
                 <div className="linked-service-payment-tools__copy">
-                  <strong>Pagos especializados</strong>
-                  <span>Vuelos y entradas se revisan y pagan desde sus formularios dedicados.</span>
+                  <strong>Paneles de servicios</strong>
+                  <span>Revisar asignaciones y pagos de vuelos y entradas.</span>
                 </div>
                 <div className="linked-service-payment-tools__actions">
                   {specializedFlightGroups.length > 0 && (
@@ -1319,65 +1206,16 @@ const PaymentManagementModal = ({
               </div>
             </div>
 
-            {ticketChargeSummary.lines.length > 0 && (
-              <section className="ticket-charge-document" aria-label="Documento de cobranza de entradas">
-                <div className="ticket-charge-document__header">
-                  <div>
-                    <span>Documento de cobranza · entradas</span>
-                    <strong>{ticketChargeSummary.paxName}</strong>
-                    <small>{ticketChargeSummary.agencyName}</small>
-                  </div>
-                  <div className="ticket-charge-document__total">
-                    <span>Total entradas</span>
-                    <strong>{formatPaymentCurrency(ticketChargeSummary.total)}</strong>
-                  </div>
-                </div>
-                <div className="ticket-charge-document__lines">
-                  {ticketChargeSummary.lines.map((line) => (
-                    <div className="ticket-charge-document__line" key={line.id}>
-                      <b>{String(line.quantity).padStart(2, "0")}</b>
-                      <span>{line.description}</span>
-                      <em>{formatPaymentCurrency(line.unit)}</em>
-                      <strong>{formatPaymentCurrency(line.total)}</strong>
-                    </div>
-                  ))}
-                </div>
-                <p>El cobro se registra a nombre del PAX principal y conserva el detalle de cada entrada asignada.</p>
-              </section>
-            )}
-
-            {batchCandidates.length > 0 && (
-              <div className="batch-request-bar">
-                <label className="batch-select-all">
-                  <input
-                    type="checkbox"
-                    checked={
-                      batchCandidates.length > 0 &&
-                      selectedServiceKeys.size === batchCandidates.length
-                    }
-                    onChange={toggleAllBatchCandidates}
-                  />
-                  <span>Seleccionar servicios sin solicitud</span>
-                </label>
-                <div className="batch-selection-summary">
-                  <span>{selectedBatchItems.length} seleccionados</span>
-                  <strong>{formatPaymentCurrency(selectedBatchTotal)}</strong>
-                </div>
-                <button
-                  type="button"
-                  className="batch-request-button"
-                  onClick={handleRequestSelectedPayments}
-                  disabled={selectedBatchItems.length === 0}
-                >
-                  <MdAttachMoney /> Solicitar en lote
-                </button>
-              </div>
-            )}
           </div>
+          <TicketChargeSummary summary={ticketChargeSummary} formatAmount={formatPaymentCurrency} />
+          {paymentLoadError && <div className="payment-load-error" role="alert">
+            No se pudo verificar el estado de los pagos. Las solicitudes están deshabilitadas para evitar duplicados.
+            <button type="button" onClick={loadVoucherData}>Reintentar</button>
+          </div>}
 
           {/* ── Itinerary ── */}
           <div className="itinerary-container">
-            {assignedItinerary.length === 0 ? (
+            {getTotalAssignedCount() === 0 ? (
               <div className="empty-state">
                 <MdWarning size={40} />
                 <p>No hay servicios asignados en este voucher</p>
@@ -1414,13 +1252,10 @@ const PaymentManagementModal = ({
                         const normalizedPaymentType = getSpecializedServiceType(service);
                         const isSpecializedPayment = ["vuelos", "tickets"].includes(normalizedPaymentType);
                         const canPayDirect = canPayDirectlyByReservas(service);
-                        const canRequestPayment = !paymentRequest && !canPayDirect && !isSpecializedPayment;
+                        const canRequestPayment = !paymentLoadError && !refreshingPayments && canRequestReservationPayment(service);
                         const serviceSelectionKey =
                           getServiceSelectionKey(service);
-                        const canSelectForBatch =
-                          canRequestPayment &&
-                          !!serviceSelectionKey &&
-                          getDirectPaymentAmount(service) > 0;
+                        const canSelectForBatch = canRequestPayment;
                         const isSelected =
                           !!serviceSelectionKey &&
                           selectedServiceKeys.has(serviceSelectionKey);
@@ -1479,12 +1314,7 @@ const PaymentManagementModal = ({
                             {/* Center: tariff */}
                             <div className="service-tariff">
                               {(() => {
-                                const tariff = getAssignedTariff(service);
-                                const price = parseFloat(
-                                  tariff?.precio_original_with_child_extras ||
-                                    tariff?.precio_original ||
-                                    0,
-                                );
+                                const price = getDirectPaymentAmount(service);
                                 return price > 0 ? (
                                   <span className="tariff-amount">
                                     {formatPaymentCurrency(price)}
@@ -1561,7 +1391,7 @@ const PaymentManagementModal = ({
                                   </button>
                                 )}
 
-                                {isPending && !canPayDirect && !isSpecializedPayment && (
+                                {isPending && !canPayDirect && normalizedPaymentType !== "vuelos" && (
                                   <span className="contabilidad-tag">
                                     Vía Contabilidad
                                   </span>
@@ -1660,6 +1490,11 @@ const PaymentManagementModal = ({
               })
             )}
           </div>
+          </div>
+          <PaymentBatchBar count={batchCandidates.length} selectedCount={selectedBatchItems.length}
+            total={selectedBatchTotal} formatAmount={formatPaymentCurrency}
+            onSelectAll={toggleAllBatchCandidates} onRequest={handleRequestSelectedPayments}
+            disabled={paymentLoadError || refreshingPayments} />
         </div>
       </Modal>
 
@@ -1712,7 +1547,10 @@ const PaymentManagementModal = ({
         <PaymentVoucherModal
           show={showPaymentVoucherModal}
           onClose={handleClosePaymentVoucherModal}
-          onSubmitted={() => setSelectedServiceKeys(new Set())}
+          onSubmitted={() => {
+            setSelectedServiceKeys(new Set());
+            setRefreshingPayments(true);
+          }}
           service={requestModalItems[0].service}
           items={requestModalItems}
           voucherReservaId={

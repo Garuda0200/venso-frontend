@@ -11,6 +11,14 @@
     align-items: flex-end;
     justify-content: space-between;
     gap: $spacing-md;
+    flex-wrap: wrap;
+
+    .movements-page-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: $spacing-sm;
+    }
 
     .btn-add {
       display: inline-flex;

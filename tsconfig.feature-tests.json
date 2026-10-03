@@ -17,6 +17,10 @@
     ]
   },
   "include": [
+    "src/services/__tests__/pendingPaymentService.test.ts",
+    "src/pages/Contabilidad/Liquidaciones/domain/__tests__/pendingPaymentGroups.test.ts",
+    "src/pages/Reservas/VouchersReserva/utils/__tests__/reservationPaymentManagement.test.tsx",
+    "src/utils/__tests__/quotationAgencyGroups.test.tsx",
     "src/pages/Reservas/Calendario/utils/__tests__/bibliaSyncFeedback.test.ts",
     "src/tests/envExamples.test.ts",
     "src/components/Ventas/Cotizaciones/EdicionCotizacion/components/ServicePicker/utils/__tests__/catalogueFilters.test.tsx",

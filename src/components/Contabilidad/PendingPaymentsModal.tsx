@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { toast } from "react-toastify";
 import {
   FaTimes,
@@ -11,7 +11,7 @@ import {
 } from "react-icons/fa";
 import { format, isPast, differenceInDays } from "date-fns";
 import { es } from "date-fns/locale";
-import axiosInstance, { invalidateGetCache } from "../../utils/axiosInstance";
+import { usePendingPaymentRequests } from "../../hooks/usePendingPaymentRequests";
 import { voucherVentaService } from "../../services/voucherVentaService";
 import {
   normalizePaymentServiceData,
@@ -112,90 +112,12 @@ const generatePaymentDescription = (serviceData, voucherCode) => {
 };
 
 const PendingPaymentsModal = ({ isOpen, onClose, onPaymentSelect }) => {
-  const [paymentRequests, setPaymentRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const pending = usePendingPaymentRequests(isOpen);
+  const paymentRequests = pending.data || [];
+  const loading = pending.isLoading;
+  const [payingId, setPayingId] = useState<string | null>(null);
   const [filter, setFilter] = useState("all"); // 'all', 'urgent', 'normal'
   const [searchQuery, setSearchQuery] = useState("");
-
-  const loadPaymentRequests = useCallback(async () => {
-    setLoading(true);
-    try {
-      invalidateGetCache("/turismo/vouchers-reserva/payment-requests/pending");
-      const response = await axiosInstance.get(
-        "/turismo/vouchers-reserva/payment-requests/pending",
-        { _skipDedup: true },
-      );
-      if (response.data && response.data.success) {
-        const allRequests = response.data.data || [];
-        console.log(` Payment requests: ${allRequests.length} total`);
-        setPaymentRequests(allRequests);
-      }
-    } catch (error) {
-      console.error("Error cargando payment requests:", error);
-      toast.error("Error al cargar las solicitudes de pago");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isOpen) {
-      loadPaymentRequests();
-    }
-  }, [isOpen, loadPaymentRequests]);
-
-  useEffect(() => {
-    if (!isOpen) return undefined;
-
-    let refreshTimerId = null;
-
-    const handlePaymentRequestChange = () => {
-      if (refreshTimerId) {
-        window.clearTimeout(refreshTimerId);
-      }
-
-      refreshTimerId = window.setTimeout(() => {
-        loadPaymentRequests();
-      }, 250);
-    };
-
-    window.addEventListener(
-      "paymentRequestCreated",
-      handlePaymentRequestChange,
-    );
-    window.addEventListener(
-      "paymentRequestCompleted",
-      handlePaymentRequestChange,
-    );
-    window.addEventListener("paymentRequestPaid", handlePaymentRequestChange);
-    window.addEventListener(
-      "paymentRequestCancelled",
-      handlePaymentRequestChange,
-    );
-
-    return () => {
-      if (refreshTimerId) {
-        window.clearTimeout(refreshTimerId);
-      }
-
-      window.removeEventListener(
-        "paymentRequestCreated",
-        handlePaymentRequestChange,
-      );
-      window.removeEventListener(
-        "paymentRequestCompleted",
-        handlePaymentRequestChange,
-      );
-      window.removeEventListener(
-        "paymentRequestPaid",
-        handlePaymentRequestChange,
-      );
-      window.removeEventListener(
-        "paymentRequestCancelled",
-        handlePaymentRequestChange,
-      );
-    };
-  }, [isOpen, loadPaymentRequests]);
 
   const getUrgencyStatus = (deadline) => {
     if (!deadline) return { level: "normal", label: "Normal", icon: FaClock };
@@ -243,69 +165,85 @@ const PendingPaymentsModal = ({ isOpen, onClose, onPaymentSelect }) => {
   );
 
   const handlePayRequest = async (request) => {
-    const assignment = request._assignment || resolvePendingPaymentAssignment(request);
-    const normalizedServiceData = assignment.service || normalizePaymentServiceData(request.service_data);
-
-    // Fetch voucher_venta by code to get referencia_voucher_venta
-    let referencia_voucher_venta = null;
-    if (request.voucher_code) {
-      try {
-        const voucher = await voucherVentaService.getVoucherByCode(
-          request.voucher_code,
-        );
-        if (voucher) {
-          referencia_voucher_venta = voucher.id;
-          console.log(
-            ` Voucher venta ID encontrado: ${referencia_voucher_venta} para código: ${request.voucher_code}`,
-          );
-        } else {
-          console.warn(
-            ` No se encontró voucher venta con código: ${request.voucher_code}`,
-          );
-        }
-      } catch (error) {
-        console.error(" Error obteniendo voucher venta por código:", error);
+    if (payingId || pending.isFetching || pending.isError) return;
+    setPayingId(request.id);
+    try {
+      const current = await pending.refetch();
+      if (current.isError) {
+        toast.error("No se pudo comprobar el estado del pago. Reintente.");
+        return;
       }
+      request = current.data?.find((item) => item.id === request.id);
+      if (!request) {
+        toast.info("La solicitud ya no está pendiente.");
+        return;
+      }
+      const assignment = request._assignment || resolvePendingPaymentAssignment(request);
+      const normalizedServiceData = assignment.service || normalizePaymentServiceData(request.service_data);
+
+      // Fetch voucher_venta by code to get referencia_voucher_venta
+      let referencia_voucher_venta = null;
+      if (request.voucher_code) {
+        try {
+          const voucher = await voucherVentaService.getVoucherByCode(
+            request.voucher_code,
+          );
+          if (voucher) {
+            referencia_voucher_venta = voucher.id;
+            console.log(
+              ` Voucher venta ID encontrado: ${referencia_voucher_venta} para código: ${request.voucher_code}`,
+            );
+          } else {
+            console.warn(
+              ` No se encontró voucher venta con código: ${request.voucher_code}`,
+            );
+          }
+        } catch (error) {
+          console.error(" Error obteniendo voucher venta por código:", error);
+        }
+      }
+
+      // Preparar datos para el formulario de pago
+      // Usar descripción basada en el tipo de servicio (parentService.typeService)
+      const descripcionPago = generatePaymentDescription(
+        normalizedServiceData,
+        request.voucher_code || request.voucher_reserva_id,
+      );
+
+      const facturacion = resolveFacturacionFromServiceData(
+        normalizedServiceData,
+      );
+
+      const paymentData = {
+        descripcion: descripcionPago,
+        monto: request.amount,
+        observaciones: request.observaciones || "",
+        contexto_pago: {
+          tipo: "ServiciosVoucherReserva",
+          payment_request_id: request.id, // Incluir payment_request_id para que el backend pueda marcarlo como pagado
+          facturacion,
+          platform: request.platform || "venso", // Incluir platform del payment_request
+          business_type: request.business_type || "B2C", // Incluir business_type del payment_request
+          assigned_parent_id: assignment.assignedParentId,
+          assigned_child_id: assignment.assignedChildId,
+        },
+        payment_request_service_data: normalizedServiceData,
+        payment_request_assigned_parent_id: assignment.assignedParentId,
+        payment_request_assigned_child_id: assignment.assignedChildId,
+        payment_request_itinerario_servicio_id:
+          request.itinerario_servicio_id || null,
+        voucher_code: request.voucher_code,
+        referencia_voucher_reserva: request.voucher_reserva_id,
+        referencia_voucher_venta: referencia_voucher_venta, // Auto-populated
+        platform: request.platform || "venso", // Incluir platform
+        business_type: request.business_type || "B2C", // Incluir business_type
+      };
+
+      onPaymentSelect(paymentData);
+      onClose();
+    } finally {
+      setPayingId(null);
     }
-
-    // Preparar datos para el formulario de pago
-    // Usar descripción basada en el tipo de servicio (parentService.typeService)
-    const descripcionPago = generatePaymentDescription(
-      normalizedServiceData,
-      request.voucher_code || request.voucher_reserva_id,
-    );
-
-    const facturacion = resolveFacturacionFromServiceData(
-      normalizedServiceData,
-    );
-
-    const paymentData = {
-      descripcion: descripcionPago,
-      monto: request.amount,
-      observaciones: request.observaciones || "",
-      contexto_pago: {
-        tipo: "ServiciosVoucherReserva",
-        payment_request_id: request.id, // Incluir payment_request_id para que el backend pueda marcarlo como pagado
-        facturacion,
-        platform: request.platform || "venso", // Incluir platform del payment_request
-        business_type: request.business_type || "B2C", // Incluir business_type del payment_request
-        assigned_parent_id: assignment.assignedParentId,
-        assigned_child_id: assignment.assignedChildId,
-      },
-      payment_request_service_data: normalizedServiceData,
-      payment_request_assigned_parent_id: assignment.assignedParentId,
-      payment_request_assigned_child_id: assignment.assignedChildId,
-      payment_request_itinerario_servicio_id:
-        request.itinerario_servicio_id || null,
-      voucher_code: request.voucher_code,
-      referencia_voucher_reserva: request.voucher_reserva_id,
-      referencia_voucher_venta: referencia_voucher_venta, // Auto-populated
-      platform: request.platform || "venso", // Incluir platform
-      business_type: request.business_type || "B2C", // Incluir business_type
-    };
-
-    onPaymentSelect(paymentData);
-    onClose();
   };
 
   if (!isOpen) return null;
@@ -379,7 +317,13 @@ const PendingPaymentsModal = ({ isOpen, onClose, onPaymentSelect }) => {
         </div>
 
         <div className="pp-body">
-          {loading ? (
+          {pending.isError ? (
+            <div className="pp-empty" role="alert">
+              <FaExclamationTriangle size={32} />
+              <p>No se pudieron comprobar los pagos pendientes.</p>
+              <button type="button" className="pp-pay-btn" onClick={() => void pending.refetch()} disabled={pending.isFetching}>Reintentar</button>
+            </div>
+          ) : loading ? (
             <div className="pp-loading">
               <div className="pp-spinner"></div>
               <p>Cargando solicitudes...</p>
@@ -441,6 +385,7 @@ const PendingPaymentsModal = ({ isOpen, onClose, onPaymentSelect }) => {
                       </span>
                       <button
                         className={`pp-pay-btn ${urgency.level === "expired" ? "expired" : ""}`}
+                        disabled={pending.isFetching || Boolean(payingId)}
                         onClick={() => handlePayRequest(request)}
                       >
                         Pagar
