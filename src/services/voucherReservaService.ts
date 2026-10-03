@@ -486,6 +486,16 @@ export const voucherReservaService = {
    * @param {number} servicioId - ID del registro itinerario_servicio
    * @param {Object} assignmentData - { assigned_parent_id, assigned_child_id, assigned_tariff, hora, is_assigned }
    */
+  assignServicesBatch: async (assignments) => {
+    if (!Array.isArray(assignments) || assignments.length === 0 || assignments.length > 100) {
+      throw new Error("El lote debe contener entre 1 y 100 servicios");
+    }
+    const response = await api.put("/turismo/vouchers-reserva/servicios/asignaciones", { assignments });
+    if (response.data?.success !== true) throw new Error("El backend no confirmó el guardado de las asignaciones");
+    invalidateAssignmentCaches();
+    return response.data;
+  },
+
   assignService: async (servicioId, assignmentData) => {
     try {
       if (!servicioId) throw new Error("ID de servicio requerido");

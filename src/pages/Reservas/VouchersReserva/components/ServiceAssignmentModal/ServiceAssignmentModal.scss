@@ -1291,3 +1291,18 @@
     height: 95%;
   }
 }
+.assignment-editor-fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.assignment-save-status {
+  display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px;
+  border: 1px solid #dce7e0; border-radius: 10px; color: #216448; background: #f4faf6; font-size: 12px;
+  small { display: block; max-width: 480px; color: #8c2d4e; }
+  button { border: 1px solid currentColor; border-radius: 7px; background: white; padding: 5px 9px; cursor: pointer; }
+  &.is-error, &.is-offline { color: #9a4f13; border-color: #efd6b5; background: #fff8ef; }
+  &.is-saving, &.is-pending { color: #aa125c; border-color: #f0cadc; background: #fff4f9; }
+}
+.assignment-draft-notice {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px;
+  background: #fff8ef; border: 1px solid #efd6b5; border-radius: 10px; margin: 12px 0;
+  button { padding: 7px 10px; border: 1px solid #ddc1a0; border-radius: 7px; background: white; cursor: pointer; }
+}
+.assignment-save-error { color: #b01456; padding: 8px 0; }

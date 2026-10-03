@@ -919,7 +919,7 @@ const VouchersReserva = () => {
 
   const handleServiceAssignmentComplete = useCallback(
     (voucherId, serviceAssignments) => {
-      handleSaveServiceAssignments(voucherId, serviceAssignments);
+      return handleSaveServiceAssignments(voucherId, serviceAssignments);
     },
     [handleSaveServiceAssignments],
   );

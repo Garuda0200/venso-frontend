@@ -37,6 +37,8 @@ import ReservationRequestModal, {
   getReservationServiceTypeLabel,
 } from "./ReservationRequestModal/ReservationRequestModal";
 import { buildAssignedFlatPricingState } from "../ReservaServiceEditor/utils/editorHelpers";
+import { useAssignmentAutosave } from "./hooks/useAssignmentAutosave";
+import AssignmentSaveStatus from "./components/AssignmentSaveStatus";
 import {
   getPassengerIdsByType,
   getTourCapacity,
@@ -785,7 +787,7 @@ const ServiceAssignmentModal = ({
   // Loading and error states
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isSaving, setIsSaving] = useState(false);
+
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const pageRootRef = useRef(null);
   const pageHeaderRef = useRef(null);
@@ -795,7 +797,17 @@ const ServiceAssignmentModal = ({
   const [validationError, setValidationError] = useState(null);
   const [serviceAssignments, setServiceAssignments] = useState([]);
   const [editMode, setEditMode] = useState(false);
-  const [hasUserMadeChanges, setHasUserMadeChanges] = useState(false);
+  const autosave = useAssignmentAutosave(voucher, buildFlatAssignedPayload, isOpen);
+  const [validationInProgress, setValidationInProgress] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const closeInProgress = useRef(false);
+  const activeVoucherId = useRef(voucher?.id);
+  activeVoucherId.current = voucher?.id;
+  useEffect(() => { setValidationInProgress(false); }, [voucher?.id]);
+  const isSaving = autosave.state === "saving" || validationInProgress || closing;
+  useEffect(() => {
+    if (autosave.recoveryRevision) setRefreshTrigger(value => value + 1);
+  }, [autosave.recoveryRevision]);
   const [showVentasSummaryPdfModal, setShowVentasSummaryPdfModal] =
     useState(false);
   const [expandedProviderType, setExpandedProviderType] = useState(null);
@@ -811,7 +823,7 @@ const ServiceAssignmentModal = ({
   useEffect(() => {
     if (isOpen && voucher) {
       setCurrentStep(1);
-      setHasUserMadeChanges(false);
+
       setValidationError(null);
 
       if (voucher.reservationVoucher) {
@@ -924,6 +936,7 @@ const ServiceAssignmentModal = ({
   // Ahora el itinerario viene de las tablas normalizadas, no de un blob assigned_itinerary
   useEffect(() => {
     if (!voucher || !isOpen) return;
+    let disposed = false;
 
     const loadCotizacionData = async () => {
       try {
@@ -1006,6 +1019,7 @@ const ServiceAssignmentModal = ({
           fullVoucherData,
           cotizacionData,
         });
+        if (disposed) return;
         setFechaInicio(formatDateForInput(resolvedTravelDates.start));
         setFechaFin(formatDateForInput(resolvedTravelDates.end));
         setTravelDateSource(resolvedTravelDates.source);
@@ -1055,6 +1069,7 @@ const ServiceAssignmentModal = ({
           );
         }
 
+        if (disposed) return;
         const normalizedPeopleDetails =
           normalizePassengersToPeopleDetails(voucherPassengers) ||
           normalizePeopleDetails(cotizacionData) ||
@@ -1103,6 +1118,7 @@ const ServiceAssignmentModal = ({
             }
           }
 
+          if (disposed) return;
           const combinedItinerary = mergeExternalItineraryDays(
             normalizeItineraryDays(normalizedItinerary),
             externalCotizacionItinerary,
@@ -1183,8 +1199,9 @@ const ServiceAssignmentModal = ({
           }));
 
           setCotizacionItinerary(formattedItinerary);
-          setVoucherItinerary(formattedItinerary);
-          setServiceAssignments(formattedItinerary);
+          const visibleItinerary = autosave.load(formattedItinerary);
+          setVoucherItinerary(visibleItinerary);
+          setServiceAssignments(visibleItinerary);
         } else {
           // Fallback: usar itinerario de la cotización directamente
           let itinerario = normalizeItineraryDays(
@@ -1211,18 +1228,21 @@ const ServiceAssignmentModal = ({
           }));
 
           setCotizacionItinerary(formattedCotizacionItinerary);
-          setVoucherItinerary(formattedCotizacionItinerary);
-          setServiceAssignments(formattedCotizacionItinerary);
+          const visibleItinerary = autosave.load(formattedCotizacionItinerary);
+          setVoucherItinerary(visibleItinerary);
+          setServiceAssignments(visibleItinerary);
         }
       } catch (err) {
+        if (disposed) return;
         console.error("Error initializing itineraries:", err);
         setError(err.message || "Error al cargar el itinerario");
       } finally {
-        setLoading(false);
+        if (!disposed) setLoading(false);
       }
     };
 
     loadCotizacionData();
+    return () => { disposed = true; };
   }, [voucher, isEditing, isOpen, refreshTrigger]);
 
   // Effect to fetch existing assigned services if in edit mode
@@ -1269,161 +1289,74 @@ const ServiceAssignmentModal = ({
     return false; // No validated services found
   }, [voucherItinerary]);
 
-  // ── Persistir ajustes de un servicio ya validado ──
-  // La validación inicial se guarda inmediatamente con /validar. Este método
-  // solo persiste ajustes posteriores de hora/precio/beneficiarios y nunca
-  // permite sustituir el servicio vendido por otro del catálogo.
-  const saveServiceAssignment = useCallback(async (service) => {
-    if (!service.servicioId) {
-      console.warn(
-        "Servicio sin servicioId, no se puede guardar la validación:",
-        service,
-      );
-      return;
-    }
-    try {
-      if (service.isAssigned && service.assignedService) {
-        await voucherReservaService.updateValidatedService(service.servicioId, {
-          ...buildFlatAssignedPayload(service),
-          hora: service.assignedService.hora || service.assigned_hora || service.hora || null,
-        });
-      } else if (service.needsUnassign || service._needsUnassign) {
-        await voucherReservaService.unassignService(service.servicioId);
-      }
-    } catch (error) {
-      console.error("Error guardando servicio validado:", error);
-      throw error;
-    }
-  }, []);
+  const handleAssignmentChange = (itinerary, metadata: { persistedServiceId?: number } = {}) => {
+    if (activeVoucherId.current !== voucher?.id) return Promise.resolve(false);
+    setVoucherItinerary(itinerary);
+    setServiceAssignments(itinerary);
+    return autosave.change(itinerary, metadata.persistedServiceId);
+  };
 
-  // Autoguardado per-service cuando cambian datos de servicios validados (debounced)
-  useEffect(() => {
-    if (
-      loading ||
-      !isOpen ||
-      !serviceAssignments?.length ||
-      !hasUserMadeChanges
-    )
-      return;
-    if (!isEditing || !voucher?.reservationVoucher?.id) return;
-
-    const timeoutId = setTimeout(async () => {
-      console.log(" Autoguardando servicios validados...");
-      for (const day of serviceAssignments) {
-        for (const svc of day.servicios || []) {
-          if (
-            svc.servicioId &&
-            (svc.isAssigned || svc.needsUnassign || svc._needsUnassign)
-          ) {
-            await saveServiceAssignment(svc);
-          }
-        }
-      }
-      console.log(" Autoguardado de validaciones exitoso");
-    }, 2000);
-
-    return () => clearTimeout(timeoutId);
-  }, [
-    serviceAssignments,
-    isEditing,
-    loading,
-    isOpen,
-    voucher,
-    hasUserMadeChanges,
-    saveServiceAssignment,
-  ]);
-
-  // Guardar ajustes de los servicios validados
-  const handleSaveAssignments = useCallback(async () => {
+  // La salida espera todas las mutaciones encadenadas. Una creación fallida
+  // también conserva el editor; el callback debe devolver su resultado.
+  const handleCloseModal = async () => {
+    if (closeInProgress.current) return false;
     setValidationError(null);
-
+    if (validationInProgress) {
+      setValidationError("Espera la confirmación de la validación antes de salir.");
+      return false;
+    }
+    if (autosave.draft.length || autosave.recovering) {
+      setValidationError("Recupera o descarta el borrador pendiente antes de salir.");
+      return false;
+    }
+    closeInProgress.current = true;
+    setClosing(true);
     try {
-      if (!serviceAssignments || serviceAssignments.length === 0) {
-        setValidationError("No hay servicios validados para guardar");
-        return;
+      if (!(await autosave.flush())) {
+        setValidationError("Hay cambios sin guardar. Reintenta antes de salir.");
+        return false;
       }
-
-      const hasAssignedServices = serviceAssignments.some(
-        (day) =>
-          day.servicios && day.servicios.some((service) => service.isAssigned),
-      );
-      const hasUnassignChanges = serviceAssignments.some(
-        (day) =>
-          day.servicios &&
-          day.servicios.some(
-            (service) =>
-              service.servicioId &&
-              (service.needsUnassign || service._needsUnassign),
-          ),
-      );
-
-      if (!hasAssignedServices && !hasUnassignChanges) {
-        setValidationError("Valide al menos un servicio antes de guardar");
-        return;
-      }
-
-      if (!voucher || !voucher.id) {
-        setValidationError("Información de voucher no disponible");
-        return;
-      }
-
-      // ── Guardar ajustes de validaciones per-service ──
-      // Solo persistir servicios validados o cambios de desvalidación.
-      const errors = [];
-      for (const day of serviceAssignments) {
-        for (const svc of day.servicios || []) {
-          if (!svc.servicioId) continue;
-          // Solo guardar servicios validados o previamente validados que necesitan desvalidación
-          if (
-            !svc.isAssigned &&
-            !svc.assignedService &&
-            !svc.assignedParentId &&
-            !svc.assignedChildId &&
-            !svc.needsUnassign &&
-            !svc._needsUnassign
-          )
-            continue;
-          try {
-            await saveServiceAssignment(svc);
-          } catch (err) {
-            errors.push(`Servicio ${svc.servicioId}: ${err.message}`);
-          }
+      if (!isEditing && autosave.latest.current.some(day =>
+        (day.servicios || []).some(service => service.isAssigned))) {
+        const created = await onSave?.(voucher.id, autosave.latest.current);
+        if (created === false) {
+          setValidationError("No se pudo crear la reserva. Los servicios guardados se conservan.");
+          return false;
         }
       }
-
-      if (errors.length > 0) {
-        console.error("Errores guardando validaciones:", errors);
-        setValidationError(`Errores al guardar: ${errors.join(", ")}`);
-        return;
-      }
-
-      // Las fechas pertenecen a la cotización; Reservas solo persiste asignaciones.
-      if (onSave) {
-        await onSave(voucher.id, serviceAssignments);
-      }
+      await onClose?.();
+      return true;
     } catch (error) {
-      console.error("Error guardando validaciones:", error);
-      setValidationError(
-        `Error al guardar: ${error.message || "Error desconocido"}`,
-      );
-    }
-  }, [
-    voucher,
-    serviceAssignments,
-    isEditing,
-    onSave,
-    fechaInicio,
-    fechaFin,
-    saveServiceAssignment,
-  ]);
-
-  // Add the missing handleCloseModal function
-  const handleCloseModal = () => {
-    setHasUserMadeChanges(false); // Resetear la bandera al cerrar
-    if (onClose) {
-      onClose();
+      setValidationError(error?.message || "No se pudo completar la reserva. Reintenta.");
+      return false;
+    } finally {
+      closeInProgress.current = false;
+      setClosing(false);
     }
   };
+
+  const handleSaveAssignments = handleCloseModal;
+
+  const retryAssignments = async () => {
+    if (await autosave.flush()) {
+      setValidationError(null);
+    }
+  };
+  const discardPendingAssignments = () => {
+    if (window.confirm("¿Descartar los cambios pendientes y recargar los servicios guardados? Esta acción no modifica lo ya confirmado en el sistema.")) {
+      autosave.discardChanges();
+    }
+  };
+
+  const renderAssignmentSaveFeedback = () => <>
+    {!asPage && <AssignmentSaveStatus state={autosave.state} error={autosave.error} onRetry={retryAssignments} onDiscard={discardPendingAssignments} />}
+    {validationError && <p className="assignment-save-error" role="alert">{validationError}</p>}
+    {autosave.draft.length > 0 && <div className="assignment-draft-notice" role="alert">
+      <span>Hay cambios de una sesión anterior sin sincronizar.</span>
+      <button type="button" disabled={isSaving} onClick={() => void autosave.restoreDraft()}>Recuperar cambios</button>
+      <button type="button" disabled={isSaving} onClick={autosave.discardDraft}>Descartar borrador</button>
+    </div>}
+  </>;
 
   const assignmentTitle =
     pageTitle ||
@@ -1612,16 +1545,16 @@ const ServiceAssignmentModal = ({
 
   const assignmentActions = [
     {
-      label: "Cancelar",
+      label: "Volver",
       onClick: handleCloseModal,
       variant: "secondary",
       disabled: isSaving,
     },
     {
-      label: isSaving ? "Guardando..." : "Guardar cambios",
+      label: isSaving ? "Guardando..." : "Listo",
       onClick: handleSaveAssignments,
       variant: "primary",
-      disabled: isSaving || !areAnyServicesAssigned(),
+      disabled: isSaving || autosave.draft.length > 0,
     },
   ];
 
@@ -1713,14 +1646,7 @@ const ServiceAssignmentModal = ({
         {showActions && saveAction && (
           <div className="assignment-page-footer">
             <div className="assignment-page-footer-inner">
-              <div className="assignment-footer-status">
-                {areAnyServicesAssigned() ? <MdCheck /> : <MdWarning />}
-                <span>
-                  {areAnyServicesAssigned()
-                    ? "Validaciones listas para guardar"
-                    : "Valida al menos un servicio para guardar"}
-                </span>
-              </div>
+              <AssignmentSaveStatus state={autosave.state} error={autosave.error} onRetry={retryAssignments} onDiscard={discardPendingAssignments} />
               <button
                 type="button"
                 onClick={saveAction.onClick}
@@ -1750,7 +1676,7 @@ const ServiceAssignmentModal = ({
     return (
       <Modal
         isOpen={isOpen}
-        onClose={onClose}
+        onClose={handleCloseModal}
         title="Validación de Servicios"
         size="large"
         className="service-assignment-modal"
@@ -1770,7 +1696,9 @@ const ServiceAssignmentModal = ({
         <div className="error-container">
           <MdWarning size={48} color="#dc3545" />
           <p>{error}</p>
-          <button onClick={onClose} className="btn-close">
+          {renderAssignmentSaveFeedback()}
+          <button type="button" onClick={() => setRefreshTrigger(value => value + 1)}>Reintentar carga</button>
+          <button onClick={handleCloseModal} className="btn-close">
             Cerrar
           </button>
         </div>,
@@ -1780,7 +1708,7 @@ const ServiceAssignmentModal = ({
     return (
       <Modal
         isOpen={isOpen}
-        onClose={onClose}
+        onClose={handleCloseModal}
         title="Validación de Servicios"
         size="large"
         className="service-assignment-modal"
@@ -1788,7 +1716,9 @@ const ServiceAssignmentModal = ({
         <div className="error-container">
           <MdWarning size={48} color="#dc3545" />
           <p>{error}</p>
-          <button onClick={onClose} className="btn-close">
+          {renderAssignmentSaveFeedback()}
+          <button type="button" onClick={() => setRefreshTrigger(value => value + 1)}>Reintentar carga</button>
+          <button onClick={handleCloseModal} className="btn-close">
             Cerrar
           </button>
         </div>
@@ -1974,21 +1904,15 @@ const ServiceAssignmentModal = ({
               </div>
             </div>
 
+            {renderAssignmentSaveFeedback()}
+            <fieldset className="assignment-editor-fieldset" disabled={autosave.draft.length > 0 || autosave.recovering}>
             <ReservaServiceEditor
+              key={String(voucher?.id)}
               cotizacionItinerary={cotizacionItinerary}
               voucherItinerary={voucherItinerary}
-              onChange={(newItinerary) => {
-                setVoucherItinerary(newItinerary);
-                setHasUserMadeChanges(true);
-              }}
-              onImmediateUnassign={async (servicioId) => {
-                try {
-                  await voucherReservaService.unassignService(servicioId);
-                } catch (err) {
-                  console.error("Error desasignando servicio:", err);
-                  throw err;
-                }
-              }}
+              onChange={handleAssignmentChange}
+              onBeforeValidation={autosave.flush}
+              onValidationStateChange={setValidationInProgress}
               totalPassengers={countPeopleDetailsPassengers(peopleDetails)}
               peopleDetails={peopleDetails}
               fechaInicio={fechaInicio}
@@ -1999,6 +1923,7 @@ const ServiceAssignmentModal = ({
               headerActionsContainerId="assignment-page-editor-actions"
               onOpenReservationRequest={handleOpenSingleReservationRequest}
             />
+            </fieldset>
           </div>,
           { showActions: true },
         )}
@@ -2032,16 +1957,16 @@ const ServiceAssignmentModal = ({
         className="service-assignment-modal"
         actions={[
           {
-            label: "Cancelar",
+            label: "Volver",
             onClick: handleCloseModal,
             variant: "secondary",
             disabled: isSaving,
           },
           {
-            label: isSaving ? "Guardando..." : "Guardar cambios",
+            label: isSaving ? "Guardando..." : "Listo",
             onClick: handleSaveAssignments,
             variant: "primary",
-            disabled: isSaving || !areAnyServicesAssigned(),
+            disabled: isSaving || autosave.draft.length > 0,
           },
         ]}
       >
@@ -2137,21 +2062,15 @@ const ServiceAssignmentModal = ({
           </div>
 
           {/* Usar el nuevo ReservaServiceEditor */}
+          {renderAssignmentSaveFeedback()}
+          <fieldset className="assignment-editor-fieldset" disabled={autosave.draft.length > 0 || autosave.recovering}>
           <ReservaServiceEditor
+            key={String(voucher?.id)}
             cotizacionItinerary={cotizacionItinerary}
             voucherItinerary={voucherItinerary}
-            onChange={(newItinerary) => {
-              setVoucherItinerary(newItinerary);
-              setHasUserMadeChanges(true);
-            }}
-            onImmediateUnassign={async (servicioId) => {
-              try {
-                await voucherReservaService.unassignService(servicioId);
-              } catch (err) {
-                console.error("Error desasignando servicio:", err);
-                throw err;
-              }
-            }}
+            onChange={handleAssignmentChange}
+            onBeforeValidation={autosave.flush}
+            onValidationStateChange={setValidationInProgress}
             totalPassengers={countPeopleDetailsPassengers(peopleDetails)}
             peopleDetails={peopleDetails}
             fechaInicio={fechaInicio}
@@ -2160,6 +2079,7 @@ const ServiceAssignmentModal = ({
             versionVoucher={voucher}
             onOpenReservationRequest={handleOpenSingleReservationRequest}
           />
+          </fieldset>
         </div>
       </Modal>
       {showVentasSummaryPdfModal && ventasPdfVoucher && (

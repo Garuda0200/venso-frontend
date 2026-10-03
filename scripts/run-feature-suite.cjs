@@ -63,6 +63,7 @@ const testSuites = [
       "src/pages/Reservas/Calendario/utils/__tests__/bibliaSingleDayViewSource.test.js",
       "src/pages/Reservas/VouchersReserva/components/ReservaServiceEditor/utils/__tests__/assignedBeneficiaries.test.js",
       "src/pages/Reservas/VouchersReserva/components/ReservaServiceEditor/utils/__tests__/validationState.test.js",
+      "src/pages/Reservas/VouchersReserva/components/ServiceAssignmentModal/utils/__tests__/assignmentSaveQueue.test.js",
       "src/pages/Reservas/VouchersReserva/utils/__tests__/reservationVoucherRender.test.js",
       "src/pages/Reservas/VouchersReserva/utils/__tests__/specializedPaymentGroups.test.js",
       "src/pages/Reservas/VouchersReserva/utils/__tests__/reservationPaymentManagement.test.js",
@@ -72,6 +73,7 @@ const testSuites = [
     name: "contabilidad e integración",
     tests: [
       "src/services/__tests__/pendingPaymentService.test.js",
+      "src/pages/Contabilidad/Files/domain/__tests__/movementFiles.test.js",
       "src/pages/Contabilidad/Liquidaciones/domain/__tests__/pendingPaymentGroups.test.js",
       "src/pages/Contabilidad/Reportes/utils/__tests__/paymentReportUtils.test.js",
       "src/pages/Contabilidad/Reportes/utils/__tests__/ticketPaymentPresentation.test.js",

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
 import {
   MdCheck,
@@ -35,6 +35,7 @@ import {
   applyQuotedServiceValidation,
 } from "./utils/validationState";
 import "./ReservaServiceEditor.scss";
+import { cloneReservationItinerary } from "./utils/itineraryDraft";
 
 const resolveReservationTicketConstraint = (...sources) => {
   for (const source of sources) {
@@ -97,6 +98,8 @@ const ReservaServiceEditor = ({
   voucherItinerary = [],
   onChange,
   onImmediateUnassign,
+  onBeforeValidation,
+  onValidationStateChange,
   totalPassengers = 1,
   peopleDetails = {},
   fechaInicio = null,
@@ -109,6 +112,14 @@ const ReservaServiceEditor = ({
 }) => {
   const [headerActionsTarget, setHeaderActionsTarget] = useState(null);
   const [validatingServiceId, setValidatingServiceId] = useState(null);
+  const latestItinerary = useRef(voucherItinerary);
+  const validationInFlight = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; onValidationStateChange?.(false); };
+  }, []);
+  latestItinerary.current = voucherItinerary;
 
   useEffect(() => {
     if (!headerActionsContainerId || typeof document === "undefined") {
@@ -207,6 +218,7 @@ const ReservaServiceEditor = ({
 
   const handleValidateQuotedService = useCallback(
     async (dayIndex, serviceIndex) => {
+      if (validationInFlight.current) return;
       const service = voucherItinerary?.[dayIndex]?.servicios?.[serviceIndex];
       if (!service?.servicioId) {
         alert("Este servicio no tiene una fila cotizada persistida para validar.");
@@ -223,8 +235,13 @@ const ReservaServiceEditor = ({
         }
       }
 
+      validationInFlight.current = true;
       setValidatingServiceId(service.servicioId);
+      onValidationStateChange?.(true);
       try {
+        if (onBeforeValidation && !(await onBeforeValidation())) {
+          throw new Error("Primero sincronice los cambios pendientes antes de validar otro servicio.");
+        }
         const response = await voucherReservaService.validateQuotedService(
           service.servicioId,
           {
@@ -236,6 +253,7 @@ const ReservaServiceEditor = ({
           },
         );
         const enriched = response?.data || {};
+        if (!mounted.current) return;
         const validation = response?.validation || {};
         const assignedService =
           enriched.assignedService ||
@@ -243,7 +261,7 @@ const ReservaServiceEditor = ({
           service.assignedService ||
           null;
 
-        const nextItinerary = voucherItinerary.map((day, currentDayIndex) => {
+        const nextItinerary = latestItinerary.current.map((day, currentDayIndex) => {
           if (currentDayIndex !== dayIndex) return day;
           return {
             ...day,
@@ -258,8 +276,10 @@ const ReservaServiceEditor = ({
           };
         });
 
-        onChange(nextItinerary);
+        latestItinerary.current = nextItinerary;
+        await onChange(nextItinerary, { persistedServiceId: service.servicioId });
       } catch (error) {
+        if (!mounted.current) return;
         console.error("Error validando el servicio cotizado:", error);
         const message =
           error?.response?.data?.message ||
@@ -268,15 +288,19 @@ const ReservaServiceEditor = ({
           "No se pudo validar el servicio";
         alert(message);
       } finally {
-        setValidatingServiceId(null);
+        validationInFlight.current = false;
+        if (mounted.current) {
+          setValidatingServiceId(null);
+          onValidationStateChange?.(false);
+        }
       }
     },
-    [voucherItinerary, onChange],
+    [voucherItinerary, onChange, onBeforeValidation, onValidationStateChange],
   );
 
   // -- Remove validation --
   const handleRemoveAssignment = async (dayIndex, serviceIndex) => {
-    const updatedItinerary = [...voucherItinerary];
+    const updatedItinerary = cloneReservationItinerary(latestItinerary.current);
     const service = updatedItinerary[dayIndex].servicios[serviceIndex];
 
     // Guard: no permitir retirar una validación con una solicitud de pago activa
@@ -324,7 +348,8 @@ const ReservaServiceEditor = ({
         },
       };
     }
-    onChange(updatedItinerary);
+    latestItinerary.current = updatedItinerary;
+    void onChange(updatedItinerary);
   };
 
   // -- Beneficiarios operativos --
@@ -338,7 +363,7 @@ const ReservaServiceEditor = ({
   ) => {
     if (!Array.isArray(selectedIds) || selectedIds.length === 0) return;
 
-    const updatedItinerary = [...voucherItinerary];
+    const updatedItinerary = cloneReservationItinerary(latestItinerary.current);
     const service = updatedItinerary[dayIndex]?.servicios?.[serviceIndex];
     const assignedService = service?.assignedService
       ? { ...service.assignedService }
@@ -422,7 +447,8 @@ const ReservaServiceEditor = ({
       convertedChildToAdultMap: nextSelection.convertedChildToAdultMap || {},
       ...nextFlatPricing,
     };
-    onChange(updatedItinerary);
+    latestItinerary.current = updatedItinerary;
+    void onChange(updatedItinerary);
   };
 
   // -- Price adjustment (direct edit only) --
@@ -476,7 +502,7 @@ const ReservaServiceEditor = ({
     const newPrice = parseFloat(value);
     if (isNaN(newPrice) || newPrice < 0) return;
 
-    const updatedItinerary = [...voucherItinerary];
+    const updatedItinerary = cloneReservationItinerary(latestItinerary.current);
     const service = updatedItinerary[dayIndex].servicios[serviceIndex];
 
     if (service.isCustomService) {
@@ -560,7 +586,8 @@ const ReservaServiceEditor = ({
       };
     }
 
-    onChange(updatedItinerary);
+    latestItinerary.current = updatedItinerary;
+    void onChange(updatedItinerary);
     setEditingPrice({
       dayIndex: null,
       serviceIndex: null,
@@ -581,7 +608,7 @@ const ReservaServiceEditor = ({
     childKey = null,
     rawValue = null,
   ) => {
-    const updatedItinerary = [...voucherItinerary];
+    const updatedItinerary = cloneReservationItinerary(latestItinerary.current);
     const service = updatedItinerary[dayIndex].servicios[serviceIndex];
     const assignedService = service.assignedService
       ? { ...service.assignedService }
@@ -834,7 +861,8 @@ const ReservaServiceEditor = ({
       treatChildrenAsAdults: nextSelection.treatChildrenAsAdults === true,
       convertedChildToAdultMap: nextSelection.convertedChildToAdultMap || {},
     };
-    onChange(updatedItinerary);
+    latestItinerary.current = updatedItinerary;
+    void onChange(updatedItinerary);
   };
 
   const resolveConvertedChildPricingMode = (
@@ -860,7 +888,7 @@ const ReservaServiceEditor = ({
   ) => {
     if (!childIdToConvert) return;
 
-    const updatedItinerary = [...voucherItinerary];
+    const updatedItinerary = cloneReservationItinerary(latestItinerary.current);
     const service = updatedItinerary[dayIndex]?.servicios?.[serviceIndex];
     const assignedService = service?.assignedService
       ? { ...service.assignedService }
@@ -987,7 +1015,8 @@ const ReservaServiceEditor = ({
       treatChildrenAsAdults: nextSelection.treatChildrenAsAdults === true,
       convertedChildToAdultMap: nextConvertedMap,
     };
-    onChange(updatedItinerary);
+    latestItinerary.current = updatedItinerary;
+    void onChange(updatedItinerary);
   };
 
   const handleRevertAdultToChild = (
@@ -997,7 +1026,7 @@ const ReservaServiceEditor = ({
   ) => {
     if (!childIdToRevert) return;
 
-    const updatedItinerary = [...voucherItinerary];
+    const updatedItinerary = cloneReservationItinerary(latestItinerary.current);
     const service = updatedItinerary[dayIndex]?.servicios?.[serviceIndex];
     const assignedService = service?.assignedService
       ? { ...service.assignedService }
@@ -1149,7 +1178,8 @@ const ReservaServiceEditor = ({
       treatChildrenAsAdults: nextSelection.treatChildrenAsAdults === true,
       convertedChildToAdultMap: convertedMap,
     };
-    onChange(updatedItinerary);
+    latestItinerary.current = updatedItinerary;
+    void onChange(updatedItinerary);
   };
 
   const preventWheelChange = (e) => e.target.blur();
@@ -1190,7 +1220,7 @@ const ReservaServiceEditor = ({
   const applyPaymentDeadline = () => {
     const { dayIndex, serviceIndex, value } = editingPaymentDeadline;
     if (!value) return;
-    const updatedItinerary = [...voucherItinerary];
+    const updatedItinerary = cloneReservationItinerary(latestItinerary.current);
     const service = updatedItinerary[dayIndex].servicios[serviceIndex];
     if (service.isCustomService) {
       service.payment_deadline = value;
@@ -1201,7 +1231,8 @@ const ReservaServiceEditor = ({
       };
     }
     updatedItinerary[dayIndex].servicios[serviceIndex] = service;
-    onChange(updatedItinerary);
+    latestItinerary.current = updatedItinerary;
+    void onChange(updatedItinerary);
     setEditingPaymentDeadline({
       dayIndex: null,
       serviceIndex: null,
@@ -1211,7 +1242,7 @@ const ReservaServiceEditor = ({
 
   // -- Service time --
   const handleServiceTimeChange = (dayIndex, serviceIndex, newTime) => {
-    const updatedItinerary = [...voucherItinerary];
+    const updatedItinerary = cloneReservationItinerary(latestItinerary.current);
     const service = updatedItinerary[dayIndex].servicios[serviceIndex];
     if (service.isCustomService) {
       service.hora = newTime;
@@ -1219,7 +1250,8 @@ const ReservaServiceEditor = ({
       service.assignedService = { ...service.assignedService, hora: newTime };
     }
     updatedItinerary[dayIndex].servicios[serviceIndex] = service;
-    onChange(updatedItinerary);
+    latestItinerary.current = updatedItinerary;
+    void onChange(updatedItinerary);
   };
 
   // ==========================================================================
@@ -1320,6 +1352,7 @@ const ReservaServiceEditor = ({
                           onServiceTimeChange={handleServiceTimeChange}
                           onValidateService={handleValidateQuotedService}
                           isValidating={validatingServiceId === service.servicioId}
+                          validationBusy={validatingServiceId !== null}
                           onRemoveAssignment={handleRemoveAssignment}
                           editingPaymentDeadline={editingPaymentDeadline}
                           onPaymentDeadlineChange={handlePaymentDeadlineChange}

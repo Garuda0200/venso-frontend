@@ -46,6 +46,9 @@ const MovimientosList = ({
   tipo,
   showTipoColumn = false,
   refreshData,
+  compact = false,
+  showFilters = true,
+  showTotals = true,
 }) => {
   const tipoMovimiento = tipo.toLowerCase(); // 'ingreso', 'egreso', o 'todos'
   const [searchTerm, setSearchTerm] = useState("");
@@ -354,16 +357,16 @@ const MovimientosList = ({
   };
 
   return (
-    <div className={`movimientos-list ${tipoMovimiento}`}>
+    <div className={`movimientos-list ${tipoMovimiento} ${compact ? "movimientos-list--compact" : ""}`}>
       <div className="list-header">
         <h5 className="list-title">
-          Listado de {tipoMovimiento === "ingreso" ? "Ingresos" : "Egresos"}
+          {tipoMovimiento === "todos" ? "Movimientos" : `Listado de ${tipoMovimiento === "ingreso" ? "Ingresos" : "Egresos"}`}
         </h5>
         <span className="badge">Total: {filteredMovimientos.length}</span>
       </div>
       <div className="list-body">
         {/* Filtros */}
-        <div className="filter-card">
+        {showFilters && <div className="filter-card">
           <div className="filter-grid">
             <div className="filter-group">
               <label>
@@ -457,7 +460,7 @@ const MovimientosList = ({
               Limpiar Filtros
             </button>
           </div>
-        </div>
+        </div>}
 
         {/* Tabla */}
         <div className="table-container">
@@ -676,7 +679,7 @@ const MovimientosList = ({
                 </tr>
               )}
             </tbody>
-            <tfoot>
+            {showTotals && <tfoot>
               <tr>
                 <th colSpan="4" className="total-label">
                   Totales:
@@ -702,7 +705,7 @@ const MovimientosList = ({
                 </th>
                 <th></th>
               </tr>
-            </tfoot>
+            </tfoot>}
           </table>
         </div>
       </div>

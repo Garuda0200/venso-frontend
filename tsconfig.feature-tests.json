@@ -17,6 +17,8 @@
     ]
   },
   "include": [
+    "src/pages/Contabilidad/Files/domain/__tests__/movementFiles.test.tsx",
+    "src/pages/Reservas/VouchersReserva/components/ServiceAssignmentModal/utils/__tests__/assignmentSaveQueue.test.ts",
     "src/services/__tests__/pendingPaymentService.test.ts",
     "src/pages/Contabilidad/Liquidaciones/domain/__tests__/pendingPaymentGroups.test.ts",
     "src/pages/Reservas/VouchersReserva/utils/__tests__/reservationPaymentManagement.test.tsx",

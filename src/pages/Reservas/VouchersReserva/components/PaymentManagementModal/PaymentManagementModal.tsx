@@ -276,6 +276,7 @@ const PaymentManagementModal = ({
       "paymentRequestPaid",
       "paymentRequestCancelled",
       "movimientoCreated",
+      "reservationAssignmentsSaved",
     ];
     events.forEach((evt) =>
       window.addEventListener(evt, handlePaymentRequestUpdate),

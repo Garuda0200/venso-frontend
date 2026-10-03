@@ -69,6 +69,7 @@ const UnifiedServiceRow = ({
   // Validation actions
   onValidateService,
   isValidating = false,
+  validationBusy = false,
   onRemoveAssignment,
   // Payment deadline
   editingPaymentDeadline,
@@ -749,7 +750,7 @@ const UnifiedServiceRow = ({
           <button
             className="btn-assign btn-validate"
             onClick={() => onValidateService?.(dayIndex, serviceIndex)}
-            disabled={isValidating}
+            disabled={validationBusy || isValidating}
           >
             <MdCheck /> {isValidating ? "Validando..." : "Validar servicio"}
           </button>
