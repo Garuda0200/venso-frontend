@@ -30,6 +30,7 @@ export const bibliaActivityService = {
     const response = await getApi().patch(`${BASE_URL}/${quotationId}/biblia-actividades`, {
       biblia_actividades: records,
     });
+    if (response?.data?.data?.synchronized_records > 0) invalidateCotizacionGraphCache();
     return response?.data;
   },
 
@@ -83,6 +84,7 @@ export const bibliaActivityService = {
       cotizacion_id: cotizacionId || null,
       actividad,
     });
+    if (response?.data?.data?.service_count != null) invalidateCotizacionGraphCache();
     return response?.data?.data ?? response?.data;
   },
 

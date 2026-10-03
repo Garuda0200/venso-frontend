@@ -17,6 +17,7 @@
     ]
   },
   "include": [
+    "src/pages/Reservas/Calendario/utils/__tests__/bibliaQuotationLinking.test.tsx",
     "src/pages/Contabilidad/Files/domain/__tests__/movementFiles.test.tsx",
     "src/pages/Reservas/VouchersReserva/components/ServiceAssignmentModal/utils/__tests__/assignmentSaveQueue.test.ts",
     "src/services/__tests__/pendingPaymentService.test.ts",

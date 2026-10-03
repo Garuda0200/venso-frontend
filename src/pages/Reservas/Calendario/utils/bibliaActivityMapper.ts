@@ -79,6 +79,7 @@ export interface BibliaActivity {
   order: number;
   sourceType: BibliaSourceType;
   sourceQuotationId: string;
+  platform?: string;
   sourceServiceId: string;
   sourceDayId: string;
   sourceItinerary: "base" | "external" | "manual" | "standalone";
@@ -730,6 +731,7 @@ export const buildBibliaActivitiesFromSnapshots = (
     const activity = recordToActivity(outer.actividad || outer.activity || {}, linkedQuotation, String(outer.id || ""));
     if (activity && !activity.isDeleted && outer.is_active !== false) {
       activity.sourceQuotationId = linkedQuotationId || activity.sourceQuotationId;
+      activity.platform = String(outer.platform || linkedQuotation.platform || "");
       result.push(activity);
     }
   });

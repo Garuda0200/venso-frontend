@@ -2001,6 +2001,51 @@
   vertical-align: middle;
 }
 
+.biblia-sheet-editor {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.biblia-link-status {
+  display: inline-flex; align-items: center; gap: 3px;
+  color: #08694e; font-size: 10px; font-weight: 700;
+}
+.biblia-quotation-sync-prompt {
+  width: 100%; max-width: 160px;
+  border: 1px solid #efbad1; border-radius: 7px;
+  background: #fff7fb; color: #9d1656; text-align: left;
+  font-size: 10px; white-space: normal;
+  summary { display: flex; align-items: center; gap: 3px; padding: 6px; cursor: pointer; font-weight: 800; }
+  > div { padding: 0 7px 7px; }
+  p { margin: 3px 0 6px; font-size: 10px; line-height: 1.5; }
+  small { display: block; margin-bottom: 6px; line-height: 1.5; }
+  button { width: 100%; min-height: 30px; border: 1px solid #d91a72;
+    border-radius: 5px; padding: 5px; background: #d91a72; color: #fff;
+    font: inherit; font-weight: 800; cursor: pointer; }
+  button + button { margin-top: 4px; border-color: #edd5df; background: #fff; color: #705760; }
+  button:disabled { opacity: .55; cursor: wait; }
+  summary:focus-visible, button:focus-visible { outline: 2px solid #d91a72; outline-offset: 2px; }
+}
+.biblia-link-recommendations {
+  margin: 10px 0; padding: 10px; border: 1px solid #f3c0d8;
+  border-radius: 10px; background: #fff6fa; color: #442936;
+  > strong { font-size: 12px; color: #ac185c; }
+  > p { margin: 4px 0 8px; font-size: 11px; line-height: 1.4; }
+  &__item { display: flex; flex-wrap: wrap; align-items: center; gap: 7px;
+    padding: 7px 0; border-top: 1px solid #f3d9e4;
+    > span { flex: 1 1 170px; min-width: 0; }
+    b { display: block; font-size: 11px; overflow-wrap: anywhere; }
+    small { display: block; margin-top: 3px; color: #71616b; font-size: 10px; }
+    button { flex: 0 0 auto; border: 1px solid #d91a72; border-radius: 7px;
+      padding: 8px 10px; background: #d91a72; color: white; font-size: 11px; font-weight: 800; cursor: pointer; }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    button:focus-visible { outline: 2px solid #d91a72; outline-offset: 3px; }
+  }
+  &__reason { color: #9b4e1b !important; }
+}
+
 .biblia-file-cell {
   min-width: 0;
   display: grid;

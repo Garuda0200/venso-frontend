@@ -48,6 +48,9 @@ import SourceVoucherPreviewModal from "../../Ventas/Cotizaciones/components/Sour
 import VentasSummaryPDFModal from "../../Ventas/VouchersVenta/components/VentasSummaryPDFModal/VentasSummaryPDFModal";
 import { bibliaActivityService } from "./services/bibliaActivityService";
 import { getBibliaSaveError, getBibliaSyncWarnings } from "./utils/bibliaSyncFeedback";
+import BibliaLinkRecommendations from "./components/BibliaLinkRecommendations";
+import BibliaQuotationSyncPrompt from "./components/BibliaQuotationSyncPrompt";
+import { buildBibliaEditRecord, getBibliaLinkRecommendations, getBibliaLinkUnavailableReason, quotationSyncCommandRecords } from "./utils/bibliaQuotationLinking";
 import { bibliaCatalogService, isBibliaCatalogField } from "./services/bibliaCatalogService";
 import {
   BIBLIA_EMPTY_VALUE,
@@ -112,10 +115,6 @@ const BIBLIA_CATALOG_FIELDS = [
   "hotelCusco", "tickets", "hotelValle", "hotelMapi", "restaurant", "endorse",
   "transport", "guide", "trainOutbound", "trainReturn", "agency",
 ] as const;
-const BIBLIA_ITINERARY_SERVICE_FIELDS = new Set<keyof BibliaActivity>([
-  "transport", "trainOutbound", "trainReturn", "restaurant", "hotelCusco", "hotelValle",
-  "hotelMapi", "tickets", "endorse", "guide", "excursion", "time",
-]);
 const formatLongDate = (date: Date) =>
   new Intl.DateTimeFormat("es-PE", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(date);
 const formatMonth = (date: Date) =>
@@ -488,6 +487,7 @@ const Calendario = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const mutationInFlight = useRef(false);
   const [syncWarnings, setSyncWarnings] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
@@ -566,7 +566,7 @@ const Calendario = () => {
       const batch: Array<{ id: string; biblia_actividades: Array<Record<string, any>> }> = [];
       const preparedQuotes = rawQuotes.map((quote) => {
         if (isQuotationBibliaMaterialized(quote)) return quote;
-        const records = materializeQuotationBibliaRecords(quote);
+        const records = quotationSyncCommandRecords(materializeQuotationBibliaRecords(quote));
         if (!bibliaRecordsEqual(asArray(quote.biblia_actividades), records)) {
           batch.push({ id: String(quote.id), biblia_actividades: records });
         }
@@ -597,6 +597,10 @@ const Calendario = () => {
     try {
       const result = await bibliaActivityService.saveQuotationOverrides(quotationId, records);
       setSyncWarnings(getBibliaSyncWarnings(result));
+      if (Array.isArray(result?.data?.biblia_actividades)) {
+        setQuotations(current => current.map(quote => String(quote.id) === quotationId
+          ? { ...quote, biblia_actividades: result.data.biblia_actividades } : quote));
+      }
       if (records.some((record) => record.syncQuotation)) await loadActivities(true);
     } catch (saveError) {
       setQuotations(previous);
@@ -640,20 +644,40 @@ const Calendario = () => {
   }, [standaloneRecords, loadActivities]);
 
   const commitActivityChanges = useCallback(async (activity: BibliaActivity, changes: Partial<BibliaActivity>) => {
-    const record = materializeBibliaOverride(activity, changes);
-    if (activity.sourceType === "standalone") {
-      await persistStandaloneRecord(activity, record).catch(() => undefined);
-      return;
-    }
-    const quotation = quotations.find((quote) => String(quote.id) === activity.sourceQuotationId);
-    if (!quotation) return;
-    const nextRecords = upsertBibliaOverride(asArray<Record<string, any>>(quotation.biblia_actividades), record);
-    await persistQuotationRecords(activity.sourceQuotationId, nextRecords).catch(() => undefined);
+    if (mutationInFlight.current) return;
+    mutationInFlight.current = true;
+    try {
+      const record = buildBibliaEditRecord(activity, changes);
+      if (activity.sourceType === "standalone") {
+        await persistStandaloneRecord(activity, record);
+      } else {
+        const quotation = quotations.find((quote) => String(quote.id) === activity.sourceQuotationId);
+        if (!quotation) return;
+        const nextRecords = quotationSyncCommandRecords(upsertBibliaOverride(asArray<Record<string, any>>(quotation.biblia_actividades), record));
+        await persistQuotationRecords(activity.sourceQuotationId, nextRecords);
+      }
+    } catch { /* El método de persistencia conserva el error y revierte la edición. */ }
+    finally { mutationInFlight.current = false; }
+  }, [persistQuotationRecords, persistStandaloneRecord, quotations]);
+
+  const syncLinkedActivity = useCallback(async (activity: BibliaActivity) => {
+    if (!activity.sourceQuotationId || mutationInFlight.current) return;
+    mutationInFlight.current = true;
+    try {
+      const record = materializeBibliaOverride(activity, { syncQuotation: true });
+      if (activity.sourceType === "standalone") {
+        await persistStandaloneRecord(activity, record);
+      } else {
+        const quotation = quotations.find(quote => String(quote.id) === activity.sourceQuotationId);
+        if (!quotation) return;
+        const records = quotationSyncCommandRecords(upsertBibliaOverride(asArray(quotation.biblia_actividades), record), String(record.id));
+        await persistQuotationRecords(activity.sourceQuotationId, records);
+      }
+    } catch { /* Conserva el aviso pendiente para corregir el bloqueo y reintentar. */ }
+    finally { mutationInFlight.current = false; }
   }, [persistQuotationRecords, persistStandaloneRecord, quotations]);
 
   const commitField = useCallback((activity: BibliaActivity, field: keyof BibliaActivity, value: string | number) => {
-    const shouldSyncQuotation = BIBLIA_ITINERARY_SERVICE_FIELDS.has(field)
-      && (activity.sourceType !== "standalone" || Boolean(activity.sourceQuotationId));
     const richText = activity.sourceExcel?.richText;
     const nextSourceExcel = richText?.[String(field)]
       ? {
@@ -664,7 +688,6 @@ const Calendario = () => {
     void commitActivityChanges(activity, {
       [field]: value,
       ...(nextSourceExcel ? { sourceExcel: nextSourceExcel } : {}),
-      ...(shouldSyncQuotation ? { syncQuotation: true } : {}),
     } as Partial<BibliaActivity>);
   }, [commitActivityChanges]);
 
@@ -752,13 +775,14 @@ const Calendario = () => {
   );
 
   const persistDayOrder = useCallback(async (ordered: BibliaActivity[]) => {
+    if (mutationInFlight.current) return;
     const quoteRecords = new Map<string, Array<Record<string, any>>>();
     const standaloneUpdates: Array<{ activity: BibliaActivity; record: Record<string, any>; quotationId: string | null }> = [];
 
     ordered.forEach((activity, index) => {
       const order = index + 1;
       if (Number(activity.order) === order) return;
-      const record = materializeBibliaOverride(activity, { order });
+      const record = buildBibliaEditRecord(activity, { order });
       if (activity.sourceType === "standalone" && activity.standaloneRecordId) {
         const outer = standaloneRecords.find((item) => String(item.id) === activity.standaloneRecordId);
         standaloneUpdates.push({ activity, record, quotationId: outer?.cotizacion_id ? String(outer.cotizacion_id) : null });
@@ -769,10 +793,11 @@ const Calendario = () => {
       const quote = quotations.find((item) => String(item.id) === quoteId);
       if (!quote) return;
       const currentRecords = quoteRecords.get(quoteId) || asArray<Record<string, any>>(quote.biblia_actividades);
-      quoteRecords.set(quoteId, upsertBibliaOverride(currentRecords, record));
+      quoteRecords.set(quoteId, quotationSyncCommandRecords(upsertBibliaOverride(currentRecords, record)));
     });
 
     if (!quoteRecords.size && !standaloneUpdates.length) return;
+    mutationInFlight.current = true;
     const previousQuotes = quotations;
     const previousStandalone = standaloneRecords;
     setSaving(true);
@@ -807,6 +832,7 @@ const Calendario = () => {
       setError("No se pudo guardar el nuevo orden. Se restauró el orden anterior.");
     } finally {
       setSaving(false);
+      mutationInFlight.current = false;
     }
   }, [quotations, standaloneRecords]);
 
@@ -942,9 +968,11 @@ const Calendario = () => {
   }, [activities, closeQuotationLinkPopover, currentDate]);
 
   const linkStandaloneActivity = useCallback(async (activity: BibliaActivity, quotationId: string) => {
-    if (activity.sourceType !== "standalone") return;
+    if (activity.sourceType !== "standalone" || mutationInFlight.current) return;
     const quotation = quotations.find((quote) => String(quote.id) === quotationId);
     if (!quotation) return;
+    const reason = getBibliaLinkUnavailableReason(activity, quotation);
+    if (reason) { setError(reason); return; }
     const template = quotation ? asArray<Record<string, any>>(quotation.biblia_actividades).find((row) => !row.isDeleted) || {} : {};
     const baseRecord = { ...(activity.overrideRecord || {}) };
     const record = materializeBibliaOverride(activity, { sourceQuotationId: quotationId } as Partial<BibliaActivity>);
@@ -957,10 +985,12 @@ const Calendario = () => {
     });
     record.file = getBibliaQuotationVoucherCode(quotation) || quotationId;
     if (quotation && Number(baseRecord.pax || 0) === 0 && Number(template.pax || 0) > 0) record.pax = Number(template.pax);
+    mutationInFlight.current = true;
     try {
       await persistStandaloneRecord(activity, record, quotationId);
       closeQuotationLinkPopover();
     } catch { /* Mantiene abierto el vínculo para corregir el dato indicado por el backend. */ }
+    finally { mutationInFlight.current = false; }
   }, [closeQuotationLinkPopover, persistStandaloneRecord, quotations]);
 
   const openQuotationCreation = useCallback((activity: BibliaActivity) => {
@@ -971,13 +1001,14 @@ const Calendario = () => {
   }, []);
 
   const createQuotationFromStandaloneActivity = useCallback(async (activity: BibliaActivity) => {
-    if (activity.sourceType !== "standalone" || !activity.standaloneRecordId) return;
+    if (activity.sourceType !== "standalone" || !activity.standaloneRecordId || mutationInFlight.current) return;
     const voucherCode = newQuotationVoucherCode.trim();
     if (!voucherCode) {
       setError("Indica el código de file antes de crear la cotización.");
       return;
     }
     if (creatingQuotationRequestId !== null) return;
+    mutationInFlight.current = true;
     setCreatingQuotationRequestId(activity.id);
     setError("");
     try {
@@ -994,6 +1025,7 @@ const Calendario = () => {
       setError(apiMessage || "No se pudo crear y vincular la cotización. Verifica el código de file e inténtalo nuevamente.");
     } finally {
       setCreatingQuotationRequestId((current) => current === activity.id ? null : current);
+      mutationInFlight.current = false;
     }
   }, [closeQuotationLinkPopover, creatingQuotationRequestId, loadActivities, newQuotationTitle, newQuotationVoucherCode]);
 
@@ -1008,6 +1040,7 @@ const Calendario = () => {
     const matches = quotations
       .filter((quotation) => matchesBibliaQuotationLinkQuery(quotation, linkSearch))
       .slice(0, 40);
+    const recommendations = getBibliaLinkRecommendations(activity, activities, quotations);
     return (
       <div className={`biblia-link-picker${open ? " is-open" : ""}`} onClick={(event) => event.stopPropagation()}>
         <button
@@ -1029,6 +1062,7 @@ const Calendario = () => {
           title="Vincular este file a una cotización o crear una nueva"
           aria-label="Vincular file a cotización"
           aria-expanded={open}
+          disabled={saving || creatingQuotationRequestId !== null}
         >
           <MdLink /> <span>Vincular</span>
         </button>
@@ -1055,6 +1089,9 @@ const Calendario = () => {
                 autoFocus
               />
             </label>
+            <BibliaLinkRecommendations activity={activity} recommendations={recommendations}
+              busy={saving || creatingQuotationRequestId !== null}
+              onLink={quotationId => void linkStandaloneActivity(activity, quotationId)} />
             {!activity.sourceQuotationId && (
               creatingQuotationForId === activity.id ? (
                 <div className="biblia-link-popover__create-form">
@@ -1093,7 +1130,7 @@ const Calendario = () => {
                   </div>
                 </div>
               ) : (
-                <button type="button" className="biblia-link-popover__create" onClick={() => openQuotationCreation(activity)}>
+                <button type="button" className="biblia-link-popover__create" disabled={saving} onClick={() => openQuotationCreation(activity)}>
                   <MdAdd /> Crear cotización
                 </button>
               )
@@ -1102,15 +1139,19 @@ const Calendario = () => {
               {matches.map((quotation) => {
                 const quotationId = String(quotation.id || "");
                 const voucherCode = String(quotation.source_sales_voucher_code || quotation.sourceSalesVoucherCode || "").trim();
+                const unavailableReason = getBibliaLinkUnavailableReason(activity, quotation);
                 return (
                   <button
                     type="button"
                     key={quotationId}
                     className={activity.sourceQuotationId === quotationId ? "active" : ""}
+                    disabled={saving || creatingQuotationRequestId !== null || Boolean(unavailableReason)}
+                    title={unavailableReason || undefined}
                     onClick={() => void linkStandaloneActivity(activity, quotationId)}
                   >
                     <span>{getBibliaQuotationLinkLabel(quotation)}</span>
                     {voucherCode && <small>Voucher {voucherCode}</small>}
+                    {unavailableReason && <small>{unavailableReason}</small>}
                   </button>
                 );
               })}
@@ -1241,6 +1282,7 @@ const Calendario = () => {
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={dayActivities.map((activity) => activity.id)} strategy={verticalListSortingStrategy}>
         <div className="biblia-sheet-wrap" role="region" aria-label="Tabla completa de la Biblia de actividades. Desliza horizontalmente para consultar todas las columnas.">
+          <fieldset className="biblia-sheet-editor" disabled={saving || refreshing || creatingQuotationRequestId !== null}>
           <table className="biblia-sheet-table">
             <thead><tr>{BIBLIA_SHEET_COLUMNS.map(([field, label]) => <th key={field}>{label}</th>)}<th>ACCIONES</th></tr></thead>
             <tbody>
@@ -1266,7 +1308,6 @@ const Calendario = () => {
                               void commitActivityChanges(activity, {
                                 participantPlan,
                                 nationality: BIBLIA_EMPTY_VALUE,
-                                ...(activity.sourceQuotationId ? { syncQuotation: true } : {}),
                               });
                             }}
                           />
@@ -1299,6 +1340,12 @@ const Calendario = () => {
                                 {editor}
                                 {renderQuotationLinkPopover(activity)}
                               </div>
+                            ) : field === "file" && activity.sourceQuotationId ? (
+                              <div className="biblia-file-cell">
+                                {editor}
+                                <BibliaQuotationSyncPrompt activity={activity} busy={saving || refreshing}
+                                  onConfirm={() => void syncLinkedActivity(activity)} />
+                              </div>
                             ) : editor}
                           </td>
                         );
@@ -1329,6 +1376,7 @@ const Calendario = () => {
               })}
             </tbody>
           </table>
+          </fieldset>
         </div>
       </SortableContext>
     </DndContext>
