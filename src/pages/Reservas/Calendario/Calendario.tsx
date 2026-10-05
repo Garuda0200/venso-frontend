@@ -50,6 +50,8 @@ import { bibliaActivityService } from "./services/bibliaActivityService";
 import { getBibliaSaveError, getBibliaSyncWarnings } from "./utils/bibliaSyncFeedback";
 import BibliaLinkRecommendations from "./components/BibliaLinkRecommendations";
 import BibliaQuotationSyncPrompt from "./components/BibliaQuotationSyncPrompt";
+import BibliaRowSave from "./components/BibliaRowSave";
+import { useBibliaRowDrafts } from "./hooks/useBibliaRowDrafts";
 import { buildBibliaEditRecord, getBibliaLinkRecommendations, getBibliaLinkUnavailableReason, quotationSyncCommandRecords } from "./utils/bibliaQuotationLinking";
 import { bibliaCatalogService, isBibliaCatalogField } from "./services/bibliaCatalogService";
 import {
@@ -255,15 +257,19 @@ const ParticipantPlanEditor = ({
   onSave,
 }: {
   activity: BibliaActivity;
-  onSave: (plan: BibliaParticipantPlan) => void;
+  onSave: (plan: BibliaParticipantPlan) => Promise<void>;
 }) => {
   const [open, setOpen] = useState(false);
   const [plan, setPlan] = useState<BibliaParticipantPlan>(() => activity.participantPlan || defaultParticipantPlan(activity.pax));
   const [error, setError] = useState("");
-  useEffect(() => setPlan(activity.participantPlan || defaultParticipantPlan(activity.pax)), [activity.id, activity.pax, activity.participantPlan]);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (!open) setPlan(activity.participantPlan || defaultParticipantPlan(activity.pax));
+  }, [activity.id, activity.pax, activity.participantPlan, open]);
   const updateGroup = (group: "adults" | "children", update: Partial<BibliaParticipantPlan["adults"]>) =>
     setPlan((current) => ({ ...current, [group]: { ...current[group], ...update } }));
-  const save = () => {
+  const save = async () => {
+    if (busy) return;
     const groups = [plan.adults, plan.children];
     const valid = groups.every((group) =>
       Number.isInteger(Number(group.count)) && Number(group.count) >= 0 &&
@@ -274,19 +280,26 @@ const ParticipantPlanEditor = ({
       setError("Adultos y niños, con sus nacionalidades, deben sumar el PAX de este día.");
       return;
     }
-    onSave({
-      version: 1,
-      adults: { ...plan.adults, count: Number(plan.adults.count), nationalities: plan.adults.nationalities.map((row) => ({ country: row.country.trim(), count: Number(row.count) })) },
-      children: { ...plan.children, count: Number(plan.children.count), nationalities: plan.children.nationalities.map((row) => ({ country: row.country.trim(), count: Number(row.count) })) },
-    });
-    setOpen(false);
+    setBusy(true);
+    setError("");
+    try {
+      await onSave({
+        version: 1,
+        adults: { ...plan.adults, count: Number(plan.adults.count), nationalities: plan.adults.nationalities.map((row) => ({ country: row.country.trim(), count: Number(row.count) })) },
+        children: { ...plan.children, count: Number(plan.children.count), nationalities: plan.children.nationalities.map((row) => ({ country: row.country.trim(), count: Number(row.count) })) },
+      });
+      setOpen(false);
+    } catch (saveError) {
+      setError(getBibliaSaveError(saveError, "No se pudo guardar la distribución. Puedes reintentar."));
+    } finally { setBusy(false); }
   };
   return <>
     <button type="button" className="biblia-edit-value" onClick={(event) => { event.stopPropagation(); setError(""); setOpen(true); }}>Editar distribución</button>
-    {open && createPortal(<div className="biblia-participants-modal" role="dialog" aria-modal="true" aria-label="Participantes del día" onClick={() => setOpen(false)}>
+    {open && createPortal(<div className="biblia-participants-modal" role="dialog" aria-modal="true" aria-label="Participantes del día" onClick={() => { if (!busy) setOpen(false); }}>
       <div className="biblia-participants-modal__panel" onClick={(event) => event.stopPropagation()}>
-        <header><strong>Participantes del día</strong><button type="button" onClick={() => setOpen(false)} aria-label="Cerrar"><MdClose /></button></header>
+        <header><strong>Participantes del día</strong><button type="button" disabled={busy} onClick={() => setOpen(false)} aria-label="Cerrar"><MdClose /></button></header>
         <p>Adultos y niños deben sumar {activity.pax} pax. Esta distribución no se muestra en las descargas.</p>
+        <fieldset className="biblia-sheet-editor" disabled={busy}>
         {(["adults", "children"] as const).map((group) => <section key={group}>
           <label>{group === "adults" ? "Adultos" : "Niños"}<input type="number" min="0" value={plan[group].count} onChange={(event) => updateGroup(group, { count: Number(event.target.value || 0) })} /></label>
           {plan[group].nationalities.map((row, index) => <div className="biblia-participants-modal__row" key={`${group}-${index}`}>
@@ -296,8 +309,9 @@ const ParticipantPlanEditor = ({
           </div>)}
           <button type="button" onClick={() => updateGroup(group, { nationalities: [...plan[group].nationalities, { country: "", count: 1 }] })}>+ País</button>
         </section>)}
+        </fieldset>
         {error && <p className="biblia-participants-modal__error">{error}</p>}
-        <footer><button type="button" onClick={() => setOpen(false)}>Cancelar</button><button type="button" onClick={save}>Guardar participantes</button></footer>
+        <footer><button type="button" disabled={busy} onClick={() => setOpen(false)}>Cancelar</button><button type="button" disabled={busy} onClick={() => void save()}>{busy ? "Guardando…" : "Guardar participantes"}</button></footer>
       </div>
     </div>, document.body)}
   </>;
@@ -307,19 +321,32 @@ const EditableValue = ({
   activity,
   field,
   onCommit,
+  onDraftChange,
+  onCancelField,
+  draftValue,
+  savedVersion,
+  busy,
+  saveError,
   extraOptions = [],
 }: {
   activity: BibliaActivity;
   field: keyof BibliaActivity;
-  onCommit: (activity: BibliaActivity, field: keyof BibliaActivity, value: string | number) => void;
+  onCommit: (activity: BibliaActivity) => Promise<boolean>;
+  onDraftChange: (activity: BibliaActivity, field: keyof BibliaActivity, value: string) => void;
+  onCancelField: (id: string, field: keyof BibliaActivity) => void;
+  draftValue?: string;
+  savedVersion: number;
+  busy: boolean;
+  saveError?: string;
   extraOptions?: string[];
 }) => {
   const rawValue = activity[field];
   const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState(String(rawValue ?? ""));
+  const value = draftValue ?? String(rawValue ?? "");
   const [options, setOptions] = useState<string[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(false);
-  useEffect(() => setValue(String(rawValue ?? "")), [rawValue]);
+  useEffect(() => { if (draftValue === undefined) setEditing(false); }, [savedVersion]);
+  const setValue = (next: string) => onDraftChange(activity, field, next);
 
   useEffect(() => {
     let active = true;
@@ -361,15 +388,21 @@ const EditableValue = ({
     trainReturn: "Busca empresa, tren, ruta u horario...",
   }[String(field)] || "Busca o escribe una opción...";
 
-  const finishEditing = (commit: boolean) => {
+  const finishEditing = async (commit: boolean) => {
+    if (busy) return;
     if (commit) {
-      const next = field === "pax" ? Number(value || 0) : (value.trim() || BIBLIA_EMPTY_VALUE);
-      if (String(next) !== String(rawValue ?? "")) onCommit(activity, field, next);
+      // Se cierra únicamente después de que el servidor acepte el registro.
+      if (await onCommit(activity)) setEditing(false);
     } else {
-      setValue(String(rawValue ?? ""));
+      onCancelField(activity.id, field);
+      setEditing(false);
     }
-    setEditing(false);
   };
+  const actions = <div className="biblia-inline-editor__actions">
+    <button type="button" className="biblia-inline-editor__save" disabled={busy}
+      onClick={() => void finishEditing(true)} title="Guardar los cambios de este registro"><MdCheck />{busy ? "Guardando…" : "Guardar"}</button>
+    <button type="button" disabled={busy} onClick={() => void finishEditing(false)} title="Cancelar este campo"><MdClose />Cancelar</button>
+  </div>;
 
   if (!editing) {
     return (
@@ -377,6 +410,7 @@ const EditableValue = ({
         type="button"
         className={`biblia-edit-value${visibleValue === "—" ? " is-empty" : ""}`}
         style={{ backgroundColor: cellColor, color: getReadableTextColor(cellColor) }}
+        disabled={busy}
         onClick={(event) => { event.stopPropagation(); setEditing(true); }}
         title={isBibliaCatalogField(field) ? "Haz clic para escribir o elegir una opción" : "Haz clic para editar"}
       >
@@ -400,7 +434,8 @@ const EditableValue = ({
 
   if (isBibliaCatalogField(field)) {
     return (
-      <div className="biblia-inline-editor biblia-inline-editor--catalog" onClick={(event) => event.stopPropagation()}>
+      <div className="biblia-inline-editor biblia-inline-editor--catalog" onClick={(event) => event.stopPropagation()} aria-busy={busy}>
+        {busy ? <input className="biblia-edit-input" value={value} disabled aria-label="Valor que se está guardando" /> : (
         <SmartComboBox
           value={value === BIBLIA_EMPTY_VALUE ? "" : value}
           onChange={setValue}
@@ -412,34 +447,36 @@ const EditableValue = ({
           portalDropdown
           className="biblia-catalog-combobox"
           onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => {
-            if (event.key === "Enter") { event.preventDefault(); finishEditing(true); }
-            if (event.key === "Escape") { event.preventDefault(); finishEditing(false); }
+            if (event.key === "Enter") { event.preventDefault(); void finishEditing(true); }
+            if (event.key === "Escape") { event.preventDefault(); void finishEditing(false); }
           }}
         />
-        <div className="biblia-inline-editor__actions">
-          <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => finishEditing(true)} title="Guardar valor"><MdCheck /></button>
-          <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => finishEditing(false)} title="Cancelar"><MdClose /></button>
-        </div>
+        )}
+        {actions}
+        {saveError && <small className="biblia-inline-editor__error" role="alert">{saveError}</small>}
       </div>
     );
   }
 
   return (
-    <div className="biblia-inline-editor" onClick={(event) => event.stopPropagation()}>
+    <div className="biblia-inline-editor" onClick={(event) => event.stopPropagation()} aria-busy={busy}>
       <input
         className="biblia-edit-input"
         type={inputType}
         min={field === "pax" ? 0 : undefined}
         value={value === BIBLIA_EMPTY_VALUE || (field === "time" && value === "Sin hora") ? "" : value}
+        disabled={busy}
+        aria-label={`Editar ${BIBLIA_SHEET_COLUMNS.find(([key]) => key === field)?.[1] || field}`}
         onChange={(event) => setValue(event.target.value)}
-        onBlur={() => finishEditing(true)}
         onKeyDown={(event) => {
-          if (event.key === "Enter") (event.currentTarget as HTMLInputElement).blur();
-          if (event.key === "Escape") { event.preventDefault(); finishEditing(false); }
+          if (event.key === "Enter") { event.preventDefault(); void finishEditing(true); }
+          if (event.key === "Escape") { event.preventDefault(); void finishEditing(false); }
         }}
         autoFocus
-        title="Enter o salir del campo para guardar; Escape para cancelar"
+        title="Pulsa Guardar o Enter para guardar; Escape para cancelar"
       />
+      {actions}
+      {saveError && <small className="biblia-inline-editor__error" role="alert">{saveError}</small>}
       {loadingOptions && <span className="biblia-inline-editor__loading" aria-label="Cargando opciones">…</span>}
     </div>
   );
@@ -488,6 +525,7 @@ const Calendario = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
   const mutationInFlight = useRef(false);
+  const { rows: rowDrafts, savingId: savingDraftId, store: draftStore } = useBibliaRowDrafts();
   const [syncWarnings, setSyncWarnings] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
@@ -593,14 +631,12 @@ const Calendario = () => {
     const previous = quotations;
     setSaving(true);
     setError("");
-    setQuotations((current) => current.map((quote) => String(quote.id) === quotationId ? { ...quote, biblia_actividades: records } : quote));
     try {
       const result = await bibliaActivityService.saveQuotationOverrides(quotationId, records);
       setSyncWarnings(getBibliaSyncWarnings(result));
-      if (Array.isArray(result?.data?.biblia_actividades)) {
-        setQuotations(current => current.map(quote => String(quote.id) === quotationId
-          ? { ...quote, biblia_actividades: result.data.biblia_actividades } : quote));
-      }
+      const savedRecords = Array.isArray(result?.data?.biblia_actividades) ? result.data.biblia_actividades : records;
+      setQuotations(current => current.map(quote => String(quote.id) === quotationId
+        ? { ...quote, biblia_actividades: savedRecords } : quote));
       if (records.some((record) => record.syncQuotation)) await loadActivities(true);
     } catch (saveError) {
       setQuotations(previous);
@@ -617,7 +653,7 @@ const Calendario = () => {
     quotationId?: string | null,
   ) => {
     const standaloneId = activity.standaloneRecordId;
-    if (!standaloneId) return;
+    if (!standaloneId) throw new Error("No se encontró el registro para guardar. Actualiza la Biblia e inténtalo nuevamente.");
     const previous = standaloneRecords;
     const currentOuter = standaloneRecords.find((item) => String(item.id) === standaloneId) || {};
     const nextQuotationId = quotationId === undefined
@@ -625,9 +661,6 @@ const Calendario = () => {
       : (quotationId || null);
     setSaving(true);
     setError("");
-    setStandaloneRecords((current) => current.map((item) => String(item.id) === standaloneId
-      ? { ...item, cotizacion_id: nextQuotationId, actividad: record }
-      : item));
     try {
       const result = await bibliaActivityService.updateStandaloneActivity(standaloneId, nextQuotationId, record);
       setSyncWarnings(getBibliaSyncWarnings(result));
@@ -644,7 +677,7 @@ const Calendario = () => {
   }, [standaloneRecords, loadActivities]);
 
   const commitActivityChanges = useCallback(async (activity: BibliaActivity, changes: Partial<BibliaActivity>) => {
-    if (mutationInFlight.current) return;
+    if (mutationInFlight.current) throw new Error("Hay otro guardado en curso. Espera y vuelve a guardar este registro.");
     mutationInFlight.current = true;
     try {
       const record = buildBibliaEditRecord(activity, changes);
@@ -652,12 +685,11 @@ const Calendario = () => {
         await persistStandaloneRecord(activity, record);
       } else {
         const quotation = quotations.find((quote) => String(quote.id) === activity.sourceQuotationId);
-        if (!quotation) return;
+        if (!quotation) throw new Error("No se encontró la cotización de este registro. Actualiza la Biblia e inténtalo nuevamente.");
         const nextRecords = quotationSyncCommandRecords(upsertBibliaOverride(asArray<Record<string, any>>(quotation.biblia_actividades), record));
         await persistQuotationRecords(activity.sourceQuotationId, nextRecords);
       }
-    } catch { /* El método de persistencia conserva el error y revierte la edición. */ }
-    finally { mutationInFlight.current = false; }
+    } finally { mutationInFlight.current = false; }
   }, [persistQuotationRecords, persistStandaloneRecord, quotations]);
 
   const syncLinkedActivity = useCallback(async (activity: BibliaActivity) => {
@@ -677,19 +709,8 @@ const Calendario = () => {
     finally { mutationInFlight.current = false; }
   }, [persistQuotationRecords, persistStandaloneRecord, quotations]);
 
-  const commitField = useCallback((activity: BibliaActivity, field: keyof BibliaActivity, value: string | number) => {
-    const richText = activity.sourceExcel?.richText;
-    const nextSourceExcel = richText?.[String(field)]
-      ? {
-        ...activity.sourceExcel,
-        richText: Object.fromEntries(Object.entries(richText).filter(([key]) => key !== String(field))),
-      }
-      : undefined;
-    void commitActivityChanges(activity, {
-      [field]: value,
-      ...(nextSourceExcel ? { sourceExcel: nextSourceExcel } : {}),
-    } as Partial<BibliaActivity>);
-  }, [commitActivityChanges]);
+  const commitField = useCallback((activity: BibliaActivity) =>
+    draftStore.save(activity, commitActivityChanges), [draftStore, commitActivityChanges]);
 
   const languages = useMemo(() => [...new Set(activities.map((item) => item.language).filter((item) => item && item !== BIBLIA_EMPTY_VALUE))].sort(), [activities]);
   const agencies = useMemo(() => [...new Set(activities.map((item) => item.agency).filter((item) => item && item !== BIBLIA_EMPTY_VALUE))].sort(), [activities]);
@@ -934,6 +955,7 @@ const Calendario = () => {
           };
         }));
       }
+      draftStore.discardRow(activity.id);
       setSelectedActivityId(null);
       setPendingDelete(null);
     } catch (deleteError) {
@@ -942,7 +964,7 @@ const Calendario = () => {
     } finally {
       setSaving(false);
     }
-  }, [isSuperAdmin, pendingDelete]);
+  }, [isSuperAdmin, pendingDelete, draftStore]);
 
   const addQuickBibliaRecord = useCallback(async () => {
     const dateKey = toBibliaDateKey(currentDate);
@@ -1059,10 +1081,10 @@ const Calendario = () => {
             setLinkActivityId(activity.id);
             setLinkPopoverAnchor(event.currentTarget);
           }}
-          title="Vincular este file a una cotización o crear una nueva"
+          title={Object.keys(rowDrafts[activity.id]?.values || {}).length ? "Guarda los cambios del registro antes de vincularlo" : "Vincular este file a una cotización o crear una nueva"}
           aria-label="Vincular file a cotización"
           aria-expanded={open}
-          disabled={saving || creatingQuotationRequestId !== null}
+          disabled={saving || savingDraftId !== null || creatingQuotationRequestId !== null || Object.keys(rowDrafts[activity.id]?.values || {}).length > 0}
         >
           <MdLink /> <span>Vincular</span>
         </button>
@@ -1166,7 +1188,7 @@ const Calendario = () => {
   const applyActivityColor = useCallback((activity: BibliaActivity, color: string) => {
     setSelectedActivityId(activity.id);
     closeColorPopover();
-    void commitActivityChanges(activity, { color: normalizeBibliaColor(color) });
+    void commitActivityChanges(activity, { color: normalizeBibliaColor(color) }).catch(() => undefined);
   }, [closeColorPopover, commitActivityChanges]);
 
   const renderRowColorPicker = (activity: BibliaActivity) => {
@@ -1282,7 +1304,7 @@ const Calendario = () => {
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={dayActivities.map((activity) => activity.id)} strategy={verticalListSortingStrategy}>
         <div className="biblia-sheet-wrap" role="region" aria-label="Tabla completa de la Biblia de actividades. Desliza horizontalmente para consultar todas las columnas.">
-          <fieldset className="biblia-sheet-editor" disabled={saving || refreshing || creatingQuotationRequestId !== null}>
+          <fieldset className="biblia-sheet-editor" disabled={saving || refreshing || savingDraftId !== null || creatingQuotationRequestId !== null}>
           <table className="biblia-sheet-table">
             <thead><tr>{BIBLIA_SHEET_COLUMNS.map(([field, label]) => <th key={field}>{label}</th>)}<th>ACCIONES</th></tr></thead>
             <tbody>
@@ -1305,7 +1327,7 @@ const Calendario = () => {
                           <ParticipantPlanEditor
                             activity={activity}
                             onSave={(participantPlan) => {
-                              void commitActivityChanges(activity, {
+                              return commitActivityChanges(activity, {
                                 participantPlan,
                                 nationality: BIBLIA_EMPTY_VALUE,
                               });
@@ -1316,6 +1338,12 @@ const Calendario = () => {
                             activity={activity}
                             field={field}
                             onCommit={commitField}
+                            onDraftChange={draftStore.stage}
+                            onCancelField={draftStore.discardField}
+                            draftValue={rowDrafts[activity.id]?.values[field]}
+                            savedVersion={rowDrafts[activity.id]?.savedVersion || 0}
+                            busy={saving || refreshing || savingDraftId !== null}
+                            saveError={rowDrafts[activity.id]?.error}
                             extraOptions={field === "trainOutbound"
                               ? historicalOutboundTrains
                               : field === "trainReturn"
@@ -1344,6 +1372,7 @@ const Calendario = () => {
                               <div className="biblia-file-cell">
                                 {editor}
                                 <BibliaQuotationSyncPrompt activity={activity} busy={saving || refreshing}
+                                  hasUnsavedChanges={Object.keys(rowDrafts[activity.id]?.values || {}).length > 0}
                                   onConfirm={() => void syncLinkedActivity(activity)} />
                               </div>
                             ) : editor}
@@ -1351,6 +1380,9 @@ const Calendario = () => {
                         );
                       })}
                       <td className="biblia-sheet-table__actions" data-label="Acciones">
+                        <BibliaRowSave draft={rowDrafts[activity.id]} busy={savingDraftId === activity.id}
+                          disabled={saving || refreshing || savingDraftId !== null || creatingQuotationRequestId !== null}
+                          file={activity.file} onSave={() => void commitField(activity)} />
                         <button
                           type="button"
                           className="biblia-drag-handle"

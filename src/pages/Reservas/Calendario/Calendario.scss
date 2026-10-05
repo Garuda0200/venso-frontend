@@ -1748,6 +1748,10 @@
 
 .biblia-inline-editor {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
   width: 100%;
   min-width: 0;
 }
@@ -1764,41 +1768,49 @@
 
 .biblia-inline-editor--train,
 .biblia-inline-editor--catalog {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  min-width: 360px;
+  min-width: 0;
   overflow: visible;
 }
 
 .biblia-train-combobox,
 .biblia-catalog-combobox {
-  flex: 1 1 320px;
-  min-width: 300px;
+  flex: 0 1 auto;
+  min-width: 0;
+  width: 100%;
 
   .combobox-input-wrapper {
     min-height: 34px;
     border-color: #ff007e;
     background: #fff;
   }
+
+  .combobox-input { min-width: 0; width: 100%; }
 }
 
 .biblia-inline-editor__actions {
-  display: inline-flex;
+  display: flex;
+  flex-wrap: wrap;
   flex: 0 0 auto;
   gap: 3px;
 
   button {
-    width: 30px;
-    height: 30px;
+    min-height: 32px;
+    padding: 5px 8px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 4px;
     border: 1px solid #d7d9dd;
     border-radius: 7px;
     background: #fff;
     color: #252525;
     cursor: pointer;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 750;
+
+    &:disabled { opacity: .6; cursor: wait; }
+    &:focus-visible { outline: 2px solid #ff007e; outline-offset: 2px; }
   }
 
   button:first-child {
@@ -2338,6 +2350,37 @@
   }
 }
 
+.biblia-inline-editor__error {
+  color: #a3204d;
+  font-size: 11px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.biblia-row-save {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 6px;
+  white-space: normal;
+
+  > span { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; color: #53655c; }
+  &.is-dirty > span { color: #ad165c; font-weight: 800; }
+  > button {
+    display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+    min-height: 32px; border: 1px solid #d7e2dd; border-radius: 7px;
+    padding: 5px 8px; background: #fff; color: #64766c;
+    font: inherit; font-size: 11px; font-weight: 800; cursor: pointer;
+    &:disabled { opacity: .6; cursor: default; }
+    &:focus-visible { outline: 2px solid #ff007e; outline-offset: 2px; }
+  }
+  &.is-dirty > button { border-color: #ff007e; background: #ff007e; color: #fff; }
+  &.has-error > span, > small { color: #a3204d; }
+  > small { flex-basis: 100%; overflow-wrap: anywhere; font-size: 10px; }
+}
+
 // Los selectores se portalean al body para escapar del overflow y de las
 // capas sticky de la tabla. Las coordenadas se calculan contra el botón activo.
 .biblia-link-popover.is-floating,
@@ -2549,16 +2592,18 @@
   .biblia-catalog-combobox {
     width: 100%;
     min-width: 0;
-    flex: 1 1 190px;
+    flex: 0 1 auto;
 
     .combobox-input { min-width: 0; width: 100%; }
   }
 
   .biblia-inline-editor__actions {
-    margin-left: auto;
+    margin-left: 0;
 
-    button { width: 38px; height: 38px; }
+    button { width: auto; min-height: 40px; }
   }
+
+  .biblia-row-save > button { min-height: 40px; }
 
   .biblia-sheet-table__actions > button,
   .biblia-sheet-table__actions .biblia-row-color-trigger,

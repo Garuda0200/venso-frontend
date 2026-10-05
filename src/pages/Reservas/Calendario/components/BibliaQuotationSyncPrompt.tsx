@@ -2,8 +2,8 @@ import { MdLink, MdSync } from "react-icons/md";
 import type { BibliaActivity } from "../utils/bibliaActivityMapper";
 import { getBibliaPendingChangeLabels } from "../utils/bibliaQuotationLinking";
 
-export default function BibliaQuotationSyncPrompt({ activity, busy, onConfirm }: {
-  activity: BibliaActivity; busy: boolean; onConfirm: () => void;
+export default function BibliaQuotationSyncPrompt({ activity, busy, hasUnsavedChanges = false, onConfirm }: {
+  activity: BibliaActivity; busy: boolean; hasUnsavedChanges?: boolean; onConfirm: () => void;
 }) {
   if (!activity.sourceQuotationId) return null;
   if (activity.overrideRecord?.quotationSyncPending !== true)
@@ -14,7 +14,8 @@ export default function BibliaQuotationSyncPrompt({ activity, busy, onConfirm }:
     <div role="status">
       <p>Los cambios están guardados en la Biblia. ¿Actualizar los servicios del día en su cotización?</p>
       {labels.length > 0 && <small>{labels.join(" · ")}</small>}
-      <button type="button" disabled={busy} onClick={onConfirm}><MdSync /> {busy ? "Guardando…" : "Actualizar cotización"}</button>
+      {hasUnsavedChanges && <small>Guarda el registro antes de actualizar su cotización.</small>}
+      <button type="button" disabled={busy || hasUnsavedChanges} onClick={onConfirm}><MdSync /> {busy ? "Guardando…" : "Actualizar cotización"}</button>
       <button type="button" disabled={busy} onClick={event => {
         event.currentTarget.closest("details")?.removeAttribute("open");
       }}>Luego</button>
