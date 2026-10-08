@@ -76,7 +76,6 @@ const buildManualTariff = ({ tariffType, agencyId }) => ({
   precio: 0,
   precio_compartido: 0,
   precio_privado: 0,
-  precio_unico: true,
   manual: true,
 });
 

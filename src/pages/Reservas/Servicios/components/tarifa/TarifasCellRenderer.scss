@@ -12,10 +12,46 @@ $tasa-color: #d97706;
 .cell-price-summary {
   display: grid;
   gap: 5px;
-  &__entry { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
-  span { color: #82717d; font-size: 10px; white-space: nowrap; }
+  &__entry {
+    display: flex; align-items: center; gap: 9px; padding: 8px 10px;
+    background: #fff; border: 1px solid #eadfe6; border-radius: 10px;
+    text-align: left; min-width: 0; flex-wrap: wrap;
+    &.is-selected { background: #fff4fa; border-color: #ff0087; }
+    strong { margin-left: auto; }
+    small { color: #998491; font-size: 9px; }
+  }
+  span { color: #685160; font-size: 11px; white-space: nowrap; }
   strong { color: #33242d; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  &__mode, &__amount {
+    display: inline-flex; align-items: center; gap: 7px; border: 0;
+    background: transparent; padding: 3px; cursor: pointer; color: #685160;
+    border-radius: 6px;
+    &:focus-visible { outline: 2px solid #ff0087; outline-offset: 2px; }
+    &:disabled { opacity: .6; cursor: wait; }
+    > svg { color: #b06a91; font-size: 10px; }
+  }
+  &__mode > span { display: flex; flex-direction: column; gap: 2px; }
+  &__amount { margin-left: auto; &:hover:not(:disabled) { background: #ffe3f1; } }
+  &__editor { flex: 1 1 130px; min-width: 0; margin-left: auto; }
+  &__controls {
+    display: flex; align-items: center; gap: 5px; justify-content: flex-end;
+    input { width: 84px; min-width: 40px; padding: 5px 6px; border: 1px solid #e0c6d5;
+      border-radius: 6px; color: #33242d; font: inherit; font-variant-numeric: tabular-nums;
+      &:focus { outline: 2px solid #ff0087; outline-offset: 1px; }
+      &[aria-invalid="true"] { border-color: #c0235a; }
+    }
+    button { display: grid; place-items: center; border: 1px solid #e0c6d5;
+      border-radius: 6px; background: #fff; color: #b40061; width: 28px; height: 28px; cursor: pointer;
+      &:focus-visible { outline: 2px solid #ff0087; outline-offset: 2px; }
+      &:disabled { opacity: .5; cursor: wait; }
+    }
+  }
+  &__error { display: block; color: #b52151 !important; white-space: normal !important;
+    font-size: 10px !important; line-height: 1.4; margin-top: 5px; }
+  .is-spinning { animation: tariff-price-spin 1s linear infinite; }
 }
+@keyframes tariff-price-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .cell-price-summary .is-spinning { animation: none; } }
 
 .cell-tarifas-manager {
   display: grid;

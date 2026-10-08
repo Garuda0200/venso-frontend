@@ -2294,6 +2294,7 @@ const DaysEditor = forwardRef(
     };
 
     const buildEmptyDay = (dayNumber) => ({
+      tipoServicio: "mixto",
       numero: dayNumber,
       servicios: [],
       titulo: "",
@@ -3475,6 +3476,7 @@ const DaysEditor = forwardRef(
                       day={day}
                       dayIndex={dayIndex}
                       handleTitleChange={handleTitleChange}
+                      handleDayModeChange={(index, mode) => setDays((previous) => previous.map((item, current) => current === index ? { ...item, tipoServicio: mode } : item))}
                       handleCiudadesChange={handleCiudadesChange}
                       addCiudad={addCiudad}
                       removeCiudad={removeCiudad}

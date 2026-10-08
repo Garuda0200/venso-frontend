@@ -176,7 +176,9 @@ test("los editores usan Guardar explícito, esperan al servidor y no se pierden 
   const standaloneSave = source.slice(source.indexOf("const persistStandaloneRecord ="), source.indexOf("const commitActivityChanges ="));
   assert.doesNotMatch(standaloneSave.slice(0, standaloneSave.indexOf("try {")), /setStandaloneRecords\(/);
   assert.match(standaloneSave, /await bibliaActivityService.updateStandaloneActivity[\s\S]*?setStandaloneRecords/);
-  assert.match(source, /if \(!open\) setPlan/);
+  const participants = readFileSync(resolve("src/pages/Reservas/Calendario/components/ParticipantPlanEditor.tsx"), "utf8");
+  assert.match(participants, /setDraft\(initialParticipantDraft\(activity, quotation\)\)/);
+  assert.match(participants, /await onSave\(buildParticipantPlan\(draft\)\)/);
   const css = readFileSync(resolve("src/pages/Reservas/Calendario/Calendario.scss"), "utf8");
   assert.match(css, /\.biblia-inline-editor[\s\S]*?flex-direction: column/);
   assert.doesNotMatch(css, /min-width: (300|360)px/);

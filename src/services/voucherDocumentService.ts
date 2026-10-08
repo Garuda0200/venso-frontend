@@ -165,6 +165,7 @@ export const voucherDocumentService = {
             uploadDate: doc.uploadedAt || doc.createdAt,
             createdAt: doc.createdAt,
             createdBy: doc.createdBy,
+            canDelete: doc.canDelete === true,
 
             // Flag para saber que viene de la DB
             isFromDatabase: true,

@@ -280,7 +280,7 @@ assert.equal(BIBLIA_SHEET_COLUMNS.length, 23, "la descarga diaria debe conservar
 assert.equal(jpegMatrix.headers.length, 23);
 assert.equal(jpegMatrix.headers.includes("ACCIONES"), false, "el JPG no debe incluir botones/acciones");
 assert.equal(jpegMatrix.rows[0].length, 23);
-assert.equal(jpegMatrix.rows[0][4], "—", "las nacionalidades detalladas no se exportan");
+assert.equal(jpegMatrix.rows[0][4], snapshots[0].nationality, "se exportan países, sin cantidades por nacionalidad");
 assert.ok(jpegMatrix.rows[0].some((value) => value.includes("EXPEDITION 81")));
 assert.ok(jpegMatrix.rows[0].some((value) => value.includes("MAPI 07:40")));
 assert.equal(buildBibliaDayJpegFilename("2026-09-01"), "biblia_actividades_2026-09-01.jpg");

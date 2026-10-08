@@ -392,7 +392,7 @@ export const syncTariffWithReservationPricing = ({
   passengerSelection = {},
   unitPrice = 0,
   fallbackTotal = 1,
-  precioAdultoDividido = undefined,
+  tipoPrecio: sharedPrice = undefined,
   preserveGroupedTotal = false,
 }) => {
   // Normalize to handle both new lean format (preciosNinos/ninosComoAdulto)
@@ -506,20 +506,18 @@ export const syncTariffWithReservationPricing = ({
   const isExtra = normalizedType === "extras" || normalizedType === "extra";
   const tourCapacity = isEndose ? getTourCapacity(childService) : null;
   const isCapacityLimitedEndose = isEndose && tourCapacity != null;
-  const isGroupedPricing = isTransport || isGuide || isCapacityLimitedEndose;
+  const isGroupedPricing = !isHotel;
   const usesGroupedTotal =
     isGroupedPricing &&
-    (precioAdultoDividido != null
-      ? Boolean(precioAdultoDividido)
-      : isTransport || isGuide || isCapacityLimitedEndose);
+    (sharedPrice != null
+      ? sharedPriceFlag(sharedPrice) === true
+      : false);
 
   let normalizedOriginal = round2(normalizedUnitPrice);
   let normalizedAdultUnitPrice = normalizedUnitPrice;
 
   if (isGroupedPricing) {
-    const effectiveDivisor = isCapacityLimitedEndose
-      ? Math.max(1, tourCapacity)
-      : isTransport
+    const effectiveDivisor = isTransport
         ? getTransportEffectiveDivisor(paxForDivision, childService)
         : Math.max(1, paxForDivision);
     const groupedBaseTotal = round2(
@@ -621,7 +619,7 @@ export const syncTariffWithReservationPricing = ({
 export const buildAssignedFlatPricingState = ({
   tariff = {},
   passengerSelection = {},
-  precioAdultoDividido = false,
+  tipoPrecio: sharedPrice = false,
 }) => {
   const selectedIds = Array.isArray(passengerSelection?.selectedIds)
     ? passengerSelection.selectedIds.filter(Boolean)
@@ -652,7 +650,7 @@ export const buildAssignedFlatPricingState = ({
       .forEach((childId) => convertedChildSlots.add(getPassengerSlotKey(childId)));
   }
   const assignedPrecioServicio = round2(
-    precioAdultoDividido
+    sharedPriceFlag(sharedPrice) === true
       ? parseFloat(tariff?.precio_original ?? tariff?.precio ?? 0)
       : parseFloat(tariff?.precio ?? tariff?.precio_original ?? 0),
   );
@@ -704,7 +702,7 @@ export const buildAssignedFlatPricingState = ({
     parseFloat(
       tariff?.precio_original_with_child_extras ?? tariff?.precio_original,
     ) ||
-      (precioAdultoDividido
+      (sharedPriceFlag(sharedPrice) === true
         ? assignedPrecioServicio + childExtrasTotal
         : adultUnitPrice * Math.max(1, assignedBeneficiariosAdultos.length || 1) +
           childExtrasTotal),
@@ -822,3 +820,4 @@ export const getPaymentStatusColor = (service) => {
   }
   return "pending";
 };
+import { sharedPriceFlag } from "../../../../../../utils/servicePricingType";

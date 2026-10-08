@@ -481,25 +481,11 @@ const VouchersVenta = () => {
 
   // Manejar edición de voucher existente (simplificado - solo usa status)
   const handleEditVoucher = async (voucher) => {
-    // Superadmin y ventas pueden editar desde sus cards.
-    // Otros roles solo pueden editar si status es EDITABLE_ONCE.
-    const isSuperAdmin = auth.role === 0;
-    const isVentas = auth.role === 2;
-
-    if (isSuperAdmin || isVentas) {
-      console.log(" Usuario autorizado - permitiendo edición de voucher");
-      setSelectedVoucher(voucher);
-      setSelectedCotizacion(getVoucherCotizacion(voucher));
-      setShowEditModal(true);
-    } else if (voucher.status === "EDITABLE_ONCE") {
-      console.log(" Voucher con status EDITABLE_ONCE - permitiendo edición");
-      setSelectedVoucher(voucher);
-      setSelectedCotizacion(getVoucherCotizacion(voucher));
-      setShowEditModal(true);
-    } else {
-      // Usuario normal intentando editar voucher con status ACTIVE
-      showInfo("Solo se pueden editar vouchers con status EDITABLE_ONCE");
-    }
+    setIsPaymentManagementMode(false);
+    setIsDocumentManagementMode(false);
+    setSelectedVoucher(voucher);
+    setSelectedCotizacion(getVoucherCotizacion(voucher));
+    setShowEditModal(true);
   };
 
   // Manejar vista previa de voucher
@@ -930,6 +916,7 @@ const VouchersVenta = () => {
           }}
           onSave={handleSaveVoucher}
           voucherData={selectedVoucher}
+          onPassengerInfoSaved={loadVouchers}
           cotizacionData={selectedCotizacion}
           isEditMode={true}
           isPaymentManagementMode={isPaymentManagementMode} // Pasar modo gestión de pagos

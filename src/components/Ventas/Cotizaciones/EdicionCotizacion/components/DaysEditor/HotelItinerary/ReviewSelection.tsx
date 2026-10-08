@@ -62,14 +62,8 @@ const ReviewSelection = ({
       return item.customPrice;
     }
     const tariff = item.tariff;
-    return packageType === "privado" && tariff?.precio_privado
-      ? parseFloat(tariff.precio_privado)
-      : parseFloat(
-          tariff?.precio_compartido ||
-            tariff?.precio_unico ||
-            tariff?.precio ||
-            0,
-        );
+    const mode = tariff?.selectedType || tariff?.tipoPrecio || packageType;
+    return Number(tariff?.precio ?? tariff?.[`precio_${mode}`] ?? 0);
   };
 
   // Calcular total general (considerando cantidad)
@@ -103,11 +97,8 @@ const ReviewSelection = ({
 
   const defaultPrice = useMemo(() => {
     if (!selectedTariff) return 0;
-    return packageType === "privado" && selectedTariff.precio_privado
-      ? parseFloat(selectedTariff.precio_privado)
-      : parseFloat(
-          selectedTariff.precio_compartido || selectedTariff.precio_unico || 0,
-        );
+    const mode = selectedTariff.selectedType || selectedTariff.tipoPrecio || packageType;
+    return Number(selectedTariff.precio ?? selectedTariff[`precio_${mode}`] ?? 0);
   }, [selectedTariff, packageType]);
 
   // Estado para precio legacy

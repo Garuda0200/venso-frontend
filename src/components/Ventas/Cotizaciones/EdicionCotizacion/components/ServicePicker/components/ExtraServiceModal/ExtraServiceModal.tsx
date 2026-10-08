@@ -10,6 +10,7 @@ import { FaFloppyDisk, FaWandMagicSparkles, FaPlus } from "react-icons/fa6";
 import { createAxiosInstance } from "../../../../../../../../utils/axiosInstance";
 import { createApiInstance } from "../../../../../../../../utils/apiUtils";
 import { getTotalPassengerCount } from "../../../../utils/unifiedServiceManager";
+import { tariffPriceOptions } from "../../../../../../../../utils/servicePricingType";
 import "./ExtraServiceModal.scss";
 
 const ExtraServiceModal = ({
@@ -148,11 +149,11 @@ const ExtraServiceModal = ({
   };
 
   // Select an existing service+tariff → add to itinerary
-  const handleSelectExisting = (svcItem, tariff) => {
+  const handleSelectExisting = (svcItem, tariff, mode = packageType) => {
     const svc = svcItem.servicio_extra || svcItem;
-    const precio = parseFloat(
-      tariff?.precio_compartido || tariff?.precio_privado || 0,
-    );
+    const choice = tariffPriceOptions(tariff, mode)[0];
+    if (!choice) return;
+    const precio = choice.tipoPrecio === "compartido" ? choice.amount / cantPax : choice.amount;
 
     onSave({
       id: `extra-${svc.id}-${Date.now()}`,
@@ -169,12 +170,13 @@ const ExtraServiceModal = ({
         nombre: svc.nombre,
         descripcion: svc.descripcion || "",
         id_servicio_extra: svc.id,
-        packageType,
+        packageType:choice.tipoPrecio,
       },
       tariff: {
         id_tarifa: tariff?.id_tarifa,
+        tipoPrecio:choice.tipoPrecio,
         precio,
-        precio_original: precio * cantPax,
+        precio_original: choice.tipoPrecio === "compartido" ? choice.amount : precio * cantPax,
         tipo_tarifa: tariff?.tipo_tarifa || tipoTarifa,
         tieneIgv: false,
         moneda: tariff?.moneda || "dolares",
@@ -221,9 +223,8 @@ const ExtraServiceModal = ({
         anio: selectedTariffYear,
         tiene_temporada: false,
         temporada: null,
-        precio_compartido: precio,
+        precio_compartido: null,
         precio_privado: precio,
-        precio_unico: true,
         moneda: tariffForm.moneda || "dolares",
         tasa_cambio: 1.0,
       });
@@ -249,10 +250,11 @@ const ExtraServiceModal = ({
           nombre: tariffTarget.nombre,
           descripcion: tariffTarget.descripcion || "",
           id_servicio_extra: tariffTarget.id,
-          packageType,
+          packageType:"privado",
         },
         tariff: {
           id_tarifa: tariffId,
+          tipoPrecio:"privado",
           precio,
           precio_original: precio * cantPax,
           tipo_tarifa: tipoTarifa,
@@ -352,9 +354,8 @@ const ExtraServiceModal = ({
         anio: selectedTariffYear,
         tiene_temporada: false,
         temporada: null,
-        precio_compartido: precio,
+        precio_compartido: null,
         precio_privado: precio,
-        precio_unico: true,
         moneda: createForm.moneda || "dolares",
         tasa_cambio: 1.0,
       });
@@ -381,10 +382,11 @@ const ExtraServiceModal = ({
           nombre: createForm.nombre.trim(),
           descripcion: createForm.descripcion.trim() || "",
           id_servicio_extra: svcId,
-          packageType,
+          packageType:"privado",
         },
         tariff: {
           id_tarifa: tariffId,
+          tipoPrecio:"privado",
           precio,
           precio_original: precio * cantPax,
           tipo_tarifa: tipoTarifa,
@@ -547,27 +549,27 @@ const ExtraServiceModal = ({
                     </div>
                     <div className="esm-card__tarifas">
                       {hasTariff ? (
-                        matchingTarifas.map((t) => (
+                        matchingTarifas.flatMap(t => tariffPriceOptions(t, packageType).map(choice => (
                           <button
-                            key={t.id_tarifa}
+                            key={`${t.id_tarifa}-${choice.tipoPrecio}`}
                             className="esm-tariff-btn"
                             onClick={(e) => {
                               e.stopPropagation(); // Avoid triggering card click
-                              handleSelectExisting(item, t);
+                              handleSelectExisting(item, t, choice.tipoPrecio);
                             }}
                             title="Clic para agregar al itinerario"
                           >
                             <span className="esm-tariff-btn__price">
-                              ${parseFloat(t.precio_compartido || 0).toFixed(2)}
+                              {t.moneda === "soles" ? "S/" : "$"} {choice.amount.toFixed(2)}
                             </span>
                             {t.moneda && (
                               <span className="esm-tariff-btn__cur">
-                                {t.moneda}
+                                {choice.label}
                               </span>
                             )}
                             <MdCheckCircle className="esm-tariff-btn__icon" />
                           </button>
-                        ))
+                        )))
                       ) : (
                         <button
                           className="esm-add-tariff-btn"

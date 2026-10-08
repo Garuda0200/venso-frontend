@@ -1,3 +1,4 @@
+import { sharedPriceFlag, normalizePricingType } from "../../../../../utils/servicePricingType";
 import React, { useMemo, useEffect } from "react";
 import { MdStar } from "react-icons/md";
 import { buildCotizacionPreviewHtml } from "../utils/cotizacionPreviewHtml";
@@ -2559,7 +2560,7 @@ const buildPricingExternalServiceItems = (cotizacion = null) => {
         pricingNumber(service?.totalPrice) ||
         pricingNumber(service?.precioAdult) ||
         pricingNumber(service?.precio_adult) ||
-        pricingNumber(service?.assigned_precio_adulto_dividido) ||
+        pricingNumber(sharedPriceFlag(service?.assigned_tipo_precio)) ||
         pricingNumber(service?.assignedPrecioServicio) ||
         pricingNumber(service?.assigned_precio_servicio) ||
         pricingNumber(service?.tariff?.precio) ||

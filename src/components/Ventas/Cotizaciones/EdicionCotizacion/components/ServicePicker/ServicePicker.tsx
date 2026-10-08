@@ -141,7 +141,8 @@ const ServicePicker = ({
   onSelectService,
   selectedDay,
   onClose,
-  packageType = "compartido",
+  packageType: quotationPackageType = "compartido",
+  dayServiceMode = "mixto",
   serviceFilter,
   filterTariffType,
   preselectedCategory = null,
@@ -152,6 +153,7 @@ const ServicePicker = ({
   platform = "venso", // Platform para controlar visibilidad de elementos (se pasa a ServiceCategoryButtons)
   agencyId = 1, // Agencia de la cotización; no restringe el catálogo del picker.
 }) => {
+  const packageType = dayServiceMode;
   // Core state management
   const [activeCategory, setActiveCategory] = useState(
     preselectedCategory || "hoteles",
@@ -323,6 +325,7 @@ const ServicePicker = ({
     filterTariffType,
     platform,
     [],
+    dayServiceMode,
   );
 
   const displayedChildServices = useMemo(() => filterCatalogue(
@@ -1662,7 +1665,7 @@ const ServicePicker = ({
     }
 
     // CORREGIR: Extraer el precio correcto basado en packageType
-    if (actualTariff && !actualTariff.precio) {
+    if (actualTariff && actualTariff.precio == null) {
       const currentPackageType =
         service.packageType || tariff?.selectedPackageType || packageType;
       const priceField =
@@ -1670,11 +1673,12 @@ const ServicePicker = ({
           ? "precio_privado"
           : "precio_compartido";
       const extractedPrice = parseFloat(
-        actualTariff[priceField] || actualTariff.precio_compartido || 0,
+        actualTariff[priceField] ?? 0,
       );
 
       actualTariff = {
         ...actualTariff,
+        tipoPrecio: currentPackageType === "privado" ? "privado" : "compartido",
         precio: extractedPrice,
         precio_original: extractedPrice,
         moneda: actualTariff.moneda,

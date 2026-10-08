@@ -1,3 +1,4 @@
+import { sharedPriceFlag, normalizePricingType } from "../../../../../../../utils/servicePricingType";
 import assert from "node:assert/strict";
 import {
   buildAssignedFlatPricingState,
@@ -55,13 +56,13 @@ const tariff = syncTariffWithReservationPricing({
   passengerSelection: withoutFirstChild,
   unitPrice: 100,
   fallbackTotal: 4,
-  precioAdultoDividido: false,
+  tipoPrecio: normalizePricingType(false),
   preserveGroupedTotal: true,
 });
 const flat = buildAssignedFlatPricingState({
   tariff,
   passengerSelection: tariff.passengerSelection,
-  precioAdultoDividido: false,
+  tipoPrecio: normalizePricingType(false),
 });
 
 assert.deepEqual(flat.assignedBeneficiariosAdultos, [

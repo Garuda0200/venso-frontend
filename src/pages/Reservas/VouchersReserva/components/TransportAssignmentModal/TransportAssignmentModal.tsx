@@ -1,3 +1,4 @@
+import { sharedPriceFlag, normalizePricingType } from "../../../../../utils/servicePricingType";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import axiosInstance from "../../../../../utils/axiosInstance";
@@ -429,9 +430,9 @@ const TransportAssignmentModal = ({
         svc.assignedPrecioTotal = assignedPrecioTotal;
         svc.assigned_precio_servicio = assignedPrecioServicio;
         svc.assigned_precio_total = assignedPrecioTotal;
-        svc.assignedPrecioAdultoDividido = true;
+        svc.assignedTipoPrecio = svc.tipoPrecio;
         svc.assignedCapacidadLimite = true;
-        svc.assigned_precio_adulto_dividido = true;
+        svc.assigned_tipo_precio = svc.tipoPrecio;
         svc.assigned_capacidad_limite = true;
         return svc;
       })

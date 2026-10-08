@@ -28,7 +28,8 @@ import "./FileDropZone.scss";
  */
 const FileDropZone = ({
   files = [],
-  onFilesAdded,
+  onFilesAdded = null,
+  onRawFilesAdded = null,
   onFileRemove,
   canRemoveFile,
   disabled = false,
@@ -75,10 +76,14 @@ const FileDropZone = ({
 
   const processNewFiles = useCallback(
     async (rawFiles) => {
-      if (!onFilesAdded || disabled) return;
+      if ((!onFilesAdded && !onRawFilesAdded) || disabled || isUploading) return;
 
       const fileArray = Array.from(rawFiles);
       const maxBytes = maxSizeMB * 1024 * 1024;
+      if (onRawFilesAdded) {
+        await onRawFilesAdded(fileArray.filter(file => file.size <= maxBytes));
+        return;
+      }
       const pendingPromises = fileArray
         .filter((f) => f.size <= maxBytes)
         .map(async (file) => {
@@ -104,7 +109,7 @@ const FileDropZone = ({
       const pending = await Promise.all(pendingPromises);
       if (pending.length > 0) onFilesAdded(pending);
     },
-    [onFilesAdded, disabled, maxSizeMB],
+    [onFilesAdded, onRawFilesAdded, disabled, isUploading, maxSizeMB],
   );
 
   const handleDrop = useCallback(

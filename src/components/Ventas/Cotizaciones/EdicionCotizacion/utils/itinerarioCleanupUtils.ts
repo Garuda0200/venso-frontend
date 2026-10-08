@@ -1,3 +1,4 @@
+import { sharedPriceFlag, normalizePricingType, normalizeServicePricingContract } from "../../../../../utils/servicePricingType";
 import {
   buildPersistedPassengerSelection,
   buildRuntimePassengerSelection,
@@ -18,14 +19,13 @@ import {
 
 // ═══════════════════════════════════════════════════════════════════════════
 // FLAT DB FIELD CONVERSION
-// New schema: moneda, precioServicio, igv, precioAdultoDividido,
+// New schema: moneda, precioServicio, igv, tipoPrecio,
 // capacidadLimite, beneficiariosAdultos (sin precio), beneficiariosNinos
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Compute the two division booleans from service type and child metadata.
- * - precioAdultoDividido: the service price represents a shared total that must be
- * divided among adults to get the per-person cost.
+ * Preserve the selected pricing mode and infer only operational capacity.
+ * - tipoPrecio: compartido is a group total; privado is a per-person amount.
  * - capacidadLimite: operational capacity marker. Only hotel room capacity
  * changes the price divisor; transport capacity only triggers conflicts.
  */
@@ -33,21 +33,10 @@ const computeDivisionFlags = (service) => {
   const typeService =
     service?.typeService || service?.parentService?.typeService || "";
 
-  if (typeService === "transportes" || typeService === "hoteles") {
-    return { precioAdultoDividido: true, capacidadLimite: true };
-  }
-
-  if (typeService === "guias") {
-    return { precioAdultoDividido: true, capacidadLimite: false };
-  }
-
-  if (typeService === "endoses") {
-    if (getTourCapacity(service) != null) {
-      return { precioAdultoDividido: true, capacidadLimite: true };
-    }
-  }
-
-  return { precioAdultoDividido: false, capacidadLimite: false };
+  return {
+    tipoPrecio: normalizePricingType(service.tipoPrecio ?? service.tariff?.tipoPrecio ?? service.tariff?.selectedPackageType) || "privado",
+    capacidadLimite: typeService === "transportes" || typeService === "hoteles" || (typeService === "endoses" && getTourCapacity(service) != null),
+  };
 };
 
 /**
@@ -86,7 +75,7 @@ const getCapacityFromService = (service) => {
 const shouldCapacityCapPriceDivisor = (service) => {
   const typeService =
     service?.typeService || service?.parentService?.typeService || "";
-  return typeService === "hoteles" || typeService === "endoses";
+  return typeService === "hoteles";
 };
 
 /**
@@ -124,14 +113,14 @@ const computePricesFromFlags = (
 /**
  * Builds internal tariff object from flat DB fields (new schema).
  *
- * Uses precioAdultoDividido and capacidadLimite booleans to compute
+ * Uses tipoPrecio and the independent operational capacity marker to compute
  * tariff.precio (per-person) and tariff.precio_original (total).
  */
 const buildTariffFromFlatFields = (service) => {
   const storedPrecioServicio = parseFloat(service.precioServicio || 0);
   const moneda = service.moneda || "dolares";
   const igv = Boolean(service.igv);
-  const dividido = Boolean(service.precioAdultoDividido);
+  const dividido = Boolean(sharedPriceFlag(service.tipoPrecio));
   const capacidadLimite = Boolean(service.capacidadLimite);
   const typeService = String(
     service?.typeService ||
@@ -270,7 +259,7 @@ const usesNewFlatSchema = (service) =>
 /**
  * Converts internal tariff + pricingState to flat DB fields for saving.
  *
- * - precioAdultoDividido/capacidadLimite → read from service or computed from type
+ * - tipoPrecio → selected tariff mode; capacidadLimite → operational capacity
  * - precioServicio → precio_original if dividido; precio if not
  * - beneficiariosAdultos → [{id}, {id, child_origin}] (NO precio)
  * - beneficiariosNinos → [{id, precio}]
@@ -291,16 +280,16 @@ const buildFlatPricingFields = (tariff, pricingState, service = {}) => {
 
   // Division flags: prefer explicit values on service, else compute from type
   const flags =
-    service.precioAdultoDividido != null
+    sharedPriceFlag(service.tipoPrecio) != null
       ? {
-          precioAdultoDividido: Boolean(service.precioAdultoDividido),
+          tipoPrecio: normalizePricingType(Boolean(sharedPriceFlag(service.tipoPrecio))),
           capacidadLimite: Boolean(service.capacidadLimite),
         }
       : computeDivisionFlags(service);
 
   // precioServicio: the value stored in DB
   // For divided: precio_original (total); for non-divided: precio (per-person)
-  let precioServicio = flags.precioAdultoDividido
+  let precioServicio = sharedPriceFlag(flags.tipoPrecio)
     ? parseFloat(tariff?.precio_original || tariff?.precio || 0)
     : parseFloat(tariff?.precio || tariff?.precio_original || 0);
 
@@ -424,7 +413,7 @@ const buildFlatPricingFields = (tariff, pricingState, service = {}) => {
     moneda,
     precioServicio,
     igv,
-    precioAdultoDividido: flags.precioAdultoDividido,
+    tipoPrecio: normalizePricingType(sharedPriceFlag(flags.tipoPrecio)),
     capacidadLimite: flags.capacidadLimite,
     beneficiariosAdultos,
     beneficiariosNinos,
@@ -518,6 +507,7 @@ export const ensureDaysHaveCiudades = (days) => {
  * @returns {Object} - Servicio con datos restaurados a nivel raíz
  */
 export const hydrateServiceFromDB = (service) => {
+  service = normalizeServicePricingContract(service);
   if (!service) return null;
 
   // Convert new flat DB fields to internal tariff/passengerSelection format
@@ -540,7 +530,7 @@ export const hydrateServiceFromDB = (service) => {
               ? service.assignedBeneficiariosAdultos
               : [];
             const assignedDividido = Boolean(
-              service.assignedPrecioAdultoDividido,
+              sharedPriceFlag(service.assignedTipoPrecio),
             );
             const assignedCapLimite = Boolean(service.assignedCapacidadLimite);
             const numAssignedAdults = assignedAdultos.length || 1;
@@ -704,6 +694,7 @@ export const hydrateDayFromDB = (day) => {
 
   return {
     ...day,
+    tipoServicio: day.tipoServicio || day.tipo_servicio || "mixto",
     servicios: (day.servicios || [])
       .filter(
         (service) =>
@@ -727,6 +718,7 @@ export const hydrateItinerarioFromDB = (itinerario) => {
 };
 
 export const cleanServiceForDB = (service) => {
+  service = normalizeServicePricingContract(service);
   if (
     !service ||
     service.is_active === false ||
@@ -821,18 +813,21 @@ export const cleanServiceForDB = (service) => {
 
     // Division flags for assigned: same as main unless explicitly different
     const assignedFlags =
-      service.assignedPrecioAdultoDividido != null
+      sharedPriceFlag(service.assignedTipoPrecio) != null
         ? {
-            precioAdultoDividido: Boolean(service.assignedPrecioAdultoDividido),
+            tipoPrecio: normalizePricingType(Boolean(sharedPriceFlag(service.assignedTipoPrecio))),
             capacidadLimite: Boolean(service.assignedCapacidadLimite),
           }
         : computeDivisionFlags(service);
 
-    cleaned.assignedPrecioAdultoDividido = assignedFlags.precioAdultoDividido;
+    // NULL means the assignment inherits its quote mode, not a new override.
+    cleaned.assignedTipoPrecio = service.assignedTipoPrecio === null
+      ? null
+      : normalizePricingType(sharedPriceFlag(assignedFlags.tipoPrecio));
     cleaned.assignedCapacidadLimite = assignedFlags.capacidadLimite;
 
     // precioServicio for assigned: total if dividido, per-person if not
-    cleaned.assignedPrecioServicio = assignedFlags.precioAdultoDividido
+    cleaned.assignedPrecioServicio = sharedPriceFlag(assignedFlags.tipoPrecio)
       ? parseFloat(at.precio_original || at.precio || 0)
       : parseFloat(at.precio || at.precio_original || 0);
 
@@ -970,6 +965,7 @@ export const cleanDayForDB = (day) => {
     id: day.id,
     versionUid: day.versionUid || day.version_uid,
     numero: day.numero,
+    tipoServicio: day.tipoServicio || day.tipo_servicio || "mixto",
     orden: day.orden,
     titulo: day.titulo,
     descripcion: day.descripcion || day.description || "",

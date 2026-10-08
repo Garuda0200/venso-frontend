@@ -1,3 +1,5 @@
+import { sharedPriceFlag } from "../../../../../utils/servicePricingType";
+
 /**
  * Utilidades compartidas para tickets.
  *
@@ -940,6 +942,9 @@ export const expandTicketServiceForPersistence = (service = {}) => {
     explicitPriceMap = {},
   }) => {
     if (!ids.length) return null;
+    const adultRatedTotal = asAdultEquivalent && sharedPriceFlag(service.tipoPrecio) === true
+      ? round2(service.tariff?.precio_original ?? service.precioServicio ?? 0)
+      : round2((unitPrice || 0) * ids.length);
 
     const explicitSum = round2(
       Object.values(explicitPriceMap).reduce(
@@ -999,10 +1004,10 @@ export const expandTicketServiceForPersistence = (service = {}) => {
       tariff: {
         ...(service?.tariff || {}),
         precio: asAdultEquivalent ? round2(unitPrice || 0) : 0,
-        precio_original: asAdultEquivalent ? round2((unitPrice || 0) * ids.length) : 0,
+        precio_original: asAdultEquivalent ? adultRatedTotal : 0,
         childExtrasTotal: asAdultEquivalent ? 0 : explicitSum,
         precio_original_with_child_extras: asAdultEquivalent
-          ? round2((unitPrice || 0) * ids.length)
+          ? adultRatedTotal
           : explicitSum,
       },
     };
@@ -1072,6 +1077,11 @@ export const expandTicketServiceForPersistence = (service = {}) => {
       hasChildExplicitPrices: Object.keys(zeroChildPriceMap).length > 0,
     };
 
+    // A homogeneous shared ticket keeps the catalog group amount, including
+    // remainder cents. Multiplying the rounded display unit loses that amount.
+    const adultRatedTotal = sharedPriceFlag(service.tipoPrecio) === true && adultSelectedIds.length === selectedIds.length
+      ? round2(service.tariff?.precio_original ?? service.precioServicio ?? 0)
+      : round2((adultUnitPrice || 0) * (adultIds.length + childIdsWithAdultTariff.length));
     expanded.push({
       ...service,
       childService: {
@@ -1101,11 +1111,9 @@ export const expandTicketServiceForPersistence = (service = {}) => {
       tariff: {
         ...(service?.tariff || {}),
         precio: round2(adultUnitPrice || 0),
-        precio_original: round2((adultUnitPrice || 0) * (adultIds.length + childIdsWithAdultTariff.length)),
+        precio_original: adultRatedTotal,
         childExtrasTotal: 0,
-        precio_original_with_child_extras: round2(
-          (adultUnitPrice || 0) * (adultIds.length + childIdsWithAdultTariff.length),
-        ),
+        precio_original_with_child_extras: adultRatedTotal,
       },
     });
   }

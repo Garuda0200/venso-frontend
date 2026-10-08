@@ -51,6 +51,9 @@ import { getBibliaSaveError, getBibliaSyncWarnings } from "./utils/bibliaSyncFee
 import BibliaLinkRecommendations from "./components/BibliaLinkRecommendations";
 import BibliaQuotationSyncPrompt from "./components/BibliaQuotationSyncPrompt";
 import BibliaRowSave from "./components/BibliaRowSave";
+import ParticipantPlanEditor from "./components/ParticipantPlanEditor";
+import { participantNationalityLabel } from "./utils/bibliaNationality";
+import { bibliaParticipantPlanError } from "./utils/bibliaParticipantEditor";
 import { useBibliaRowDrafts } from "./hooks/useBibliaRowDrafts";
 import { buildBibliaEditRecord, getBibliaLinkRecommendations, getBibliaLinkUnavailableReason, quotationSyncCommandRecords } from "./utils/bibliaQuotationLinking";
 import { bibliaCatalogService, isBibliaCatalogField } from "./services/bibliaCatalogService";
@@ -58,7 +61,6 @@ import {
   BIBLIA_EMPTY_VALUE,
   BIBLIA_EXCEL_PALETTE,
   BibliaActivity,
-  BibliaParticipantPlan,
   bibliaRecordsEqual,
   buildBibliaActivitiesFromSnapshots,
   buildStandaloneBibliaRecord,
@@ -89,6 +91,7 @@ import {
   canCreateQuotationFromBiblia,
 } from "./utils/bibliaQuotationCreation";
 import "./Calendario.scss";
+import "./components/ParticipantPlanEditor.scss";
 
 type ViewMode = "month" | "day";
 
@@ -246,77 +249,6 @@ const ActivityChip = ({ activity, compact = false, onClick }: { activity: Biblia
   </button>
 );
 
-const defaultParticipantPlan = (pax: number): BibliaParticipantPlan => ({
-  version: 1,
-  adults: { count: Math.max(0, pax), nationalities: pax > 0 ? [{ country: "Extranjero", count: pax }] : [] },
-  children: { count: 0, nationalities: [] },
-});
-
-const ParticipantPlanEditor = ({
-  activity,
-  onSave,
-}: {
-  activity: BibliaActivity;
-  onSave: (plan: BibliaParticipantPlan) => Promise<void>;
-}) => {
-  const [open, setOpen] = useState(false);
-  const [plan, setPlan] = useState<BibliaParticipantPlan>(() => activity.participantPlan || defaultParticipantPlan(activity.pax));
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  useEffect(() => {
-    if (!open) setPlan(activity.participantPlan || defaultParticipantPlan(activity.pax));
-  }, [activity.id, activity.pax, activity.participantPlan, open]);
-  const updateGroup = (group: "adults" | "children", update: Partial<BibliaParticipantPlan["adults"]>) =>
-    setPlan((current) => ({ ...current, [group]: { ...current[group], ...update } }));
-  const save = async () => {
-    if (busy) return;
-    const groups = [plan.adults, plan.children];
-    const valid = groups.every((group) =>
-      Number.isInteger(Number(group.count)) && Number(group.count) >= 0 &&
-      group.nationalities.every((row) => row.country.trim() && Number.isInteger(Number(row.count)) && Number(row.count) > 0) &&
-      group.nationalities.reduce((total, row) => total + Number(row.count), 0) === Number(group.count),
-    );
-    if (!valid || Number(plan.adults.count) + Number(plan.children.count) !== Number(activity.pax)) {
-      setError("Adultos y niños, con sus nacionalidades, deben sumar el PAX de este día.");
-      return;
-    }
-    setBusy(true);
-    setError("");
-    try {
-      await onSave({
-        version: 1,
-        adults: { ...plan.adults, count: Number(plan.adults.count), nationalities: plan.adults.nationalities.map((row) => ({ country: row.country.trim(), count: Number(row.count) })) },
-        children: { ...plan.children, count: Number(plan.children.count), nationalities: plan.children.nationalities.map((row) => ({ country: row.country.trim(), count: Number(row.count) })) },
-      });
-      setOpen(false);
-    } catch (saveError) {
-      setError(getBibliaSaveError(saveError, "No se pudo guardar la distribución. Puedes reintentar."));
-    } finally { setBusy(false); }
-  };
-  return <>
-    <button type="button" className="biblia-edit-value" onClick={(event) => { event.stopPropagation(); setError(""); setOpen(true); }}>Editar distribución</button>
-    {open && createPortal(<div className="biblia-participants-modal" role="dialog" aria-modal="true" aria-label="Participantes del día" onClick={() => { if (!busy) setOpen(false); }}>
-      <div className="biblia-participants-modal__panel" onClick={(event) => event.stopPropagation()}>
-        <header><strong>Participantes del día</strong><button type="button" disabled={busy} onClick={() => setOpen(false)} aria-label="Cerrar"><MdClose /></button></header>
-        <p>Adultos y niños deben sumar {activity.pax} pax. Esta distribución no se muestra en las descargas.</p>
-        <fieldset className="biblia-sheet-editor" disabled={busy}>
-        {(["adults", "children"] as const).map((group) => <section key={group}>
-          <label>{group === "adults" ? "Adultos" : "Niños"}<input type="number" min="0" value={plan[group].count} onChange={(event) => updateGroup(group, { count: Number(event.target.value || 0) })} /></label>
-          {plan[group].nationalities.map((row, index) => <div className="biblia-participants-modal__row" key={`${group}-${index}`}>
-            <input value={row.country} placeholder="País" onChange={(event) => updateGroup(group, { nationalities: plan[group].nationalities.map((item, itemIndex) => itemIndex === index ? { ...item, country: event.target.value } : item) })} />
-            <input type="number" min="1" value={row.count} onChange={(event) => updateGroup(group, { nationalities: plan[group].nationalities.map((item, itemIndex) => itemIndex === index ? { ...item, count: Number(event.target.value || 0) } : item) })} />
-            <button type="button" onClick={() => updateGroup(group, { nationalities: plan[group].nationalities.filter((_, itemIndex) => itemIndex !== index) })}>Quitar</button>
-          </div>)}
-          <button type="button" onClick={() => updateGroup(group, { nationalities: [...plan[group].nationalities, { country: "", count: 1 }] })}>+ País</button>
-        </section>)}
-        </fieldset>
-        {error && <p className="biblia-participants-modal__error">{error}</p>}
-        <footer><button type="button" disabled={busy} onClick={() => setOpen(false)}>Cancelar</button><button type="button" disabled={busy} onClick={() => void save()}>{busy ? "Guardando…" : "Guardar participantes"}</button></footer>
-      </div>
-    </div>, document.body)}
-  </>;
-};
-
 const EditableValue = ({
   activity,
   field,
@@ -362,7 +294,7 @@ const EditableValue = ({
   const inputType = field === "dateKey" ? "date" : field === "pax" ? "number" : field === "time" ? "time" : "text";
   const isTrainField = field === "trainOutbound" || field === "trainReturn";
   const visibleValue = field === "nationality"
-    ? "Editar distribución"
+    ? participantNationalityLabel(activity.participantPlan, rawValue)
     : isEmptyBibliaValue(rawValue)
     ? "—"
     : isTrainField
@@ -694,6 +626,9 @@ const Calendario = () => {
 
   const syncLinkedActivity = useCallback(async (activity: BibliaActivity) => {
     if (!activity.sourceQuotationId || mutationInFlight.current) return;
+    const linkedQuotation = quotations.find(quote => String(quote.id) === activity.sourceQuotationId);
+    const participantIssue = bibliaParticipantPlanError(activity, linkedQuotation);
+    if (participantIssue) { setError(participantIssue); return; }
     mutationInFlight.current = true;
     try {
       const record = materializeBibliaOverride(activity, { syncQuotation: true });
@@ -1326,10 +1261,13 @@ const Calendario = () => {
                         const editor = field === "nationality" ? (
                           <ParticipantPlanEditor
                             activity={activity}
+                            quotation={quotations.find(quote => String(quote.id) === activity.sourceQuotationId)}
+                            disabled={saving || refreshing || savingDraftId !== null || Object.keys(rowDrafts[activity.id]?.values || {}).length > 0}
                             onSave={(participantPlan) => {
                               return commitActivityChanges(activity, {
                                 participantPlan,
-                                nationality: BIBLIA_EMPTY_VALUE,
+                                pax: participantPlan.adults.count + participantPlan.children.count,
+                                nationality: participantNationalityLabel(participantPlan),
                               });
                             }}
                           />

@@ -1,4 +1,5 @@
 import { getHotelRoomCapacity } from "../../../../../../../utils/hotelRoomTypes";
+import { sharedPriceFlag } from "../../../../../../../utils/servicePricingType";
 /**
  * Utility functions for price calculations in DaysEditor
  * Following Single Responsibility Principle
@@ -181,19 +182,12 @@ export const calculateAndSetDividedPrice = (service, totalPassengers) => {
   const serviceType = detectServiceType(service);
   let shouldDivide = false;
 
-  if (serviceType === "transportes" || serviceType === "guias") {
+  if (sharedPriceFlag(service.tipoPrecio) !== true) {
+    return service;
+  }
+  if (serviceType !== "hoteles") {
     dividedPrice = basePrice / paxForDivision;
     shouldDivide = true;
-  } else if (serviceType === "endoses") {
-    const tourCapacity = getTourCapacity(service);
-    if (tourCapacity != null) {
-      dividedPrice = basePrice / Math.max(1, tourCapacity);
-      shouldDivide = true;
-    } else {
-      // Endose normal en Venso: la tarifa es por persona, no un total grupal.
-      dividedPrice = basePrice;
-      shouldDivide = false;
-    }
   } else if (serviceType === "hoteles") {
     const tipoHabitacion =
       service.childService?.tipo_habitacion ||

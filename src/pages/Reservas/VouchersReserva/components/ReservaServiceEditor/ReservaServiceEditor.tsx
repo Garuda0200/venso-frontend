@@ -1,3 +1,4 @@
+import { sharedPriceFlag, normalizePricingType } from "../../../../../utils/servicePricingType";
 import { useState, useCallback, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
 import {
@@ -80,8 +81,8 @@ const clearAssignedReservationState = (service = {}) => ({
   assignedPrecioTotal: null,
   assigned_precio_servicio: null,
   assigned_precio_total: null,
-  assignedPrecioAdultoDividido: null,
-  assigned_precio_adulto_dividido: null,
+  assignedTipoPrecio: normalizePricingType(null),
+  assigned_tipo_precio: normalizePricingType(null),
   assignedCapacidadLimite: null,
   assigned_capacidad_limite: null,
   assignedChildExplicitPriceMap: {},
@@ -377,11 +378,11 @@ const ReservaServiceEditor = ({
     );
     if (nextSelectionInput.selectedIds.length === 0) return;
 
-    const assignedPrecioAdultoDividido =
-      service.assignedPrecioAdultoDividido ??
-      assignedService.assignedPrecioAdultoDividido ??
-      assignedService.precioAdultoDividido ??
-      service.precioAdultoDividido;
+    const assignedSharedPrice =
+      sharedPriceFlag(service.assignedTipoPrecio) ??
+      sharedPriceFlag(assignedService.assignedTipoPrecio) ??
+      sharedPriceFlag(assignedService.tipoPrecio) ??
+      sharedPriceFlag(service.tipoPrecio);
     const nextTariff = syncTariffWithReservationPricing({
       tariff: {
         ...(assignedService.tariff || {}),
@@ -398,7 +399,7 @@ const ReservaServiceEditor = ({
       passengerSelection: nextSelectionInput,
       unitPrice: parseFloat(assignedService.tariff?.precio || 0),
       fallbackTotal: totalPassengers,
-      precioAdultoDividido: assignedPrecioAdultoDividido,
+      tipoPrecio: normalizePricingType(assignedSharedPrice),
       // Transporte, guía y endose con aforo conservan su importe agrupado.
       // Tickets, trenes y servicios unitarios se reducen con sus beneficiarios.
       preserveGroupedTotal: true,
@@ -407,7 +408,7 @@ const ReservaServiceEditor = ({
     const nextFlatPricing = buildAssignedFlatPricingState({
       tariff: nextTariff,
       passengerSelection: nextSelection,
-      precioAdultoDividido: assignedPrecioAdultoDividido,
+      tipoPrecio: normalizePricingType(assignedSharedPrice),
     });
 
     assignedService.tariff = nextTariff;
@@ -417,7 +418,7 @@ const ReservaServiceEditor = ({
     assignedService.assignedPassengerCount = nextSelection.selectedIds.length;
     assignedService.convertedChildToAdultMap =
       nextSelection.convertedChildToAdultMap || {};
-    assignedService.assignedPrecioAdultoDividido = assignedPrecioAdultoDividido;
+    assignedService.assignedTipoPrecio = normalizePricingType(assignedSharedPrice);
     assignedService.assignedPrecioServicio =
       nextFlatPricing.assignedPrecioServicio;
     assignedService.assignedPrecioTotal = nextFlatPricing.assignedPrecioTotal;
@@ -433,7 +434,7 @@ const ReservaServiceEditor = ({
       assignedPassengerIds: nextSelection.selectedIds,
       assignedPassengerCount: nextSelection.selectedIds.length,
       assignedPassengerSelection: nextSelection,
-      assignedPrecioAdultoDividido,
+      assignedTipoPrecio: normalizePricingType(assignedSharedPrice),
       assignedChildExplicitPriceMap:
         nextSelection.assignedChildExplicitPriceMap || {},
       assignedChildExplicitPriceSum:
@@ -519,9 +520,8 @@ const ReservaServiceEditor = ({
         passengerSelection,
         unitPrice: newPrice,
         fallbackTotal: totalPassengers,
-        precioAdultoDividido:
-          service.precioAdultoDividido ??
-          service.cotizacionServiceRef?.precioAdultoDividido,
+        tipoPrecio: normalizePricingType(sharedPriceFlag(service.tipoPrecio) ??
+          sharedPriceFlag(service.cotizacionServiceRef?.tipoPrecio)),
       });
       const nextSelection = nextTariff.passengerSelection || passengerSelection;
 
@@ -549,26 +549,25 @@ const ReservaServiceEditor = ({
         passengerSelection,
         unitPrice: newPrice,
         fallbackTotal: totalPassengers,
-        precioAdultoDividido:
-          service.assignedPrecioAdultoDividido ??
-          assignedService.precioAdultoDividido ??
-          service.precioAdultoDividido,
+        tipoPrecio: normalizePricingType(sharedPriceFlag(service.assignedTipoPrecio) ??
+          sharedPriceFlag(assignedService.tipoPrecio) ??
+          sharedPriceFlag(service.tipoPrecio)),
       });
       const nextSelection = nextTariff.passengerSelection || passengerSelection;
-      const assignedPrecioAdultoDividido =
-        service.assignedPrecioAdultoDividido ??
-        assignedService.precioAdultoDividido ??
-        service.precioAdultoDividido;
+      const assignedSharedPrice =
+        sharedPriceFlag(service.assignedTipoPrecio) ??
+        sharedPriceFlag(assignedService.tipoPrecio) ??
+        sharedPriceFlag(service.tipoPrecio);
       const nextFlatPricing = buildAssignedFlatPricingState({
         tariff: nextTariff,
         passengerSelection: nextSelection,
-        precioAdultoDividido: assignedPrecioAdultoDividido,
+        tipoPrecio: normalizePricingType(assignedSharedPrice),
       });
       assignedService.tariff = nextTariff;
       assignedService.passengerSelection = nextSelection;
       assignedService.assignedPassengerSelection = nextSelection;
-      assignedService.assignedPrecioAdultoDividido =
-        assignedPrecioAdultoDividido;
+      assignedService.assignedTipoPrecio =
+        normalizePricingType(assignedSharedPrice);
       assignedService.assignedPrecioServicio =
         nextFlatPricing.assignedPrecioServicio;
       assignedService.assignedPrecioTotal = nextFlatPricing.assignedPrecioTotal;
@@ -581,7 +580,7 @@ const ReservaServiceEditor = ({
         assignedService,
         assignedTariff: assignedService.tariff,
         assignedPassengerSelection: nextSelection,
-        assignedPrecioAdultoDividido,
+        assignedTipoPrecio: normalizePricingType(assignedSharedPrice),
         ...nextFlatPricing,
       };
     }
@@ -811,27 +810,26 @@ const ReservaServiceEditor = ({
       passengerSelection: paxSel,
       unitPrice: adultPrice,
       fallbackTotal: totalPassengers,
-      precioAdultoDividido:
-        service.assignedPrecioAdultoDividido ??
-        assignedService.precioAdultoDividido ??
-        service.precioAdultoDividido,
+      tipoPrecio: normalizePricingType(sharedPriceFlag(service.assignedTipoPrecio) ??
+        sharedPriceFlag(assignedService.tipoPrecio) ??
+        sharedPriceFlag(service.tipoPrecio)),
       preserveGroupedTotal: true,
     });
     const nextSelection = nextTariff.passengerSelection || paxSel;
-    const assignedPrecioAdultoDividido =
-      service.assignedPrecioAdultoDividido ??
-      assignedService.precioAdultoDividido ??
-      service.precioAdultoDividido;
+    const assignedSharedPrice =
+      sharedPriceFlag(service.assignedTipoPrecio) ??
+      sharedPriceFlag(assignedService.tipoPrecio) ??
+      sharedPriceFlag(service.tipoPrecio);
     const nextFlatPricing = buildAssignedFlatPricingState({
       tariff: nextTariff,
       passengerSelection: nextSelection,
-      precioAdultoDividido: assignedPrecioAdultoDividido,
+      tipoPrecio: normalizePricingType(assignedSharedPrice),
     });
     const updatedAssignedService = {
       ...assignedService,
       assignedPassengerSelection: nextSelection,
       passengerSelection: nextSelection,
-      assignedPrecioAdultoDividido,
+      assignedTipoPrecio: normalizePricingType(assignedSharedPrice),
       assignedPrecioServicio: nextFlatPricing.assignedPrecioServicio,
       assignedPrecioTotal: nextFlatPricing.assignedPrecioTotal,
       assignedBeneficiariosAdultos:
@@ -848,7 +846,7 @@ const ReservaServiceEditor = ({
       assignedTariff: updatedAssignedService.tariff,
       assignedPassengerIds: assignedIds,
       assignedPassengerSelection: nextSelection,
-      assignedPrecioAdultoDividido,
+      assignedTipoPrecio: normalizePricingType(assignedSharedPrice),
       ...nextFlatPricing,
       assignedChildExplicitPriceMap:
         nextSelection.assignedChildExplicitPriceMap || {},
@@ -967,26 +965,25 @@ const ReservaServiceEditor = ({
       passengerSelection: updatedSelection,
       unitPrice: parseFloat(assignedService.tariff?.precio || 0),
       fallbackTotal: totalPassengers,
-      precioAdultoDividido:
-        service.assignedPrecioAdultoDividido ??
-        assignedService.precioAdultoDividido ??
-        service.precioAdultoDividido,
+      tipoPrecio: normalizePricingType(sharedPriceFlag(service.assignedTipoPrecio) ??
+        sharedPriceFlag(assignedService.tipoPrecio) ??
+        sharedPriceFlag(service.tipoPrecio)),
       preserveGroupedTotal: true,
     });
     const nextSelection = nextTariff.passengerSelection || updatedSelection;
-    const assignedPrecioAdultoDividido =
-      service.assignedPrecioAdultoDividido ??
-      assignedService.precioAdultoDividido ??
-      service.precioAdultoDividido;
+    const assignedSharedPrice =
+      sharedPriceFlag(service.assignedTipoPrecio) ??
+      sharedPriceFlag(assignedService.tipoPrecio) ??
+      sharedPriceFlag(service.tipoPrecio);
     const nextFlatPricing = buildAssignedFlatPricingState({
       tariff: nextTariff,
       passengerSelection: nextSelection,
-      precioAdultoDividido: assignedPrecioAdultoDividido,
+      tipoPrecio: normalizePricingType(assignedSharedPrice),
     });
     assignedService.assignedPassengerSelection = nextSelection;
     assignedService.passengerSelection = nextSelection;
     assignedService.convertedChildToAdultMap = nextConvertedMap;
-    assignedService.assignedPrecioAdultoDividido = assignedPrecioAdultoDividido;
+    assignedService.assignedTipoPrecio = normalizePricingType(assignedSharedPrice);
     assignedService.assignedPrecioServicio =
       nextFlatPricing.assignedPrecioServicio;
     assignedService.assignedPrecioTotal = nextFlatPricing.assignedPrecioTotal;
@@ -1002,7 +999,7 @@ const ReservaServiceEditor = ({
       assignedTariff: assignedService.tariff,
       assignedPassengerIds: assignedIds, // Mantener los mismos IDs
       assignedPassengerSelection: nextSelection,
-      assignedPrecioAdultoDividido,
+      assignedTipoPrecio: normalizePricingType(assignedSharedPrice),
       ...nextFlatPricing,
       assignedChildExplicitPriceMap:
         nextSelection.assignedChildExplicitPriceMap || {},
@@ -1112,19 +1109,18 @@ const ReservaServiceEditor = ({
       passengerSelection: updatedSelection,
       unitPrice: adultPrice,
       fallbackTotal: totalPassengers,
-      precioAdultoDividido:
-        service.assignedPrecioAdultoDividido ??
-        assignedService.precioAdultoDividido ??
-        service.precioAdultoDividido,
+      tipoPrecio: normalizePricingType(sharedPriceFlag(service.assignedTipoPrecio) ??
+        sharedPriceFlag(assignedService.tipoPrecio) ??
+        sharedPriceFlag(service.tipoPrecio)),
       preserveGroupedTotal: true,
     });
 
     // Direct recalculation for divided-pricing services (mirrors DaysEditor)
-    const assignedPrecioAdultoDividido =
-      service.assignedPrecioAdultoDividido ??
-      assignedService.precioAdultoDividido ??
-      service.precioAdultoDividido;
-    if (assignedPrecioAdultoDividido) {
+    const assignedSharedPrice =
+      sharedPriceFlag(service.assignedTipoPrecio) ??
+      sharedPriceFlag(assignedService.tipoPrecio) ??
+      sharedPriceFlag(service.tipoPrecio);
+    if (assignedSharedPrice) {
       const basePricePost = parseFloat(nextTariff.precio_original || 0);
       if (basePricePost > 0) {
         const newAdultCount = assignedIds.filter(
@@ -1144,12 +1140,12 @@ const ReservaServiceEditor = ({
     const nextFlatPricing = buildAssignedFlatPricingState({
       tariff: nextTariff,
       passengerSelection: nextSelection,
-      precioAdultoDividido: assignedPrecioAdultoDividido,
+      tipoPrecio: normalizePricingType(assignedSharedPrice),
     });
     assignedService.assignedPassengerSelection = nextSelection;
     assignedService.passengerSelection = nextSelection;
     assignedService.convertedChildToAdultMap = convertedMap;
-    assignedService.assignedPrecioAdultoDividido = assignedPrecioAdultoDividido;
+    assignedService.assignedTipoPrecio = normalizePricingType(assignedSharedPrice);
     assignedService.assignedPrecioServicio =
       nextFlatPricing.assignedPrecioServicio;
     assignedService.assignedPrecioTotal = nextFlatPricing.assignedPrecioTotal;
@@ -1165,7 +1161,7 @@ const ReservaServiceEditor = ({
       assignedTariff: assignedService.tariff,
       assignedPassengerIds: assignedIds, // Mantener los mismos IDs
       assignedPassengerSelection: nextSelection,
-      assignedPrecioAdultoDividido,
+      assignedTipoPrecio: normalizePricingType(assignedSharedPrice),
       ...nextFlatPricing,
       assignedChildExplicitPriceMap:
         nextSelection.assignedChildExplicitPriceMap || {},

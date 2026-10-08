@@ -375,9 +375,8 @@ const buildTariffPayload = (tarifaData) => ({
   anio: Number(tarifaData.anio || new Date().getFullYear()),
   tiene_temporada: Boolean(tarifaData.tiene_temporada),
   temporada: tarifaData.tiene_temporada ? tarifaData.temporada : null,
-  precio_compartido: parseFloat(tarifaData.precio_compartido),
-  precio_privado: parseFloat(tarifaData.precio_privado),
-  precio_unico: Boolean(tarifaData.precio_unico),
+  precio_compartido: tarifaData.precio_compartido == null ? null : Number(tarifaData.precio_compartido),
+  precio_privado: tarifaData.precio_privado == null ? null : Number(tarifaData.precio_privado),
   moneda: tarifaData.moneda || "dolares",
   tasa_cambio: Number(tarifaData.tasa_cambio || 1),
   agency_ids: normalizeTariffAgencyIds(tarifaData),
@@ -404,23 +403,29 @@ export const updateTarifa = async (id, tarifaData) => {
     const processedData = buildTariffPayload(tarifaData);
     const auditedData = withUpdateAuditFields(processedData);
 
-    if (auditedData.precio_unico === false) {
-      const orderedData = {
-        ...auditedData,
-        precio_compartido: auditedData.precio_compartido,
-        precio_privado: auditedData.precio_privado,
-      };
-      const response = await api.put(`turismo/tarifas/${id}`, orderedData);
-      await invalidateServiciosCaches(TURISMO_ENTITY_TYPES.TARIFA);
-      return response.data;
-    }
-
     const response = await api.put(`turismo/tarifas/${id}`, auditedData);
     await invalidateServiciosCaches(TURISMO_ENTITY_TYPES.TARIFA);
     return response.data;
   } catch (error) {
     throw handleApiError(error);
   }
+};
+
+// A price edit is deliberately partial. The backend supplies the authenticated
+// audit user and preserves omitted prices and commercial agency scope.
+export const updateTarifaPrice = async (id, patch: Record<string, number>) => {
+  const keys = Object.keys(patch);
+  if (keys.length !== 1 || !["precio_compartido", "precio_privado"].includes(keys[0]) ||
+      !Number.isFinite(patch[keys[0]]) || patch[keys[0]] < 0) {
+    throw new Error("El cambio debe contener solo un precio válido.");
+  }
+  try {
+    const response = await api.put(`turismo/tarifas/${id}`, withUpdateAuditFields(patch));
+    // A successful write must not be reported as failed if cache refresh fails.
+    try { await invalidateServiciosCaches(TURISMO_ENTITY_TYPES.TARIFA); }
+    catch (error) { console.warn("Precio guardado; no se pudo actualizar la caché de servicios.", error); }
+    return response.data;
+  } catch (error) { throw handleApiError(error); }
 };
 
 export const deleteTarifa = async (id) =>

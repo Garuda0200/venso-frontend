@@ -9,6 +9,7 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { getCountryNames } from "../../../../../../utils/countries";
 import pasajeroService from "../../../../../../services/pasajeroService";
+import { normalizePassengerForDraft } from "../../passengerDraft";
 import "./PassengerStep.scss";
 
 // Lista de países obtenida del archivo de utilidades
@@ -53,39 +54,12 @@ const splitLastNames = (value = "") => {
 };
 
 const normalizePassengerForForm = (p = {}, type = "adult") => {
-  const split = splitLastNames(p.apellidos || p.lastName || "");
-  const apellidoPaterno =
-    p.apellido_paterno || p.apellidoPaterno || split.apellido_paterno || "";
-  const apellidoMaterno =
-    p.apellido_materno || p.apellidoMaterno || split.apellido_materno || "";
-  const pais = p.pais || p.nacionalidad || p.nationality || "Perú";
-
-  return {
-    id: p.id_pasajero || p.id || uuidv4(),
-    id_pasajero: p.id_pasajero,
-    nombres: p.nombres || p.firstName || "",
-    apellidos:
-      p.apellidos || p.lastName || joinNames(apellidoPaterno, apellidoMaterno),
-    apellido_paterno: apellidoPaterno,
-    apellido_materno: apellidoMaterno,
-    fecha_nacimiento: p.fecha_nacimiento || p.birthDate || "",
-    edad: p.edad || p.age || (type === "child" ? "10" : "18"),
-    procedencia: p.procedencia || "Extranjero",
-    pais,
-    nacionalidad: pais,
-    sexo: p.sexo || "",
-    correo: p.correo || p.email || "",
-    telefono: p.telefono || p.phone || "",
-    tipoDocumento:
-      p.tipoDocumento ||
-      p.tipo_documento ||
-      p.docType ||
-      (pais === "Perú" ? "DNI" : "Pasaporte"),
-    numeroDocumento:
-      p.numeroDocumento || p.numero_documento || p.docNumber || "",
-    observaciones: p.observaciones || p.notes || "",
-    passenger_key: p.passenger_key || "",
-  };
+  const canonical=normalizePassengerForDraft(p,type);
+  const split=splitLastNames(canonical.apellidos);
+  return {...canonical,id:p.id_pasajero || p.id || uuidv4(),
+    apellido_paterno:p.apellido_paterno ?? p.apellidoPaterno ?? split.apellido_paterno,
+    apellido_materno:p.apellido_materno ?? p.apellidoMaterno ?? split.apellido_materno,
+    pais:canonical.nacionalidad,sexo:canonical.sexo};
 };
 
 const createBlankPassenger = (type = "adult", seed = {}) =>
@@ -113,6 +87,8 @@ const PassengerStep = ({
   isEditMode = false,
   voucherId = null,
   voucherCode = null,
+  isPassengerInfoOnlyMode = false,
+  disabled = false,
 }) => {
   // Memoize initial data to avoid unnecessary recalculations
   const initialData = useMemo(() => {
@@ -162,6 +138,7 @@ const PassengerStep = ({
   useEffect(() => {
     // Inicialización prioritaria para modo edición
     if (isEditMode && passengerData?.adults?.length) {
+      if (isPassengerInfoOnlyMode) {setDataInitialized(true); return;}
       // En modo edición, usar datos del voucher como base, pero reconciliar
       // con los pasajeros actuales de la cotización para detectar nuevos
       const voucherAdults = [...passengerData.adults];
@@ -501,6 +478,7 @@ const PassengerStep = ({
   // Handle person data changes
   const handlePersonChange = useCallback(
     (type, index, field, value) => {
+      if (disabled) return;
       setLocalPassengerData((prev) => {
         const newData = { ...prev };
         const nextPassenger = {
@@ -526,9 +504,7 @@ const PassengerStep = ({
 
         if (field === "fecha_nacimiento") {
           const calculatedAge = calculateAgeFromBirthDate(value);
-          if (calculatedAge) {
-            nextPassenger.edad = calculatedAge;
-          }
+          nextPassenger.edad = calculatedAge;
         }
 
         newData[type][index] = {
@@ -677,7 +653,7 @@ const PassengerStep = ({
   );
 
   return (
-    <div className="passenger-step">
+    <fieldset className="passenger-step" disabled={disabled}>
       <div className="passenger-panels">
         {/* Panel izquierdo: Lista de pasajeros */}
         <div className="passengers-list-panel">
@@ -1163,7 +1139,7 @@ const PassengerStep = ({
           </p>
         </div>
       )}
-    </div>
+    </fieldset>
   );
 };
 

@@ -1,6 +1,7 @@
 import type { BibliaActivity } from "./bibliaActivityMapper";
 import { BIBLIA_EMPTY_VALUE, getBibliaExcelCellColor, normalizeBibliaColor } from "./bibliaActivityMapper";
 import { compactBibliaTrainText } from "./bibliaTrainCatalog";
+import { participantNationalityLabel } from "./bibliaNationality";
 
 export const BIBLIA_SHEET_COLUMNS: Array<[keyof BibliaActivity, string]> = [
   ["dateKey", "FECHA"], ["file", "FILE"], ["reservationName", "NOMBRE DE LA RESERVA"],
@@ -39,10 +40,8 @@ const COLUMN_WIDTHS: Partial<Record<keyof BibliaActivity, number>> = {
   agency: 235,
 };
 
-const valueForExport = (value: unknown, field?: keyof BibliaActivity) => {
-  // La distribución detallada de nacionalidad es operativa: solo se gestiona
-  // desde la edición de Biblia y no acompaña documentos ni capturas.
-  if (field === "nationality") return "—";
+const valueForExport = (value: unknown, field?: keyof BibliaActivity, activity?: BibliaActivity) => {
+  if (field === "nationality") return participantNationalityLabel(activity?.participantPlan, value);
   const normalized = String(value ?? "").trim();
   if (!normalized || normalized === BIBLIA_EMPTY_VALUE) return "—";
   return field === "trainOutbound" || field === "trainReturn"
@@ -53,7 +52,7 @@ const valueForExport = (value: unknown, field?: keyof BibliaActivity) => {
 export const buildBibliaDayExportMatrix = (activities: BibliaActivity[]) => ({
   headers: BIBLIA_SHEET_COLUMNS.map(([, label]) => label),
   rows: (Array.isArray(activities) ? activities : []).map((activity) =>
-    BIBLIA_SHEET_COLUMNS.map(([field]) => valueForExport(activity[field], field)),
+    BIBLIA_SHEET_COLUMNS.map(([field]) => valueForExport(activity[field], field, activity)),
   ),
 });
 
@@ -117,7 +116,7 @@ export const renderBibliaDayJpegBlob = async ({
 
   const rows = activities.map((activity) => {
     const cells = BIBLIA_SHEET_COLUMNS.map(([field], index) =>
-      wrapCanvasText(measurementCtx, valueForExport(activity[field], field), widths[index] - cellPaddingX * 2),
+      wrapCanvasText(measurementCtx, valueForExport(activity[field], field, activity), widths[index] - cellPaddingX * 2),
     );
     const maxLines = Math.max(1, ...cells.map((cell) => cell.length));
     return { activity, cells, height: Math.max(48, maxLines * lineHeight + cellPaddingY * 2) };

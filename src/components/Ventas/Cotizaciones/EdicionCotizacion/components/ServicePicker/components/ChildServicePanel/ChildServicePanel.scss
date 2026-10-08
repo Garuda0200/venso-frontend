@@ -1047,6 +1047,7 @@
 
   .ticket-entry-card__action {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 0.75rem;
     justify-content: flex-end;
@@ -1069,4 +1070,22 @@
   .child-service-panel--tickets-grouped .ticket-entry-card__action {
     justify-content: space-between;
   }
+}
+.tariff-price-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+}
+.tariff-price-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .2rem;
+  padding: .5rem .65rem;
+  border: 1px solid #b9dace;
+  border-radius: .65rem;
+  background: #f3faf7;
+  color: #07583e;
+  cursor: pointer;
+  &:hover, &:focus-visible { border-color: #ff0087; background: #fff2f8; }
 }

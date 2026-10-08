@@ -1,3 +1,4 @@
+import { sharedPriceFlag, normalizePricingType } from "../../../utils/servicePricingType";
 import React, {
   useState,
   useEffect,
@@ -1298,7 +1299,7 @@ const Cotizaciones = () => {
           } else {
             const raw = parseFloat(service.precioServicio ?? 0);
             const total = parseFloat(service.precioTotal) || 0;
-            if (service.precioAdultoDividido) {
+            if (sharedPriceFlag(service.tipoPrecio)) {
               // precioServicio is the TOTAL — divide to get per-adult
               const numAdults = Array.isArray(service.beneficiariosAdultos)
                 ? service.beneficiariosAdultos.length

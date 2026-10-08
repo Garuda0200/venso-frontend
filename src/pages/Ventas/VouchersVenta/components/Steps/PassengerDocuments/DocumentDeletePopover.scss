@@ -1,0 +1,30 @@
+.document-delete-popover {
+  position: fixed;
+  z-index: 12000;
+  box-sizing: border-box;
+  width: 300px;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 24px);
+  overflow: auto;
+  padding: 16px;
+  border: 1px solid #e6cfca;
+  border-radius: 12px;
+  background: white;
+  color: #273c36;
+  box-shadow: 0 10px 32px #172b2440;
+  font-size: 14px;
+  strong { display: block; font-size: 15px; }
+  p { margin: 8px 0 16px; line-height: 1.5; }
+  &__actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+  button {
+    min-height: 44px;
+    padding: 8px 12px;
+    border: 1px solid #ccd9d4;
+    border-radius: 8px;
+    background: #f6faf8;
+    cursor: pointer;
+    &:focus-visible { outline: 3px solid #ff0087; outline-offset: 2px; }
+    &:disabled { opacity: .6; cursor: wait; }
+  }
+  button.document-delete-popover__confirm { color: white; background: #b32d31; border-color: #b32d31; }
+}

@@ -1,3 +1,4 @@
+import { sharedPriceFlag, normalizePricingType } from "../../../../../utils/servicePricingType";
 import React, {
   useState,
   useEffect,
@@ -399,8 +400,8 @@ const clearPersistedTicketAssignment = (service = {}) => ({
   assigned_precio_total: null,
   assignedIgv: null,
   assigned_igv: null,
-  assignedPrecioAdultoDividido: null,
-  assigned_precio_adulto_dividido: null,
+  assignedTipoPrecio: normalizePricingType(null),
+  assigned_tipo_precio: normalizePricingType(null),
   assignedCapacidadLimite: null,
   assigned_capacidad_limite: null,
   ticketAssignmentNeedsReview: true,
@@ -586,19 +587,14 @@ const buildFlatAssignedPayload = (service) => {
       "",
   ).toLowerCase();
 
-  const inferredIsDivided =
-    typeService.includes("transporte") ||
-    typeService.includes("hotel") ||
-    typeService.includes("guia") ||
-    (typeService.includes("endose") &&
-      getTourCapacity(assignedChildService) != null);
+  const inferredIsDivided = false;
   const isDivided = Boolean(
-    service?.assignedPrecioAdultoDividido ??
-    service?.assigned_precio_adulto_dividido ??
-    service?.assignedService?.assignedPrecioAdultoDividido ??
-    service?.assignedService?.assigned_precio_adulto_dividido ??
-    service?.assignedService?.precioAdultoDividido ??
-    service?.precioAdultoDividido ??
+    sharedPriceFlag(service?.assignedTipoPrecio) ??
+    sharedPriceFlag(service?.assigned_tipo_precio) ??
+    sharedPriceFlag(service?.assignedService?.assignedTipoPrecio) ??
+    sharedPriceFlag(service?.assignedService?.assigned_tipo_precio) ??
+    sharedPriceFlag(service?.assignedService?.tipoPrecio) ??
+    sharedPriceFlag(service?.tipoPrecio) ??
     inferredIsDivided,
   );
   const inferredIsCapLimited =
@@ -627,7 +623,7 @@ const buildFlatAssignedPayload = (service) => {
   const flatPricing = buildAssignedFlatPricingState({
     tariff: tariffForPersistence,
     passengerSelection,
-    precioAdultoDividido: isDivided,
+    tipoPrecio: normalizePricingType(isDivided),
   });
 
   const adultBeneficiaries = flatPricing.assignedBeneficiariosAdultos || [];
@@ -680,7 +676,7 @@ const buildFlatAssignedPayload = (service) => {
         service?.assignedService?.assignedIgv ??
         service?.assignedService?.assigned_igv,
     ),
-    assigned_precio_adulto_dividido: isDivided,
+    assigned_tipo_precio: normalizePricingType(isDivided),
     assigned_capacidad_limite: isCapLimited,
     assigned_beneficiarios_adultos: adultBeneficiaries,
     assigned_beneficiarios_ninos: childBeneficiaries,

@@ -1,3 +1,4 @@
+import { sharedPriceFlag, normalizePricingType } from "../../../../../utils/servicePricingType";
 import {
   getPassengerIdAliases,
   isPeruvianPassenger,
@@ -587,9 +588,9 @@ const normalizeServiceForChildPricing = (service = {}) => {
     service?.precio_original ??
     unitPrice;
   const dividedAdultPrice =
-    service?.precioAdultoDividido ??
-    service?.precio_adulto_dividido ??
-    service?.tariff?.precio_adulto_dividido;
+    sharedPriceFlag(service?.tipoPrecio) ??
+    sharedPriceFlag(service?.tipo_precio) ??
+    sharedPriceFlag(service?.tariff?.tipo_precio);
   const hasFlatPrice =
     unitPrice !== undefined ||
     totalPrice !== undefined ||
@@ -603,9 +604,9 @@ const normalizeServiceForChildPricing = (service = {}) => {
         ...(service?.tariff?.precio_original == null && totalPrice !== undefined
           ? { precio_original: totalPrice }
           : {}),
-        ...(service?.tariff?.precio_adulto_dividido == null &&
+        ...(sharedPriceFlag(service?.tariff?.tipo_precio) == null &&
         dividedAdultPrice !== undefined
-          ? { precio_adulto_dividido: dividedAdultPrice }
+          ? { tipo_precio: normalizePricingType(dividedAdultPrice) }
           : {}),
       }
     : service?.tariff;
@@ -622,7 +623,7 @@ const normalizeServiceForChildPricing = (service = {}) => {
     ),
     precioServicio: unitPrice,
     precioTotal: totalPrice,
-    precioAdultoDividido: dividedAdultPrice,
+    tipoPrecio: normalizePricingType(dividedAdultPrice),
   };
 };
 
@@ -724,9 +725,9 @@ const resolveHotelChildUnitFallback = (service = {}, adultUnitFallback = 0) => {
   );
   const beneficiaryCount = adultEntries.length + childEntries.length;
   const divided = Boolean(
-    service?.precioAdultoDividido ??
-      service?.precio_adulto_dividido ??
-      service?.tariff?.precio_adulto_dividido,
+    sharedPriceFlag(service?.tipoPrecio) ??
+      sharedPriceFlag(service?.tipo_precio) ??
+      sharedPriceFlag(service?.tariff?.tipo_precio),
   );
   const roomTotal = toNumber(
     service?.precioTotal ??

@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { cataloguePricingOptions } from "../../../../../../../utils/servicePricingType";
 
 const normalizeFilterId = (value) => {
   if (value === null || value === undefined) return null;
@@ -24,6 +25,7 @@ export const useUnifiedFilters = (
   filterTariffType = null,
   platform = "venso",
   selectedParents = [],
+  dayServiceMode = "mixto",
 ) => {
   // Use ref to track previous preselectedCities to prevent unnecessary re-renders
   const prevPreselectedCitiesRef = useRef(preselectedCities);
@@ -927,6 +929,12 @@ export const useUnifiedFilters = (
         (filters.rangoPrecio.min !== null || filters.rangoPrecio.max !== null)
       ) {
         filtered = filtered.filter((service) => {
+          const selectedPrices = cataloguePricingOptions(service, dayServiceMode, filterTariffType);
+          if (selectedPrices.length) {
+            const {min,max} = filters.rangoPrecio;
+            return selectedPrices.some(({amount}) => (min == null || amount >= min) && (max == null || amount <= max));
+          }
+          if (cataloguePricingOptions(service, "mixto", filterTariffType).length > 0) return false;
           let servicePrice = null;
 
           // Extract price from different sources with enhanced logic based on schema.rs
@@ -1174,7 +1182,7 @@ export const useUnifiedFilters = (
       // OPTIMIZADO: Log removido
       return filtered;
     },
-    [],
+    [dayServiceMode, filterTariffType],
   );
 
   // Create unified services (parent-child with tariffs) and deduplicated extras

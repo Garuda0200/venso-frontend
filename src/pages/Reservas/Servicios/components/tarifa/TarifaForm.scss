@@ -272,22 +272,35 @@
     }
   }
 
-  .tf__unique-toggle {
-    min-height: 29px;
-    padding: 5px 8px;
-    border: 1px solid rgba($color-success, 0.35);
-    border-radius: $border-radius-md;
-    background: rgba($color-success, 0.06);
-    color: darken($color-success, 8%);
-    font-size: 9px;
-    font-weight: $font-weight-bold;
+  .tf__mode-chips {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .tf__mode-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 64px;
+    padding: 10px;
+    border: 1px solid $color-border;
+    border-radius: 12px;
+    background: white;
+    color: $color-text-medium;
+    text-align: left;
     cursor: pointer;
-
-    &:hover,
-    &.active {
-      border-color: $color-success;
-      background: rgba($color-success, 0.11);
-    }
+    transition: border-color .15s, background .15s;
+    > span:nth-child(2) { display: flex; flex-direction: column; gap: 3px; }
+    b { font-size: 12px; }
+    small { font-size: 10px; }
+    strong { margin-left: auto; font-size: 13px; white-space: nowrap; }
+    .tf__mode-chip-check { display: grid; place-items: center; width: 22px; height: 22px; border: 1px solid $color-border; border-radius: 7px; }
+    &.active { border-color: $color-primary; background: rgba($color-primary, .05); color: $color-text-dark;
+      .tf__mode-chip-check { border-color: $color-primary; background: $color-primary; color: white; } }
+    &:focus-visible { outline: 2px solid $color-primary; outline-offset: 3px; }
+    &:disabled { cursor: not-allowed; opacity: .6; }
+    @media(max-width: 520px) { flex-wrap: wrap; strong { width: 100%; margin-left: 30px; } }
   }
 
   .tf__prices {

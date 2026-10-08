@@ -1,3 +1,4 @@
+import { sharedPriceFlag, normalizePricingType } from "../../../../../utils/servicePricingType";
 import {
   getHotelRoomCapacity,
   isExtraBedRoomType,
@@ -591,6 +592,8 @@ export const createUnifiedService = (
   passengerSelection = null,
 ) => {
   const typeService = determineServiceCategory(parentService, childService);
+  const selectedPricingType = normalizePricingType(tariff?.tipoPrecio ?? tariff?.selectedPackageType ?? packageType) || "privado";
+  const sharedPricing = sharedPriceFlag(selectedPricingType) === true;
   const serviceId = `${typeService}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   console.log(passengerSelection);
 
@@ -633,12 +636,9 @@ export const createUnifiedService = (
       originalPrice = parseFloat(tariff.precio);
     } else {
       const priceField =
-        packageType === "privado" ? "precio_privado" : "precio_compartido";
+        selectedPricingType === "compartido" ? "precio_compartido" : "precio_privado";
       originalPrice = parseFloat(
-        tariff[priceField] ||
-          tariff.precio_compartido ||
-          tariff.precio_privado ||
-          0,
+        tariff[priceField] ?? 0,
       );
     }
   }
@@ -650,7 +650,7 @@ export const createUnifiedService = (
   let childPriceMapFromPercentage = {};
 
   if (sel.pricingMode === "percentage" && sel.selectedChildIds.length > 0) {
-    const adultUnitPrice = originalPrice / Math.max(1, sel.adultCount || 1);
+    const adultUnitPrice = sharedPricing ? originalPrice / Math.max(1, sel.adultCount || 1) : originalPrice;
 
     sel.selectedChildIds.forEach((childId) => {
       // Obtener porcentaje individual o uniforme (si no hay, el niño tiene precio 0)
@@ -679,17 +679,20 @@ export const createUnifiedService = (
   }
 
   if (isTicketChildTarget && sel.selectedChildIds.length > 0) {
-    childPriceMapFromPercentage = sel.selectedChildIds.reduce((acc, childId) => {
+    // Student beneficiaries retain child_origin. A shared price is their group
+    // amount, not an additional unit charge for each child.
+    childPriceMapFromPercentage = sharedPricing ? {} : sel.selectedChildIds.reduce((acc, childId) => {
       acc[childId] = Math.round(originalPrice * 100) / 100;
       return acc;
     }, {});
-    childExtrasFromPercentage =
-      Math.round(originalPrice * sel.selectedChildIds.length * 100) / 100;
+    childExtrasFromPercentage = sharedPricing
+      ? 0
+      : Math.round(originalPrice * sel.selectedChildIds.length * 100) / 100;
   }
 
   // Usar childExtrasTotal del modal si es modo fijo, o el calculado si es porcentaje
   const effectiveChildExtrasTotal =
-    sel.pricingMode === "percentage"
+    isTicketChildTarget || sel.pricingMode === "percentage"
       ? childExtrasFromPercentage
       : sel.childExtrasTotal;
 
@@ -697,7 +700,7 @@ export const createUnifiedService = (
   let finalPrice = originalPrice; // precio mostrado (por persona / unitario)
 
   // Lógica por categoría usando paxForDivision (excluye niños con precio)
-  if (typeService === "transportes" || typeService === "guias") {
+  if (sharedPricing && typeService !== "hoteles") {
     // precio total = tarifa del proveedor; precio unitario = total / divisor
     adjustedOriginalPrice = originalPrice;
     const effectiveDivisor =
@@ -705,20 +708,14 @@ export const createUnifiedService = (
         ? getTransportDivisor(sel.paxForDivision, childService)
         : sel.paxForDivision;
     finalPrice = originalPrice / effectiveDivisor;
-  } else if (typeService === "hoteles") {
+  } else if (sharedPricing && typeService === "hoteles") {
     // hoteles: dividir por capacidad de habitación
     const capacity = getHotelRoomCapacity(childService, 2);
     adjustedOriginalPrice = originalPrice; // total por habitación/noche (como llega de API)
     finalPrice = originalPrice / Math.max(1, capacity);
-  } else if (typeService === "endoses") {
-    if (tourCapacity != null) {
-      adjustedOriginalPrice = originalPrice;
-      finalPrice = originalPrice / Math.max(1, tourCapacity);
-    } else {
-      // Venso trata los endoses sin capacidad como tarifas por persona.
-      finalPrice = originalPrice;
-      adjustedOriginalPrice = originalPrice * sel.paxForDivision;
-    }
+  } else if (typeService === "endoses" || typeService === "transportes" || typeService === "guias") {
+    finalPrice = originalPrice;
+    adjustedOriginalPrice = originalPrice * sel.paxForDivision;
   } else if (
     typeService === "trenes" ||
     typeService === "vuelos" ||
@@ -736,9 +733,9 @@ export const createUnifiedService = (
       ? 0
       : originalPrice * paxMultiplier;
   } else if (typeService === "extras") {
-    // extras: unitario; no se multiplica ni divide
+    // Private extras follow the same per-person contract as other services.
     finalPrice = originalPrice;
-    adjustedOriginalPrice = originalPrice;
+    adjustedOriginalPrice = originalPrice * sel.paxForDivision;
   } else {
     // otros: por persona
     finalPrice = originalPrice;
@@ -755,7 +752,7 @@ export const createUnifiedService = (
 
   // Determinar mapa de precios de niños efectivo
   const effectiveChildPriceMap =
-    sel.pricingMode === "percentage"
+    isTicketChildTarget || sel.pricingMode === "percentage"
       ? childPriceMapFromPercentage
       : sel.childMap;
 
@@ -765,7 +762,7 @@ export const createUnifiedService = (
     assignedChildExplicitPriceMap: effectiveChildPriceMap,
     assignedChildExplicitPriceSum: effectiveChildExtrasTotal,
     assignedChildExplicitCount:
-      sel.pricingMode === "percentage"
+        isTicketChildTarget || sel.pricingMode === "percentage"
         ? Object.keys(childPriceMapFromPercentage).length
         : sel.explicitChildCount,
     hasChildExplicitPrices: Object.keys(effectiveChildPriceMap).length > 0,
@@ -789,7 +786,7 @@ export const createUnifiedService = (
       moneda: tariff.moneda,
       precio_original_with_child_extras:
         Math.round(precioOriginalWithExtras * 100) / 100,
-      tipo_tarifa: packageType,
+      tipo_tarifa: tariff.tipo_tarifa || "externa",
       precio_interno: tariff.precio_interno,
     },
     passengerPricingState,
@@ -813,7 +810,7 @@ export const createUnifiedService = (
     id: serviceId,
     typeService,
     parentService: finalParentService,
-    childService: { ...childService, packageType },
+    childService: { ...childService, packageType: selectedPricingType },
     ...(typeService === "hoteles"
       ? {
           habitacion_capacidad: getHotelRoomCapacity(childService, 2),
@@ -827,12 +824,8 @@ export const createUnifiedService = (
     precioServicio: originalPrice,
     moneda: tariff?.moneda || "dolares",
     igv: applyIGV,
-    // Division flags for DB persistence (determined by service type)
-    precioAdultoDividido:
-      typeService === "transportes" ||
-      typeService === "hoteles" ||
-      typeService === "guias" ||
-      (typeService === "endoses" && tourCapacity != null),
+    // Explicit tariff mode and independent operational capacity for persistence.
+    tipoPrecio: selectedPricingType,
     capacidadLimite:
       typeService === "transportes" ||
       typeService === "hoteles" ||
@@ -1026,17 +1019,11 @@ export const updateSingleServicePricesForPassengerChange = (
   // =========================
 
   // 3.a) TRANSPORTES / GUÍAS / ENDOS CON CAPACIDAD → total compartido.
-  if (
-    typeService === "transportes" ||
-    typeService === "guias" ||
-    isCapacityLimitedEndose
-  ) {
+  if (!isHotel && sharedPriceFlag(service.tipoPrecio) === true) {
     const originalPrice = parseFloat(newTariff.precio_original || 0) || 0;
 
     const effectiveDivisor =
-      isCapacityLimitedEndose
-        ? tourCapacity
-        : typeService === "transportes"
+      typeService === "transportes"
         ? getTransportDivisor(divisor, childService)
         : divisor;
     const newPrice = originalPrice / effectiveDivisor;
@@ -1083,7 +1070,7 @@ export const updateSingleServicePricesForPassengerChange = (
   }
 
   // 3.c) OTROS SERVICIOS (no hoteles, no extras)
-  else if (!isHotel && !isExtra) {
+  else if (!isHotel) {
     const basePricePerPerson = parseFloat(newTariff.precio || 0) || 0;
 
     const paxMultiplier =
@@ -1109,18 +1096,6 @@ export const updateSingleServicePricesForPassengerChange = (
       precio_original: round2(baseOriginal),
       childExtrasTotal: round2(childExtrasTotal),
       precio_original_with_child_extras: round2(precioOriginalWithExtras),
-    };
-  }
-
-  // 3.d) EXTRAS → precio fijo; solo sumamos extras de niños al total
-  if (isExtra) {
-    newTariff = {
-      ...newTariff,
-      childExtrasTotal: round2(assignedChildExplicitPriceSum),
-      precio_original_with_child_extras: round2(
-        (parseFloat(newTariff.precio_original || 0) || 0) +
-          assignedChildExplicitPriceSum,
-      ),
     };
   }
 
@@ -1771,17 +1746,11 @@ export const updateServicePricesForPassengerChange = (
     let newTariff = { ...service.tariff };
 
     // === 3.a) TRANSPORTES / GUÍAS / ENDOS CON CAPACIDAD ===
-    if (
-      typeService === "transportes" ||
-      typeService === "guias" ||
-      isCapacityLimitedEndose
-    ) {
-      // For divided services (precioAdultoDividido=true OR transportes which are always divided),
-      // precio_original is the fixed total cost that gets divided among passengers.
-      // For per-person services (precioAdultoDividido=false, e.g. old migrated guias),
-      // precio is the fixed per-person cost and total scales with passenger count.
+    if ((!isHotel && sharedPriceFlag(service.tipoPrecio) === true) || typeService === "transportes" || typeService === "guias" || isCapacityLimitedEndose) {
+      // Shared tariffs preserve a fixed group total; private tariffs preserve
+      // the per-person price. Provider kind and capacity never choose the mode.
       const isServiceDivided =
-        service.precioAdultoDividido !== false || typeService === "transportes";
+        sharedPriceFlag(service.tipoPrecio) === true;
 
       const originalPrice = parseFloat(newTariff.precio_original || 0) || 0;
       const basePricePerPerson = parseFloat(newTariff.precio || 0) || 0;
@@ -1809,9 +1778,7 @@ export const updateServicePricesForPassengerChange = (
 
       // Para transportes: capacidad solo valida conflicto; no divide precio.
       const effectiveDivisor =
-        isCapacityLimitedEndose
-          ? tourCapacity
-          : typeService === "transportes"
+        typeService === "transportes"
           ? getTransportDivisor(divisor, childService)
           : divisor;
 
@@ -2363,51 +2330,9 @@ export const updateServicesForPackageTypeChange = (
   newPackageType,
   totalPassengers,
 ) => {
-  console.log(days);
-  if (!Array.isArray(days) || !newPackageType) {
-    return days;
-  }
-
-  return days.map((day) => {
-    if (!day.servicios || !Array.isArray(day.servicios)) {
-      return day;
-    }
-
-    const updatedServicios = day.servicios.map((service) => {
-      // Actualizar el packageType en la estructura del servicio
-      const updatedService = {
-        ...service,
-        packageType: newPackageType,
-      };
-
-      // Si tiene tariff, actualizar también ahí
-      if (service.tariff) {
-        updatedService.tariff = {
-          ...service.tariff,
-          tipo_tarifa: newPackageType,
-        };
-      }
-
-      // Si tiene childService, actualizar también ahí
-      if (service.childService) {
-        updatedService.childService = {
-          ...service.childService,
-          packageType: newPackageType,
-        };
-      }
-
-      // Recalcular precios con el nuevo packageType
-      return updateSingleServicePricesForPassengerChange(
-        updatedService,
-        totalPassengers,
-      );
-    });
-
-    return {
-      ...day,
-      servicios: updatedServicios,
-    };
-  });
+  // La modalidad general es metadata histórica. No altera tarifas elegidas
+  // ni el contexto compartido/privado/mixto de los días.
+  return days;
 };
 
 export const applyImportPriceAdjustments = (
@@ -2418,27 +2343,6 @@ export const applyImportPriceAdjustments = (
   // Primero actualizar el packageType si es diferente
   console.log("Applying import price adjustments...", { totalPassengers });
   let adjustedService = service;
-
-  if (targetPackageType && service.tariff?.tipo_tarifa !== targetPackageType) {
-    adjustedService = {
-      ...service,
-      packageType: targetPackageType,
-    };
-
-    if (service.tariff) {
-      adjustedService.tariff = {
-        ...service.tariff,
-        tipo_tarifa: targetPackageType,
-      };
-    }
-
-    if (service.childService) {
-      adjustedService.childService = {
-        ...service.childService,
-        packageType: targetPackageType,
-      };
-    }
-  }
 
   // LÓGICA ESPECIAL PARA HOTELES EN IMPORTACIÓN
   const parentService = adjustedService.parentService || adjustedService;

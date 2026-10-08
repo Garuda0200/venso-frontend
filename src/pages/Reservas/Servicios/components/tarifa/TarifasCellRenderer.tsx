@@ -15,6 +15,7 @@ import {
   deleteTarifa,
   getServiciosAgencyScope,
   updateTarifa,
+  updateTarifaPrice,
 } from "../../services/api";
 import useAuditInfo from "../../hooks/useAuditInfo";
 import { getProtectedDeleteTitle } from "../../utils/serviceProtection";
@@ -139,6 +140,19 @@ const TarifasCellRenderer = ({
     }
   };
 
+  const handlePriceSave = async (tarifa, patch) => {
+    if (!canManage || !tarifa?.id_tarifa) throw new Error("No se puede editar esta tarifa.");
+    setIsSubmitting(true);
+    setFeedback(null);
+    try {
+      await updateTarifaPrice(tarifa.id_tarifa, patch);
+      // Keep the confirmed price even if refreshing the catalogue fails.
+      try { await onTarifasUpdated(); }
+      catch { setFeedback({ type: "error", message: "Precio guardado. Actualiza el catálogo para ver todos los cambios." }); return; }
+      setFeedback({ type: "success", message: "Precio guardado." });
+    } finally { setIsSubmitting(false); }
+  };
+
   const handleClone = async (formData) => {
     setIsSubmitting(true);
     setFeedback(null);
@@ -213,7 +227,8 @@ const TarifasCellRenderer = ({
         </div>
 
         <div className="cell-precio">
-          <TarifaPriceSummary tarifa={tarifa} />
+          <TarifaPriceSummary tarifa={tarifa} disabled={isSubmitting}
+            onPriceSave={canManage ? patch => handlePriceSave(tarifa, patch) : undefined} />
         </div>
 
         <div className="cell-tarifa-actions" onClick={(event) => event.stopPropagation()}>

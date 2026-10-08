@@ -1,3 +1,4 @@
+import { sharedPriceFlag, normalizePricingType } from "../../../../../utils/servicePricingType";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
@@ -132,7 +133,7 @@ test("agency report exposes commission per passenger and reconciles divided serv
         typeService: "transportes",
         precioServicio: 80,
         precioTotal: 80,
-        precioAdultoDividido: true,
+        tipoPrecio: normalizePricingType(true),
         beneficiariosAdultos: [1, 2, 3, 4, 5],
       },
       {
@@ -229,7 +230,7 @@ test("agency report reproduces quotation fee per service from the screenshot cas
         typeService: "transportes",
         precioServicio: 85,
         precioTotal: 85,
-        precioAdultoDividido: true,
+        tipoPrecio: normalizePricingType(true),
         moneda: "USD",
         beneficiariosAdultos: [
           { id: "adult:0:1" },
@@ -317,7 +318,7 @@ test("hotel with a Peruvian beneficiary applies IGV before administrative percen
         typeService: "hotel",
         precioServicio: 100,
         precioTotal: 100,
-        precioAdultoDividido: true,
+        tipoPrecio: normalizePricingType(true),
         moneda: "USD",
         beneficiariosAdultos: [{ id: "adult-1" }, { id: "adult-2" }],
         childService: { tipo_habitacion: "Doble" },
@@ -437,7 +438,7 @@ test("CSV persistence semantics keep fee-applied commercial amount in Venso prov
             moneda: "dolares",
             precio_servicio: 85,
             precio_total: 85,
-            precio_adulto_dividido: true,
+            tipo_precio: normalizePricingType(true),
             beneficiarios_adultos: [
               { id: "adult:0:1" },
               { id: "adult:1:adult-1" },
@@ -491,7 +492,7 @@ test("Venso provider payment status still reconciles against supplier amount, no
         typeService: "transportes",
         precioServicio: 85,
         precioTotal: 85,
-        precioAdultoDividido: true,
+        tipoPrecio: normalizePricingType(true),
         beneficiariosAdultos: [{ id: "adult:1" }, { id: "adult:2" }, { id: "adult:3" }],
       }],
     }],

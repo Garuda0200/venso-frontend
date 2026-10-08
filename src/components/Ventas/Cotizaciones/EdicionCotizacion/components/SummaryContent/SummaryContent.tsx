@@ -1,3 +1,4 @@
+import { sharedPriceFlag, normalizePricingType } from "../../../../../../utils/servicePricingType";
 import { useMemo, memo, Fragment } from "react";
 import {
   MdPerson,
@@ -2348,9 +2349,9 @@ const SummaryContent = memo(({ cotizacion, readonly = false }) => {
       );
       const igvAmount = hasIgv ? Math.max(0, round2(roomTotal - roomBase)) : 0;
       const divided = Boolean(
-        service?.precioAdultoDividido ??
-          service?.precio_adulto_dividido ??
-          service?.tariff?.precio_adulto_dividido ??
+        sharedPriceFlag(service?.tipoPrecio) ??
+          sharedPriceFlag(service?.tipo_precio) ??
+          sharedPriceFlag(service?.tariff?.tipo_precio) ??
           true,
       );
       const pricePerPax =

@@ -2219,7 +2219,7 @@ export function EdicionCotizacion({
           );
         setDays(updatedDays);
         showSnackbar(
-          `Tipo de paquete cambiado a ${newPackageType}. Precios actualizados.`,
+          `Tipo de paquete cambiado a ${newPackageType}.`,
           "info",
         );
       }
@@ -6598,6 +6598,7 @@ export function EdicionCotizacion({
             }}
             packageType={packageType}
             serviceFilter="ventas"
+            dayServiceMode={days[currentDayIndex]?.tipoServicio || "mixto"}
             selectedDay={days[currentDayIndex]?.numero || currentDayIndex + 1}
             filterTariffType={tariffType}
             totalPassengers={

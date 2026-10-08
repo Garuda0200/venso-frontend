@@ -1,3 +1,4 @@
+import { sharedPriceFlag, normalizePricingType } from "../utils/servicePricingType";
 import api from "../utils/axiosInstance";
 import {
   invalidateReservaAssignmentGraphCache,
@@ -570,7 +571,7 @@ export const voucherReservaService = {
           assigned_moneda: null,
           assigned_precio_servicio: null,
           assigned_igv: null,
-          assigned_precio_adulto_dividido: null,
+          assigned_tipo_precio: normalizePricingType(null),
           assigned_capacidad_limite: null,
           assigned_beneficiarios_adultos: null,
           assigned_beneficiarios_ninos: null,

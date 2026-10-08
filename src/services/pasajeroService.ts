@@ -4,15 +4,23 @@ import axiosInstance from "../utils/axiosInstance";
  * Service for managing passengers (pasajeros) in vouchers
  */
 export const pasajeroService = {
+  async syncPassengersByVoucherVenta(voucherId, payload) {
+    try {
+      const response = await axiosInstance.put(`/turismo/pasajeros/by-voucher/${voucherId}/sync`,payload);
+      if (!response.data?.success || !Array.isArray(response.data?.data)) throw new Error("No se confirmo el guardado de pasajeros.");
+      return response.data.data;
+    } catch(error) {throw new Error(error.response?.data?.message || error.response?.data?.error || error.message || "No se guardaron los pasajeros.");}
+  },
   /**
    * Get all passengers for a specific voucher de venta
    * @param {number} voucherVentaId - The ID of the voucher de venta
    * @returns {Promise<Array>} List of passengers
    */
-  async getPassengersByVoucherVenta(voucherVentaId) {
+  async getPassengersByVoucherVenta(voucherVentaId, options = {}) {
     try {
       const response = await axiosInstance.get(
         `/turismo/pasajeros/by-voucher/${voucherVentaId}`,
+        options,
       );
       return response.data.data || [];
     } catch (error) {

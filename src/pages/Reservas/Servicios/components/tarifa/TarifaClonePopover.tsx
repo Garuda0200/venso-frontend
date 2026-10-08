@@ -19,6 +19,7 @@ import {
   getTarifaTypeLabel,
 } from "../../utils/constants";
 import { formatCurrency } from "../../utils/formatters";
+import { tariffPriceOptions } from "../../../../../utils/servicePricingType";
 import "./TarifaClonePopover.scss";
 
 const STANDARD_KEY = "estandar";
@@ -80,13 +81,8 @@ const buildCloneData = (
   anio: Number(sourceTarifa.anio || CURRENT_TARIFF_YEAR),
   tiene_temporada: tieneTemporada,
   temporada: tieneTemporada ? temporada : null,
-  precio_compartido: parseFloat(sourceTarifa.precio_compartido),
-  precio_privado: parseFloat(
-    sourceTarifa.precio_unico
-      ? sourceTarifa.precio_compartido
-      : sourceTarifa.precio_privado ?? sourceTarifa.precio_compartido,
-  ),
-  precio_unico: Boolean(sourceTarifa.precio_unico),
+  precio_compartido: sourceTarifa.precio_compartido == null ? null : Number(sourceTarifa.precio_compartido),
+  precio_privado: sourceTarifa.precio_privado == null ? null : Number(sourceTarifa.precio_privado),
   moneda: sourceTarifa.moneda || "dolares",
   tasa_cambio:
     sourceTarifa.tasa_cambio != null
@@ -349,9 +345,11 @@ const TarifaClonePopover = ({
                 <SourceTempIcon />
                 {sourceTemp.label}
               </span>
-              <span className="source-mini price">
-                {formatCurrency(sourceTarifa.precio_compartido, currencySymbol)}
-              </span>
+              {tariffPriceOptions(sourceTarifa).map(choice => (
+                <span className="source-mini price" key={choice.tipoPrecio}>
+                  {choice.tipoPrecio === "compartido" ? "Compartido" : "Privado"} · {formatCurrency(choice.amount, currencySymbol)}
+                </span>
+              ))}
             </div>
 
             <div className="clone-popover-body">

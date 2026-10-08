@@ -11,6 +11,11 @@ import {
 // Remove CotizacionSelectorModal import
 import SecureStorage from "../../../../../utils/secureStorage";
 import axiosInstance from "../../../../../utils/axiosInstance"; // Para crear movimientos
+import { documentSnapshot, mergeConfirmedDocuments, persistVoucherDocuments } from "../../../../../services/voucherDocumentPersistence";
+import { normalizePassengerData, passengerRowsToDraft, passengerDraftFingerprint, toVoucherPassengerSyncPayload, mergeNominalRoster } from "../passengerDraft";
+import { hasPendingDocumentUploads } from "../Steps/PassengerDocuments/documentPermissions";
+import { reconcileDocumentListing } from "../Steps/PassengerDocuments/documentListing";
+import { makeProxyUrlAbsolute } from "../../../../../services/presignedUrlService";
 import voucherDocumentService from "../../../../../services/voucherDocumentService"; // Para guardar documentos
 import useFileUpload from "../../../../../hooks/useFileUpload"; // Hook para subir archivos a Tigris
 import { getTigrisPathForDocumentosVenta } from "../../../../../utils/tigrisPathHelper"; // Helper para rutas organizadas
@@ -132,7 +137,10 @@ const VoucherModal = ({
   skipCotizacionSelector = false,
   isPaymentManagementMode = false,
   isDocumentManagementMode = false,
+  onPassengerInfoSaved = null,
 }) => {
+  const isPassengerInfoOnlyMode = isEditMode && !isPaymentManagementMode && !isDocumentManagementMode;
+  const isDedicatedManagement = isEditMode;
   const currentUserRole = Number(SecureStorage.getItem("userRole") ?? -1);
   const isSuperAdmin = currentUserRole === 0;
   const currentUserIdentifier = SecureStorage.getItem("dniuser") || "";
@@ -197,11 +205,30 @@ const VoucherModal = ({
 
   // Referencias para tracking
   const hasLoadedData = useRef(false);
+  const loadRequestRef = useRef(0);
+  const passengerDraftRef = useRef<any>(null);
+  const passengerPersistedFingerprintRef = useRef<string | null>(null);
+  const passengerPersistedVoucherIdRef = useRef<number | null>(null);
+  const passengerSavePromiseRef = useRef<Promise<boolean> | null>(null);
+  const documentDraftRef = useRef<any>(editedVoucherData.documentData);
+  const documentScopeRef = useRef("");
+  documentScopeRef.current = JSON.stringify([isOpen,voucherData?.id,cotizacionData?.id]);
+  const [documentsPreparing,setDocumentsPreparing]=useState(false);
+  const [documentsSaving,setDocumentsSaving]=useState(false);
+  const hasPassengerChanges = isVoucherLoaded && passengerPersistedFingerprintRef.current !== null &&
+    passengerDraftFingerprint(editedVoucherData.passengerData) !== passengerPersistedFingerprintRef.current;
+  const needsPassengerLink = isPassengerInfoOnlyMode && isVoucherLoaded && passengerPersistedVoucherIdRef.current !== Number(voucherData?.id);
+  useEffect(() => {
+    if (isVoucherLoaded && passengerPersistedFingerprintRef.current === null) {
+      passengerDraftRef.current=normalizePassengerData(editedVoucherData.passengerData);
+      passengerPersistedFingerprintRef.current=passengerDraftFingerprint(passengerDraftRef.current);
+    }
+  },[isVoucherLoaded,editedVoucherData.passengerData]);
 
   useEffect(() => {
     let isMounted = true;
 
-    if (!isOpen || !isSuperAdmin) {
+    if (!isOpen || !isSuperAdmin || isDedicatedManagement) {
       setCreatorUsers([]);
       return () => {
         isMounted = false;
@@ -225,7 +252,7 @@ const VoucherModal = ({
     return () => {
       isMounted = false;
     };
-  }, [isOpen, isSuperAdmin]);
+  }, [isOpen, isSuperAdmin, isDedicatedManagement]);
 
   // Efecto para forzar step a 'payments' cuando está en modo gestión de pagos
   useEffect(() => {
@@ -261,6 +288,10 @@ const VoucherModal = ({
 
   // Inicializar datos cuando se está editando un voucher existente
   useEffect(() => {
+    if (!isOpen) return;
+    const request=++loadRequestRef.current;
+    const scope=documentScopeRef.current;
+    const isCurrent=()=>request===loadRequestRef.current && scope===documentScopeRef.current;
     const loadVoucherData = async () => {
       // Para edición, cargamos datos del voucher si no se han cargado ya
       if (
@@ -279,6 +310,7 @@ const VoucherModal = ({
             );
 
           console.log(" Response getVoucherWithCotizacionById:", response);
+          if(!isCurrent()) return;
 
           if (response && response.success && response.data) {
             const fullVoucherData = response.data;
@@ -318,48 +350,7 @@ const VoucherModal = ({
                   fullVoucherData.id,
                 );
 
-              // Transform to format expected by frontend
-              passengersResponse.forEach((p) => {
-                const passengerObj = {
-                  id_pasajero: p.id_pasajero, // ID de la BD para usar como passengerId
-                  id_persona: p.id_persona,
-                  id: p.id_pasajero, // Alias para compatibilidad
-                  nombres: p.nombres,
-                  apellidos: p.apellidos,
-                  apellido_paterno: p.apellido_paterno,
-                  apellido_materno: p.apellido_materno,
-                  firstName: p.nombres,
-                  lastName: p.apellidos,
-                  birthDate: p.fecha_nacimiento,
-                  fecha_nacimiento: p.fecha_nacimiento,
-                  edad: p.edad,
-                  age: p.edad,
-                  procedencia: p.procedencia,
-                  pais: p.pais || p.nacionalidad,
-                  nacionalidad: p.nacionalidad,
-                  nationality: p.nacionalidad,
-                  sexo: p.sexo || p.genero,
-                  tipo_documento: p.tipo_documento,
-                  tipoDocumento: p.tipo_documento || "DNI",
-                  docType: p.tipo_documento,
-                  numero_documento: p.numero_documento,
-                  numeroDocumento: p.numero_documento || "",
-                  docNumber: p.numero_documento,
-                  correo: p.correo,
-                  email: p.correo,
-                  telefono: p.telefono,
-                  phone: p.telefono,
-                  observaciones: p.observaciones,
-                  notes: p.observaciones,
-                  passenger_key: p.passenger_key,
-                };
-
-                if (p.tipo_pasajero === "adult") {
-                  parsedPassengerData.adults.push(passengerObj);
-                } else if (p.tipo_pasajero === "child") {
-                  parsedPassengerData.children.push(passengerObj);
-                }
-              });
+              parsedPassengerData=passengerRowsToDraft(passengersResponse);
             } catch (passengerErr) {
               console.error(
                 " Error cargando pasajeros del voucher:",
@@ -369,6 +360,13 @@ const VoucherModal = ({
               parsedPassengerData = { adults: [], children: [] };
             }
 
+            if(fullVoucherData.cotizacion_id){
+              const linkedIds=new Set([...parsedPassengerData.adults,...parsedPassengerData.children].map(p=>Number(p.id_pasajero)));
+              parsedPassengerData=mergeNominalRoster(await pasajeroService.getPassengersByCotizacion(fullVoucherData.cotizacion_id),parsedPassengerData);
+              passengerPersistedVoucherIdRef.current=[...parsedPassengerData.adults,...parsedPassengerData.children].every(p=>linkedIds.has(Number(p.id_pasajero)))
+                ? Number(fullVoucherData.id) : null;
+            }
+            if(!isCurrent()) return;
             // CARGAR DOCUMENTOS DESDE LA TABLA voucher_venta_documentos
             let parsedDocumentData = {};
             try {
@@ -433,6 +431,7 @@ const VoucherModal = ({
                           uploadDate: doc.uploadedAt,
                           createdAt: doc.uploadedAt,
                           createdBy: doc.createdBy,
+                          canDelete: doc.canDelete === true,
                           isFromDatabase: true,
                         };
 
@@ -463,6 +462,9 @@ const VoucherModal = ({
               total_final: financialSummary.totalFinal,
             };
 
+            if(!isCurrent()) return;
+            passengerDraftRef.current=normalizePassengerData(parsedPassengerData);
+            documentDraftRef.current=parsedDocumentData;
             setEditedVoucherData({
               id: fullVoucherData.id,
               voucher_code: fullVoucherData.voucher_code,
@@ -626,10 +628,12 @@ const VoucherModal = ({
     };
 
     loadVoucherData();
-  }, [isEditMode, voucherData, cotizacionData]);
+    return ()=>{if(request===loadRequestRef.current)loadRequestRef.current++;};
+  }, [isOpen,isEditMode, voucherData, cotizacionData]);
 
   // Manejo de cambios en los datos de los pasajeros
   const handlePassengerDataChange = useCallback((newPassengerData) => {
+    passengerDraftRef.current=normalizePassengerData(newPassengerData);
     setEditedVoucherData((prev) => ({
       ...prev,
       passengerData: newPassengerData,
@@ -638,26 +642,9 @@ const VoucherModal = ({
 
   // Manejo de cambios en los documentos
   const handleDocumentDataChange = useCallback((newDocumentData) => {
-    console.log(" handleDocumentDataChange recibido:", {
-      keys: Object.keys(newDocumentData),
-      docCount: Object.values(newDocumentData).reduce((sum, passengerDocs) => {
-        if (typeof passengerDocs === "object" && passengerDocs !== null) {
-          return (
-            sum +
-            (passengerDocs.passports?.length || 0) +
-            (passengerDocs.idCards?.length || 0) +
-            (passengerDocs.otherDocuments?.length || 0)
-          );
-        }
-        return sum;
-      }, 0),
-    });
-
-    setEditedVoucherData((prev) => ({
-      ...prev,
-      documentData: newDocumentData,
-    }));
-  }, []);
+    documentDraftRef.current=newDocumentData;
+    setEditedVoucherData(prev=>({...prev,documentData:newDocumentData}));
+  },[]);
 
   // Manejo de cambios en los datos de pago
   const handlePaymentDataChange = useCallback((newPaymentData) => {
@@ -702,6 +689,9 @@ const VoucherModal = ({
       setIsSubmitting(false);
       setShowUnsavedWarning(false);
       hasLoadedData.current = false;
+      passengerDraftRef.current=null; passengerPersistedFingerprintRef.current=null;
+      passengerPersistedVoucherIdRef.current=null;
+      passengerSavePromiseRef.current=null; documentDraftRef.current={};
       documentsSavedInStepRef.current = false;
       // Reset voucher refs to prevent stale IDs on next open
       voucherIdRef.current = null;
@@ -839,353 +829,84 @@ const VoucherModal = ({
     }
   };
 
-  // NUEVO: Guardar pasajeros en la BD y actualizar con IDs retornados
   const savePassengers = async () => {
-    try {
-      // CRÍTICO: Usar refs primero (tienen el valor más reciente)
-      const voucherIdToUse =
-        voucherIdRef.current || createdVoucherId || voucherData?.id;
-      const voucherCodeToUse =
-        voucherCodeRef.current ||
-        createdVoucherCode ||
-        voucherData?.voucher_code;
-      if (!voucherIdToUse) {
-        throw new Error("No hay voucherId para guardar pasajeros");
-      }
-
-      // Transformar passengerData a formato de backend
-      const passengersPayload = voucherVentaService.transformPassengerData(
-        editedVoucherData.passengerData,
-        voucherIdToUse,
-        voucherCodeToUse,
-      );
-
-      if (passengersPayload.length === 0) {
+    if (passengerSavePromiseRef.current) return passengerSavePromiseRef.current;
+    const draft = normalizePassengerData(passengerDraftRef.current || editedVoucherData.passengerData);
+    const id = voucherIdRef.current || createdVoucherId || voucherData?.id;
+    const quote = cotizacion?.id || cotizacionData?.id || voucherData?.cotizacion_id;
+    const scope=documentScopeRef.current;
+    const fingerprint=passengerDraftFingerprint(draft);
+    if (fingerprint===passengerPersistedFingerprintRef.current && passengerPersistedVoucherIdRef.current===Number(id)) return true;
+    const operation=(async()=>{
+      setIsSubmitting(true);
+      try {
+        const rows=await pasajeroService.syncPassengersByVoucherVenta(id,toVoucherPassengerSyncPayload(draft,quote));
+        if (scope!==documentScopeRef.current) return false;
+        const confirmed=passengerRowsToDraft(rows);
+        // A save response cannot erase typing which happened during the request.
+        if (passengerDraftFingerprint(passengerDraftRef.current || editedVoucherData.passengerData)!==fingerprint)
+          throw new Error("Los pasajeros cambiaron durante el guardado. Revisa el borrador antes de continuar.");
+        passengerDraftRef.current=confirmed;
+        passengerPersistedFingerprintRef.current=passengerDraftFingerprint(confirmed);
+        passengerPersistedVoucherIdRef.current=Number(id);
+        setEditedVoucherData(prev=>({...prev,passengerData:confirmed}));
         return true;
-      }
-
-      // Guardar pasajeros en paralelo (independientes entre sí)
-      const results = await Promise.all(
-        passengersPayload.map(async (passenger) => {
-          if (passenger.id_pasajero) {
-            try {
-              await pasajeroService.updatePassenger(
-                passenger.id_pasajero,
-                passenger,
-              );
-            } catch (updateErr) {
-              console.error(
-                ` Error actualizando pasajero ${passenger.id_pasajero}:`,
-                updateErr,
-              );
-            }
-            return {
-              passenger_key: passenger.passenger_key,
-              id_pasajero: passenger.id_pasajero,
-            };
-          }
-
-          // Crear solo pasajeros nuevos
-          const response = await pasajeroService.createPassenger(passenger);
-          if (response.success && response.data?.id) {
-            return {
-              passenger_key: passenger.passenger_key,
-              id_pasajero: response.data.id,
-            };
-          }
-          console.error(
-            ` Error creando pasajero ${passenger.passenger_key}:`,
-            response,
-          );
-          return null;
-        }),
-      );
-      const savedPassengerIds = results.filter(Boolean);
-
-      // CRÍTICO: Actualizar editedVoucherData con los id_pasajero retornados
-      setEditedVoucherData((prev) => {
-        const updated = { ...prev };
-
-        // Actualizar adultos
-        if (updated.passengerData?.adults) {
-          updated.passengerData.adults = updated.passengerData.adults.map(
-            (adult, idx) => {
-              const passengerKey = `adult-${idx}`;
-              const saved = savedPassengerIds.find(
-                (p) => p.passenger_key === passengerKey,
-              );
-              if (saved) {
-                return { ...adult, id_pasajero: saved.id_pasajero };
-              }
-              return adult;
-            },
-          );
-        }
-
-        // Actualizar niños
-        if (updated.passengerData?.children) {
-          updated.passengerData.children = updated.passengerData.children.map(
-            (child, idx) => {
-              const passengerKey = `child-${idx}`;
-              const saved = savedPassengerIds.find(
-                (p) => p.passenger_key === passengerKey,
-              );
-              if (saved) {
-                return { ...child, id_pasajero: saved.id_pasajero };
-              }
-              return child;
-            },
-          );
-        }
-
-        return updated;
-      });
-
-      return true;
-    } catch (error) {
-      console.error(" Error guardando pasajeros:", error);
-      setShowToast({
-        type: "error",
-        message: `Error al guardar pasajeros: ${error.message}`,
-      });
-      return false;
-    }
+      } catch (error) {
+        if(scope===documentScopeRef.current)setShowToast({type:"error",message:error.message || "No se guardaron los pasajeros."});
+        return false;
+      } finally {if(scope===documentScopeRef.current)setIsSubmitting(false);}
+    })();
+    passengerSavePromiseRef.current=operation;
+    try{return await operation;}finally{if(passengerSavePromiseRef.current===operation)passengerSavePromiseRef.current=null;}
   };
 
-  // Función para guardar documentos en voucher_venta_documentos
-  const savingDocumentsRef = useRef(false); // Flag para prevenir duplicados
-  const documentsSavedInStepRef = useRef(false); // Track si ya se guardaron en navegación de step
-
-  const saveVoucherDocuments = useCallback(
-    async (documentData, voucherId, voucherCode) => {
-      if (!documentData || Object.keys(documentData).length === 0) {
-        return { savedCount: 0, failedDocuments: [] };
-      }
-
-      // Prevenir llamadas simultáneas
-      if (savingDocumentsRef.current) {
-        return;
-      }
-
-      savingDocumentsRef.current = true;
-
+  const savingDocumentsRef=useRef<any>(null);
+  const documentsResaveRef=useRef(false);
+  const documentsSavedInStepRef=useRef(false);
+  const saveVoucherDocuments=useCallback(async(documentData,voucherId,voucherCode)=>{
+    const scope=documentScopeRef.current;
+    if(savingDocumentsRef.current?.scope===scope){documentsResaveRef.current=true;return savingDocumentsRef.current.promise;}
+    setDocumentsSaving(true);
+    const operation=(async()=>{
       try {
-        let savedCount = 0;
-        const failedDocuments = [];
+        do {
+          documentsResaveRef.current=false;
+          const snapshot=documentSnapshot(documentDraftRef.current || documentData || {});
+          const progress=()=>{
+            if(documentScopeRef.current!==scope)return;
+            const merged=mergeConfirmedDocuments(documentDraftRef.current,snapshot);
+            documentDraftRef.current=merged;
+            setEditedVoucherData(prev=>({...prev,documentData:merged}));
+          };
+          try {
+            await persistVoucherDocuments({documentData:snapshot,passengerData:passengerDraftRef.current || editedVoucherData.passengerData,
+              quote:cotizacion?.id || cotizacionData?.id || voucherData?.cotizacion_id,voucher:voucherId,code:voucherCode},{
+              authorize:async (id,passengerIds)=>{
+                const roster=await pasajeroService.getPassengersByVoucherVenta(id,{_skipDedup:true});
+                return passengerIds.every(passengerId=>roster.some(row=>Number(row.id_pasajero)===passengerId));
+              },
+              legacyUpload:uploadFile,legacyFolder:getTigrisPathForDocumentosVenta,legacyProxy:getProxyUrl,
+              legacyRegister:voucherDocumentService.uploadDocument,legacyPayload:voucherDocumentService.convertFrontendToBackend,
+              privateProxy:makeProxyUrlAbsolute,isCurrent:()=>documentScopeRef.current===scope,onProgress:progress,
+            });
+          } finally {progress();}
+        } while(documentsResaveRef.current && scope===documentScopeRef.current);
+        return scope===documentScopeRef.current;
+      } catch (failure) {
+        if(scope===documentScopeRef.current)setShowToast({type:"error",message:failure.message || "No se guardaron todos los documentos. Se conservaron los pendientes para reintentar."});
+        return false;
+      } finally {if(scope===documentScopeRef.current)setDocumentsSaving(false);}
+    })();
+    savingDocumentsRef.current={scope,promise:operation};
+    try{return await operation;}finally{if(savingDocumentsRef.current?.promise===operation)savingDocumentsRef.current=null;}
+  },[cotizacion?.id,cotizacionData?.id,voucherData?.cotizacion_id,uploadFile]);
+  const handleDocumentsAdded=useCallback(()=>saveVoucherDocuments(documentDraftRef.current,
+    voucherIdRef.current || createdVoucherId || voucherData?.id,
+    voucherCodeRef.current || createdVoucherCode || voucherData?.voucher_code),
+    [saveVoucherDocuments,createdVoucherId,createdVoucherCode,voucherData?.id,voucherData?.voucher_code]);
 
-        // CORREGIDO: Crear mapa de passengerKey -> passenger data (incluyendo id_pasajero)
-        const passengerMap = {};
-        if (editedVoucherData?.passengerData?.adults) {
-          editedVoucherData.passengerData.adults.forEach((adult, idx) => {
-            // Usar siempre el índice para consistencia con PassengerDocuments
-            const key = `adult-${idx}`;
-            passengerMap[key] = adult;
-          });
-        }
-        if (editedVoucherData?.passengerData?.children) {
-          editedVoucherData.passengerData.children.forEach((child, idx) => {
-            // Usar siempre el índice para consistencia con PassengerDocuments
-            const key = `child-${idx}`;
-            passengerMap[key] = child;
-          });
-        }
-
-        console.log(
-          " Mapa de pasajeros para guardar documentos:",
-          Object.keys(passengerMap),
-        );
-
-        // Iterar sobre cada pasajero en documentData
-        for (const [passengerKey, passengerDocs] of Object.entries(
-          documentData,
-        )) {
-          if (!passengerDocs || typeof passengerDocs !== "object") continue;
-
-          // CORREGIDO: Buscar passenger en el mapa
-          const passengerInfo = passengerMap[passengerKey];
-          if (!passengerInfo) {
-            console.warn(` No se encontró pasajero para key: ${passengerKey}`);
-            console.warn(
-              "Keys disponibles en mapa:",
-              Object.keys(passengerMap),
-            );
-            continue;
-          }
-
-          const passengerId = passengerInfo.id_pasajero;
-          const passengerName =
-            `${passengerInfo.nombres || ""} ${passengerInfo.apellidos || ""}`.trim();
-
-          console.log(
-            ` Procesando documentos para ${passengerKey}: ${passengerName} (ID: ${passengerId})`,
-          );
-
-          // VALIDACIÓN: Verificar que tengamos id_pasajero
-          if (!passengerId) {
-            console.warn(
-              ` Pasajero sin id_pasajero: ${passengerKey}`,
-              passengerInfo,
-            );
-            continue;
-          }
-
-          // Iterar sobre cada categoría de documentos (passports, idCards, otherDocuments)
-          for (const [category, documents] of Object.entries(passengerDocs)) {
-            if (!Array.isArray(documents)) continue;
-
-            console.log(
-              ` Categoría ${category}: ${documents.length} documentos`,
-            );
-
-            // Guardar cada documento
-            for (const doc of documents) {
-              console.log(` Procesando documento:`, {
-                name: doc.name,
-                isPending: doc.isPending,
-                hasFileObject: !!doc.fileObject,
-                hasTigrisUrl: !!doc.tigrisUrl,
-                hasDbId: !!doc.dbId,
-                isFromDatabase: doc.isFromDatabase,
-              });
-
-              // NUEVA LÓGICA: Si el documento está pendiente (isPending), subirlo a Tigris primero
-              if (doc.isPending && doc.fileObject) {
-                console.log(
-                  ` Subiendo documento pendiente a Tigris: ${doc.name}`,
-                );
-
-                try {
-                  // Mapear categoría a tipo Tigris
-                  const categoryMap = {
-                    passports: "passports",
-                    idCards: "idCards",
-                    otherDocuments: "otherDocuments",
-                  };
-                  const tipoDocumento =
-                    categoryMap[category] || "otherDocuments";
-                  const tigrisFolder = getTigrisPathForDocumentosVenta(
-                    voucherId,
-                    voucherCode,
-                    tipoDocumento,
-                  );
-
-                  // Subir a Tigris
-                  const uploadResult = await uploadFile(
-                    doc.fileObject,
-                    tigrisFolder,
-                  );
-
-                  // Actualizar documento con URLs de Tigris
-                  doc.tigrisUrl = uploadResult.tigrisUrl;
-                  doc.filename = uploadResult.metadata.originalName;
-                  doc.uploaded_at =
-                    uploadResult.metadata.uploadedAt ||
-                    new Date().toISOString();
-
-                  // Usar proxy URL en lugar de presigned URL
-                  doc.proxyUrl = getProxyUrl(uploadResult.tigrisUrl);
-
-                  // Limpiar datos temporales
-                  delete doc.isPending;
-                  delete doc.fileObject;
-
-                  console.log(
-                    ` Documento subido a Tigris: ${uploadResult.tigrisUrl}`,
-                  );
-                } catch (uploadErr) {
-                  console.error(
-                    ` Error subiendo documento a Tigris: ${doc.name}`,
-                    uploadErr,
-                  );
-                  failedDocuments.push({
-                    name: doc.name || "Documento sin nombre",
-                    stage: "subir a Tigris",
-                    error: uploadErr?.message || "Error de almacenamiento",
-                  });
-                  // Mantener isPending/fileObject para que el usuario pueda
-                  // reintentar; no continuar como si el documento existiera.
-                  continue;
-                }
-              }
-
-              // Solo guardar en DB si tiene tigrisUrl (fue subido) y no tiene dbId (no guardado aún)
-              if (doc.tigrisUrl && !doc.dbId && !doc.isFromDatabase) {
-                try {
-                  const documentPayload =
-                    voucherDocumentService.convertFrontendToBackend(
-                      doc,
-                      voucherCode,
-                      passengerId, // CORREGIDO: Pasar passengerId (entero) en lugar de passengerKey
-                      passengerName,
-                    );
-
-                  const saveResponse =
-                    await voucherDocumentService.uploadDocument(
-                      voucherId,
-                      documentPayload,
-                    );
-
-                  if (saveResponse.success) {
-                    console.log(
-                      ` Documento guardado: ${doc.name} (ID: ${saveResponse.data.id})`,
-                    );
-                    // Actualizar documento con ID de DB
-                    doc.dbId = saveResponse.data.id;
-                    doc.id = saveResponse.data.id;
-                    doc.proxyUrl = saveResponse.data.proxyUrl;
-                    doc.isFromDatabase = true;
-                    savedCount++;
-                  } else {
-                    console.error(
-                      ` Error guardando documento ${doc.name}:`,
-                      saveResponse.error,
-                    );
-                    failedDocuments.push({
-                      name: doc.name || "Documento sin nombre",
-                      stage: "registrar el documento",
-                      error: saveResponse.error || "Error de base de datos",
-                    });
-                  }
-                } catch (docErr) {
-                  console.error(
-                    ` Error al guardar documento ${doc.name}:`,
-                    docErr,
-                  );
-                  failedDocuments.push({
-                    name: doc.name || "Documento sin nombre",
-                    stage: "registrar el documento",
-                    error: docErr?.message || "Error de base de datos",
-                  });
-                }
-              }
-            }
-          }
-        }
-
-        if (failedDocuments.length > 0) {
-          const filenames = failedDocuments.map((item) => item.name).join(", ");
-          throw new Error(
-            `No se guardaron ${failedDocuments.length} documento(s): ${filenames}. Corrige el almacenamiento y vuelve a intentarlo.`,
-          );
-        }
-
-        console.log(" Proceso de guardado de documentos completado", {
-          savedCount,
-        });
-        return { savedCount, failedDocuments };
-      } catch (err) {
-        console.error(" Error general al guardar documentos:", err);
-        throw err;
-      } finally {
-        // CRÍTICO: Restablecer flag siempre
-        savingDocumentsRef.current = false;
-      }
-    },
-    [editedVoucherData, uploadFile],
-  );
-
-  // Navegación entre pasos
   const handleNextStep = useCallback(async () => {
+    if (documentsPreparing || documentsSaving || isDedicatedManagement) return;
     if (nextStepPromiseRef.current) {
       return nextStepPromiseRef.current;
     }
@@ -1244,11 +965,12 @@ const VoucherModal = ({
     if (currentStep === 1 && voucherIdToUse) {
       setIsSubmitting(true);
       try {
-        await saveVoucherDocuments(
+        const documentsSaved = await saveVoucherDocuments(
           editedVoucherData.documentData,
           voucherIdToUse,
           voucherCodeToUse,
         );
+        if (!documentsSaved) return;
         documentsSavedInStepRef.current = true;
         setCurrentStep((prev) => Math.min(prev + 1, STEPS.length - 1));
       } catch (error) {
@@ -1292,6 +1014,7 @@ const VoucherModal = ({
   ]);
 
   const handlePrevStep = useCallback(async () => {
+    if(documentsPreparing || documentsSaving || isDedicatedManagement) return;
     // NUEVO: Guardar datos del step actual antes de retroceder
 
     // Si estamos en el step de documentos (step 1), guardar documentos antes de retroceder
@@ -1303,11 +1026,12 @@ const VoucherModal = ({
     if (currentStep === 1 && voucherIdToUse) {
       setIsSubmitting(true);
       try {
-        await saveVoucherDocuments(
+        const documentsSaved = await saveVoucherDocuments(
           editedVoucherData.documentData,
           voucherIdToUse,
           voucherCodeToUse,
         );
+        if (!documentsSaved) return;
         documentsSavedInStepRef.current = true;
       } catch (error) {
         console.error("No se pudo guardar los documentos del voucher:", error);
@@ -1338,33 +1062,33 @@ const VoucherModal = ({
     saveVoucherDocuments,
   ]);
 
-  // Fix the handleClose function to ensure it always works
-  const handleClose = useCallback(() => {
-    // Check if there are unsaved changes
-    if (
-      editedVoucherData.passengerData.adults?.length > 0 ||
-      editedVoucherData.paymentData.payments?.length > 0
-    ) {
-      setShowUnsavedWarning(true);
-    } else {
-      // If no unsaved changes, close directly
-      // Notificar al padre para refrescar la lista si se creó un voucher
-      if (createdVoucherId && onSave) {
-        onSave();
+  const handleClose=useCallback(()=>{
+    if(isSubmitting || documentsPreparing || documentsSaving || savingDocumentsRef.current?.scope===documentScopeRef.current)return;
+    if(isDocumentManagementMode){
+      if(hasPendingDocumentUploads(documentDraftRef.current)){
+        setShowToast({type:"error",message:"Reintenta guardar los documentos o retira los archivos pendientes antes de cerrar."});return;
       }
+      onClose();return;
+    }
+    if(isPaymentManagementMode){onClose();return;}
+    if(!isVoucherLoaded){onClose();return;}
+    if(passengerPersistedFingerprintRef.current!==null &&
+        passengerDraftFingerprint(passengerDraftRef.current || editedVoucherData.passengerData)!==passengerPersistedFingerprintRef.current){
+      setShowUnsavedWarning(true);return;
+    }
+    onClose();
+  },[isSubmitting,documentsPreparing,documentsSaving,isVoucherLoaded,isDocumentManagementMode,isPaymentManagementMode,editedVoucherData.passengerData,onClose]);
+  const handleForceClose=useCallback(()=>{
+    if(isSubmitting || documentsPreparing || documentsSaving || hasPendingDocumentUploads(documentDraftRef.current))return;
+    onClose();
+  },[isSubmitting,documentsPreparing,documentsSaving,onClose]);
+  const savePassengerInformation=async()=>{
+    if(await savePassengers()){
+      await onPassengerInfoSaved?.();
+      setShowUnsavedWarning(false);
       onClose();
     }
-  }, [editedVoucherData, createdVoucherId, onSave, onClose]);
-
-  // Add a force close function that bypasses the unsaved changes check
-  const handleForceClose = useCallback(() => {
-    // Notificar al padre para refrescar la lista si se creó un voucher
-    if (createdVoucherId && onSave) {
-      onSave();
-    }
-    // Close without checking for unsaved changes
-    onClose();
-  }, [createdVoucherId, onSave, onClose]);
+  };
 
   // Deshabilitar cierre al hacer clic fuera del modal (mantener otros métodos de cierre)
   const handleOverlayClick = useCallback((e) => {
@@ -1391,6 +1115,8 @@ const VoucherModal = ({
   // Función para guardar documentos del voucher en la base de datos
   // Completar el proceso de creación/edición
   const handleCompleteVoucher = async (voucherData) => {
+    if(isDedicatedManagement) return;
+    if(documentsPreparing || documentsSaving) return;
     if (completionSucceededRef.current) {
       return null;
     }
@@ -1413,19 +1139,20 @@ const VoucherModal = ({
 
         // GUARDAR PASAJEROS PENDIENTES antes de completar voucher
         if (voucherIdToUpdate) {
-          await savePassengers();
+          if(!(await savePassengers())) throw new Error("No se emitio el voucher: los pasajeros no se guardaron.");
         }
 
         // GUARDAR DOCUMENTOS PENDIENTES antes de completar el voucher
         // Solo si no se guardaron ya en la navegación de steps
         if (voucherIdToUpdate && isUpdate && !documentsSavedInStepRef.current) {
-          await saveVoucherDocuments(
+          const documentsSaved = await saveVoucherDocuments(
             editedVoucherData?.documentData || {},
             voucherIdToUpdate,
             voucherCodeRef.current ||
               createdVoucherCode ||
               voucherData?.voucher_code,
           );
+          if(!documentsSaved) throw new Error("No se emitio el voucher: quedan documentos pendientes.");
         }
 
         const finalVoucherData = {
@@ -1554,7 +1281,8 @@ const VoucherModal = ({
 
   // Renderizar contenido según el paso currentStep
   const renderStepContent = () => {
-    switch (STEPS[currentStep].id) {
+    const step = isPassengerInfoOnlyMode ? "passengers" : isDocumentManagementMode ? "documents" : isPaymentManagementMode ? "payments" : STEPS[currentStep].id;
+    switch (step) {
       case "passengers":
         return (
           <PassengerStep
@@ -1572,6 +1300,8 @@ const VoucherModal = ({
                 editedVoucherData.passengerData,
             }}
             isEditMode={isEditMode}
+            isPassengerInfoOnlyMode={isPassengerInfoOnlyMode}
+            disabled={isSubmitting}
             voucherId={createdVoucherId || voucherData?.id} // Pasar ID del voucher creado
             voucherCode={createdVoucherCode || voucherData?.voucher_code} // Pasar código
           />
@@ -1582,6 +1312,10 @@ const VoucherModal = ({
             passengerData={editedVoucherData.passengerData}
             documentData={editedVoucherData.documentData}
             onDocumentDataChange={handleDocumentDataChange}
+            cotizacionId={cotizacion?.id || cotizacionData?.id}
+            onDocumentsAdded={handleDocumentsAdded}
+            onPreparingChange={setDocumentsPreparing}
+            documentsSaving={documentsSaving}
             isEditMode={isEditMode}
             voucherCode={
               createdVoucherCode || voucherCode || voucherData?.voucher_code
@@ -1685,7 +1419,7 @@ const VoucherModal = ({
                 {isEditMode ? <MdEdit /> : <MdAddCircleOutline />}
               </div>
               <div className="header-info">
-                <h2>{isEditMode ? "Editar Voucher" : "Crear Nuevo Voucher"}</h2>
+                <h2>{isPassengerInfoOnlyMode ? "Información de pasajeros" : isDocumentManagementMode ? "Documentos del file" : isPaymentManagementMode ? "Pagos del file" : "Crear Nuevo Voucher"}</h2>
                 {cotizacion && (
                   <span className="header-subtitle">
                     {voucherCode || "Sin código"}
@@ -1714,7 +1448,7 @@ const VoucherModal = ({
               </div>
             </div>
 
-            {isSuperAdmin && (
+            {isSuperAdmin && !isDedicatedManagement && (
               <div className="header-admin-metadata" aria-label="Auditoría de creación del voucher">
                 <div className="admin-metadata-title">
                   <span>Auditoría superadmin</span>
@@ -1766,7 +1500,7 @@ const VoucherModal = ({
               </div>
             )}
 
-            <button className="close-button" onClick={() => handleClose()}>
+            <button className="close-button" onClick={() => handleClose()} disabled={isSubmitting || documentsPreparing || documentsSaving}>
               <MdClose />
             </button>
           </div>
@@ -1790,7 +1524,7 @@ const VoucherModal = ({
           ) : (
             <>
               {/* Steps progress indicator */}
-              <div className="voucher-modal-steps">
+              {!isDedicatedManagement && <div className="voucher-modal-steps">
                 {STEPS.map((step, index) => (
                   <div
                     key={step.id}
@@ -1806,22 +1540,23 @@ const VoucherModal = ({
                     <div className="step-label">{step.label}</div>
                   </div>
                 ))}
-              </div>
+              </div>}
 
               {/* Contenedor del contenido del step */}
               <div className="voucher-modal-content">{renderStepContent()}</div>
 
               {/* Footer con navegación o botón guardar según modo */}
-              {isPaymentManagementMode || isDocumentManagementMode ? (
-                // Modo gestión de pagos o documentos - Solo botón guardar
-                <div className="voucher-modal-footer payment-management">
-                  <button
-                    className="save-button"
-                    onClick={() => handleCompleteVoucher(editedVoucherData)}
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? "Guardando..." : "Guardar Cambios"}
-                  </button>
+              {isDedicatedManagement ? (
+                <div className="voucher-modal-footer document-management">
+                  <span role="status" aria-live="polite">{isDocumentManagementMode
+                    ? documentsPreparing ? "Preparando documentos..." : documentsSaving ? "Guardando documentos..." :
+                      hasPendingDocumentUploads(editedVoucherData.documentData) ? "Hay documentos pendientes de guardar." : "Los documentos se guardan automáticamente."
+                    : isPassengerInfoOnlyMode ? hasPassengerChanges ? "Información de pasajeros pendiente de guardar." : needsPassengerLink ? "Los pasajeros cotizados necesitan vincularse al voucher." : "Sin cambios pendientes."
+                    : "Los pagos se registran desde sus propios formularios."}</span>
+                  {isPassengerInfoOnlyMode && (hasPassengerChanges || needsPassengerLink) && <button type="button" className="save-button" onClick={savePassengerInformation}
+                    disabled={isSubmitting}>{isSubmitting ? "Guardando..." : "Guardar información de pasajeros"}</button>}
+                  <button type="button" className="close-documents-button" onClick={handleClose}
+                    disabled={isSubmitting || documentsPreparing || documentsSaving}>Cerrar</button>
                 </div>
               ) : currentStep === STEPS.length - 1 ? (
                 // Último step (Confirmation) - Botones de completar voucher
@@ -1893,6 +1628,7 @@ const VoucherModal = ({
                 >
                   Cancelar
                 </button>
+                {isPassengerInfoOnlyMode && <button type="button" className="save-button" disabled={isSubmitting} onClick={savePassengerInformation}>Guardar y cerrar</button>}
                 <button className="discard-button" onClick={handleForceClose}>
                   Descartar cambios
                 </button>

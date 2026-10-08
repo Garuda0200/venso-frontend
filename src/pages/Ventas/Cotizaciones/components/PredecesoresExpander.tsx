@@ -1,3 +1,4 @@
+import { sharedPriceFlag, normalizePricingType } from "../../../../utils/servicePricingType";
 import React, {
   useCallback,
   useEffect,
@@ -435,8 +436,8 @@ const normalizeService = (service = {}, index = 0, dayKey = "day", scope = "main
   );
   const divided = Boolean(
     firstDefined(
-      service.precioAdultoDividido,
-      service.precio_adulto_dividido,
+      sharedPriceFlag(service.tipoPrecio),
+      sharedPriceFlag(service.tipo_precio),
       false,
     ),
   );

@@ -50,14 +50,11 @@ const pickTariffForRoom = (
   // Usar tarifa preferida, o el tipo de tarifa por defecto según el contexto
   const tipoPreferido = preferTariff?.tipo_tarifa || defaultTariffType;
   const roomTariffs = Array.isArray(room.tarifas) ? room.tarifas : [];
-  let t =
-    roomTariffs.find((x) => x.tipo_tarifa === tipoPreferido) || roomTariffs[0];
+  const mode = preferTariff?.selectedType || preferTariff?.tipoPrecio || pkgType;
+  const field = mode === "privado" ? "precio_privado" : "precio_compartido";
+  const t = roomTariffs.find(x => x.tipo_tarifa === tipoPreferido && x[field] != null);
   if (!t) return null;
-  const precio =
-    pkgType === "privado"
-      ? (t.precio_privado ?? t.precio_compartido ?? t.precio ?? 0)
-      : (t.precio_compartido ?? t.precio_privado ?? t.precio ?? 0);
-  return { ...t, _unitPrice: Number(precio || 0) };
+  return { ...t, selectedType:mode, tipoPrecio:mode, _unitPrice: Number(t[field]) };
 };
 
 const computeAutoDistributions = (
@@ -571,7 +568,8 @@ const HotelItineraryModal = ({
     const roomId = room.id_habitacion || room.id;
     const hotelId = hotel.id_hotel || hotel.id;
     const tariffId = tariff?.id_tarifa || tariff?.id;
-    const priceType = tariff?.selectedType || "unico"; // compartido, privado, o unico
+    const priceType = tariff?.selectedType || tariff?.tipoPrecio || packageType;
+    tariff = { ...tariff, selectedType:priceType, tipoPrecio:priceType, precio:tariff?.[`precio_${priceType}`] };
 
     setSelectedRooms((prev) => {
       const isExtraBed = isExtraBedRoom(room);
@@ -586,7 +584,7 @@ const HotelItineraryModal = ({
         const itemRoomId = item.room.id_habitacion || item.room.id;
         const itemHotelId = item.hotel.id_hotel || item.hotel.id;
         const itemTariffId = item.tariff?.id_tarifa || item.tariff?.id;
-        const itemPriceType = item.tariff?.selectedType || "unico";
+        const itemPriceType = item.tariff?.selectedType || item.tariff?.tipoPrecio || packageType;
 
         return (
           itemRoomId === roomId &&

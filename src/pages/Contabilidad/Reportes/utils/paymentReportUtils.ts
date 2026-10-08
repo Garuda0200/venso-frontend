@@ -1,3 +1,4 @@
+import { sharedPriceFlag, normalizePricingType } from "../../../../utils/servicePricingType";
 import { serviceHasPeruvianBeneficiary } from "../../../../components/Ventas/Cotizaciones/EdicionCotizacion/utils/igvUtils";
 import { isReportTicket, reportTicketName } from "./ticketPaymentPresentation";
 
@@ -213,9 +214,9 @@ export const resolveServiceCommercialBase = (
     ),
   );
   const divided = readBoolean(
-    service?.precioAdultoDividido,
-    service?.precio_adulto_dividido,
-    service?.tariff?.precio_adulto_dividido,
+    sharedPriceFlag(service?.tipoPrecio),
+    sharedPriceFlag(service?.tipo_precio),
+    sharedPriceFlag(service?.tariff?.tipo_precio),
   );
   const unit = firstPositiveNumber(
     service?.precioServicio,

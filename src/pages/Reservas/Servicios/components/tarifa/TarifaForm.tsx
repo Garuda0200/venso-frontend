@@ -20,6 +20,7 @@ import { EXCHANGE_RATE } from "../../../../../utils/constants";
 import useAuditInfo from "../../hooks/useAuditInfo";
 import TariffAgencyCombobox from "../../../../../components/common/TariffAgencyCombobox/TariffAgencyCombobox";
 import { fetchTarifasByServicio } from "../../services/api";
+import { TARIFF_MODES, initialTariffModes, validateTariffModePrices, buildTariffModePrices } from "../../utils/tariffPriceModes";
 import "./TarifaForm.scss";
 
 const STANDARD_KEY = "estandar";
@@ -63,14 +64,17 @@ const TarifaForm = ({
     temporada: tarifa?.temporada || null,
     precio_compartido: tarifa?.precio_compartido?.toString() || "",
     precio_privado: tarifa?.precio_privado?.toString() || "",
-    precio_unico:
-      tarifa?.precio_unico !== undefined ? Boolean(tarifa.precio_unico) : true,
     moneda: initialCurrency,
     tasa_cambio:
       tarifa?.tasa_cambio?.toString() ||
       (initialCurrency === "soles" ? EXCHANGE_RATE.toString() : "1.0"),
     created_by: userId,
   });
+
+  const [enabledModes, setEnabledModes] = useState(() => initialTariffModes(tarifa));
+  const [editingMode, setEditingMode] = useState<"compartido" | "privado">(
+    tarifa?.precio_compartido != null ? "compartido" : "privado",
+  );
 
   const [existingTarifas, setExistingTarifas] = useState<any[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -219,30 +223,30 @@ const TarifaForm = ({
         tasa_cambio:
           currency === "soles" ? rate.toString() : current.tasa_cambio,
         precio_compartido: shared,
-        precio_privado: current.precio_unico
-          ? shared
-          : convert(current.precio_privado),
+        precio_privado: convert(current.precio_privado),
       };
     });
   };
 
-  const toggleUniquePrice = () => {
-    setFormData((current) => {
-      const nextUnique = !current.precio_unico;
-      return {
-        ...current,
-        precio_unico: nextUnique,
-        precio_privado: nextUnique
-          ? current.precio_compartido
-          : current.precio_privado || current.precio_compartido,
-      };
+  const togglePriceMode = (mode: "compartido" | "privado") => {
+    const active = !enabledModes[mode];
+    setEnabledModes(current => ({ ...current, [mode]: active }));
+    if (active) {
+      setEditingMode(mode);
+      window.setTimeout(() => precioInputRef.current?.focus(), 0);
+    } else {
+      setEditingMode(mode === "compartido" ? "privado" : "compartido");
+    }
+    setErrors(current => {
+      const next = {...current};
+      delete next.modalidades;
+      delete next[`precio_${mode}`];
+      return next;
     });
   };
 
   const validate = () => {
     const nextErrors: Record<string, string> = {};
-    const shared = Number.parseFloat(formData.precio_compartido);
-    const privatePrice = Number.parseFloat(formData.precio_privado);
 
     if (!Array.isArray(formData.agency_ids) || formData.agency_ids.length === 0) nextErrors.agency_ids = "Selecciona al menos una agencia.";
     if (!TIPOS_TARIFA_EDITABLES.includes(formData.tipo_tarifa)) {
@@ -257,12 +261,7 @@ const TarifaForm = ({
     if (isCombinationUsed(selectedSeasonKey)) {
       nextErrors.combinacion = `Ya existe una tarifa ${getTarifaTypeLabel(formData.tipo_tarifa).toLowerCase()} para ${selectedSeasonKey === STANDARD_KEY ? "vigencia estándar" : `temporada ${selectedSeasonKey}`}.`;
     }
-    if (!Number.isFinite(shared) || shared <= 0) {
-      nextErrors.precio_compartido = "Ingresa un precio mayor a cero.";
-    }
-    if (!formData.precio_unico && (!Number.isFinite(privatePrice) || privatePrice <= 0)) {
-      nextErrors.precio_privado = "Ingresa el precio privado.";
-    }
+    Object.assign(nextErrors, validateTariffModePrices(formData, enabledModes));
     if (
       formData.moneda === "soles" &&
       (!Number.isFinite(Number.parseFloat(formData.tasa_cambio)) ||
@@ -282,10 +281,6 @@ const TarifaForm = ({
     event.preventDefault();
     if (!validate()) return;
 
-    const shared = Number.parseFloat(formData.precio_compartido);
-    const privatePrice = formData.precio_unico
-      ? shared
-      : Number.parseFloat(formData.precio_privado);
 
     onSubmit({
       ...formData,
@@ -293,8 +288,7 @@ const TarifaForm = ({
       anio: Number(formData.anio),
       tipo_tarifa: normalizeEditableTariffType(formData.tipo_tarifa),
       temporada: formData.tiene_temporada ? formData.temporada : null,
-      precio_compartido: shared,
-      precio_privado: privatePrice,
+      ...buildTariffModePrices(formData, enabledModes),
       tasa_cambio:
         formData.moneda === "soles"
           ? Number.parseFloat(formData.tasa_cambio) || EXCHANGE_RATE
@@ -472,30 +466,36 @@ const TarifaForm = ({
             </button>
           </div>
 
-          <button
-            type="button"
-            className={`tf__unique-toggle ${formData.precio_unico ? "active" : ""}`}
-            onClick={toggleUniquePrice}
-            disabled={isSubmitting}
-            aria-pressed={formData.precio_unico}
-          >
-            {formData.precio_unico ? "Único" : "Compartido / privado"}
-          </button>
         </div>
 
-        <div className={`tf__prices ${formData.precio_unico ? "single" : "double"}`}>
+        <div className="tf__mode-chips" role="group" aria-label="Modalidades disponibles">
+          {TARIFF_MODES.map(mode => (
+            <button key={mode} type="button" className={`tf__mode-chip ${enabledModes[mode] ? "active" : ""}`}
+              aria-pressed={enabledModes[mode]} onClick={() => togglePriceMode(mode)} disabled={isSubmitting}>
+              <span className="tf__mode-chip-check">{enabledModes[mode] ? <FaCheck /> : "+"}</span>
+              <span><b>{mode === "compartido" ? "Compartido" : "Privado"}</b>
+                <small>{mode === "compartido" ? "Importe total" : "Por persona"}</small></span>
+              <strong>{currencySymbol} {toMoneyString(formData[`precio_${mode}`]) || "—"}</strong>
+            </button>
+          ))}
+        </div>
+        {errors.modalidades && <p className="tf__error" role="alert">{errors.modalidades}</p>}
+
+        <div className={`tf__prices ${enabledModes.compartido && enabledModes.privado ? "double" : "single"}`}>
+          {enabledModes.compartido && (
           <label className="tf__field tf__price-field">
-            <span>{formData.precio_unico ? "Precio" : "Compartido"}</span>
+            <span>Compartido · total</span>
             <div>
               <b>{currencySymbol}</b>
               <input
-                ref={precioInputRef}
+                ref={editingMode === "compartido" ? precioInputRef : undefined}
                 type="number"
                 inputMode="decimal"
-                min="0.01"
+                min="0"
                 step="0.01"
                 value={formData.precio_compartido}
                 placeholder="0.00"
+                disabled={isSubmitting}
                 onChange={(event) => updateField("precio_compartido", event.target.value)}
                 onWheel={(event) => event.currentTarget.blur()}
                 onKeyDown={(event) => {
@@ -507,19 +507,22 @@ const TarifaForm = ({
             </div>
             {errors.precio_compartido && <em>{errors.precio_compartido}</em>}
           </label>
+          )}
 
-          {!formData.precio_unico && (
+          {enabledModes.privado && (
             <label className="tf__field tf__price-field">
-              <span>Privado</span>
+              <span>Privado · por persona</span>
               <div>
                 <b>{currencySymbol}</b>
                 <input
+                  ref={editingMode === "privado" ? precioInputRef : undefined}
                   type="number"
                   inputMode="decimal"
-                  min="0.01"
+                  min="0"
                   step="0.01"
                   value={formData.precio_privado}
                   placeholder="0.00"
+                  disabled={isSubmitting}
                   onChange={(event) => updateField("precio_privado", event.target.value)}
                   onWheel={(event) => event.currentTarget.blur()}
                   onKeyDown={(event) => {
@@ -566,9 +569,9 @@ const TarifaForm = ({
       <div className="tf__summary">
         <span>{formData.anio} · {getTarifaTypeLabel(formData.tipo_tarifa)} · {seasonLabel} · {formData.agency_ids.length} agencia{formData.agency_ids.length === 1 ? "" : "s"}</span>
         <strong>
-          {formData.precio_unico
-            ? `${currencySymbol} ${toMoneyString(formData.precio_compartido) || "0.00"}`
-            : `${currencySymbol} ${toMoneyString(formData.precio_compartido) || "0.00"} / ${toMoneyString(formData.precio_privado) || "0.00"}`}
+          {TARIFF_MODES.filter(mode => enabledModes[mode]).map(mode =>
+            `${mode === "compartido" ? "Compartido" : "Privado"}: ${currencySymbol} ${toMoneyString(formData[`precio_${mode}`]) || "—"}`,
+          ).join(" · ") || "Sin modalidad"}
         </strong>
       </div>
 

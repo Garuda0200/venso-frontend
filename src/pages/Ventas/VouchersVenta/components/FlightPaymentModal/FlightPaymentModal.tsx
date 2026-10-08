@@ -1,3 +1,4 @@
+import { sharedPriceFlag, normalizePricingType } from "../../../../../utils/servicePricingType";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Modal from "../../../../../components/UI/Modal/Modal";
 import SmartComboBox from "../../../../../components/common/SmartComboBox/SmartComboBox";
@@ -903,10 +904,10 @@ const normalizeAssignedService = (service = {}) => {
       service.assignedPrecioServicio || service.assigned_precio_servicio || 0,
     ),
     tieneIgv: Boolean(service.assignedIgv || service.assigned_igv),
-    precioAdultoDividido: Boolean(
-      service.assignedPrecioAdultoDividido ||
-      service.assigned_precio_adulto_dividido,
-    ),
+    tipoPrecio: normalizePricingType(Boolean(
+      sharedPriceFlag(service.assignedTipoPrecio) ||
+      sharedPriceFlag(service.assigned_tipo_precio),
+    )),
   };
 
   return {
@@ -1230,10 +1231,9 @@ const buildManualFlightService = ({
     moneda: "dolares",
     precio: unitPrice,
     precio_original: unitPrice,
-    precio_compartido: unitPrice,
+    precio_compartido: null,
     precio_privado: unitPrice,
-    precio_unico: true,
-    precio_adulto_dividido: false,
+    tipo_precio: normalizePricingType(false),
     capacidad_limite: false,
   };
 
@@ -1403,11 +1403,11 @@ const buildAssignmentPayload = (
     assigned_precio_servicio: assignedUnitPrice,
     assigned_precio_total: assignedTotalPrice,
     assigned_igv: Boolean(tariff.tieneIgv || tariff.tiene_igv),
-    assigned_precio_adulto_dividido: Boolean(
-      tariff.precioAdultoDividido ||
-      tariff.precio_adulto_dividido ||
-      selectedService.precioAdultoDividido,
-    ),
+    assigned_tipo_precio: normalizePricingType(Boolean(
+      sharedPriceFlag(tariff.tipoPrecio) ||
+      sharedPriceFlag(tariff.tipo_precio) ||
+      sharedPriceFlag(selectedService.tipoPrecio),
+    )),
     assigned_capacidad_limite: Boolean(
       tariff.capacidadLimite ||
       tariff.capacidad_limite ||

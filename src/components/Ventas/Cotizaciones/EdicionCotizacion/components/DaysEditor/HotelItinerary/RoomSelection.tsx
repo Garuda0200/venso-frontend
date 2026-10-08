@@ -63,7 +63,7 @@ const RoomSelection = ({
   const isCapacityMet = totalSelectedCapacity >= totalPassengers;
 
   // Obtener cantidad de una habitación específica
-  const getRoomQuantity = (room, tariff, priceType = "unico") => {
+  const getRoomQuantity = (room, tariff, priceType = tariff?.selectedType || tariff?.tipoPrecio || "compartido") => {
     const item = selectedRooms.find((item) => {
       const roomMatch =
         (item.room.id_habitacion || item.room.id) ===
@@ -73,7 +73,7 @@ const RoomSelection = ({
       const tariffMatch =
         (item.tariff?.id_tarifa || item.tariff?.id) ===
         (tariff?.id_tarifa || tariff?.id);
-      const itemType = item.tariff?.selectedType || "unico";
+      const itemType = item.tariff?.selectedType || item.tariff?.tipoPrecio || "compartido";
       return roomMatch && tariffMatch && itemType === priceType;
     });
     return item?.quantity || 0;
@@ -92,7 +92,7 @@ const RoomSelection = ({
 
   // Verificar si una tarifa específica de una habitación está seleccionada
   const isTariffSelected = (room, tariff, priceType = null) => {
-    return getRoomQuantity(room, tariff, priceType || "unico") > 0;
+    return getRoomQuantity(room, tariff, priceType || tariff?.selectedType || tariff?.tipoPrecio || "compartido") > 0;
   };
 
   return (
@@ -154,9 +154,8 @@ const RoomSelection = ({
               const capacity = getRoomCapacity(item.room);
               const extraBed = isExtraBedRoom(item.room);
               const unitPrice =
-                item.tariff.precio ||
-                item.tariff.precio_compartido ||
-                item.tariff.precio_privado;
+                item.customPrice ?? item.tariff.precio ??
+                item.tariff[`precio_${item.tariff.selectedType || item.tariff.tipoPrecio || "compartido"}`] ?? 0;
               return (
                 <div key={`selected-${index}`} className="selected-room-chip">
                   <span className="hotel-name">{item.hotel.nombre}</span>
@@ -331,12 +330,7 @@ const RoomSelection = ({
                   {hasTariffs ? (
                     <div className="tariffs-list">
                       {roomTariffs.map((tariff, index) => {
-                        const isPrecioUnico = tariff.precio_unico === true;
                         const tieneTemporada = tariff.tiene_temporada === true;
-                        const precio =
-                          tariff.precio ||
-                          tariff.precio_compartido ||
-                          tariff.precio_privado;
                         const isThisTariffSelected = isTariffSelected(
                           room,
                           tariff,
@@ -366,62 +360,10 @@ const RoomSelection = ({
                               )}
                             </span>
                             <div className="price-buttons">
-                              {isPrecioUnico ? (
-                                // Precio único: selector de cantidad
-                                (() => {
-                                  const qty = getRoomQuantity(
-                                    room,
-                                    tariff,
-                                    "unico",
-                                  );
-                                  return (
-                                    <div className="quantity-selector">
-                                      <span className="price-value">
-                                        {formatPrice(precio, tariff.moneda)}
-                                      </span>
-                                      <div className="qty-controls">
-                                        <button
-                                          className="qty-btn minus"
-                                          onClick={() =>
-                                            onToggleRoom &&
-                                            onToggleRoom(
-                                              room,
-                                              selectedHotel,
-                                              tariff,
-                                              -1,
-                                            )
-                                          }
-                                          disabled={qty <= 0}
-                                        >
-                                          <FaMinus />
-                                        </button>
-                                        <span
-                                          className={`qty-value ${qty > 0 ? "active" : ""}`}
-                                        >
-                                          {qty}
-                                        </span>
-                                        <button
-                                          className="qty-btn plus"
-                                          onClick={() =>
-                                            onToggleRoom &&
-                                            onToggleRoom(
-                                              room,
-                                              selectedHotel,
-                                              tariff,
-                                              1,
-                                            )
-                                          }
-                                        >
-                                          <FaPlus />
-                                        </button>
-                                      </div>
-                                    </div>
-                                  );
-                                })()
-                              ) : (
+                              {(
                                 // Precio compartido y privado separados con selector de cantidad
                                 <>
-                                  {tariff.precio_compartido &&
+                                  {tariff.precio_compartido != null &&
                                     (() => {
                                       const qty = getRoomQuantity(
                                         room,
@@ -484,7 +426,7 @@ const RoomSelection = ({
                                         </div>
                                       );
                                     })()}
-                                  {tariff.precio_privado &&
+                                  {tariff.precio_privado != null &&
                                     (() => {
                                       const qty = getRoomQuantity(
                                         room,

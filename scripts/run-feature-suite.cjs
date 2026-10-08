@@ -23,6 +23,7 @@ const testSuites = [
   {
     name: "ventas / cotizaciones",
     tests: [
+      "src/utils/__tests__/servicePricingType.test.js",
       "src/pages/Ventas/Cotizaciones/utils/__tests__/preliquidacionQuotation.test.js",
       "src/pages/Ventas/Cotizaciones/utils/__tests__/cotizacionIgv.test.js",
       "src/pages/Ventas/Cotizaciones/utils/__tests__/cotizacionListState.test.js",
@@ -45,6 +46,7 @@ const testSuites = [
       "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/ticketTariffGrouping.test.js",
       "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/vensoPdfCanvaDesign.test.js",
       "src/pages/Ventas/VouchersVenta/utils/__tests__/voucherFinancials.test.js",
+      "src/pages/Ventas/VouchersVenta/components/__tests__/voucherWorkflowParity.test.js",
       "src/pages/Ventas/VouchersVenta/utils/__tests__/salesPdfPresentation.test.js",
       "src/pages/Ventas/VouchersVenta/utils/__tests__/voucherPdfLayout.test.js",
     ],
@@ -61,6 +63,7 @@ const testSuites = [
       "src/pages/Reservas/Calendario/utils/__tests__/bibliaSyncFeedback.test.js",
       "src/pages/Reservas/Calendario/utils/__tests__/bibliaQuotationLinking.test.js",
       "src/pages/Reservas/Calendario/utils/__tests__/bibliaRowDrafts.test.js",
+      "src/pages/Reservas/Calendario/utils/__tests__/bibliaParticipantEditor.test.js",
       "src/pages/Reservas/Calendario/utils/__tests__/bibliaResponsiveSource.test.js",
       "src/pages/Reservas/Calendario/utils/__tests__/bibliaSingleDayViewSource.test.js",
       "src/pages/Reservas/VouchersReserva/components/ReservaServiceEditor/utils/__tests__/assignedBeneficiaries.test.js",
@@ -120,13 +123,16 @@ try {
     );
   }
 
+  const failures = [];
   for (const suite of testSuites) {
     console.log(`\n## ${suite.name}`);
     for (const test of suite.tests) {
       console.log(`\n==> ${test}`);
-      run(process.execPath, [path.join(tmpDir, test)], test);
+      try { run(process.execPath, [path.join(tmpDir, test)], test); }
+      catch (error) { failures.push(test); console.error(error.message); }
     }
   }
+  if (failures.length) throw new Error(`Feature suite: ${failures.length} suites fallaron:\n${failures.join('\n')}`);
   console.log("\nFeature suite: PASS");
 } finally {
   fs.rmSync(tmpDir, { recursive: true, force: true });

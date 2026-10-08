@@ -1,3 +1,4 @@
+import { sharedPriceFlag, normalizePricingType } from "../../../../utils/servicePricingType";
 import { getRoomCapacityByType } from "../../../../components/Ventas/Cotizaciones/EdicionCotizacion/components/DaysEditor/utils/priceCalculations";
 import { getTourCapacity } from "../../../../components/Ventas/Cotizaciones/EdicionCotizacion/utils/unifiedServiceManager";
 import { getPassengerSlotKey } from "../../../../components/Ventas/Cotizaciones/EdicionCotizacion/utils/passengerPricingState";
@@ -63,8 +64,7 @@ const resolveBaseServiceType = (service = {}) =>
     service.parentService?.typeService ||
     service.childService?.typeService ||
     ""
-  )
-    .toString()
+  ).toString()
     .toLowerCase();
 
 const getBeneficiariosByScope = (service = {}, assigned = true) => {
@@ -173,29 +173,29 @@ const inferDivisionFlags = (service = {}, assigned = true) => {
     : service.childService || {};
 
   if (typeService.includes("transporte") || typeService.includes("hotel")) {
-    return { precioAdultoDividido: true, capacidadLimite: true };
+    return { tipoPrecio: normalizePricingType(service.tipoPrecio) || "privado", capacidadLimite: true };
   }
 
   if (typeService.includes("guia")) {
-    return { precioAdultoDividido: true, capacidadLimite: false };
+    return { tipoPrecio: normalizePricingType(service.tipoPrecio) || "privado", capacidadLimite: false };
   }
 
   if (typeService.includes("endose")) {
     const tourCapacity = getTourCapacity(childService);
     if (tourCapacity != null) {
-      return { precioAdultoDividido: true, capacidadLimite: true };
+      return { tipoPrecio: normalizePricingType(service.tipoPrecio) || "privado", capacidadLimite: true };
     }
 
   }
 
-  return { precioAdultoDividido: false, capacidadLimite: false };
+  return { tipoPrecio: normalizePricingType(service.tipoPrecio) || "privado", capacidadLimite: false };
 };
 
 /**
  * Replica el divisor usado por EdicionCotizacion:
  * - hotel: capacidad de la habitación;
- * - endose con aforo: capacidad del tour;
- * - transporte y guía: beneficiarios adultos cobrables.
+ * - cualquier otro servicio compartido: beneficiarios adultos cobrables;
+ * - privado: importe por persona, sin reparto por capacidad.
  *
  * Los niños con precio explícito no forman parte de `adults`, por lo que no
  * alteran el divisor y se suman únicamente como extras al total.
@@ -203,22 +203,18 @@ const inferDivisionFlags = (service = {}, assigned = true) => {
 const getAssignedPricingDivisor = ({
   service = {},
   assigned = true,
-  precioAdultoDividido = false,
+  tipoPrecio: sharedPrice = false,
   capacidadLimite = false,
   adults = [],
 }) => {
   const beneficiaryDivisor = Math.max(1, adults.length || 1);
-  if (!precioAdultoDividido) return beneficiaryDivisor;
+  if (sharedPriceFlag(sharedPrice) !== true) return beneficiaryDivisor;
 
   const typeService = String(
     assigned ? resolveServiceType(service) : resolveBaseServiceType(service),
   ).toLowerCase();
 
   if (typeService.includes("hotel")) {
-    return getCapacityLimitForService(service, assigned) || beneficiaryDivisor;
-  }
-
-  if (typeService.includes("endose") && capacidadLimite) {
     return getCapacityLimitForService(service, assigned) || beneficiaryDivisor;
   }
 
@@ -248,15 +244,15 @@ const buildTariffFromFlatFields = (service = {}, assigned = true) => {
       )
     : Boolean(service.igv);
   const inferredFlags = inferDivisionFlags(service, assigned);
-  const assignedPrecioAdultoDividido =
-    service.assignedPrecioAdultoDividido ??
-    service.assignedService?.assignedPrecioAdultoDividido ??
-    service.assignedService?.precioAdultoDividido;
-  const precioAdultoDividido = assigned
-    ? assignedPrecioAdultoDividido != null
-      ? Boolean(assignedPrecioAdultoDividido)
-      : inferredFlags.precioAdultoDividido
-    : Boolean(service.precioAdultoDividido);
+  const assignedSharedPrice =
+    sharedPriceFlag(service.assignedTipoPrecio) ??
+    sharedPriceFlag(service.assignedService?.assignedTipoPrecio) ??
+    sharedPriceFlag(service.assignedService?.tipoPrecio);
+  const sharedPrice = assigned
+    ? assignedSharedPrice != null
+      ? Boolean(assignedSharedPrice)
+      : sharedPriceFlag(inferredFlags.tipoPrecio)
+    : Boolean(sharedPriceFlag(service.tipoPrecio));
   const assignedCapacidadLimite =
     service.assignedCapacidadLimite ??
     service.assignedService?.assignedCapacidadLimite ??
@@ -271,7 +267,7 @@ const buildTariffFromFlatFields = (service = {}, assigned = true) => {
   const divisor = getAssignedPricingDivisor({
     service,
     assigned,
-    precioAdultoDividido,
+    tipoPrecio: normalizePricingType(sharedPrice),
     capacidadLimite,
     adults,
   });
@@ -305,14 +301,14 @@ const buildTariffFromFlatFields = (service = {}, assigned = true) => {
     precioOriginal = round2(
       Math.max(0, backendTotalWithChildren - childExtrasTotal),
     );
-    precio = precioAdultoDividido
+    precio = sharedPrice
       ? round2(precioOriginal / divisor)
       : round2(precioServicio);
   } else {
-    precio = precioAdultoDividido
+    precio = sharedPrice
       ? round2(precioServicio / divisor)
       : round2(precioServicio);
-    precioOriginal = precioAdultoDividido
+    precioOriginal = sharedPrice
       ? round2(precioServicio)
       : round2(precioServicio * adultBeneficiaryCount);
   }

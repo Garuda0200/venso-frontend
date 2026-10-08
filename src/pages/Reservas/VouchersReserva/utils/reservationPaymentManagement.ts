@@ -1,3 +1,4 @@
+import { sharedPriceFlag, normalizePricingType } from "../../../../utils/servicePricingType";
 import { getAssignedTariff, hasAssignedService, mergeItineraryDaysByNumber } from "./serviceAssignment";
 import { getSpecializedServiceType } from "./specializedPaymentGroups";
 
@@ -33,7 +34,7 @@ export function normalizePaymentItinerary(itinerary: any): any[] {
         assignedPrecioTotal: defined(service.assignedPrecioTotal, service.assigned_precio_total, wrapper.assignedPrecioTotal, wrapper.assigned_precio_total, wrapper.precioTotal, wrapper.precio_total),
         assignedMoneda: defined(service.assignedMoneda, service.assigned_moneda, wrapper.moneda),
         assignedIgv: defined(service.assignedIgv, service.assigned_igv, wrapper.igv),
-        assignedPrecioAdultoDividido: defined(service.assignedPrecioAdultoDividido, service.assigned_precio_adulto_dividido, wrapper.precioAdultoDividido, wrapper.precio_adulto_dividido),
+        assignedTipoPrecio: normalizePricingType(defined(sharedPriceFlag(service.assignedTipoPrecio), sharedPriceFlag(service.assigned_tipo_precio), sharedPriceFlag(wrapper.tipoPrecio), sharedPriceFlag(wrapper.tipo_precio))),
         assignedCapacidadLimite: defined(service.assignedCapacidadLimite, service.assigned_capacidad_limite, wrapper.capacidadLimite, wrapper.capacidad_limite),
         assignedBeneficiariosAdultos: defined(service.assignedBeneficiariosAdultos, service.assigned_beneficiarios_adultos, wrapper.assignedBeneficiariosAdultos, wrapper.beneficiariosAdultos, wrapper.beneficiarios_adultos),
         assignedBeneficiariosNinos: defined(service.assignedBeneficiariosNinos, service.assigned_beneficiarios_ninos, wrapper.assignedBeneficiariosNinos, wrapper.beneficiariosNinos, wrapper.beneficiarios_ninos),

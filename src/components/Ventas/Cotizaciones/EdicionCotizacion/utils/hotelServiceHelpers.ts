@@ -1,3 +1,4 @@
+import { sharedPriceFlag, normalizePricingType } from "../../../../../utils/servicePricingType";
 ﻿import {
   getHotelRoomCapacity,
   isExtraBedRoomType,
@@ -2027,7 +2028,7 @@ export const buildHotelServicesForNight = (
         // above remains tax-inclusive for totals, while the igv boolean is the
         // sole authority for applying the 18% charge after reloading.
         precioServicio: roomBaseUnit,
-        precioAdultoDividido: true,
+        tipoPrecio: normalizePricingType(true),
         capacidadLimite: true,
         igv: hasRoomIgv,
         precio_adult: hotelAdultUnitPrice,

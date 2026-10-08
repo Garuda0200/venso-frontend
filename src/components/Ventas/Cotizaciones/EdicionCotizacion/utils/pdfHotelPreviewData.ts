@@ -1,3 +1,4 @@
+import { sharedPriceFlag, normalizePricingType } from "../../../../../utils/servicePricingType";
 import { deriveSelectedHotelFromDays } from "./hotelServiceHelpers";
 import {
   getHotelDetalleLanguagePayload,
@@ -150,8 +151,8 @@ const getExternalServiceAdultUnitPrice = (service = {}) => {
     service.pricePerPerson,
     service.precioAdult,
     service.precio_adult,
-    service.assigned_precio_adulto_dividido,
-    service.assignedPrecioAdultoDividido,
+    sharedPriceFlag(service.assigned_tipo_precio),
+    sharedPriceFlag(service.assignedTipoPrecio),
     service.assignedPrecioServicio,
     service.assigned_precio_servicio,
     service.tariff?.precio,

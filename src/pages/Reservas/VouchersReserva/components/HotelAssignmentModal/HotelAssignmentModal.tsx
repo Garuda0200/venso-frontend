@@ -138,11 +138,8 @@ const getRoomUnitPrice = (item) => {
     return Number(item.customPrice);
   }
   return Number(
-    tariff?.precio ||
-      tariff?.precio_compartido ||
-      tariff?.precio_privado ||
-      tariff?.precio_unico ||
-      0,
+    tariff?.precio ??
+      tariff?.[`precio_${tariff?.selectedType || "compartido"}`] ?? 0,
   );
 };
 
@@ -1328,7 +1325,7 @@ const HotelAssignmentModal = ({
       typeof priceType === "string" ? priceType : tariff?.selectedType || null;
     const hotelToUse = hotel || selectedHotel;
     const tariffWithType = selectedType
-      ? { ...tariff, selectedType }
+      ? { ...tariff, selectedType, tipoPrecio:selectedType, precio:tariff?.[`precio_${selectedType}`] }
       : tariff;
     const selectionId = buildSelectedRoomId(
       hotelToUse,

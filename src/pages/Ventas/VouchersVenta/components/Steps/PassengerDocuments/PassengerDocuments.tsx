@@ -12,19 +12,21 @@ import {
   MdCardMembership,
   MdCreditCard,
   MdLibraryBooks,
-  MdDownload,
   MdArrowForward,
 } from "react-icons/md";
 import {
   getProxyUrl,
   makeProxyUrlAbsolute,
 } from "../../../../../../services/presignedUrlService";
-import useFileUpload from "../../../../../../hooks/useFileUpload"; // Hook para subir archivos a Tigris
-import { getTigrisPathForDocumentosVenta } from "../../../../../../utils/tigrisPathHelper"; // Helper para rutas organizadas
 import voucherDocumentService from "../../../../../../services/voucherDocumentService"; // Servicio para documentos relacionales
 import FileDropZone from "../../../../../../components/common/FileDropZone/FileDropZone";
+import ImagePreviewModal from "../../../../../../components/Contabilidad/shared/ImagePreviewModal";
 import "./PassengerDocuments.scss";
 import { v4 as uuidv4 } from "uuid";
+import { hydrateDocumentDraft, reconcileDocumentListing } from "./documentListing";
+import { getDocumentPreviewUrl, getDocumentFilename, getDocumentMimeType } from "./documentPreview";
+import DocumentDeletePopover from "./DocumentDeletePopover";
+import { canDeletePassengerDocument } from "./documentPermissions";
 
 const ACCEPTED_TYPES = [
   "image/jpeg",
@@ -37,39 +39,39 @@ const PassengerDocuments = ({
   passengerData,
   documentData,
   onDocumentDataChange,
-  isEditMode = false,
   voucherId = null, // ID del voucher para jerarquía en Tigris
-  voucherCode = null, // Código del voucher para rutas organizadas en Tigris
-}) => {
-  // Hook para subir archivos a Tigris
-  const {
-    uploadFile,
-    isUploading,
-    uploadProgress: tigrisUploadProgress,
-    uploadError,
-  } = useFileUpload();
-
-  // CRÍTICO: Ref persistente que NUNCA se resetea
+  cotizacionId = null,
+  hasUnsavedPassengers = false,
+  onIdentityApplied,
+  onPersistDocuments,
+  onPreparingChange,
+  onDocumentsAdded,
+  documentsSaving = false,
+}: any) => {
+  // Local working view; the parent owns the draft across step unmounts.
   const documentsMapRef = useRef(new Map());
-  const isInitializedRef = useRef(false);
-  const syncTimeoutRef = useRef(null);
-  const fileInputRef = useRef(null);
-  const lastDocumentDataHashRef = useRef("");
+  const scopeEpochRef = useRef(0);
+  const deletedIdsRef = useRef(new Set());
+  const preparingFilesRef = useRef(0);
+  const activeReadersRef = useRef(new Set());
 
   // Document management state
   const [passengerDocuments, setPassengerDocuments] = useState(new Map());
+  const [unassignedDocuments, setUnassignedDocuments] = useState([]);
 
   // Selected passenger state
   const [selectedPassengerId, setSelectedPassengerId] = useState(null);
   const [activeCategory, setActiveCategory] = useState("passports");
 
   // UI states
-  const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState([]);
   const [uploadErrors, setUploadErrors] = useState([]);
   const [statusMessage, setStatusMessage] = useState(null);
   const [previewDocument, setPreviewDocument] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState(null);
+  const [deletingDocument, setDeletingDocument] = useState(false);
+  const deleteInFlightRef = useRef(false);
 
   // Format passengers list with unique IDs for selection - MEMOIZED
   const allPassengers = React.useMemo(
@@ -88,13 +90,8 @@ const PassengerDocuments = ({
     [passengerData],
   );
 
-  // CRÍTICO: Función de sincronización mejorada con debounce
+  // Synchronize immediately: save/next must see the file just selected.
   const syncToParent = useCallback(() => {
-    if (syncTimeoutRef.current) {
-      clearTimeout(syncTimeoutRef.current);
-    }
-
-    syncTimeoutRef.current = setTimeout(() => {
       try {
         // CORREGIDO: Crear objeto vacío que se llenará con passengerKeys como top-level keys
         const outputDocumentData = {};
@@ -123,7 +120,7 @@ const PassengerDocuments = ({
               passengerDocs[category].forEach((doc) => {
                 outputDocumentData[passengerKey][category].push({
                   ...doc,
-                  ownerId: passenger.id,
+                  ownerId: passenger.id_pasajero || passenger.id,
                   ownerName:
                     `${passenger.nombres || ""} ${passenger.apellidos || ""}`.trim(),
                   ownerType: passenger.type,
@@ -138,317 +135,68 @@ const PassengerDocuments = ({
         onDocumentDataChange(outputDocumentData);
       } catch (error) {
         // Silent error handling
-      } finally {
-        syncTimeoutRef.current = null;
       }
-    }, 150);
   }, [allPassengers, onDocumentDataChange]);
 
-  // CRÍTICO: Reset initialization cuando cambia el voucherId O cuando se monta el componente
+  // Restore the parent's canonical draft synchronously, in creation and editing.
+  // Do not wait for a database request before interpreting passenger-keyed data.
   useEffect(() => {
-    isInitializedRef.current = false;
-    lastDocumentDataHashRef.current = "";
-
-    // Cleanup when component unmounts
+    scopeEpochRef.current += 1;
+    deletedIdsRef.current = new Set();
+    preparingFilesRef.current = 0;
+    setUnassignedDocuments([]);
+    setDeleteConfirmation(null);
+    setDeletingDocument(false);
+    deleteInFlightRef.current = false;
     return () => {
-      isInitializedRef.current = false;
+      scopeEpochRef.current += 1;
+      for (const reader of activeReadersRef.current) reader.abort?.();
+      activeReadersRef.current.clear();
+      onPreparingChange?.(false);
     };
-  }, [voucherId]);
+  }, [voucherId, cotizacionId, onPreparingChange]);
 
-  // CRÍTICO: Inicialización única - SOLO UNA VEZ (por voucherId o mount)
+  useEffect(() => { setDeleteConfirmation(null); }, [activeCategory, selectedPassengerId]);
+
   useEffect(() => {
-    if (isInitializedRef.current) {
-      return;
-    }
+    const restored = hydrateDocumentDraft(allPassengers, documentData, makeProxyUrlAbsolute, getProxyUrl);
+    documentsMapRef.current = restored;
+    setPassengerDocuments(restored);
+    setSelectedPassengerId(previous => restored.has(previous) ? previous
+      : [...restored].find(([, groups]) => Object.values(groups).some(docs => docs.length))?.[0]
+        || allPassengers[0]?.passengerKey || null);
+  }, [documentData, allPassengers, voucherId, cotizacionId]);
 
-    // No inicializar si aún no hay pasajeros cargados (evita race condition
-    // cuando isDocumentManagementMode salta directo al step de documentos
-    // antes de que loadVoucherData termine de cargar los pasajeros)
-    if (isEditMode && voucherId && allPassengers.length === 0) {
-      return;
-    }
-
-    const initializeDocuments = async () => {
+  // A persisted draft is also a real voucher. Reload its saved/unassigned files
+  // even when the wizard still has isEditMode=false. Ignore old-file responses.
+  const rosterSignature = allPassengers.map(passenger => `${passenger.passengerKey}:${passenger.id_pasajero ?? passenger.id ?? ''}`).join('|');
+  const latestSyncRef = useRef(syncToParent);
+  latestSyncRef.current = syncToParent;
+  useEffect(() => {
+    if (!voucherId || !allPassengers.length) return;
+    let cancelled = false;
+    const epoch = scopeEpochRef.current;
+    const reload = async () => {
       try {
-        const documentsByPassenger = new Map();
-
-        // Create empty document containers for each passenger
-        allPassengers.forEach((passenger) => {
-          documentsByPassenger.set(passenger.passengerKey, {
-            passports: [],
-            idCards: [],
-            otherDocuments: [],
-          });
+        const response = await voucherDocumentService.getDocumentsByVoucherId(voucherId, { _skipDedup: true });
+        if (cancelled || epoch !== scopeEpochRef.current) return;
+        if (!response.success) throw new Error('Document listing unavailable');
+        const next = reconcileDocumentListing(allPassengers, documentsMapRef.current, response, makeProxyUrlAbsolute, {
+          preserveSaved: true, excludedIds: deletedIdsRef.current,
         });
-
-        // PRIORIDAD 1: Si estamos en modo edición Y tenemos voucherId, cargar desde la base de datos
-        if (isEditMode && voucherId) {
-          try {
-            const response =
-              await voucherDocumentService.getDocumentsByVoucherId(voucherId);
-
-            if (response.success && response.data) {
-              const backendDocs = response.data.data || response.data;
-
-              // Crear mapa passengerId -> passengerKey
-              const passengerIdToKeyMap = {};
-              allPassengers.forEach((p) => {
-                passengerIdToKeyMap[p.id_pasajero] = p.passengerKey;
-              });
-
-              // Asignar documentos a los pasajeros correspondientes
-              ["passports", "idCards", "otherDocuments"].forEach((category) => {
-                if (Array.isArray(backendDocs[category])) {
-                  backendDocs[category].forEach((doc) => {
-                    // Construir passengerKey desde passengerId
-                    const passengerKey = passengerIdToKeyMap[doc.passengerId];
-
-                    if (
-                      passengerKey &&
-                      documentsByPassenger.has(passengerKey)
-                    ) {
-                      // Convertir proxy URL relativa a absoluta
-                      const absoluteProxyUrl = makeProxyUrlAbsolute(
-                        doc.proxyUrl,
-                      );
-
-                      // Transformar doc al formato que espera el componente
-                      const transformedDoc = {
-                        id: doc.id,
-                        dbId: doc.id,
-                        name: doc.filename,
-                        filename: doc.filename,
-                        tigrisUrl: doc.tigrisUrl,
-                        dataUrl: absoluteProxyUrl,
-                        proxyUrl: absoluteProxyUrl,
-                        type: doc.fileType || "application/octet-stream",
-                        size: doc.fileSize,
-                        ownerId: doc.passengerId,
-                        ownerName: doc.passengerName,
-                        passengerKey: passengerKey,
-                        documentoTipo: doc.documentoTipo,
-                        uploadDate: doc.uploadedAt,
-                        createdAt: doc.uploadedAt,
-                        createdBy: doc.createdBy,
-                        isFromDatabase: true,
-                        category: category,
-                      };
-
-                      documentsByPassenger
-                        .get(passengerKey)
-                        [category].push(transformedDoc);
-                    }
-                  });
-                }
-              });
-            } else {
-              console.warn(
-                " No se pudieron cargar documentos desde DB:",
-                response.error,
-              );
-              // Continuar con el flujo normal usando documentData
-            }
-            // CRÍTICO: Marcar hash del documentData actual para que el segundo effect
-            // no sobreescriba los datos cargados de la DB con datos que usan passengerKeys incompatibles
-            if (documentData) {
-              lastDocumentDataHashRef.current = JSON.stringify(documentData);
-            }
-          } catch (error) {
-            console.error(" Error cargando documentos desde DB:", error);
-            // Continuar con el flujo normal usando documentData
-          }
+        documentsMapRef.current = next.documents;
+        setPassengerDocuments(next.documents);
+        setUnassignedDocuments(next.unassigned);
+        latestSyncRef.current();
+      } catch {
+        if (!cancelled && epoch === scopeEpochRef.current) {
+          setStatusMessage({ type: 'warning', message: 'No se pudo actualizar la lista guardada. Los documentos de esta sesión se conservan; vuelve a abrir Documentos para reintentar.' });
         }
-        // PRIORIDAD 2: Si NO hay documentos cargados de la DB, usar documentData (JSONB legacy)
-        else if (documentData && Object.keys(documentData).length > 0) {
-          // Process existing document data SOLO SI EXISTE
-          await Promise.all(
-            ["passports", "idCards", "otherDocuments"].map(async (category) => {
-              if (Array.isArray(documentData[category])) {
-                const processedDocs = documentData[category].map((doc) => {
-                  if (!doc) return null;
-
-                  // Usar proxy URL en lugar de presigned URL
-                  let processedDoc = { ...doc };
-                  if (doc.tigrisUrl && !doc.dataUrl) {
-                    const proxyUrl = getProxyUrl(doc.tigrisUrl);
-                    processedDoc.proxyUrl = proxyUrl;
-                    processedDoc.dataUrl = proxyUrl;
-                  } else if (doc.proxyUrl && !doc.dataUrl) {
-                    // Convertir proxy URL relativa a absoluta
-                    const absoluteProxyUrl = makeProxyUrlAbsolute(doc.proxyUrl);
-                    processedDoc.proxyUrl = absoluteProxyUrl;
-                    processedDoc.dataUrl = absoluteProxyUrl;
-                  } else if (doc.dataUrl) {
-                    // Ya tiene dataUrl, usarla directamente
-                    processedDoc.dataUrl = doc.dataUrl;
-                  }
-
-                  return processedDoc;
-                });
-
-                // Ahora asignar los documentos procesados a los pasajeros
-                processedDocs.forEach((processedDoc) => {
-                  if (!processedDoc) return;
-
-                  const ownerId =
-                    processedDoc.ownerId || processedDoc.owner_id || null;
-                  const passengerKey =
-                    processedDoc.passengerKey ||
-                    processedDoc.passenger_key ||
-                    null;
-
-                  let assignedToPassenger = false;
-
-                  // Method 1: By passengerKey
-                  if (passengerKey && documentsByPassenger.has(passengerKey)) {
-                    documentsByPassenger.get(passengerKey)[category].push({
-                      ...processedDoc,
-                      id: processedDoc.id || `doc-${uuidv4()}`,
-                      passengerKey: passengerKey,
-                    });
-                    assignedToPassenger = true;
-                  }
-                  // Method 2: By ownerId
-                  else if (ownerId) {
-                    const matchingPassenger = allPassengers.find(
-                      (p) => String(p.id) === String(ownerId),
-                    );
-
-                    if (matchingPassenger) {
-                      const targetKey = matchingPassenger.passengerKey;
-
-                      documentsByPassenger.get(targetKey)[category].push({
-                        ...processedDoc,
-                        id: processedDoc.id || `doc-${uuidv4()}`,
-                        passengerKey: targetKey,
-                      });
-                      assignedToPassenger = true;
-                    }
-                  }
-
-                  // Method 3: By name/type match
-                  if (
-                    !assignedToPassenger &&
-                    processedDoc.ownerType &&
-                    processedDoc.ownerName
-                  ) {
-                    const matchingPassenger = allPassengers.find(
-                      (p) =>
-                        p.type === processedDoc.ownerType &&
-                        `${p.nombres} ${p.apellidos}`.trim() ===
-                          processedDoc.ownerName.trim(),
-                    );
-
-                    if (matchingPassenger) {
-                      const targetKey = matchingPassenger.passengerKey;
-
-                      documentsByPassenger.get(targetKey)[category].push({
-                        ...processedDoc,
-                        id: processedDoc.id || `doc-${uuidv4()}`,
-                        passengerKey: targetKey,
-                        ownerId: matchingPassenger.id,
-                      });
-                    }
-                  }
-                });
-              }
-            }),
-          );
-        }
-
-        // Auto-select passenger with documents
-        if (!selectedPassengerId) {
-          for (const [key, docs] of documentsByPassenger.entries()) {
-            const totalDocs =
-              docs.passports.length +
-              docs.idCards.length +
-              docs.otherDocuments.length;
-            if (totalDocs > 0) {
-              setSelectedPassengerId(key);
-              break;
-            }
-          }
-        }
-
-        // Initialize refs and state
-        documentsMapRef.current = new Map(documentsByPassenger);
-        setPassengerDocuments(new Map(documentsByPassenger));
-
-        // Select first passenger if none selected
-        if (allPassengers.length > 0 && !selectedPassengerId) {
-          setSelectedPassengerId(allPassengers[0].passengerKey);
-        }
-
-        isInitializedRef.current = true;
-      } catch (error) {
-        console.error(" Error initializing documents:", error);
       }
     };
-
-    // Ejecutar la inicialización asíncrona
-    initializeDocuments();
-  }, [voucherId, isEditMode, allPassengers]); // Re-ejecutar cuando cambian estos valores
-
-  // NUEVO: Effect para procesar cambios en documentData DESPUÉS de la inicialización
-  useEffect(() => {
-    if (!isInitializedRef.current || !documentData) return;
-
-    // Crear un hash de los documentos para detectar cambios reales
-    const currentDocumentHash = JSON.stringify(documentData);
-    if (currentDocumentHash === lastDocumentDataHashRef.current) {
-      return; // No hay cambios, no hacer nada
-    }
-
-    lastDocumentDataHashRef.current = currentDocumentHash;
-
-    // FIX: Eliminar validación que impedía actualizar cuando se borraba solo 1 documento
-    // Ahora siempre se actualizará cuando haya cambios en documentData
-
-    // Re-procesar documentos con la estructura correcta {passengerKey: {category: [docs]}}
-    const documentsByPassenger = new Map();
-
-    // Inicializar estructura vacía para cada pasajero
-    allPassengers.forEach((passenger) => {
-      documentsByPassenger.set(passenger.passengerKey, {
-        passports: [],
-        idCards: [],
-        otherDocuments: [],
-      });
-    });
-
-    // FIX: Iterar sobre passengerKeys (nivel superior de documentData)
-    Object.keys(documentData).forEach((passengerKey) => {
-      const passengerDocs = documentData[passengerKey];
-
-      if (!passengerDocs || typeof passengerDocs !== "object") return;
-
-      // Verificar si este passengerKey existe en nuestros pasajeros
-      if (!documentsByPassenger.has(passengerKey)) {
-        console.warn(
-          ` PassengerKey ${passengerKey} no encontrado en allPassengers`,
-        );
-        return;
-      }
-
-      // Iterar sobre categorías dentro de cada pasajero
-      ["passports", "idCards", "otherDocuments"].forEach((category) => {
-        if (Array.isArray(passengerDocs[category])) {
-          passengerDocs[category].forEach((doc) => {
-            if (!doc) return;
-
-            documentsByPassenger.get(passengerKey)[category].push({
-              ...doc,
-              id: doc.id || `doc-${uuidv4()}`,
-              passengerKey: passengerKey,
-            });
-          });
-        }
-      });
-    });
-
-    documentsMapRef.current = documentsByPassenger;
-    setPassengerDocuments(new Map(documentsByPassenger));
-  }, [documentData, allPassengers]);
+    reload();
+    return () => { cancelled = true; };
+  }, [voucherId, cotizacionId, rosterSignature]);
 
   // Handle file upload
   const handleFileUpload = useCallback(
@@ -477,155 +225,171 @@ const PassengerDocuments = ({
       );
 
       const newDocuments = [];
+      const epoch = scopeEpochRef.current;
+      preparingFilesRef.current += 1;
+      onPreparingChange?.(true);
 
-      for (let i = 0; i < fileArray.length; i++) {
-        const file = fileArray[i];
+      try {
+        for (let i = 0; i < fileArray.length; i++) {
+          const file = fileArray[i];
 
-        // Simular progreso durante el upload
-        const progressInterval = setInterval(() => {
-          setUploadProgress((prev) =>
-            prev.map((item, idx) =>
-              idx === i
-                ? { ...item, progress: Math.min(item.progress + 10, 90) }
-                : item,
-            ),
-          );
-        }, 200);
+          // Simular progreso durante el upload
+          const progressInterval = setInterval(() => {
+            if (epoch !== scopeEpochRef.current) return;
+            setUploadProgress((prev) =>
+              prev.map((item, idx) =>
+                idx === i
+                  ? { ...item, progress: Math.min(item.progress + 10, 90) }
+                  : item,
+              ),
+            );
+          }, 200);
 
-        try {
-          if (!ACCEPTED_TYPES.includes(file.type)) {
-            throw new Error(`Tipo de archivo no permitido: ${file.name}`);
+          try {
+            if (!ACCEPTED_TYPES.includes(file.type)) {
+              throw new Error(`Tipo de archivo no permitido: ${file.name}`);
+            }
+
+            // Prepare a local preview once; the parent persists the batch below.
+            const reader = new FileReader();
+            const base64Promise = new Promise((resolve, reject) => {
+              activeReadersRef.current.add(reader);
+              reader.onload = () => {
+                activeReadersRef.current.delete(reader);
+                resolve(reader.result);
+              };
+              reader.onerror = reader.onabort = () => {
+                activeReadersRef.current.delete(reader);
+                reject(new Error("No se pudo leer el archivo seleccionado"));
+              };
+              reader.readAsDataURL(file);
+            });
+
+            const dataUrl = await base64Promise;
+
+            clearInterval(progressInterval);
+            if (epoch !== scopeEpochRef.current) return;
+            setUploadProgress((prev) =>
+              prev.map((item, idx) =>
+                idx === i ? { ...item, progress: 100 } : item,
+              ),
+            );
+
+            // ESTRUCTURA TEMPORAL (sin tigrisUrl aún)
+            const document = {
+              id: `doc-${selectedPassengerId}-${uuidv4()}`,
+              name: file.name,
+              filename: file.name,
+              fileObject: file, // Keep until storage and DB both confirm the save.
+              dataUrl: dataUrl, // Base64 para preview inmediato
+              type: file.type,
+              size: file.size,
+              uploadDate: new Date().toISOString(),
+              ownerId: passenger.id_pasajero || passenger.id,
+              ownerName:
+                `${passenger.nombres || ""} ${passenger.apellidos || ""}`.trim(),
+              ownerType: passenger.type,
+              passengerKey: selectedPassengerId,
+              category: activeCategory,
+              isPending: true, // Marca que aún no se subió a Tigris/DB
+            };
+
+            newDocuments.push(document);
+          } catch (error) {
+            clearInterval(progressInterval);
+            if (epoch !== scopeEpochRef.current) return;
+            console.error("No se pudo subir un documento; nombre y detalles omitidos");
+            setUploadErrors((prev) => [
+              ...prev,
+              `Error procesando ${file.name}: ${error.message}`,
+            ]);
           }
+        }
 
-          // MAPEO DE CATEGORÍAS: activeCategory -> tipo para Tigris
-          const categoryMap = {
-            passports: "passports",
-            idCards: "idCards",
-            otherDocuments: "otherDocuments",
+        if (newDocuments.length > 0) {
+          const currentDocs = documentsMapRef.current.get(
+            selectedPassengerId,
+          ) || {
+            passports: [],
+            idCards: [],
+            otherDocuments: [],
           };
 
-          const tipoDocumento = categoryMap[activeCategory] || "otherDocuments";
+          const updatedPassengerDocs = {
+            ...currentDocs,
+            [activeCategory]: [...currentDocs[activeCategory], ...newDocuments],
+          };
 
-          // NO SUBIR INMEDIATAMENTE - Solo preparar para subir después
-          // Convertir archivo a base64 para preview temporal
-          const reader = new FileReader();
-          const base64Promise = new Promise((resolve, reject) => {
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
+          documentsMapRef.current.set(selectedPassengerId, updatedPassengerDocs);
+
+          setPassengerDocuments((prevMap) => {
+            const newMap = new Map(prevMap);
+            newMap.set(selectedPassengerId, updatedPassengerDocs);
+            return newMap;
           });
 
-          const dataUrl = await base64Promise;
-
-          clearInterval(progressInterval);
-          setUploadProgress((prev) =>
-            prev.map((item, idx) =>
-              idx === i ? { ...item, progress: 100 } : item,
-            ),
+          syncToParent();
+          onDocumentsAdded?.();
+          showStatusMessage(
+            "success",
+            onDocumentsAdded ? "Archivos preparados. Guardando los documentos en el file..." : "Documentos preparados; pendientes de guardar.",
           );
-
-          // ESTRUCTURA TEMPORAL (sin tigrisUrl aún)
-          const document = {
-            id: `doc-${selectedPassengerId}-${uuidv4()}`,
-            name: file.name,
-            filename: file.name,
-            fileObject: file, // Guardar archivo para subirlo después
-            dataUrl: dataUrl, // Base64 para preview inmediato
-            type: file.type,
-            size: file.size,
-            uploadDate: new Date().toISOString(),
-            ownerId: passenger.id,
-            ownerName:
-              `${passenger.nombres || ""} ${passenger.apellidos || ""}`.trim(),
-            ownerType: passenger.type,
-            passengerKey: selectedPassengerId,
-            category: activeCategory,
-            isPending: true, // Marca que aún no se subió a Tigris/DB
-          };
-
-          newDocuments.push(document);
-        } catch (error) {
-          clearInterval(progressInterval);
-          console.error(` Error al subir ${file.name}:`, error);
-          setUploadErrors((prev) => [
-            ...prev,
-            `Error procesando ${file.name}: ${error.message}`,
-          ]);
         }
-      }
 
-      if (newDocuments.length > 0) {
-        const currentDocs = documentsMapRef.current.get(
-          selectedPassengerId,
-        ) || {
-          passports: [],
-          idCards: [],
-          otherDocuments: [],
-        };
-
-        const updatedPassengerDocs = {
-          ...currentDocs,
-          [activeCategory]: [...currentDocs[activeCategory], ...newDocuments],
-        };
-
-        documentsMapRef.current.set(selectedPassengerId, updatedPassengerDocs);
-
-        setPassengerDocuments((prevMap) => {
-          const newMap = new Map(prevMap);
-          newMap.set(selectedPassengerId, updatedPassengerDocs);
-          return newMap;
-        });
-
-        syncToParent();
-        showStatusMessage(
-          "success",
-          `${newDocuments.length} documento(s) agregado(s). Se subirán al guardar el voucher.`,
-        );
-      }
-
-      setTimeout(() => {
-        setUploadProgress([]);
-      }, 2000);
-
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
+        setTimeout(() => {
+          if (epoch === scopeEpochRef.current) setUploadProgress([]);
+        }, 2000);
+      } finally {
+        if (epoch === scopeEpochRef.current) {
+          preparingFilesRef.current -= 1;
+          onPreparingChange?.(preparingFilesRef.current > 0);
+        }
       }
     },
     [
+      onPreparingChange,
+      onDocumentsAdded,
       selectedPassengerId,
       activeCategory,
       allPassengers,
       syncToParent,
-      voucherId,
-      voucherCode,
-      uploadFile,
     ],
   );
 
   const showStatusMessage = (type, message) => {
+    const epoch = scopeEpochRef.current;
     setStatusMessage({ type, message });
-    setTimeout(() => setStatusMessage(null), 3000);
+    setTimeout(() => {
+      if (epoch === scopeEpochRef.current) setStatusMessage(null);
+    }, 3000);
   };
 
   const handlePassengerChange = useCallback((passengerKey) => {
+    if (deleteInFlightRef.current) return;
+    setDeleteConfirmation(null);
     setSelectedPassengerId(passengerKey);
   }, []);
-
-  /** Bridge: FileDropZone gives us pre-processed file objects; feed raw files into existing handler */
-  const handleDropZoneFiles = useCallback(
-    (pendingFiles) => {
-      // Extract the raw File objects and pass them to existing handleFileUpload
-      const rawFiles = pendingFiles.map((f) => f.fileObject).filter(Boolean);
-      if (rawFiles.length > 0) handleFileUpload(rawFiles);
-    },
-    [handleFileUpload],
-  );
 
   const handleDeleteDocument = useCallback(
     async (docId) => {
       if (!selectedPassengerId) return;
+      const protectedDoc = documentsMapRef.current.get(selectedPassengerId)?.[activeCategory]?.find(doc => doc.id === docId);
+      if (protectedDoc?.documentAssetId) {
+        showStatusMessage("warning", "El documento privado se conserva como evidencia. Su eliminación se gestiona mediante la retención documental.");
+        return;
+      }
+      if (!canDeletePassengerDocument(protectedDoc)) {
+        showStatusMessage("warning", "No tienes permiso para eliminar este documento.");
+        return;
+      }
 
-      if (window.confirm("¿Está seguro de eliminar este documento?")) {
+      if (deleteInFlightRef.current || documentsSaving) return;
+      deleteInFlightRef.current = true;
+      setDeletingDocument(true);
+      const deleteEpoch = scopeEpochRef.current;
+      preparingFilesRef.current += 1;
+      onPreparingChange?.(true);
+      try {
         const currentDocs = documentsMapRef.current.get(selectedPassengerId);
         if (!currentDocs) return;
 
@@ -634,66 +398,49 @@ const PassengerDocuments = ({
           (doc) => doc.id === docId,
         );
 
-        // SIEMPRE eliminar de la UI inmediatamente (optimistic)
-        const updatedDocs = {
-          ...currentDocs,
-          [activeCategory]: currentDocs[activeCategory].filter(
-            (doc) => doc.id !== docId,
-          ),
-        };
-
-        documentsMapRef.current.set(selectedPassengerId, updatedDocs);
-        setPassengerDocuments((prevMap) => {
-          const newMap = new Map(prevMap);
-          newMap.set(selectedPassengerId, { ...updatedDocs });
-          return newMap;
-        });
-
-        // Prevent the documentData useEffect from overwriting this local change
-        // by marking the current parent documentData hash as "already processed"
-        // (syncToParent will update the parent shortly, but until then the old hash protects us)
-
-        // Si el documento está en la base de datos, eliminarlo también de allí
-        if (
-          docToDelete &&
-          (docToDelete.dbId || docToDelete.isFromDatabase) &&
-          isEditMode
-        ) {
+        // A new voucher also has saved files: confirm deletion before hiding it.
+        const epoch = scopeEpochRef.current;
+        const savedId = docToDelete?.dbId || (docToDelete?.isFromDatabase ? docId : null);
+        if (savedId && voucherId) {
           try {
-            const deleteResponse = await voucherDocumentService.deleteDocument(
-              docToDelete.dbId || docId,
-            );
-
-            if (!deleteResponse.success) {
-              console.error(
-                " Error eliminando documento de DB:",
-                deleteResponse.error,
-              );
-              showStatusMessage(
-                "warning",
-                "El documento se eliminó de la vista pero puede haber un error en la base de datos",
-              );
-            }
-          } catch (error) {
-            console.error(" Error al eliminar documento de DB:", error);
-            showStatusMessage(
-              "warning",
-              "El documento se eliminó de la vista pero puede haber un error en la base de datos",
-            );
+            const response = await voucherDocumentService.deleteDocument(savedId);
+            if (epoch !== scopeEpochRef.current) return;
+            if (!response.success) throw new Error("Document deletion unavailable");
+          } catch {
+            if (epoch === scopeEpochRef.current) showStatusMessage("error", "No se pudo eliminar el documento. Se conserva en la lista para reintentar.");
+            return;
           }
+          deletedIdsRef.current.add(String(savedId));
         }
+        const latestDocs = documentsMapRef.current.get(selectedPassengerId);
+        if (!latestDocs) return;
+        const updatedDocs = {
+          ...latestDocs,
+          [activeCategory]: latestDocs[activeCategory].filter(doc => doc.id !== docId),
+        };
+        documentsMapRef.current.set(selectedPassengerId, updatedDocs);
+        setPassengerDocuments(new Map(documentsMapRef.current));
 
         syncToParent();
+        setDeleteConfirmation(null);
         showStatusMessage("success", "Documento eliminado correctamente");
+      } finally {
+        if (deleteEpoch === scopeEpochRef.current) {
+          deleteInFlightRef.current = false;
+          setDeletingDocument(false);
+          preparingFilesRef.current -= 1;
+          onPreparingChange?.(preparingFilesRef.current > 0);
+        }
       }
     },
     [
       selectedPassengerId,
       activeCategory,
       syncToParent,
-      isEditMode,
       voucherId,
       allPassengers,
+      documentsSaving,
+      onPreparingChange,
     ],
   );
 
@@ -756,140 +503,7 @@ const PassengerDocuments = ({
     }
   }, []);
 
-  const renderDocumentPreview = useCallback(() => {
-    if (!previewDocument) return null;
 
-    const isImage = previewDocument.type?.startsWith("image/");
-    const isPdf = previewDocument.type === "application/pdf";
-
-    // Determinar URL del archivo
-    // Prioridad: dataUrl (local) > getProxyUrl(tigrisUrl) (proxy público) > proxyUrl
-    let fileUrl = null;
-    if (previewDocument.dataUrl) {
-      fileUrl = previewDocument.dataUrl;
-    } else if (previewDocument.tigrisUrl) {
-      fileUrl = getProxyUrl(previewDocument.tigrisUrl);
-    } else if (previewDocument.proxyUrl) {
-      fileUrl = previewDocument.proxyUrl;
-    }
-
-    if (!fileUrl) {
-      console.warn(" No se encontró URL para preview:", previewDocument);
-      return (
-        <div className="preview-unsupported">
-          <MdDescription className="unsupported-icon" />
-          <p>No se puede previsualizar este archivo (URL no disponible).</p>
-        </div>
-      );
-    }
-
-    if (isImage) {
-      return (
-        <img
-          src={fileUrl}
-          alt={previewDocument.name}
-          className="preview-image"
-          onError={(e) => {
-            console.error(" Error cargando imagen:", fileUrl);
-            e.target.style.display = "none";
-            const errorDiv = document.createElement("div");
-            errorDiv.className = "image-error";
-            errorDiv.textContent = " Error al cargar la imagen";
-            e.target.parentElement.appendChild(errorDiv);
-          }}
-        />
-      );
-    } else if (isPdf) {
-      return (
-        <div className="pdf-container">
-          <iframe
-            src={fileUrl}
-            title={previewDocument.name}
-            className="preview-pdf"
-            onError={(e) => {
-              console.error(" Error cargando PDF:", fileUrl);
-            }}
-          />
-          <div className="pdf-actions">
-            <a
-              href={fileUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="download-button"
-            >
-              <MdDownload /> Ver en nueva pestaña
-            </a>
-          </div>
-        </div>
-      );
-    } else {
-      return (
-        <div className="preview-unsupported">
-          <MdDescription className="unsupported-icon" />
-          <p>No se puede previsualizar este tipo de archivo.</p>
-          <a
-            href={fileUrl}
-            download={previewDocument.name}
-            className="download-button"
-          >
-            <MdDownload /> Descargar
-          </a>
-        </div>
-      );
-    }
-  }, [previewDocument]);
-
-  // Final sync on unmount - NO DEPENDENCY ARRAY PARA EVITAR LOOPS
-  useEffect(() => {
-    return () => {
-      if (
-        isInitializedRef.current &&
-        onDocumentDataChange &&
-        documentsMapRef.current.size > 0
-      ) {
-        try {
-          // CORREGIDO: Mantener estructura con passengerKey como top-level (igual que syncToParent)
-          const outputDocumentData = {};
-
-          documentsMapRef.current.forEach((passengerDocs, passengerKey) => {
-            const passenger = allPassengers.find(
-              (p) => p.passengerKey === passengerKey,
-            );
-            if (passenger) {
-              // Inicializar entrada para este pasajero
-              if (!outputDocumentData[passengerKey]) {
-                outputDocumentData[passengerKey] = {
-                  passports: [],
-                  idCards: [],
-                  otherDocuments: [],
-                };
-              }
-
-              // Agregar documentos organizados por pasajero
-              ["passports", "idCards", "otherDocuments"].forEach((category) => {
-                if (Array.isArray(passengerDocs[category])) {
-                  passengerDocs[category].forEach((doc) => {
-                    outputDocumentData[passengerKey][category].push({
-                      ...doc,
-                      ownerId: passenger.id,
-                      ownerName:
-                        `${passenger.nombres} ${passenger.apellidos}`.trim(),
-                      ownerType: passenger.type,
-                      passengerKey: passengerKey,
-                    });
-                  });
-                }
-              });
-            }
-          });
-
-          onDocumentDataChange(outputDocumentData);
-        } catch (error) {
-          // Silent error handling
-        }
-      }
-    };
-  }, []); // EMPTY dependency array
 
   const selectedPassengerDocuments = getSelectedPassengerDocuments();
   const selectedPassenger = allPassengers.find(
@@ -1006,7 +620,8 @@ const PassengerDocuments = ({
               <div className="document-upload-area-wrapper">
                 <FileDropZone
                   files={[]}
-                  onFilesAdded={handleDropZoneFiles}
+                  onRawFilesAdded={handleFileUpload}
+                  disabled={deletingDocument}
                   accept=".jpg,.jpeg,.png,.pdf"
                   label={`Arrastra archivos de ${getCategoryDisplayName(activeCategory)} aquí`}
                   hint="Formatos permitidos: JPG, PNG, PDF"
@@ -1073,10 +688,7 @@ const PassengerDocuments = ({
                               alt={doc.name}
                               className="document-thumbnail"
                               onError={(e) => {
-                                console.error(
-                                  " Error cargando miniatura:",
-                                  doc,
-                                );
+                                console.error("Miniatura no disponible; referencia documental omitida");
                                 e.target.style.display = "none";
                                 // Mostrar icono de error en lugar de imagen rota
                                 const iconDiv = document.createElement("div");
@@ -1103,6 +715,9 @@ const PassengerDocuments = ({
                           <div className="document-name" title={doc.name}>
                             {doc.name}
                           </div>
+                          <small className="document-save-state" role="status">
+                            {doc.isPending ? (documentsSaving ? "Guardando..." : "Pendiente de guardar") : "Guardado en el file"}
+                          </small>
                           <div className="document-meta">
                             <span>{Math.round((doc.size || 0) / 1024)} KB</span>
                             <span>•</span>
@@ -1114,13 +729,16 @@ const PassengerDocuments = ({
                           </div>
                         </div>
 
-                        <button
+                        {canDeletePassengerDocument(doc) && <button
                           className="delete-button"
-                          onClick={() => handleDeleteDocument(doc.id)}
-                          title="Eliminar documento"
+                          onClick={event => setDeleteConfirmation({ id: doc.id, anchor: event.currentTarget })}
+                          disabled={!!doc.documentAssetId || documentsSaving || deletingDocument}
+                          aria-haspopup="dialog"
+                          aria-expanded={deleteConfirmation?.id === doc.id}
+                          title={doc.documentAssetId ? "Documento privado protegido por retención" : "Eliminar documento"}
                         >
                           <MdClose />
-                        </button>
+                        </button>}
                       </div>
                     ))}
                   </div>
@@ -1150,6 +768,15 @@ const PassengerDocuments = ({
       </div>
 
       {/* Status message */}
+      {onDocumentsAdded && !documentsSaving && [...passengerDocuments.values()].some(groups =>
+        Object.values(groups).some(docs => docs.some(doc => doc.isPending))) && (
+        <button type="button" className="document-retry-button" onClick={onDocumentsAdded}>
+          Reintentar guardar documentos pendientes
+        </button>
+      )}
+      {deleteConfirmation && <DocumentDeletePopover anchor={deleteConfirmation.anchor}
+        busy={deletingDocument} onCancel={() => setDeleteConfirmation(null)}
+        onConfirm={() => handleDeleteDocument(deleteConfirmation.id)} />}
       {statusMessage && (
         <div className={`status-message ${statusMessage.type}`}>
           {statusMessage.type === "success" ? <MdCheck /> : <MdError />}
@@ -1157,19 +784,16 @@ const PassengerDocuments = ({
         </div>
       )}
 
-      {/* Document preview modal */}
-      {showPreview && (
-        <div className="preview-modal-overlay" onClick={handleClosePreview}>
-          <div className="preview-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="preview-header">
-              <h3>{previewDocument?.name}</h3>
-              <button className="close-preview" onClick={handleClosePreview}>
-                <MdClose />
-              </button>
-            </div>
-            <div className="preview-content">{renderDocumentPreview()}</div>
-          </div>
-        </div>
+      {/* Vista previa segura para imágenes y PDF. El PDF se convierte a Blob
+          antes de insertarlo para evitar bloqueos frame-ancestors/CSP. */}
+      {showPreview && previewDocument && (
+        <ImagePreviewModal
+          isOpen={showPreview}
+          onClose={handleClosePreview}
+          fileUrl={getDocumentPreviewUrl(previewDocument)}
+          filename={getDocumentFilename(previewDocument)}
+          fileType={getDocumentMimeType(previewDocument)}
+        />
       )}
     </div>
   );

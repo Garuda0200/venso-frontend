@@ -1,4 +1,5 @@
 import { compactBibliaTrainText } from "./bibliaTrainCatalog";
+import { participantNationalityLabel } from "./bibliaNationality";
 
 export type BibliaActivityCategory =
   | "machupicchu"
@@ -687,7 +688,7 @@ const recordToActivity = (
     dateKey: toBibliaDateKey(date), date,
     file: firstText(record.file, sourceQuotationId) || EMPTY,
     reservationName: firstText(record.reservationName) || EMPTY,
-    pax: Number(record.pax || 0), nationality: firstText(record.nationality) || EMPTY,
+    pax: Number(record.pax || 0), nationality: participantNationalityLabel(record.participantPlan, record.nationality),
     participantPlan: record.participantPlan && typeof record.participantPlan === "object"
       ? record.participantPlan as BibliaParticipantPlan
       : null,

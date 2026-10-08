@@ -1348,36 +1348,6 @@
   }
 }
 
-// La tabla se ve como una hoja normal. La edición aparece solo al pedirla.
-.biblia-participants-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 1200;
-  display: grid;
-  place-items: center;
-  padding: 1rem;
-  background: rgba(19, 12, 18, .48);
-}
-
-.biblia-participants-modal__panel {
-  width: min(620px, 100%);
-  max-height: min(760px, calc(100vh - 2rem));
-  overflow: auto;
-  padding: 1.25rem;
-  border-radius: 16px;
-  background: #fff;
-  box-shadow: 0 24px 60px rgba(30, 10, 23, .28);
-
-  header, footer { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
-  section { margin-top: .8rem; padding-top: .8rem; border-top: 1px solid #eee; }
-  label { display: flex; align-items: center; justify-content: space-between; gap: .75rem; font-weight: 700; }
-  input { min-width: 0; padding: .5rem .6rem; border: 1px solid #d9ced4; border-radius: 8px; }
-  button { border-radius: 8px; padding: .45rem .7rem; cursor: pointer; }
-}
-
-.biblia-participants-modal__row { display: grid; grid-template-columns: minmax(0, 1fr) 84px auto; gap: .45rem; margin: .45rem 0; }
-.biblia-participants-modal__error { color: #bc145c; font-weight: 600; }
-
 .biblia-edit-value {
   width: 100%;
   min-height: 31px;

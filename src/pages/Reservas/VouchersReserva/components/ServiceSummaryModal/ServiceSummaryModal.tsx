@@ -1,3 +1,4 @@
+import { sharedPriceFlag, normalizePricingType } from "../../../../../utils/servicePricingType";
 import { useState, useEffect } from "react";
 import Modal from "../../../../../components/UI/Modal/Modal";
 import {
@@ -484,7 +485,7 @@ const ServiceSummaryModal = ({
                 0,
             );
             const extPrecioAdultoDividido = Boolean(
-              extSrc?.precioAdultoDividido,
+              sharedPriceFlag(extSrc?.tipoPrecio),
             );
             const extAdultos = Array.isArray(extSrc?.beneficiariosAdultos)
               ? extSrc.beneficiariosAdultos

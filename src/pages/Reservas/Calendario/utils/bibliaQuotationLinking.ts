@@ -1,4 +1,5 @@
 import { BIBLIA_EMPTY_VALUE, BibliaActivity, materializeBibliaOverride } from "./bibliaActivityMapper";
+import { bibliaParticipantPlanError } from "./bibliaParticipantEditor";
 
 export const BIBLIA_QUOTATION_SYNC_LABELS = {
   dateKey: "Fecha", pax: "Pasajeros", participantPlan: "Participantes y nacionalidades",
@@ -44,7 +45,7 @@ export function getBibliaLinkUnavailableReason(activity: BibliaActivity, quotati
   const difference = (timestamp(day) - timestamp(start)) / 86400000;
   if (!Number.isFinite(difference)) return "Completa la fecha de inicio de la cotización";
   if (difference < 0 || difference >= 120) return "La fecha del registro queda fuera del itinerario permitido";
-  return "";
+  return bibliaParticipantPlanError(activity, quotation);
 }
 
 const comparable = (value: unknown) => typeof value === "string"

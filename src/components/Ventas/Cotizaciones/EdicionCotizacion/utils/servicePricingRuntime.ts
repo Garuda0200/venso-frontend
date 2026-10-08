@@ -1,3 +1,4 @@
+import { sharedPriceFlag, normalizePricingType } from "../../../../../utils/servicePricingType";
 import { detectServiceType } from "../components/DaysEditor/utils/serviceTypeMapper";
 import { getServicePassengerPricingState } from "./passengerPricingState";
 
@@ -346,31 +347,14 @@ export const getServiceAdultUnitPrice = (service = {}) => {
     1,
     actualAdultCount + convertedChildCount,
   );
-  const hasAdultDividedPrice =
-    service?.precio_adulto_dividido === true ||
-    service?.precioAdultoDividido === true ||
-    service?.tariff?.precio_adulto_dividido === true ||
-    service?.assignedTariff?.precio_adulto_dividido === true ||
-    service?.passengerSelection?.precio_adulto_dividido === true;
+  const priceFlag = sharedPriceFlag(service?.tipoPrecio ?? service?.tipo_precio ?? service?.tariff?.tipoPrecio ?? service?.tariff?.tipo_precio ?? service?.assignedTariff?.tipo_precio ?? service?.passengerSelection?.tipo_precio);
+  const hasAdultDividedPrice = priceFlag === true;
 
   if (assignedIds.length > 0 && adultRatedTotal > 0) {
-    const tourCapacity =
-      serviceType === "endoses" ? getTourCapacityFromService(service) : null;
-    if (tourCapacity != null && hasAdultDividedPrice) {
-      return round2(adultRatedTotal / tourCapacity);
-    }
-
-    if (serviceType === "hoteles" || hasAdultDividedPrice) {
+    if (hasAdultDividedPrice || (serviceType === "hoteles" && priceFlag == null)) {
       return round2(adultRatedTotal / adultEquivalentCount);
     }
 
-    const assignedAdultRatedCount = Math.max(
-      1,
-      assignedIds.length - explicitChildCount,
-    );
-    if (service?.capacidad_limite === true && assignedAdultRatedCount > 0) {
-      return round2(adultRatedTotal / assignedAdultRatedCount);
-    }
   }
 
   return round2(
@@ -454,10 +438,10 @@ export const getServicePricingSnapshot = (service = {}) => {
     selectedAdultCount + selectedConvertedChildCount,
   );
   const hasUndividedAdultPrice =
-    service?.precio_adulto_dividido === false ||
-    service?.precioAdultoDividido === false ||
-    service?.tariff?.precio_adulto_dividido === false ||
-    service?.passengerSelection?.precio_adulto_dividido === false;
+    sharedPriceFlag(service?.tipo_precio) === false ||
+    sharedPriceFlag(service?.tipoPrecio) === false ||
+    sharedPriceFlag(service?.tariff?.tipo_precio) === false ||
+    sharedPriceFlag(service?.passengerSelection?.tipo_precio) === false;
   const adultRatedTotal = round2(
     explicitAdultRatedTotal ??
       (hasUndividedAdultPrice

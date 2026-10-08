@@ -17,6 +17,9 @@
     ]
   },
   "include": [
+    "src/pages/Ventas/VouchersVenta/components/__tests__/voucherWorkflowParity.test.ts",
+    "src/utils/__tests__/servicePricingType.test.ts",
+    "src/pages/Reservas/Calendario/utils/__tests__/bibliaParticipantEditor.test.tsx",
     "src/pages/Reservas/Calendario/utils/__tests__/bibliaRowDrafts.test.tsx",
     "src/pages/Reservas/Calendario/utils/__tests__/bibliaQuotationLinking.test.tsx",
     "src/pages/Contabilidad/Files/domain/__tests__/movementFiles.test.tsx",

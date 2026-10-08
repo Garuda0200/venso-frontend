@@ -1,4 +1,5 @@
 import React from "react";
+import { tariffPriceOptions } from "../../../../../../../../utils/servicePricingType";
 import { catalogueParentId, catalogueProviderName, filterCatalogueCapacity } from "../../utils/catalogueFilters";
 import TrainPickerDetails from "../TrainPickerDetails";
 import {
@@ -1273,8 +1274,12 @@ const ChildServicePanel = ({
 
   const ticketEntryGroups = React.useMemo(() => {
     if (category?.id !== "tickets") return [];
-    return groupTicketsByEntrada(searchFilteredServices || []);
-  }, [category?.id, searchFilteredServices]);
+    return groupTicketsByEntrada((searchFilteredServices || []).filter(item => {
+      const tarifas = item.tarifas || item.ticket?.tarifas || [];
+      return tarifas.some(tariff => (!filterTariffType || tariff.tipo_tarifa === filterTariffType)
+        && tariffPriceOptions(tariff, packageType).length > 0);
+    }));
+  }, [category?.id, searchFilteredServices, filterTariffType, packageType]);
 
   const getTicketDisplayPrice = React.useCallback(
     (item) => {
@@ -1289,10 +1294,9 @@ const ChildServicePanel = ({
         : allTarifas[0];
       if (!tarifa) return null;
       const converted = convertTarifaToDollars(tarifa);
-      const price =
-        packageType === "privado"
-          ? converted.precio_privado || converted.precio_compartido
-          : converted.precio_compartido || converted.precio_privado;
+      const option = tariffPriceOptions(converted, packageType)[0];
+      if (!option) return null;
+      const price = option.amount;
       return {
         price,
         tarifa,
@@ -1303,7 +1307,7 @@ const ChildServicePanel = ({
   );
 
   const handleTicketEntryGroupClick = React.useCallback(
-    async (group) => {
+    async (group, selectedMode = packageType) => {
       const currentFilterTariffType =
         filterTariffType ||
         (platform === "venso" ? "externa" : platform === "mil" ? "interna" : null);
@@ -1318,25 +1322,20 @@ const ChildServicePanel = ({
           : allTarifas[0];
       };
 
-      const getPriceFromConvertedTariff = (tarifaEnDolares) => {
-        if (!tarifaEnDolares) return 0;
-        return packageType === "privado"
-          ? tarifaEnDolares.precio_privado || tarifaEnDolares.precio_compartido
-          : tarifaEnDolares.precio_compartido || tarifaEnDolares.precio_privado;
-      };
-
       const buildRateInfo = (item) => {
         if (!item) return null;
         const tarifa = pickTariff(item);
         if (!tarifa) return null;
         const tarifaEnDolares = convertTarifaToDollars(tarifa);
-        const precio = getPriceFromConvertedTariff(tarifaEnDolares);
+        const selectedPrice = tariffPriceOptions(tarifaEnDolares, selectedMode)[0];
+        if (!selectedPrice) return null;
+        const precio = selectedPrice.amount;
         const tarifaInterna = pickTariff(item, "interna");
         const tarifaInternaEnDolares = tarifaInterna
           ? convertTarifaToDollars(tarifaInterna)
           : null;
         const precioInterno = tarifaInternaEnDolares
-          ? getPriceFromConvertedTariff(tarifaInternaEnDolares)
+          ? tariffPriceOptions(tarifaInternaEnDolares, selectedPrice.tipoPrecio)[0]?.amount ?? null
           : null;
 
         return {
@@ -1344,6 +1343,7 @@ const ChildServicePanel = ({
           tarifa,
           tarifaEnDolares,
           precio,
+          tipoPrecio: selectedPrice.tipoPrecio,
           precioInterno,
           rate: {
             ...item,
@@ -1377,10 +1377,10 @@ const ChildServicePanel = ({
 
       let selectedCount = 0;
       const selectTicketVariant = async ({ item, rateInfo, targetGroup, procedencia, childRateInfo = null }) => {
-        if (!item || !rateInfo || !Number(rateInfo.precio)) return false;
+        if (!item || !rateInfo || !Number.isFinite(rateInfo.precio)) return false;
 
         const isChildTarget = targetGroup === "child";
-        const hasStudentTariff = Boolean(childRateInfo && Number(childRateInfo.precio));
+        const hasStudentTariff = Boolean(childRateInfo && Number.isFinite(childRateInfo.precio));
         const freeChildRate = {
           ...(rateInfo.rate || {}),
           precio: 0,
@@ -1415,7 +1415,7 @@ const ChildServicePanel = ({
               ? "none"
               : "manual",
           ticketChildrenUseStudentTariffAsAdult: isChildTarget,
-          packageType,
+          packageType: rateInfo.tipoPrecio,
         };
 
         const resolvedPassengerSelection = buildTicketProcedenciaPassengerSelection({
@@ -1439,7 +1439,8 @@ const ChildServicePanel = ({
           actualParent,
           {
             ...rateInfo.tarifaEnDolares,
-            selectedPackageType: packageType,
+            selectedPackageType: rateInfo.tipoPrecio,
+            tipoPrecio: rateInfo.tipoPrecio,
             precio: Number(rateInfo.precio) || 0,
             precio_interno: rateInfo.precioInterno,
           },
@@ -1455,7 +1456,7 @@ const ChildServicePanel = ({
         const adultInfo = buildRateInfo(entry.adult);
         const childInfo = buildRateInfo(entry.child);
 
-        if (adultInfo && Number(adultInfo.precio)) {
+        if (adultInfo) {
           const addedAdult = await selectTicketVariant({
             item: adultInfo.item,
             rateInfo: adultInfo,
@@ -1466,7 +1467,7 @@ const ChildServicePanel = ({
           if (addedAdult) selectedCount += 1;
         }
 
-        if (childInfo && Number(childInfo.precio)) {
+        if (childInfo) {
           const addedChild = await selectTicketVariant({
             item: childInfo.item,
             rateInfo: childInfo,
@@ -1542,6 +1543,11 @@ const ChildServicePanel = ({
           {ticketEntryGroups.length > 0 ? (
             ticketEntryGroups.map((group) => {
               const counters = summarizeTicketGroup(group);
+              const selectableModes = Array.from(new Set((group.items || []).flatMap(item => {
+                const info = getTicketDisplayPrice(item);
+                return info ? tariffPriceOptions(info.converted, packageType).map(option => option.tipoPrecio) : [];
+              })));
+              const hasDualPrices = packageType === "mixto" && selectableModes.length > 1;
               const priceItems = (group.items || [])
                 .map((item) => ({ item, priceInfo: getTicketDisplayPrice(item) }))
                 .filter(({ priceInfo }) => priceInfo && Number(priceInfo.price) > 0);
@@ -1556,11 +1562,11 @@ const ChildServicePanel = ({
                 <div
                   key={group.key}
                   className="ticket-entry-card"
-                  onClick={() => handleTicketEntryGroupClick(group)}
+                  onClick={() => { if (!hasDualPrices) handleTicketEntryGroupClick(group); }}
                   role="button"
                   tabIndex={0}
                   onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
+                    if (!hasDualPrices && event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) {
                       event.preventDefault();
                       handleTicketEntryGroupClick(group);
                     }
@@ -1593,7 +1599,7 @@ const ChildServicePanel = ({
                         >
                           <strong>{procedencia || "por definir"}</strong>
                           <small>{tipoUsuario}</small>
-                          <b>{priceInfo ? formatPrice(priceInfo.price, "dolares") : "—"}</b>
+                          <b>{priceInfo ? tariffPriceOptions(priceInfo.converted, packageType).map(option => `${option.label}: ${formatPrice(option.amount, "dolares")}`).join(" · ") : "—"}</b>
                         </span>
                       );
                     })}
@@ -1606,9 +1612,12 @@ const ChildServicePanel = ({
                           : `${formatPrice(minPrice, "dolares")} - ${formatPrice(maxPrice, "dolares")}`
                         : "Sin precio"}
                     </span>
-                    <button className="add-btn" type="button" title="Agregar entrada completa">
-                      <FaPlus />
-                    </button>
+                    {hasDualPrices ? selectableModes.map(mode => (
+                      <button className="tariff-price-option" key={mode} type="button" onClick={event => {
+                        event.stopPropagation();
+                        handleTicketEntryGroupClick(group, mode);
+                      }}>{mode === "compartido" ? "Compartido · total" : "Privado · por persona"} <FaPlus /></button>
+                    )) : <button className="add-btn" type="button" title="Agregar entrada completa"><FaPlus /></button>}
                   </div>
                 </div>
               );
@@ -1740,7 +1749,11 @@ const ChildServicePanel = ({
               );
 
               // Manejar clic en toda la tarjeta - seleccionar automáticamente el primer precio
-              const handleCardClick = async () => {
+              const priceChoices = hasTariffs ? tariffPriceOptions(tarifas[0], packageType) : [];
+              if (hasTariffs && priceChoices.length === 0) return null;
+              const handleCardClick = async (requestedMode = null) => {
+                const selectedPrice = priceChoices.find((option) => option.tipoPrecio === requestedMode) || priceChoices[0];
+                const selectedMode = selectedPrice?.tipoPrecio || (packageType === "compartido" ? "compartido" : "privado");
                 let actualParent = parentService;
 
                 // Para guías, buscar padre completo
@@ -1770,7 +1783,7 @@ const ChildServicePanel = ({
                   // itinerario; ServicePicker creará una tarifa provisional de
                   // precio 0 sin inventar un valor comercial.
                   onSelectService(
-                    { ...service, packageType: packageType },
+                    { ...service, packageType: selectedMode },
                     actualParent,
                     null,
                   );
@@ -1779,24 +1792,22 @@ const ChildServicePanel = ({
 
                 const tarifa = tarifas[0];
                 const tarifaEnDolares = convertTarifaToDollars(tarifa);
-                const precio =
-                  tarifaEnDolares.precio_compartido ||
-                  tarifaEnDolares.precio_privado;
+                const precio = tariffPriceOptions(tarifaEnDolares, selectedMode)[0]?.amount ?? 0;
                 const tarifaInternaEnDolares =
                   tarifa_interna.length > 0
                     ? convertTarifaToDollars(tarifa_interna[0])
                     : null;
                 const precio_interno = tarifaInternaEnDolares
-                  ? tarifaInternaEnDolares.precio_compartido ||
-                    tarifaInternaEnDolares.precio_privado
+                  ? tariffPriceOptions(tarifaInternaEnDolares, selectedMode)[0]?.amount ?? 0
                   : null;
 
                 onSelectService(
-                  { ...service, packageType: packageType },
+                  { ...service, packageType: selectedMode },
                   actualParent,
                   {
                     ...tarifaEnDolares,
-                    selectedPackageType: packageType,
+                    selectedPackageType: selectedMode,
+                    tipoPrecio: selectedMode,
                     precio: precio,
                     precio_interno,
                   },
@@ -2094,35 +2105,14 @@ const ChildServicePanel = ({
                       {/* Price + Actions */}
                       <div className="card-price-actions">
                         {hasTariffs ? (
-                          <div className="price-block">
-                            <span className="price-label">
-                              {tarifas.length > 1
-                                ? `${tarifas.length} tarifas`
-                                : packageType === "privado"
-                                  ? "Privado"
-                                  : "Compartido"}
-                            </span>
-                            <span className="price-amount">
-                              {(() => {
-                                const t = tarifas[0];
-                                const isSinglePrice =
-                                  t.precio_unico ||
-                                  !t.precio_compartido !== !t.precio_privado;
-                                const price = isSinglePrice
-                                  ? t.precio_compartido || t.precio_privado
-                                  : packageType === "privado"
-                                    ? t.precio_privado || t.precio_compartido
-                                    : t.precio_compartido || t.precio_privado;
-                                return formatPrice(
-                                  price,
-                                  t.moneda,
-                                  t.tasa_cambio,
-                                );
-                              })()}
-                            </span>
-                            {isConvertedFromSoles(tarifas[0]?.moneda) && (
-                              <span className="price-converted">S/→$</span>
-                            )}
+                          <div className="tariff-price-options">
+                            {priceChoices.map((option) => (
+                              <button type="button" className="tariff-price-option" key={option.tipoPrecio}
+                                onClick={(event) => { event.stopPropagation(); handleCardClick(option.tipoPrecio); }}>
+                                <span className="price-label">{option.label}</span>
+                                <span className="price-amount">{formatPrice(option.amount, tarifas[0].moneda, tarifas[0].tasa_cambio)}</span>
+                              </button>
+                            ))}
                           </div>
                         ) : (
                           <div className="price-block">

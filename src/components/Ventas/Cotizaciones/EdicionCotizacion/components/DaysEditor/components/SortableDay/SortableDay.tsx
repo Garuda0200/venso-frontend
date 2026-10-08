@@ -23,6 +23,7 @@ const SortableDay = React.memo(({
   dayIndex,
   children,
   handleTitleChange,
+  handleDayModeChange,
   handleCiudadesChange,
   addCiudad,
   removeCiudad,
@@ -243,6 +244,17 @@ const SortableDay = React.memo(({
 
           {/* ── Right: meta + actions ── */}
           <div className="day-right-actions">
+            <select
+              className="day-service-mode"
+              aria-label={`Tipo de servicio del día ${day.numero}`}
+              value={day.tipoServicio || "mixto"}
+              onClick={(event) => event.stopPropagation()}
+              onChange={(event) => handleDayModeChange?.(dayIndex, event.target.value)}
+            >
+              <option value="compartido">Compartido</option>
+              <option value="privado">Privado</option>
+              <option value="mixto">Mixto</option>
+            </select>
             {serviceCount > 0 && (
               <span className="service-count-badge">
                 {serviceCount} servicio{serviceCount !== 1 ? "s" : ""}

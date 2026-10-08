@@ -198,10 +198,10 @@ function VoucherCard({
         tone: "neutral",
       });
     }
-    if (onEdit && (canManageVoucher || voucher.status === "EDITABLE_ONCE")) {
+    if (onEdit) {
       items.push({
         key: "edit",
-        label: "Editar voucher",
+        label: "Información de pasajeros",
         icon: <MdEdit />,
         onClick: () => onEdit(voucher),
         tone: voucher.status === "EDITABLE_ONCE" ? "warning" : "primary",

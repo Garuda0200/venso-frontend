@@ -144,22 +144,18 @@ const selectFlightTariff = (entry = {}, packageType = "compartido") => {
   const matchingTariffs = tarifas.filter(
     (item) => normalizeFlightText(item?.tipo_tarifa) === "externa",
   );
-  const tariff =
-    matchingTariffs.find((item) => item?.precio_unico === true) ||
-    matchingTariffs[0] ||
-    tarifas.find((item) => item?.precio_unico === true) ||
-    tarifas[0];
+  const priceField = packageType === "privado" ? "precio_privado" : "precio_compartido";
+  const tariff = matchingTariffs.find(item => item?.[priceField] != null)
+    || tarifas.find(item => item?.[priceField] != null);
 
   if (!tariff) return null;
 
-  const price =
-    packageType === "privado"
-      ? tariff.precio_privado ?? tariff.precio_compartido ?? tariff.precio
-      : tariff.precio_compartido ?? tariff.precio_privado ?? tariff.precio;
+  const price = tariff[priceField];
 
   return {
     ...tariff,
     selectedPackageType: packageType,
+    tipoPrecio: packageType,
     precio: parseMoney(price),
     precio_original: parseMoney(price),
     tieneIgv: false,
