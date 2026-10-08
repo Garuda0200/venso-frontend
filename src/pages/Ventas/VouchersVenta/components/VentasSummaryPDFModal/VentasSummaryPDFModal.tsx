@@ -32,7 +32,8 @@ import {
 } from "../../../../../components/Ventas/Cotizaciones/EdicionCotizacion/utils/formatters";
 import { hydrateCotizacionPricingContext } from "../../../Cotizaciones/utils/cotizacionPricingContext";
 import { getQuoteTravelDates } from "../../utils/voucherFinancials";
-import { buildVoucherTitleBlocks, packMeasuredVoucherFlow } from "../../utils/voucherPdfLayout";
+import { buildVoucherTitleBlocks, packMeasuredVoucherFlow, buildVoucherFlightRows, groupVoucherFlightCards } from "../../utils/voucherPdfLayout";
+import VoucherFlightsTable from "./VoucherFlightsTable";
 import LanguageFlag from "../../../../../components/common/LanguageFlag/LanguageFlag";
 import "./VentasSummaryPDFModal.scss";
 
@@ -2595,11 +2596,12 @@ const getPdfFlowItemSignature = (item = {}) => {
   });
 };
 
-const buildMeasuredPdfFlowPages = (items = [], heights = [], introHeight = 0) =>
+const buildMeasuredPdfFlowPages = (items = [], heights = [], introHeight = 0, pageStartExtraHeights = []) =>
   packMeasuredVoucherFlow(items, heights, {
     introHeight,
     pageHeight: PDF_FLOW_CONTENT_HEIGHT_PX,
     gap: PDF_FLOW_PAGE_GAP_PX,
+    pageStartExtraHeights,
   });
 
 const getTextOffsetInNode = (root, targetNode, targetOffset) => {
@@ -2931,32 +2933,25 @@ const VoucherView = ({
     return String(rawValue || "");
   };
 
-  const renderFlightInput = (
-    flight,
-    info,
-    field,
-    label,
-    procedencia,
-    type = "text",
-    placeholder = "",
-  ) => (
+  const resizeFlightTextField = (node: HTMLTextAreaElement | null) => {
+    if(!node)return;
+    node.style.setProperty("height","0px","important");
+    node.style.setProperty("height",`${Math.max(18,node.scrollHeight)}px`,"important");
+  };
+  const renderFlightTextInput = (flight, info, field, label, procedencia, placeholder = "—") => (
+    <textarea key={`${field}-${getFlightEditableValue(flight,info,field)}`} className="flight-edit-input flight-edit-input--text"
+      rows={1} defaultValue={getFlightEditableValue(flight,info,field)} aria-label={label.replace(/:$/, "")}
+      placeholder={placeholder} ref={resizeFlightTextField} onInput={event=>resizeFlightTextField(event.currentTarget)}
+      onKeyDown={event=>{if(event.key==="Enter" && !event.shiftKey){event.preventDefault();event.currentTarget.blur();}}}
+      onBlur={event=>handleFlightFieldBlur(flight,field,event.currentTarget.value,procedencia)} />
+  );
+  const renderFlightInput = (flight, info, field, label, procedencia, type = "text", placeholder = "") => (
     <div className="pax-row flight-edit-row">
-      <span className="label">{label}:</span>
-      <input
-        key={`${field}-${getFlightEditableValue(flight, info, field)}`}
-        className="flight-edit-input"
-        type={type}
-        defaultValue={getFlightEditableValue(flight, info, field)}
-        placeholder={placeholder}
-        onBlur={(e) =>
-          handleFlightFieldBlur(
-            flight,
-            field,
-            e.currentTarget.value,
-            procedencia,
-          )
-        }
-      />
+      {type === "text" ? renderFlightTextInput(flight,info,field,label,procedencia,placeholder || "—") : (
+        <input key={`${field}-${getFlightEditableValue(flight,info,field)}`} className="flight-edit-input"
+          type={type} defaultValue={getFlightEditableValue(flight,info,field)} aria-label={label.replace(/:$/, "")}
+          onBlur={event=>handleFlightFieldBlur(flight,field,event.currentTarget.value,procedencia)} />
+      )}
     </div>
   );
 
@@ -2975,39 +2970,10 @@ const VoucherView = ({
 
     return (
       <div className="pax-row flight-edit-row">
-        <span className="label">{labels.route}</span>
         <div className="flight-route-edit">
-          <input
-            key={`from-${getFlightEditableValue(flight, info, "from")}`}
-            className="flight-edit-input"
-            type="text"
-            defaultValue={getFlightEditableValue(flight, info, "from")}
-            placeholder={labels.originPlaceholder}
-            onBlur={(e) =>
-              handleFlightFieldBlur(
-                flight,
-                "from",
-                e.currentTarget.value,
-                procedencia,
-              )
-            }
-          />
-          <span>-</span>
-          <input
-            key={`to-${getFlightEditableValue(flight, info, "to")}`}
-            className="flight-edit-input"
-            type="text"
-            defaultValue={getFlightEditableValue(flight, info, "to")}
-            placeholder={labels.destinationPlaceholder}
-            onBlur={(e) =>
-              handleFlightFieldBlur(
-                flight,
-                "to",
-                e.currentTarget.value,
-                procedencia,
-              )
-            }
-          />
+          {renderFlightTextInput(flight,info,"from",labels.originPlaceholder,procedencia,labels.originPlaceholder)}
+          <span>→</span>
+          {renderFlightTextInput(flight,info,"to",labels.destinationPlaceholder,procedencia,labels.destinationPlaceholder)}
         </div>
       </div>
     );
@@ -3261,38 +3227,8 @@ const VoucherView = ({
       return `${card.type}:${flightsSignature}`;
     })
     .join("|");
-  // Los vuelos se fragmentan por filas visuales. Cada fila puede contener, en
-  // paralelo, un vuelo internacional y uno nacional. Esto permite usar el
-  // espacio libre debajo de pasajeros sin mover el bloque completo y continuar
-  // las filas restantes junto con el itinerario en la página siguiente.
-  const flightRows = Array.from(
-    {
-      length: Math.max(
-        0,
-        ...flightPageCards.map((card) =>
-          Array.isArray(card.flights) ? card.flights.length : 0,
-        ),
-      ),
-    },
-    (_, rowIndex) => ({
-      rowIndex,
-      key: `flight-row-${rowIndex}`,
-      cards: flightPageCards.flatMap((card) => {
-        const flight = Array.isArray(card.flights)
-          ? card.flights[rowIndex]
-          : null;
-        if (!flight) return [];
-        return [
-          {
-            ...card,
-            key: `${card.key}-row-${rowIndex}`,
-            flights: [flight],
-            rowIndex,
-          },
-        ];
-      }),
-    }),
-  ).filter((row) => row.cards.length > 0);
+  // One flight per row; same-type rows share their headers on each page.
+  const flightRows = buildVoucherFlightRows(flightPageCards);
   const canPlaceFlightsAfterPassengers =
     flightRows.length > 0 && passengers.length > 0;
   const [inlineFlightRowCount, setInlineFlightRowCount] = useState(() =>
@@ -3705,19 +3641,10 @@ const VoucherView = ({
           cards: row.cards,
           rowIndex: row.rowIndex,
           signature: `${flightPaginationSignature}:row:${row.rowIndex}`,
-          // Las tarjetas de una fila se muestran en paralelo; el alto estimado
-          // corresponde a la tarjeta más alta, no a la suma de columnas.
-          units: Math.max(
-            12,
-            ...row.cards.map((card) =>
-              4.5 +
-              Math.max(
-                1,
-                Array.isArray(card?.flights) ? card.flights.length : 1,
-              ) *
-                10.5,
-            ),
-          ),
+          showHeaderReserve: row === flowFlightRows[0] || flowFlightRows[flowFlightRows.indexOf(row)-1]?.cards[0]?.type !== row.cards[0]?.type,
+          // One compact data row; the DOM measurer accounts for headers.
+          units: 7,
+
         }))
       : []),
     ...remainingItineraryBlocks.map((block, blockIndex) => ({
@@ -3776,6 +3703,16 @@ const VoucherView = ({
         return;
       }
 
+      const headerHeights = new Map<string,number>();
+      measuredItems.forEach((itemNode,index) => {
+        if(pdfFlowItems[index]?.type !== "flight-row" || !pdfFlowItems[index]?.showHeaderReserve)return;
+        const box=itemNode.querySelector("[data-flight-type]");
+        const firstRow=box?.querySelector("[data-voucher-flight-row]");
+        if(box && firstRow) headerHeights.set(box.getAttribute("data-flight-type"),
+          Math.ceil(firstRow.getBoundingClientRect().top-box.getBoundingClientRect().top));
+      });
+      const pageStartExtraHeights=pdfFlowItems.map(item=>item.type === "flight-row" && !item.showHeaderReserve
+        ? headerHeights.get(item.cards?.[0]?.type) || 34 : 0);
       const tail = introFlowStartRef.current;
       const introPage = tail?.closest(".voucher-a4-page");
       const availableHeight = tail && introPage
@@ -3783,7 +3720,7 @@ const VoucherView = ({
           - Number.parseFloat(window.getComputedStyle(introPage).paddingBottom || "0")
           - tail.getBoundingClientRect().top - 20)
         : 0;
-      setMeasuredPdfFlowPages(buildMeasuredPdfFlowPages(pdfFlowItems, heights, availableHeight));
+      setMeasuredPdfFlowPages(buildMeasuredPdfFlowPages(pdfFlowItems, heights, availableHeight, pageStartExtraHeights));
     };
     frameId = window.requestAnimationFrame(measureFlow);
     // Web fonts can change row heights after the first layout calculation.
@@ -4096,114 +4033,35 @@ const VoucherView = ({
     );
   };
 
-  const renderFlightBox = (type, flights) => {
-    if (!flights.length) return null;
-
-    const isInternationalFlight = type === "internacional";
-    const title = isInternationalFlight
-      ? labels.internationalFlightData
-      : labels.nationalFlightData;
-    const boxClass = isInternationalFlight
-      ? "flight-box--intl"
-      : "flight-box--national";
-    const keyPrefix = isInternationalFlight ? "intl" : "nat";
-
-    return (
-      <div
-        className={`flight-box ${boxClass}${
-          flights.length > 1 ? " flight-box--stacked" : ""
-        }`}
-      >
-        <div className="flight-title">{title}</div>
-        {flights.map((flight, index) => {
-          const info = extractFlightInfo(flight);
-          return (
-            <div
-              className={`flight-item${
-                canRemoveFlight(flight) ? " flight-item--removable" : ""
-              }`}
-              key={`${keyPrefix}-${index}`}
-            >
-              {canRemoveFlight(flight) && (
-                <button
-                  type="button"
-                  className="flight-remove-button"
-                  onClick={() => handleRemoveFlight(flight)}
-                  title={labels.removeFlight}
-                  aria-label={labels.removeFlight}
-                >
-                  <MdDeleteOutline size={13} />
-                </button>
-              )}
-              {renderFlightRouteInputs(flight, info, type)}
-              {renderFlightInput(
-                flight,
-                info,
-                "airline",
-                labels.airline,
-                type,
-                "text",
-                labels.airline,
-              )}
-              {renderFlightInput(
-                flight,
-                info,
-                "flightClass",
-                labels.flightClass,
-                type,
-                "text",
-                labels.flightClass,
-              )}
-              {renderFlightInput(
-                flight,
-                info,
-                "flightNumber",
-                labels.flightNumber,
-                type,
-                "text",
-                labels.number,
-              )}
-              {renderFlightInput(flight, info, "date", labels.date, type, "date")}
-              {renderFlightInput(
-                flight,
-                info,
-                "depTime",
-                labels.departureTime,
-                type,
-                "time",
-              )}
-              {renderFlightInput(
-                flight,
-                info,
-                "arrTime",
-                labels.arrivalTime,
-                type,
-                "time",
-              )}
-              {renderFlightInput(
-                flight,
-                info,
-                "baggage",
-                labels.baggage,
-                type,
-                "text",
-                labels.baggage,
-              )}
-              {index < flights.length - 1 && <hr className="flight-sep" />}
-            </div>
-          );
-        })}
-      </div>
-    );
+  const renderFlightBox = (type, flights, showHeader = true) => {
+    const headers = {
+      route: labels.route, airline: labels.airline, flightClass: labels.flightClass,
+      flightNumber: labels.flightNumber, date: labels.date, depTime: labels.departureTime,
+      arrTime: labels.arrivalTime, baggage: labels.baggage,
+    };
+    return <VoucherFlightsTable type={type} flights={flights} headers={headers} showHeader={showHeader}
+      title={type === "internacional" ? labels.internationalFlightData : labels.nationalFlightData}
+      getRowKey={(flight,index) => getFlightSourceKey(flight) || `${type}-${index}`}
+      renderCell={(flight,field) => {
+        const info=extractFlightInfo(flight);
+        return field === "route" ? renderFlightRouteInputs(flight,info,type)
+          : renderFlightInput(flight,info,field,headers[field],type,
+              field === "date" ? "date" : field === "depTime" || field === "arrTime" ? "time" : "text");
+      }}
+      renderAction={flight => canRemoveFlight(flight) ? <button type="button" className="flight-remove-button"
+        onClick={() => handleRemoveFlight(flight)} title={labels.removeFlight} aria-label={labels.removeFlight}>
+        <MdDeleteOutline size={13} />
+      </button> : null}
+    />;
   };
 
-  const renderFlightsGrid = ({ compact = false, cards = null } = {}) => {
-    const flightCards = Array.isArray(cards) ? cards : flightPageCards;
+  const renderFlightsGrid = ({ compact = false, cards = null, showHeader = true } = {}) => {
+    const flightCards = groupVoucherFlightCards(Array.isArray(cards) ? cards : flightPageCards);
     if (!flightCards.length) return null;
 
     return (
       <div
-        className={`voucher-flights-grid${
+        className={`voucher-flights-grid voucher-flights-grid--table${
           compact ? " voucher-flights-grid--compact" : ""
         }${flightCards.length === 1 ? " voucher-flights-grid--single" : ""}`}
       >
@@ -4212,6 +4070,7 @@ const VoucherView = ({
             {renderFlightBox(
               card.type,
               Array.isArray(card.flights) ? card.flights : [card.flight],
+              showHeader,
             )}
           </Fragment>
         ))}
@@ -4438,7 +4297,7 @@ const VoucherView = ({
     if (item.type === "flight-row") {
       node = (
         <div className="voucher-section voucher-flights-flow voucher-flights-flow--row">
-          {renderFlightsGrid({ compact: true, cards: item.cards })}
+          {renderFlightsGrid({ compact: true, cards: item.cards, showHeader: item.showHeaderReserve })}
         </div>
       );
     } else if (item.type === "itinerary-day") {
@@ -4488,6 +4347,14 @@ const VoucherView = ({
   ) => {
     const content = [];
     let itineraryBuffer = [];
+    let flightsBuffer = [];
+    const flushFlights = () => {
+      if(!flightsBuffer.length)return;
+      content.push(<div key={`flow-flights-${flowPageIndex}-${content.length}`} className="voucher-section voucher-flights-flow voucher-flights-flow--row">
+        {renderFlightsGrid({compact:true,cards:flightsBuffer.flatMap(item=>item.cards)})}
+      </div>);
+      flightsBuffer=[];
+    };
     let terminosBuffer = [];
     let itineraryHeaderRenderedInPage = false;
 
@@ -4524,12 +4391,14 @@ const VoucherView = ({
 
     page.items.forEach((item, itemIndex) => {
       if (item.type === "itinerary-day") {
+        flushFlights();
         flushTerminos();
         itineraryBuffer.push(item.block);
         return;
       }
 
       if (item.type === "terminos") {
+        flushFlights();
         flushItinerary();
         terminosBuffer.push(item.pageText);
         return;
@@ -4539,16 +4408,10 @@ const VoucherView = ({
       flushTerminos();
 
       if (item.type === "flight-row") {
-        content.push(
-          <div
-            key={`flow-flight-row-${flowPageIndex}-${item.rowIndex}-${itemIndex}`}
-            className="voucher-section voucher-flights-flow voucher-flights-flow--row"
-          >
-            {renderFlightsGrid({ compact: true, cards: item.cards })}
-          </div>,
-        );
+        flightsBuffer.push(item);
         return;
       }
+      flushFlights();
 
       if (item.type === "info-extra") {
         content.push(
@@ -4573,6 +4436,7 @@ const VoucherView = ({
       }
     });
 
+    flushFlights();
     flushItinerary();
     flushTerminos();
 
@@ -4688,11 +4552,7 @@ const VoucherView = ({
               className="voucher-section voucher-a4-page--flights voucher-a4-page--flights-inline"
               data-passenger-inline-flights="true"
             >
-              {inlineFlightRows.map((row) => (
-                <div className="voucher-flight-row" key={row.key}>
-                  {renderFlightsGrid({ compact: true, cards: row.cards })}
-                </div>
-              ))}
+              {renderFlightsGrid({compact:true,cards:inlineFlightRows.flatMap(row=>row.cards)})}
             </div>
           )}
           {renderInlineItineraryBlocks(introInlineItineraryBlocks, "intro")}

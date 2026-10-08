@@ -3737,6 +3737,42 @@
   .voucher-a4-page--flights-inline { margin-top: 7px; padding: 0 !important; gap: 5px; }
   .voucher-flights-grid { gap: 6px !important; margin: 0 !important; }
 
+  .voucher-flights-grid.voucher-flights-grid--table {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .voucher-flights-table-box { overflow: visible; }
+  .voucher-flights-table {
+    width: 100%; table-layout: fixed; border-collapse: collapse;
+    font-size: 8.2px; line-height: 1.3;
+    &__col--route { width: 20%; }
+    &__col--airline { width: 14%; }
+    &__col--flightClass { width: 9%; }
+    &__col--flightNumber { width: 9%; }
+    &__col--date { width: 12%; }
+    &__col--depTime, &__col--arrTime { width: 10%; }
+    &__col--baggage { width: 16%; }
+    thead { display: table-header-group; }
+    th { padding: 4px; text-align: left; vertical-align: middle; font-size: 7px;
+      color: #444; background: #fff2fc; font-weight: 800; text-transform: uppercase;
+      overflow-wrap: anywhere; border: 1px dotted var(--venso-voucher-grid-soft); }
+    tbody tr { break-inside: avoid; page-break-inside: avoid; }
+    td { padding: 2px 0; vertical-align: middle; min-width: 0;
+      border: 1px dotted var(--venso-voucher-grid-soft); }
+    .flight-edit-row { border: 0 !important; padding: 2px 4px !important; }
+    .flight-edit-input { box-sizing: border-box; height: 18px !important; font-size: 8px !important; }
+    textarea.flight-edit-input--text { display: block; height: auto !important; min-height: 18px;
+      resize: none; overflow: hidden; white-space: pre-wrap; overflow-wrap: anywhere;
+      font: inherit; line-height: 1.35; }
+    &__cell--baggage { position: relative; padding-right: 17px; }
+    .flight-remove-button { position: absolute; right: 1px; top: 3px; width: 16px; height: 16px;
+      display: grid; place-items: center; padding: 0; border-radius: 3px;
+      border: 1px solid #ffd0de; background: white; color: #bd1744; cursor: pointer;
+      &:focus-visible { outline: 2px solid #f129a8; outline-offset: 1px; }
+    }
+    input::-webkit-calendar-picker-indicator { margin: 0; padding: 0; width: 10px; }
+  }
+
   .flight-box {
     overflow: hidden;
     margin: 0;

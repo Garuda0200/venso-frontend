@@ -2,7 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { buildVoucherTitleBlocks, packMeasuredVoucherFlow } from "../voucherPdfLayout";
+import { buildVoucherTitleBlocks, packMeasuredVoucherFlow, buildVoucherFlightRows, groupVoucherFlightCards } from "../voucherPdfLayout";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import VoucherFlightsTable, { VOUCHER_FLIGHT_FIELDS } from "../../components/VentasSummaryPDFModal/VoucherFlightsTable";
 
 test("un solo bloque por día aunque existan descripciones editoriales muy extensas", () => {
   const days = [{ title: "Valle Sagrado", content: "Descripción histórica\n".repeat(300) }, { title: "Machu Picchu", content: "Texto" }];
@@ -59,4 +62,47 @@ test("la vista y exportación no incluyen contenido diario ni fechas redundantes
   assert.match(source, /renderPdfFlowContent\(\{ items: introPdfFlowItems \}/);
   assert.match(source, /introHasItinerary/);
   assert.match(source, /hasObservacionesText \|\| showObservacionesEditor \? \[\{/);
+});
+
+test("cada vuelo ocupa una fila aunque haya vuelos internos e internacionales",()=>{
+ const intl=[{id:1},{id:2}],nat=[{id:3},{id:4},{id:5}];
+ const cards=[{type:"internacional",key:"intl",flights:intl},{type:"nacional",key:"nat",flights:nat}];
+ const snapshot=JSON.stringify(cards),rows=buildVoucherFlightRows(cards);
+ assert.equal(rows.length,5);assert.ok(rows.every(row=>row.cards.length===1 && row.cards[0].flights.length===1));
+ assert.deepEqual(rows.map(row=>row.cards[0].flights[0].id),[1,2,3,4,5]);
+ const grouped=groupVoucherFlightCards(rows.flatMap(row=>row.cards));
+ assert.equal(grouped.length,2);assert.equal(grouped[1].flights[2],nat[2]);
+ assert.equal(JSON.stringify(cards),snapshot);
+});
+
+test("los encabezados se comparten y cada vuelo contiene ocho celdas, no dos filas",()=>{
+ const headers=Object.fromEntries(VOUCHER_FLIGHT_FIELDS.map(field=>[field,field]));
+ const html=renderToStaticMarkup(React.createElement(VoucherFlightsTable,{type:"nacional",title:"Vuelos internos",
+  flights:[{id:1},{id:2},{id:3}],headers,renderCell:(flight,field)=>`${field}-${flight.id}`}));
+ assert.equal((html.match(/class="flight-title"/g)||[]).length,1);
+ assert.equal((html.match(/scope="col"/g)||[]).length,8);
+ assert.equal((html.match(/data-voucher-flight-row="true"/g)||[]).length,3);
+ assert.equal((html.match(/<td /g)||[]).length,24);
+ assert.doesNotMatch(html,/flight-edit-row|flight-sep|class="label"/);
+});
+
+test("la continuación medida reserva encabezados sin cambiar ni duplicar vuelos",()=>{
+ const items=buildVoucherFlightRows([{type:"nacional",key:"nat",flights:[{id:1},{id:2},{id:3},{id:4}]}]);
+ const result=packMeasuredVoucherFlow(items,[50,25,25,25],{introHeight:50,pageHeight:65,gap:0,pageStartExtraHeights:[0,25,25,25]});
+ assert.deepEqual(result.introItems,[items[0]]);
+ assert.deepEqual(result.pages.map(page=>page.items),[[items[1]],[items[2]],[items[3]]]);
+ assert.deepEqual([...result.introItems,...result.pages.flatMap(page=>page.items)],items);
+});
+
+test("las filas de medición pueden omitir cabecera; los controles conservan la identidad del vuelo",()=>{
+ const html=renderToStaticMarkup(React.createElement(VoucherFlightsTable,{type:"nacional",title:"Vuelos internos",showHeader:false,
+  headers:Object.fromEntries(VOUCHER_FLIGHT_FIELDS.map(field=>[field,field])),flights:[{__externalIndex:7}],
+  renderCell:(flight,field)=>React.createElement("input",{defaultValue:`${field}-${flight.__externalIndex}`,"aria-label":field}),
+  renderAction:flight=>React.createElement("button",{"aria-label":`Eliminar ${flight.__externalIndex}`},"Quitar")}));
+ assert.doesNotMatch(html,/<thead|class="flight-title"/);assert.match(html,/Eliminar 7/);
+ const source=readFileSync(resolve(process.cwd(),"src/pages/Ventas/VouchersVenta/components/VentasSummaryPDFModal/VentasSummaryPDFModal.tsx"),"utf8");
+ assert.match(source,/buildVoucherFlightRows\(flightPageCards\)/);
+ assert.match(source,/inlineFlightRows.flatMap\(row=>row.cards\)/);
+ assert.match(source,/flightsBuffer.flatMap\(item=>item.cards\)/);
+ assert.match(source,/handleFlightFieldBlur/);assert.match(source,/handleRemoveFlight\(flight\)/);
 });
