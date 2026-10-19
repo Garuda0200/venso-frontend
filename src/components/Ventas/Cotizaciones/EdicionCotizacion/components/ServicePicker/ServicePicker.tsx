@@ -449,7 +449,6 @@ const ServicePicker = ({
                 nombres: persona.nombres,
                 apellidos: persona.apellidos,
                 genero: persona.genero,
-                estado_civil: persona.estado_civil,
                 direccion: persona.direccion,
                 // Nombre completo para display
                 nombre_completo: `${persona.nombres} ${persona.apellidos}`,
@@ -1530,7 +1529,6 @@ const ServicePicker = ({
                         nombres: persona.nombres,
                         apellidos: persona.apellidos,
                         genero: persona.genero,
-                        estado_civil: persona.estado_civil,
                         direccion: persona.direccion,
                         nombre_completo: `${persona.nombres} ${persona.apellidos}`,
                         persona: persona,

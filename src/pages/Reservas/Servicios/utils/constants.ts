@@ -209,17 +209,6 @@ export const IDIOMAS_GUIA = [
 ];
 
 /**
- * Opciones de estado civil para formularios - Exactamente iguales a las restricciones de BD
- */
-export const OPCIONES_ESTADO_CIVIL = [
-  "Soltero",
-  "Casado",
-  "Divorciado",
-  "Viudo",
-  "Otro",
-];
-
-/**
  * Opciones de género para formularios - Exactamente iguales a las restricciones de BD
  */
 export const OPCIONES_GENERO = ["Masculino", "Femenino"];

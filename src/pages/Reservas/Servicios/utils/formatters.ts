@@ -95,7 +95,6 @@ export const extractPersonaData = (guia) => {
     apellidos: guia.persona?.apellidos || guia.apellidos || "",
     direccion: guia.persona?.direccion || guia.direccion || "",
     genero: guia.persona?.genero || guia.genero || "",
-    estado_civil: guia.persona?.estado_civil || guia.estado_civil || "",
   };
 };
 

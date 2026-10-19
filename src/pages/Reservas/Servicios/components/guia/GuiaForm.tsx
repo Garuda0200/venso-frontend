@@ -3,7 +3,6 @@ import { MdClose, MdAdd, MdExpandMore, MdExpandLess } from "react-icons/md";
 import {
   IDIOMAS_GUIA,
   OPCIONES_GENERO,
-  OPCIONES_ESTADO_CIVIL,
 } from "../../utils/constants";
 import useAuditInfo from "../../hooks/useAuditInfo";
 import "../../../../../components/common/FormComponents.scss";
@@ -20,7 +19,6 @@ const GuiaForm = ({ guia, onSubmit, isSubmitting }) => {
     apellidos: "",
     direccion: "",
     genero: "",
-    estado_civil: "",
 
     // Datos de guía
     codigo_guia: "",
@@ -81,7 +79,6 @@ const GuiaForm = ({ guia, onSubmit, isSubmitting }) => {
         apellidos: guia.persona?.apellidos || guia.apellidos || "",
         direccion: guia.persona?.direccion || guia.direccion || "",
         genero: guia.persona?.genero || guia.genero || "",
-        estado_civil: guia.persona?.estado_civil || guia.estado_civil || "",
 
         // Datos de guía
         codigo_guia: guia.guia?.codigo_guia || guia.codigo_guia || "",
@@ -229,15 +226,11 @@ const GuiaForm = ({ guia, onSubmit, isSubmitting }) => {
             ? null
             : formData.correo.trim()
           : null,
-        // Convert empty strings to null for genero and estado_civil to avoid constraint violation
+        // Convert empty strings to null for genero to avoid constraint violation
         genero:
           formData.genero === "" || formData.genero === null
             ? null
             : formData.genero,
-        estado_civil:
-          formData.estado_civil === "" || formData.estado_civil === null
-            ? null
-            : formData.estado_civil,
         direccion:
           formData.direccion === "" || formData.direccion === null
             ? null
@@ -255,10 +248,10 @@ const GuiaForm = ({ guia, onSubmit, isSubmitting }) => {
   useEffect(() => {
     if (guia) {
       const hasOptionalData =
-        formData.direccion || formData.genero || formData.estado_civil;
+        formData.direccion || formData.genero;
       setShowOptionalInfo(!!hasOptionalData);
     }
-  }, [guia, formData.direccion, formData.genero, formData.estado_civil]);
+  }, [guia, formData.direccion, formData.genero]);
 
   return (
     <form onSubmit={handleSubmit} className="guia-form">
@@ -456,24 +449,6 @@ const GuiaForm = ({ guia, onSubmit, isSubmitting }) => {
                 >
                   <option value="">Seleccione...</option>
                   {OPCIONES_GENERO.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="estado_civil">Estado Civil</label>
-                <select
-                  id="estado_civil"
-                  name="estado_civil"
-                  value={formData.estado_civil || ""}
-                  onChange={handleChange}
-                  disabled={isSubmitting}
-                >
-                  <option value="">Seleccione...</option>
-                  {OPCIONES_ESTADO_CIVIL.map((option) => (
                     <option key={option} value={option}>
                       {option}
                     </option>

@@ -743,29 +743,6 @@ export const fetchGuiaById = async (id) => {
 
 export const createGuia = async (guiaData) => {
   try {
-    // First, make sure estado_civil exactly matches expected values (case sensitive)
-    const normalizeEstadoCivil = (value) => {
-      if (!value) return null;
-
-      // Direct mapping to ensure exact match with backend
-      const estadoCivilMap = {
-        soltero: "Soltero",
-        casado: "Casado",
-        divorciado: "Divorciado",
-        viudo: "Viudo",
-        otro: "Otro",
-        // Include exact matches too to avoid double mapping
-        Soltero: "Soltero",
-        Casado: "Casado",
-        Divorciado: "Divorciado",
-        Viudo: "Viudo",
-        Otro: "Otro",
-      };
-
-      const normalized = estadoCivilMap[value] || null;
-      return normalized;
-    };
-
     // Step 1: Create persona first (if we have persona data)
     if (!guiaData.id_persona && (guiaData.nombres || guiaData.apellidos)) {
       // Create persona first with normalized data
@@ -775,7 +752,6 @@ export const createGuia = async (guiaData) => {
         apellidos: guiaData.apellidos,
         direccion: guiaData.direccion || null,
         genero: guiaData.genero === "" ? null : guiaData.genero || null,
-        estado_civil: normalizeEstadoCivil(guiaData.estado_civil),
         created_by: guiaData.created_by || "system",
       };
 
@@ -870,7 +846,6 @@ export const updateGuia = async (id, guiaData) => {
       apellidos: auditedGuiaData.apellidos || null,
       direccion: auditedGuiaData.direccion || null,
       genero: auditedGuiaData.genero || null,
-      estado_civil: auditedGuiaData.estado_civil || null,
       updated_by: auditedGuiaData.updated_by,
       updated_at: auditedGuiaData.updated_at,
     };
