@@ -862,3 +862,28 @@ export const buildPersistedPassengerSelection = (state = {}) => {
 
   return persisted;
 };
+
+
+/** Commit the commercial beneficiary lists after an explicit passenger-pricing
+ * edit. Runtime IDs preserve the user's selection; a partial legacy list must
+ * not turn the adults' amount into an unallocated service charge.
+ * Operational assignedBeneficiarios* fields are deliberately preserved. */
+export const syncQuotedBeneficiariesFromRuntime = (service = {}) => {
+  const snapshot = getServiceBeneficiarySnapshot(service);
+  const beneficiariosAdultos = [
+    ...snapshot.adultIds.map((id) => ({ id })),
+    ...snapshot.convertedEntries.map(({ childId, revertKey }) => ({
+      id: revertKey || childId, child_origin: childId,
+    })),
+  ];
+  const beneficiariosNinos = snapshot.childIds.map((id) => ({
+    id, precio: Number(snapshot.childPriceMap[id]) || 0,
+  }));
+  return {
+    ...service, beneficiariosAdultos, beneficiariosNinos,
+    // Pricing snapshots are derived from the edited tariff/selection, never reused.
+    children: undefined, precio_adult: undefined, amount_per_adult: undefined, amount_per_child: undefined,
+    ...(Object.hasOwn(service, "beneficiarios_adultos") ? { beneficiarios_adultos: beneficiariosAdultos } : {}),
+    ...(Object.hasOwn(service, "beneficiarios_ninos") ? { beneficiarios_ninos: beneficiariosNinos } : {}),
+  };
+};

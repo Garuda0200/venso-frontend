@@ -30,8 +30,7 @@ import {
 import {
   buildRuntimePassengerSelection,
   getPassengerSlotKey,
-  getServiceBeneficiarySnapshot,
-} from "../../utils/passengerPricingState";
+  getServiceBeneficiarySnapshot, syncQuotedBeneficiariesFromRuntime } from "../../utils/passengerPricingState";
 import { calculateExternalItineraryBreakdown } from "../../utils/cotizacionFinancialSummary";
 import {
   isOperationallyAssignedService,
@@ -492,7 +491,7 @@ const ExternalItineraryEditor = ({
         if (!updatedService) return prev;
 
         nextDay.servicios[serviceIndex] =
-          syncServicePassengerState(updatedService);
+          syncServicePassengerState(syncQuotedBeneficiariesFromRuntime(updatedService));
         next[dayIndex] = nextDay;
         return next;
       });

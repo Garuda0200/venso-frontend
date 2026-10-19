@@ -38,6 +38,7 @@ const testSuites = [
       "src/components/Ventas/Cotizaciones/EdicionCotizacion/components/ServicePicker/utils/__tests__/catalogueFilters.test.js",
       "src/components/Ventas/Cotizaciones/EdicionCotizacion/components/DaysEditor/utils/__tests__/endoseCapacityFlow.test.js",
       "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/editorRenderOptimization.test.js",
+      "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/childTariffReversion.test.js",
       "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/externalChildPricing.test.js",
       "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/groupedHotelPersistence.test.js",
       "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/passengerPricingPresentation.test.js",

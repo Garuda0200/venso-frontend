@@ -76,6 +76,7 @@
     "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/pdfCanvaCopy.test.ts",
     "src/pages/Contabilidad/Reportes/utils/__tests__/paymentReportUtils.test.ts",
     "src/pages/Reservas/VouchersReserva/utils/__tests__/specializedPaymentGroups.test.ts",
-    "src/utils/__tests__/pendingPayments.test.ts"
+    "src/utils/__tests__/pendingPayments.test.ts",
+    "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/childTariffReversion.test.ts"
   ]
 }

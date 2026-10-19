@@ -37,6 +37,7 @@ import {
 import {
   getPassengerSlotKey,
   getServiceBeneficiarySnapshot,
+  syncQuotedBeneficiariesFromRuntime,
 } from "../../utils/passengerPricingState";
 import { ensureDaysHaveCiudades } from "../../utils/itinerarioCleanupUtils";
 import { resolveTicketChildUnitPrice } from "../../utils/ticketBeneficiaries";
@@ -1383,7 +1384,7 @@ const DaysEditor = forwardRef(
           baseTc: baseTcRef.current,
         };
 
-        newDays[dayIndex].servicios[serviceIndex] = newService;
+        newDays[dayIndex].servicios[serviceIndex] = syncQuotedBeneficiariesFromRuntime(newService);
         return newDays;
       });
     };
@@ -1545,7 +1546,7 @@ const DaysEditor = forwardRef(
           baseTc: baseTcRef.current,
         };
 
-        newDays[dayIndex].servicios[serviceIndex] = newService;
+        newDays[dayIndex].servicios[serviceIndex] = syncQuotedBeneficiariesFromRuntime(newService);
         return newDays;
       });
     };
@@ -1732,256 +1733,12 @@ const DaysEditor = forwardRef(
 
         // Invalidar precio_adult cacheado para que el runtime recalcule desde tariff.precio
         delete service.precio_adult;
-        day.servicios[serviceIndex] = service;
+        day.servicios[serviceIndex] = syncQuotedBeneficiariesFromRuntime(service);
         newDays[dayIndex] = day;
         return newDays;
       });
     };
 
-    /*
-        const isTicketSvc = detectServiceType(newService) === "tickets";
-        const currentChildPriceMap = {
-          ...(newService.assignedChildExplicitPriceMap || {}),
-        };
-        const nextConvertedMap = {
-          ...(newService.convertedChildToAdultMap || {}),
-          ...(newService.passengerSelection?.convertedChildToAdultMap || {}),
-          ...(newService.passengerSelection?.ninosComoAdulto || {}),
-        };
-
-        if (isTicketSvc && priceType === "adult") {
-          delete currentChildPriceMap[childId];
-          nextConvertedMap[childId] = true;
-        } else {
-          currentChildPriceMap[childId] = newChildPrice;
-          delete nextConvertedMap[childId];
-        }
-
-        const newChildExtrasTotal = Object.values(currentChildPriceMap).reduce(
-          (sum, price) => sum + (parseFloat(price) || 0),
-          0,
-        );
-
-        newService.assignedChildExplicitPriceMap = currentChildPriceMap;
-        newService.assignedChildExplicitPriceSum = newChildExtrasTotal;
-        newService.hasChildExplicitPrices =
-          Object.keys(currentChildPriceMap).length > 0;
-        newService.convertedChildToAdultMap = nextConvertedMap;
-
-        if (newService.tariff) {
-          newService.tariff = {
-            ...newService.tariff,
-            childExtrasTotal: newChildExtrasTotal,
-            precio_original_with_child_extras:
-              parseFloat(newService.tariff.precio_original || 0) +
-              newChildExtrasTotal,
-          };
-        }
-
-        const assignedIds = newService.assignedPassengerIds || [];
-        const childIds = assignedIds.filter((id) => id.startsWith("child:"));
-
-        newService.passengerSelection = {
-          ...newService.passengerSelection,
-          hasChildExplicitPrices: Object.keys(currentChildPriceMap).length > 0,
-          assignedChildExplicitCount: Object.keys(currentChildPriceMap).length,
-          assignedChildExplicitPriceMap: currentChildPriceMap,
-          assignedChildExplicitPriceSum: newChildExtrasTotal,
-          convertedChildToAdultMap: nextConvertedMap,
-          ninosComoAdulto: nextConvertedMap,
-        };
-
-        if (isTicketSvc) {
-          const ticketChildPricingMode =
-            priceType === "adult" ? "adult_tariff" : "manual";
-          const ticketChildrenUseStudentTariffAsAdult = priceType === "adult";
-          newService.ticketChildPricingMode = ticketChildPricingMode;
-          newService.ticketChildrenUseStudentTariffAsAdult =
-            ticketChildrenUseStudentTariffAsAdult;
-          newService.passengerSelection = {
-            ...newService.passengerSelection,
-            ticketChildPricingMode,
-            ticketChildrenUseStudentTariffAsAdult,
-          };
-        }
-
-        newService.fxMeta = {
-          ...(newService.fxMeta || {}),
-          tcApplied: exchangeRate,
-          baseTc: baseTcRef.current,
-        };
-
-        newDays[dayIndex].servicios[serviceIndex] = newService;
-        return newDays;
-      });
-    };
-
-    // NUEVO: Convertir un niño a adulto en un servicio específico
-    const handleConvertChildToAdult = (
-      dayIndex,
-      serviceIndex,
-      childIdToConvert,
-    ) => {
-      if (dayIndex === null || serviceIndex === null || !childIdToConvert)
-        return;
-
-      setDays((prevDays) => {
-        const newDays = [...prevDays];
-        const day = { ...newDays[dayIndex] };
-        if (!day || !day.servicios || !day.servicios[serviceIndex])
-          return prevDays;
-
-        day.servicios = [...day.servicios];
-        const service = { ...day.servicios[serviceIndex] };
-        const assignedIds = [...(service.assignedPassengerIds || [])];
-
-        if (!assignedIds.includes(childIdToConvert)) return prevDays;
-
-        // Mark child as converted (keep child ID, add to map — matches HotelPricingModal format)
-        const convertedMap = { ...(service.convertedChildToAdultMap || {}) };
-        convertedMap[childIdToConvert] = true;
-        service.convertedChildToAdultMap = convertedMap;
-
-        // assignedPassengerIds stays unchanged — child ID remains
-        service.assignedPassengerIds = assignedIds;
-
-        const adultCount = assignedIds.filter((id) =>
-          id.startsWith("adult:"),
-        ).length;
-        const convertedChildCount = Object.keys(convertedMap).filter(
-          (k) => k.startsWith("child:") && convertedMap[k],
-        ).length;
-        const newAdultCount = adultCount + convertedChildCount;
-
-        const childPriceMap = {
-          ...(service.assignedChildExplicitPriceMap || {}),
-        };
-        delete childPriceMap[childIdToConvert];
-
-        const newChildExtrasTotal = Object.values(childPriceMap).reduce(
-          (sum, price) => sum + (parseFloat(price) || 0),
-          0,
-        );
-        const remainingChildCount = Object.keys(childPriceMap).length;
-
-        service.assignedChildExplicitPriceMap = childPriceMap;
-        service.assignedChildExplicitPriceSum = newChildExtrasTotal;
-        service.hasChildExplicitPrices = remainingChildCount > 0;
-        service.assignedChildExplicitCount = remainingChildCount;
-        service.pricingMode = "fixed";
-        service.treatChildrenAsAdults = false;
-
-        const serviceType =
-          service.typeService ||
-          service.parentService?.typeService ||
-          service.serviceCategory ||
-          "";
-        const isDividedPricing =
-          serviceType === "transportes" ||
-          serviceType === "guias" ||
-          (serviceType === "endoses" && getTourCapacity(service) != null);
-
-        const isHotel = serviceType === "hoteles";
-
-        if (isDividedPricing) {
-          const basePrice = parseFloat(service.tariff?.precio_original || 0);
-          if (basePrice > 0) {
-            const newDividedPrice = basePrice / newAdultCount;
-            service.tariff = {
-              ...service.tariff,
-              precio: Math.round(newDividedPrice * 100) / 100,
-              childExtrasTotal: newChildExtrasTotal,
-              precio_original_with_child_extras:
-                basePrice + newChildExtrasTotal,
-            };
-          }
-        } else if (isHotel) {
-          if (service.tariff) {
-            service.tariff = {
-              ...service.tariff,
-              childExtrasTotal: newChildExtrasTotal,
-              precio_original_with_child_extras:
-                parseFloat(service.tariff.precio_original || 0) +
-                newChildExtrasTotal,
-            };
-          }
-        } else {
-          if (service.tariff) {
-            const unitPrice = parseFloat(service.tariff.precio || 0);
-            const newPrecioOriginal = unitPrice * newAdultCount;
-            service.tariff = {
-              ...service.tariff,
-              precio_original: newPrecioOriginal,
-              childExtrasTotal: newChildExtrasTotal,
-              precio_original_with_child_extras:
-                newPrecioOriginal + newChildExtrasTotal,
-            };
-          }
-        }
-
-        if (
-          service.pricingMode === "percentage" &&
-          service.uniformPercentage &&
-          remainingChildCount > 0
-        ) {
-          const percentage = parseFloat(service.uniformPercentage) || 0;
-          const newUnitPrice = parseFloat(service.tariff?.precio || 0);
-          const newChildPrice = (percentage / 100) * newUnitPrice;
-
-          Object.keys(childPriceMap).forEach((childId) => {
-            childPriceMap[childId] = newChildPrice;
-          });
-
-          const updatedChildExtrasTotal = Object.values(childPriceMap).reduce(
-            (sum, price) => sum + (parseFloat(price) || 0),
-            0,
-          );
-          service.assignedChildExplicitPriceMap = childPriceMap;
-          service.assignedChildExplicitPriceSum = updatedChildExtrasTotal;
-
-          if (service.tariff) {
-            service.tariff.childExtrasTotal = updatedChildExtrasTotal;
-            service.tariff.precio_original_with_child_extras =
-              parseFloat(service.tariff.precio_original || 0) +
-              updatedChildExtrasTotal;
-          }
-        }
-
-        service.passengerSelection = {
-          ...service.passengerSelection,
-          selectedIds: assignedIds,
-          assignedPassengerCount: assignedIds.length,
-          convertedChildToAdultMap: { ...convertedMap },
-          hasChildExplicitPrices: remainingChildCount > 0,
-          assignedChildExplicitCount: remainingChildCount,
-          assignedChildExplicitPriceMap: service.assignedChildExplicitPriceMap,
-          assignedChildExplicitPriceSum: service.assignedChildExplicitPriceSum,
-        };
-
-        if (detectServiceType(service) === "tickets") {
-          service.ticketChildPricingMode = "adult_tariff";
-          service.ticketChildrenUseStudentTariffAsAdult = true;
-          service.passengerSelection = {
-            ...service.passengerSelection,
-            ticketChildPricingMode: "adult_tariff",
-            ticketChildrenUseStudentTariffAsAdult: true,
-          };
-        }
-
-        service.fxMeta = {
-          ...(service.fxMeta || {}),
-          tcApplied: exchangeRate,
-          baseTc: baseTcRef.current,
-        };
-
-        // Invalidar precio_adult cacheado para que el runtime recalcule desde tariff.precio
-        delete service.precio_adult;
-        day.servicios[serviceIndex] = service;
-        newDays[dayIndex] = day;
-        return newDays;
-      });
-    };
-    */
 
     const handleRevertAdultToChild = (
       dayIndex,
@@ -2222,7 +1979,7 @@ const DaysEditor = forwardRef(
             service.passengerSelection.treatChildrenAsAdults = false;
           }
         }
-        day.servicios[serviceIndex] = service;
+        day.servicios[serviceIndex] = syncQuotedBeneficiariesFromRuntime(service);
         newDays[dayIndex] = day;
         return newDays;
       });
