@@ -2089,14 +2089,18 @@ const ServicePicker = ({
                   <div className="empty-state-modern">
                     <div className="state-icon"></div>
                     <div className="state-title">
-                      {currentCategory?.hasChildren
+                      {loading[activeCategory]
                         ? "Cargando opciones..."
-                        : "Sin opciones adicionales"}
+                        : currentCategory?.hasChildren
+                          ? "Sin opciones visibles"
+                          : "Sin opciones adicionales"}
                     </div>
                     <div className="state-message">
-                      {currentCategory?.hasChildren
+                      {loading[activeCategory]
                         ? "Las opciones se cargarán automáticamente."
-                        : "Este servicio no tiene opciones adicionales."}
+                        : currentCategory?.hasChildren
+                          ? "No hay servicios disponibles para esta categoría con la visibilidad actual del catálogo."
+                          : "Este servicio no tiene opciones adicionales."}
                     </div>
                   </div>
                 )}
