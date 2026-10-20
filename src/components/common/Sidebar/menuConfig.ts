@@ -65,6 +65,7 @@ const menuConfig = {
       // Se conserva la entrada para poder reactivarla sin reconstruir el módulo.
       hidden: !FRONTEND_FEATURES.commissionsManagement,
     },
+    /*
     {
       key: "post-sale-edits",
       name: "Permisos postventa",
@@ -72,6 +73,7 @@ const menuConfig = {
       icon: "logsIcon",
       superadminOnly: true,
     },
+    */
   ],
 
   ventas: [
