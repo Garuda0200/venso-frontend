@@ -47,6 +47,7 @@ import {
 } from "../../utils/reservationPaymentManagement";
 import TicketChargeSummary from "./TicketChargeSummary";
 import PaymentBatchBar from "./PaymentBatchBar";
+import { canPayAssignedTrain, prepareDirectTrainPayment } from "../../utils/directTrainPayment";
 import "./PaymentManagementModal.scss";
 
 const normalizeItinerary = normalizePaymentItinerary;
@@ -57,8 +58,8 @@ const generatePaymentDescription = (serviceData, voucherCode) => {
     return `Pago de servicio del file ${voucherCode || "Sin código"}`;
   }
 
-  const parentService = serviceData.parentService || {};
-  const childService = serviceData.childService || {};
+  const parentService = serviceData.assignedParentService || serviceData.assignedService?.parentService || serviceData.parentService || {};
+  const childService = serviceData.assignedChildService || serviceData.assignedService?.childService || serviceData.childService || {};
   const typeService = String(
     serviceData.typeService || parentService.typeService || "",
   ).toLowerCase();
@@ -176,6 +177,18 @@ const PaymentManagementModal = ({
   const [selectedPaymentRequest, setSelectedPaymentRequest] = useState(null);
   const [specializedPaymentType, setSpecializedPaymentType] = useState<string | null>(null);
   const initialLoadDone = React.useRef(false);
+  const directPaymentInFlightRef = React.useRef(false);
+  const directPaymentSessionRef = React.useRef(0);
+  const [preparingDirectPaymentId, setPreparingDirectPaymentId] = useState<number | null>(null);
+
+  useEffect(() => {
+    directPaymentSessionRef.current += 1;
+    directPaymentInFlightRef.current = false;
+    setPreparingDirectPaymentId(null);
+    setShowPaymentModal(false);
+    setSelectedPaymentRequest(null);
+    return () => { directPaymentSessionRef.current += 1; };
+  }, [isOpen, voucherReserva?.id, voucherReserva?.reservationVoucher?.id, voucherReserva?.voucher_reserva_id]);
 
   // Estado para solicitud individual o por lote
   const [showPaymentVoucherModal, setShowPaymentVoucherModal] = useState(false);
@@ -590,14 +603,7 @@ const PaymentManagementModal = ({
 
   // Solo trenes usan el egreso directo estándar; vuelos y entradas tienen conciliación propia.
   const canPayDirectlyByReservas = useCallback((service) => {
-    const typeService = normalizeDirectPaymentType(resolveServiceType(service));
-
-    if (typeService === "trenes") {
-      // Los trenes requieren un parentService (empresa de tren) asignado.
-      return !!getAssignedParentService(service);
-    }
-
-    return false;
+    return canPayAssignedTrain(service);
   }, []);
 
   const getDirectPaymentAmount = useCallback((service) => {
@@ -696,122 +702,36 @@ const PaymentManagementModal = ({
     };
   }, [assignedItinerary, getDirectPaymentAmount, getServiceSelectionKey, principalPax, voucherReserva]);
 
-  const buildDirectPaymentServiceData = useCallback((service) => {
-    return {
-      parentService: getAssignedParentService(service),
-      childService: getAssignedChildService(service),
-      tariff: getAssignedTariff(service),
-      typeService: normalizeDirectPaymentType(resolveServiceType(service)),
-      payment_deadline:
-        service?.payment_deadline ||
-        service?.assignedService?.payment_deadline ||
-        null,
-    };
-  }, []);
-
-  // Handler para pago directo por reservas (similar a PendingPaymentsModal)
+  // Preparar no registra un egreso: el usuario confirma en MovimientoForm.
   const handlePayDirectly = async (service, paymentRequest, dayIndex, serviceIndex) => {
-    let requestForPayment = paymentRequest;
-
-    if (!requestForPayment) {
-      const servicioId =
-        service?.servicioId ||
-        service?.itinerario_servicio_id ||
-        service?.assignedService?.servicioId ||
-        service?.assignedService?.itinerario_servicio_id ||
-        null;
-      const amount = getDirectPaymentAmount(service);
-
-      if (!servicioId) {
-        toast.error("No se encontró el servicio de itinerario para pagar");
-        return;
-      }
-      if (!amount || amount <= 0) {
-        toast.error("El monto debe ser mayor a 0");
-        return;
-      }
-
-      try {
-        const response = await voucherReservaService.requestPayment({
-          voucher_reserva_id: voucherReserva.id,
-          voucher_reserva_code: voucherReserva.voucher_code,
-          itinerario_servicio_id: servicioId,
-          amount,
-          currency: "USD",
-          moneda: "dolares",
-          observaciones: null,
-          service_data: buildDirectPaymentServiceData(service),
-          payment_deadline: null,
-        });
-
-        requestForPayment =
-          response?.data?.payment_request ||
-          response?.data ||
-          response?.payment_request ||
-          response;
-
-        if (!requestForPayment?.id) {
-          const refreshed = await voucherReservaService.getPaymentRequest(
-            voucherReserva.id,
-            servicioId,
-          );
-          requestForPayment = refreshed?.data || refreshed?.payment_request || null;
-        }
-
+    if (directPaymentInFlightRef.current || showPaymentModal || paymentLoadError || refreshingPayments) return;
+    const session = directPaymentSessionRef.current;
+    const isCurrent = () => session === directPaymentSessionRef.current;
+    directPaymentInFlightRef.current = true;
+    setPreparingDirectPaymentId(getPaymentServiceId(service));
+    try {
+      const prepared = await prepareDirectTrainPayment({ service, paymentRequest,
+        voucher: voucherReserva, api: voucherReservaService, isCurrent });
+      if (!prepared || !isCurrent()) return;
+      // Mount the form before notifying other consumers to refresh their data.
+      setSelectedPaymentRequest(prepared.request);
+      setShowPaymentModal(true);
+      if (prepared.created) {
         window.dispatchEvent(
           new CustomEvent("paymentRequestCreated", {
-            detail: { voucherReservaId: voucherReserva.id, dayIndex, serviceIndex },
+            detail: { voucherReservaId: prepared.request.voucher_reserva_id,
+              payment_request_id: prepared.request.id, dayIndex, serviceIndex },
           }),
         );
-      } catch (error) {
-        console.error("Error creando solicitud para pago directo:", error);
-        toast.error("No se pudo preparar el pago directo");
-        return;
+      }
+    } catch (error) {
+      if (isCurrent()) toast.error(error?.response?.data?.message || error?.message || "No se pudo preparar el pago directo");
+    } finally {
+      if (isCurrent()) {
+        directPaymentInFlightRef.current = false;
+        setPreparingDirectPaymentId(null);
       }
     }
-
-    if (!requestForPayment?.id) {
-      toast.error("No hay solicitud de pago para este servicio");
-      return;
-    }
-
-    const normalizedServiceData =
-      requestForPayment.service_data || buildDirectPaymentServiceData(service);
-
-    // Obtener el voucher_code de forma robusta - priorizar voucher_code_venta
-    const voucherCode =
-      voucherReserva.voucher_code_venta ||
-      requestForPayment.voucher_code ||
-      voucherReserva.voucher_code;
-
-    // Preparar datos para el formulario de pago
-    // Usar descripción basada en el tipo de servicio (parentService.typeService)
-    const descripcionPago = generatePaymentDescription(
-      normalizedServiceData,
-      voucherCode,
-    );
-
-    const paymentData = {
-      descripcion: descripcionPago,
-      amount: requestForPayment.amount || requestForPayment.monto,
-      monto: requestForPayment.amount || requestForPayment.monto,
-      moneda: "USD",
-      observaciones: requestForPayment.observaciones || "",
-      service_data: normalizedServiceData,
-      contexto_pago: {
-        payment_request_id: requestForPayment.id,
-        tipo: "ServiciosVoucherReserva",
-      },
-      voucher_code: voucherCode,
-      referencia_voucher_reserva:
-        requestForPayment.voucher_reserva_id || voucherReserva.id,
-      referencia_voucher_venta:
-        voucherReserva.voucher_venta_id || voucherReserva.voucherId,
-    };
-
-    // Abrir modal de MovimientoForm con los datos preparados
-    setSelectedPaymentRequest({ ...requestForPayment, ...paymentData });
-    setShowPaymentModal(true);
   };
 
   // Ver el movimiento contable completo y sus evidencias.
@@ -1105,6 +1025,8 @@ const PaymentManagementModal = ({
           "N/A",
       ),
       monto: selectedPaymentRequest.amount,
+      payment_request_service_data: selectedPaymentRequest.service_data,
+      itinerario_servicio_id: selectedPaymentRequest.itinerario_servicio_id,
       moneda: "USD",
       observaciones: selectedPaymentRequest.observaciones || "",
       contexto_pago: {
@@ -1127,6 +1049,7 @@ const PaymentManagementModal = ({
     selectedPaymentRequest?.voucher_code,
     selectedPaymentRequest?.voucher_reserva_id,
     selectedPaymentRequest?.service_data,
+    selectedPaymentRequest?.itinerario_servicio_id,
     voucherReserva?.voucher_code_venta,
     voucherReserva?.voucher_code,
     voucherReserva?.id,
@@ -1387,8 +1310,10 @@ const PaymentManagementModal = ({
                                       )
                                     }
                                     title="Pagar directamente"
+                                    disabled={preparingDirectPaymentId !== null || showPaymentModal || paymentLoadError || refreshingPayments}
+                                    aria-busy={preparingDirectPaymentId === getPaymentServiceId(service)}
                                   >
-                                    <MdPayment /> Pagar
+                                    <MdPayment /> {preparingDirectPaymentId === getPaymentServiceId(service) ? "Preparando..." : "Pagar"}
                                   </button>
                                 )}
 
@@ -1531,6 +1456,7 @@ const PaymentManagementModal = ({
 
       {/* Modal de pago */}
       {showPaymentModal && selectedPaymentRequest && (
+        <div className="reservation-direct-payment-layer">
         <MovimientoForm
           tipo="egreso"
           isOpen={showPaymentModal}
@@ -1541,6 +1467,7 @@ const PaymentManagementModal = ({
           onSuccess={handlePaymentSuccess}
           initialData={movimientoFormInitialData}
         />
+        </div>
       )}
 
       {/* Popover compacto para solicitud individual o por lote */}

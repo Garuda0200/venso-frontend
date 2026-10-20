@@ -73,6 +73,7 @@ const testSuites = [
       "src/pages/Reservas/VouchersReserva/utils/__tests__/reservationVoucherRender.test.js",
       "src/pages/Reservas/VouchersReserva/utils/__tests__/specializedPaymentGroups.test.js",
       "src/pages/Reservas/VouchersReserva/utils/__tests__/reservationPaymentManagement.test.js",
+      "src/pages/Reservas/VouchersReserva/utils/__tests__/directTrainPayment.test.js",
     ],
   },
   {

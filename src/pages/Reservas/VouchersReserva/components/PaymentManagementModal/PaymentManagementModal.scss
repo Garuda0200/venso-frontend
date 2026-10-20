@@ -558,6 +558,11 @@
   }
 }
 
+// Above the management sheet, including the global modal layer (5000).
+.reservation-direct-payment-layer > .modal-overlay {
+  z-index: 5200;
+}
+
 @keyframes pmm-spin {
   to {
     transform: rotate(360deg);

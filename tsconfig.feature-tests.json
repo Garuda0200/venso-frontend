@@ -17,6 +17,7 @@
     ]
   },
   "include": [
+    "src/pages/Reservas/VouchersReserva/utils/__tests__/directTrainPayment.test.ts",
     "src/pages/Ventas/VouchersVenta/components/__tests__/voucherWorkflowParity.test.ts",
     "src/utils/__tests__/servicePricingType.test.ts",
     "src/pages/Reservas/Calendario/utils/__tests__/bibliaParticipantEditor.test.tsx",
