@@ -12,6 +12,7 @@ const testSuites = [
       "src/components/common/__tests__/backendStatusBanner.test.js",
       "src/tests/envExamples.test.js",
       "src/utils/__tests__/csrfToken.test.js",
+      "src/utils/__tests__/categoryOptions.test.js",
       "src/utils/__tests__/idempotency.test.js",
       "src/utils/__tests__/packageFeeUtils.test.js",
       "src/utils/__tests__/pendingPayments.test.js",

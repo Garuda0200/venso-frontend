@@ -1,0 +1,125 @@
+// Los módulos pueden ajustar el color con --bulk-accent y --bulk-accent-soft.
+.bulk-selection-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
+  padding: 9px 12px;
+  border: 1px solid #e7dae3;
+  border-radius: 8px;
+  background: #fff;
+
+  &.is-active {
+    border-color: var(--bulk-accent, #d90070);
+    background: var(--bulk-accent-soft, #fff7fb);
+    box-shadow: 0 3px 14px rgba(65, 19, 49, 0.06);
+  }
+
+  &__all {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    color: #344554;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+
+    input {
+      width: 15px;
+      height: 15px;
+      accent-color: var(--bulk-accent, #d90070);
+    }
+  }
+
+  &__summary {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    color: #657281;
+    font-size: 12px;
+
+    strong {
+      color: #2b1726;
+    }
+  }
+
+  &__clear {
+    display: inline-flex;
+    gap: 3px;
+    align-items: center;
+    padding: 2px 6px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: #8a2a5c;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+
+    &:hover {
+      background: #fbe6f1;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-left: auto;
+
+    button {
+      display: inline-flex;
+      gap: 5px;
+      align-items: center;
+      min-height: 32px;
+      padding: 6px 12px;
+      border: 1px solid #d9c6d3;
+      border-radius: 6px;
+      background: #fff;
+      color: #3b2235;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+
+      &:hover:not(:disabled) {
+        border-color: var(--bulk-accent, #d90070);
+        color: var(--bulk-accent, #d90070);
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      &.danger {
+        border-color: #f0c2c2;
+        color: #b42318;
+
+        &:hover:not(:disabled) {
+          border-color: #b42318;
+          background: #fff1f1;
+          color: #b42318;
+        }
+      }
+    }
+  }
+
+  &__warning {
+    flex-basis: 100%;
+    color: #b42318;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  @media (max-width: 640px) {
+    &__actions {
+      margin-left: 0;
+      width: 100%;
+
+      button {
+        flex: 1 1 auto;
+        justify-content: center;
+      }
+    }
+  }
+}

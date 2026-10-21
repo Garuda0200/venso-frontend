@@ -72,6 +72,7 @@
     "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/serviceExchangeRate.test.ts",
     "src/pages/Ventas/VouchersVenta/utils/__tests__/voucherFinancials.test.ts",
     "src/utils/__tests__/csrfToken.test.ts",
+    "src/utils/__tests__/categoryOptions.test.ts",
     "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/editorRenderOptimization.test.ts",
     "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/vensoPdfCanvaDesign.test.ts",
     "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/pdfCanvaCopy.test.ts",
