@@ -119,6 +119,16 @@ export const mediaService = {
     return normalizeMediaAsset(response.data?.data);
   },
 
+  /** Cambio común sobre varias imágenes: `{ category?, is_active? }`. Todo o nada. */
+  async updateReferenceImagesBatch(ids, patch) {
+    const response = await axiosInstance.patch(`${API_BASE}/batch`, { ids, ...patch });
+    invalidateGetCache(API_BASE);
+    invalidateGetCache("/turismo/media");
+    clearReferenceManifestCache();
+    clearTigrisImageCache();
+    return (response.data?.data || []).map(normalizeMediaAsset);
+  },
+
   async deleteReferenceImage(id) {
     const response = await axiosInstance.delete(`${API_BASE}/${id}`);
     invalidateGetCache(API_BASE);

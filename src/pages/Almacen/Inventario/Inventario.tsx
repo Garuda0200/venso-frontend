@@ -4,16 +4,23 @@ import {
   MdCheckCircle,
   MdClose,
   MdDelete,
+  MdDriveFileMove,
   MdEdit,
   MdFolder,
   MdImageSearch,
   MdRefresh,
+  MdRestore,
   MdSave,
   MdSearch,
   MdUploadFile,
+  MdVisibilityOff,
 } from "react-icons/md";
+import BulkSelectionBar from "../../../components/common/BulkSelectionBar";
+import CategoryCombobox from "../../../components/common/CategoryCombobox";
 import { useAuth } from "../../../context/AuthContext";
+import useBulkSelection from "../../../hooks/useBulkSelection";
 import mediaService from "../../../services/mediaService";
+import { canonicalCategory, mergeCategoryOptions } from "../../../utils/categoryOptions";
 import "./Inventario.scss";
 
 const DEFAULT_CATEGORY = "General";
@@ -39,53 +46,24 @@ const createClientId = () =>
   `media-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
 function CategorySelector({ label, value, categories, onChange, disabled = false }) {
-  const [custom, setCustom] = useState(false);
-
-  useEffect(() => {
-    if (value && categories.length && !categories.includes(value)) {
-      setCustom(true);
-    }
-  }, [categories, value]);
-
   return (
     <div className="media-category-field">
       <div className="media-category-field__head">
         <span>{label}</span>
-        <button
-          type="button"
-          onClick={() => {
-            setCustom((current) => !current);
-            if (!custom && value === DEFAULT_CATEGORY) onChange("");
-            if (custom && !value) onChange(DEFAULT_CATEGORY);
-          }}
-          disabled={disabled}
-        >
-          {custom ? "Usar existente" : "Nueva categoría"}
-        </button>
       </div>
-      {custom ? (
-        <input
+      <fieldset className="media-category-field__control" disabled={disabled}>
+        <CategoryCombobox
           value={value}
-          onChange={(event) => onChange(event.target.value)}
+          onChange={onChange}
+          options={categories}
           placeholder="Ej. Valle Sagrado / Pisac"
-          disabled={disabled}
         />
-      ) : (
-        <select
-          value={value || DEFAULT_CATEGORY}
-          onChange={(event) => onChange(event.target.value)}
-          disabled={disabled}
-        >
-          {categories.map((item) => (
-            <option key={item} value={item}>
-              {item}
-            </option>
-          ))}
-        </select>
-      )}
+      </fieldset>
     </div>
   );
 }
+
+const getAssetId = (asset) => asset.id;
 
 export function Inventario() {
   const { getCurrentUser } = useAuth();
@@ -106,14 +84,20 @@ export function Inventario() {
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [bulkCategory, setBulkCategory] = useState(null);
+  const [confirmBulkDeactivate, setConfirmBulkDeactivate] = useState(false);
   const uploadItemsRef = useRef([]);
+  const selection = useBulkSelection(getAssetId);
+  const { sync: syncSelection } = selection;
 
-  const categories = useMemo(() => {
-    const values = assets.map((asset) => asset.category).filter(Boolean);
-    return [...new Set([DEFAULT_CATEGORY, ...values])].sort((a, b) =>
-      a.localeCompare(b),
-    );
-  }, [assets]);
+  // Las categorías salen de la propia biblioteca (incluye inactivas) y se
+  // amplían cuando el usuario escribe una nueva.
+  const categories = useMemo(
+    () => mergeCategoryOptions([DEFAULT_CATEGORY], assets.map((asset) => asset.category)),
+    [assets],
+  );
+  const resolveCategory = (value) =>
+    canonicalCategory(value, categories) || DEFAULT_CATEGORY;
 
   const filteredAssets = useMemo(() => {
     const tokens = query
@@ -147,6 +131,14 @@ export function Inventario() {
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([groupCategory, items]) => ({ category: groupCategory, items }));
   }, [filteredAssets]);
+
+  useEffect(() => {
+    const existing = new Set(assets.map(getAssetId));
+    syncSelection(assets, (asset) => existing.has(asset.id));
+  }, [assets, syncSelection]);
+
+  const selectedAssets = selection.items;
+  const visibleSelectedCount = filteredAssets.filter(selection.isSelected).length;
 
   const groupedUploadItems = useMemo(() => {
     const grouped = new Map();
@@ -267,7 +259,7 @@ export function Inventario() {
   };
 
   const applyDefaultCategoryToAll = () => {
-    const nextCategory = defaultCategory.trim() || DEFAULT_CATEGORY;
+    const nextCategory = resolveCategory(defaultCategory);
     setUploadItems((current) =>
       current.map((item) => ({ ...item, category: nextCategory })),
     );
@@ -287,7 +279,7 @@ export function Inventario() {
 
     try {
       const response = await mediaService.uploadReferenceImagesBatch(
-        uploadItems,
+        uploadItems.map((item) => ({ ...item, category: resolveCategory(item.category) })),
         (progressEvent) => {
           if (!progressEvent.total) return;
           setUploadProgress(
@@ -359,7 +351,7 @@ export function Inventario() {
     try {
       const updated = await mediaService.updateReferenceImage(editing.id, {
         title: editing.title,
-        category: editing.category,
+        category: resolveCategory(editing.category),
         is_active: editing.isActive,
       });
       setAssets((current) =>
@@ -391,6 +383,47 @@ export function Inventario() {
       setSaving(false);
     }
   };
+
+  const applyBulkPatch = async (patch, successMessage) => {
+    if (!canManage || !selection.count) return false;
+    setSaving(true);
+    setError("");
+    try {
+      const updated = await mediaService.updateReferenceImagesBatch(selection.ids, patch);
+      const byId = new Map(updated.map((asset) => [asset.id, asset]));
+      setAssets((current) => current.map((asset) => byId.get(asset.id) || asset));
+      selection.clear();
+      setMessage(successMessage(updated.length));
+      return true;
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || "No se pudo actualizar el lote");
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const saveBulkCategory = async () => {
+    const nextCategory = resolveCategory(bulkCategory);
+    const done = await applyBulkPatch(
+      { category: nextCategory },
+      (count) => `${count} imagen(es) movidas a ${nextCategory}`,
+    );
+    if (done) setBulkCategory(null);
+  };
+
+  const deactivateSelected = async () => {
+    const done = await applyBulkPatch(
+      { is_active: false },
+      (count) => `${count} imagen(es) desactivadas`,
+    );
+    if (done) setConfirmBulkDeactivate(false);
+  };
+
+  const reactivateSelected = () =>
+    applyBulkPatch({ is_active: true }, (count) => `${count} imagen(es) reactivadas`);
+
+  const toggleGroup = (items) => selection.toggleAll(items);
 
   return (
     <div className="media-manager">
@@ -596,6 +629,40 @@ export function Inventario() {
             </select>
           </div>
 
+          {canManage && (
+            <BulkSelectionBar
+              visibleCount={filteredAssets.length}
+              visibleSelectedCount={visibleSelectedCount}
+              selectedCount={selection.count}
+              onToggleVisible={() => selection.toggleAll(filteredAssets)}
+              onClear={selection.clear}
+              itemLabel="imágenes"
+            >
+              <button
+                type="button"
+                onClick={() => setBulkCategory("")}
+                disabled={saving || selection.overLimit}
+              >
+                <MdDriveFileMove /> Cambiar categoría
+              </button>
+              <button
+                type="button"
+                onClick={reactivateSelected}
+                disabled={saving || selection.overLimit || selectedAssets.every((asset) => asset.isActive)}
+              >
+                <MdRestore /> Reactivar
+              </button>
+              <button
+                type="button"
+                className="danger"
+                onClick={() => setConfirmBulkDeactivate(true)}
+                disabled={saving || selection.overLimit || selectedAssets.every((asset) => !asset.isActive)}
+              >
+                <MdVisibilityOff /> Desactivar
+              </button>
+            </BulkSelectionBar>
+          )}
+
           {loading ? (
             <div className="media-library__state"><MdImageSearch /> Cargando galería...</div>
           ) : filteredAssets.length ? (
@@ -603,12 +670,40 @@ export function Inventario() {
               {groupedAssets.map((group) => (
                 <section className="media-library__group" key={group.category}>
                   <header>
+                    {canManage && (
+                      <input
+                        type="checkbox"
+                        className="media-library__group-select"
+                        checked={group.items.every(selection.isSelected)}
+                        ref={(element) => {
+                          if (element) {
+                            const some = group.items.some(selection.isSelected);
+                            element.indeterminate = some && !group.items.every(selection.isSelected);
+                          }
+                        }}
+                        onChange={() => toggleGroup(group.items)}
+                        aria-label={`Seleccionar categoría ${group.category}`}
+                      />
+                    )}
                     <h2>{group.category}</h2>
                     <span>{group.items.length} imágenes</span>
                   </header>
                   <div className="media-library__grid">
                     {group.items.map((asset) => (
-                      <article className={`media-card ${asset.isActive ? "" : "inactive"}`} key={asset.id}>
+                      <article
+                        className={`media-card ${asset.isActive ? "" : "inactive"} ${selection.isSelected(asset) ? "selected" : ""}`}
+                        key={asset.id}
+                      >
+                        {canManage && (
+                          <label className="media-card__select" title="Seleccionar">
+                            <input
+                              type="checkbox"
+                              checked={selection.isSelected(asset)}
+                              onChange={() => selection.toggle(asset)}
+                              aria-label={`Seleccionar ${asset.title}`}
+                            />
+                          </label>
+                        )}
                         <img src={asset.previewSrc || asset.proxyUrl || asset.src} alt="" />
                         <div className="media-card__body">
                           <strong>{asset.title}</strong>
@@ -648,6 +743,60 @@ export function Inventario() {
           )}
         </section>
       </section>
+
+      {bulkCategory !== null && (
+        <div className="media-edit" onClick={() => !saving && setBulkCategory(null)}>
+          <div className="media-edit__panel" onClick={(event) => event.stopPropagation()}>
+            <header>
+              <h2>Cambiar categoría</h2>
+              <button type="button" onClick={() => setBulkCategory(null)} disabled={saving}><MdClose /></button>
+            </header>
+            <p className="media-edit__hint">
+              {selection.count} imagen(es) seleccionadas. La categoría también influye en cómo
+              el editor PDF sugiere y rotula las imágenes automáticamente.
+            </p>
+            <CategorySelector
+              label="Nueva categoría"
+              value={bulkCategory}
+              categories={categories}
+              onChange={setBulkCategory}
+              disabled={saving}
+            />
+            <button
+              type="button"
+              className="media-edit__save"
+              onClick={saveBulkCategory}
+              disabled={saving || !bulkCategory.trim()}
+            >
+              <MdSave /> {saving ? "Guardando..." : `Mover ${selection.count} imagen(es)`}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {confirmBulkDeactivate && (
+        <div className="media-edit" onClick={() => !saving && setConfirmBulkDeactivate(false)}>
+          <div className="media-edit__panel" onClick={(event) => event.stopPropagation()}>
+            <header>
+              <h2>Desactivar imágenes</h2>
+              <button type="button" onClick={() => setConfirmBulkDeactivate(false)} disabled={saving}><MdClose /></button>
+            </header>
+            <p className="media-edit__hint">
+              {selectedAssets.filter((asset) => asset.isActive).length} imagen(es) dejarán de
+              mostrarse en el selector PDF. Puedes reactivarlas después; los PDF ya guardados
+              conservan sus imágenes.
+            </p>
+            <button
+              type="button"
+              className="media-edit__save media-edit__save--danger"
+              onClick={deactivateSelected}
+              disabled={saving}
+            >
+              <MdVisibilityOff /> {saving ? "Desactivando..." : "Desactivar"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {editing && (
         <div className="media-edit">
