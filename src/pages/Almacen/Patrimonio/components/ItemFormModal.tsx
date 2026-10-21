@@ -9,7 +9,9 @@ import {
   FaUser,
 } from "react-icons/fa";
 import LoadingSpinner from "../../../../components/LoadingSpinner";
+import CategoryCombobox from "../../../../components/common/CategoryCombobox";
 import patrimonioService from "../../../../services/patrimonioService";
+import { canonicalCategory, mergeCategoryOptions } from "../../../../utils/categoryOptions";
 import {
   CATEGORY_DEFINITIONS,
   CATEGORY_MAP,
@@ -18,21 +20,13 @@ import {
 } from "../constants";
 import {
   attributeLabel,
+  customAttributeKey,
   getResponseData,
   itemResponsibles,
   normalizeCode,
   toForm,
   toPayload,
 } from "../utils";
-
-const customAttributeKey = (value) =>
-  String(value || "")
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, "");
 
 export default function ItemFormModal({
   item,
@@ -51,10 +45,11 @@ export default function ItemFormModal({
   const [error, setError] = useState("");
 
   const categoryOptions = useMemo(
-    () => [...new Set([...CATEGORY_DEFINITIONS.map(({ value }) => value), ...(categories || [])])],
+    () => mergeCategoryOptions(CATEGORY_DEFINITIONS.map(({ value }) => value), categories || []),
     [categories],
   );
-  const definition = CATEGORY_MAP[form.categoria];
+  const resolvedCategory = canonicalCategory(form.categoria, categoryOptions);
+  const definition = CATEGORY_MAP[resolvedCategory];
   const templateKeys = new Set((definition?.fields || []).map(({ key }) => key));
   const extraAttributeKeys = Object.keys(form.atributos || {}).filter(
     (key) => !templateKeys.has(key),
@@ -96,16 +91,23 @@ export default function ItemFormModal({
   };
 
   useEffect(() => {
-    if (!item && form.categoria) requestNextCode(form.categoria);
+    if (item || !resolvedCategory) return undefined;
+    // La categoría se escribe libremente: se espera a que el usuario termine.
+    const timeout = setTimeout(() => requestNextCode(resolvedCategory), 350);
+    return () => clearTimeout(timeout);
     // La sugerencia solo se recalcula al cambiar la categoría.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.categoria, item]);
+  }, [resolvedCategory, item]);
 
   const handleCategoryChange = (value) => {
     setForm((current) => ({
       ...current,
       categoria: value,
-      nombre: current.nombre || value,
+      // El nombre sigue a la categoría mientras el usuario no lo personalice.
+      nombre:
+        !current.nombre.trim() || current.nombre === current.categoria
+          ? value
+          : current.nombre,
     }));
     if (!item && !initialCode) setCodeManuallyEdited(false);
   };
@@ -130,7 +132,7 @@ export default function ItemFormModal({
 
     setSaving(true);
     setError("");
-    const payload = toPayload(form);
+    const payload = toPayload({ ...form, categoria: resolvedCategory });
     const response = item
       ? await patrimonioService.updateItem(item.id, payload)
       : await patrimonioService.createItem(payload);
@@ -181,17 +183,11 @@ export default function ItemFormModal({
             <div className="patrimonio-form-grid patrimonio-essential-grid">
               <label className="field">
                 <span>Categoría *</span>
-                <select
+                <CategoryCombobox
                   value={form.categoria}
-                  onChange={(event) => handleCategoryChange(event.target.value)}
-                  disabled={saving}
-                  required
-                >
-                  <option value="">Seleccionar categoría</option>
-                  {categoryOptions.map((category) => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}
-                </select>
+                  onChange={handleCategoryChange}
+                  options={categoryOptions}
+                />
               </label>
 
               <label className="field">
@@ -211,7 +207,7 @@ export default function ItemFormModal({
                     type="button"
                     title="Generar siguiente código"
                     disabled={!form.categoria || saving || suggestingCode}
-                    onClick={() => requestNextCode(form.categoria, true)}
+                    onClick={() => requestNextCode(resolvedCategory, true)}
                   >
                     <FaBarcode />
                   </button>
@@ -322,7 +318,7 @@ export default function ItemFormModal({
               </div>
 
               <div className="patrimonio-attributes-heading">
-                <h5>Características de {form.categoria || "la categoría"}</h5>
+                <h5>Características de {resolvedCategory || "la categoría"}</h5>
                 <p>Se almacenan dentro del JSONB del bien.</p>
               </div>
 

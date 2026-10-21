@@ -1873,3 +1873,120 @@
     min-height: 42px;
   }
 }
+
+/* Selección y acciones por lote */
+.patrimonio-page {
+  --bulk-accent: var(--patrimonio-green);
+  --bulk-accent-soft: var(--patrimonio-green-soft);
+}
+
+.patrimonio-bulk-bar {
+  margin-bottom: 12px;
+}
+
+.patrimonio-select-col {
+  width: 34px;
+  text-align: center;
+
+  input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--patrimonio-green);
+    cursor: pointer;
+  }
+}
+
+.patrimonio-table tbody tr.selected,
+.patrimonio-mobile-card.selected {
+  background: var(--patrimonio-green-soft);
+}
+
+.patrimonio-mobile-card.selected {
+  border-color: var(--patrimonio-green);
+}
+
+.patrimonio-mobile-select {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--patrimonio-green);
+}
+
+.patrimonio-mobile-card-header > div {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.patrimonio-batch-codes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 120px;
+  margin-bottom: 14px;
+  overflow-y: auto;
+}
+
+.patrimonio-batch-modal {
+  width: min(640px, calc(100vw - 32px));
+}
+
+.patrimonio-batch-create-modal {
+  width: min(1040px, calc(100vw - 32px));
+}
+
+.patrimonio-batch-grid-wrapper {
+  max-height: 360px;
+  overflow: auto;
+  border: 1px solid var(--patrimonio-border);
+  border-radius: 10px;
+}
+
+.patrimonio-batch-grid {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+
+  th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 7px 8px;
+    background: var(--patrimonio-green-soft);
+    color: var(--patrimonio-green-dark);
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 0;
+    border-top: 1px solid var(--patrimonio-border);
+    border-left: 1px solid var(--patrimonio-border);
+  }
+
+  td input {
+    width: 100%;
+    min-width: 120px;
+    padding: 7px 8px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    font-size: 0.8rem;
+
+    &:focus {
+      outline: 2px solid var(--patrimonio-green);
+      outline-offset: -2px;
+      background: #fff;
+    }
+  }
+
+  .patrimonio-batch-grid-index {
+    width: 36px;
+    padding: 0 8px;
+    border-left: 0;
+    color: var(--patrimonio-muted);
+    font-weight: 700;
+    text-align: center;
+  }
+}

@@ -17,7 +17,7 @@ import {
   stateLabel,
 } from "../utils";
 
-export default function ItemsMobileCards({ items, onView, onEdit, onDelete }) {
+export default function ItemsMobileCards({ items, onView, onEdit, onDelete, isSelected, onToggleSelect }) {
   if (items.length === 0) {
     return <div className="patrimonio-empty-card">No existen bienes para los filtros aplicados.</div>;
   }
@@ -30,9 +30,16 @@ export default function ItemsMobileCards({ items, onView, onEdit, onDelete }) {
         return (
           <article
             key={item.id}
-            className={`patrimonio-mobile-card ${!item.is_active ? "inactive" : ""}`}
+            className={`patrimonio-mobile-card ${!item.is_active ? "inactive" : ""} ${isSelected(item) ? "selected" : ""}`}
           >
             <div className="patrimonio-mobile-card-header">
+              <input
+                type="checkbox"
+                className="patrimonio-mobile-select"
+                checked={isSelected(item)}
+                onChange={() => onToggleSelect(item)}
+                aria-label={`Seleccionar ${item.codigo}`}
+              />
               <div>
                 <span className="patrimonio-item-category">{item.categoria}</span>
                 <h4>{itemName(item)}</h4>

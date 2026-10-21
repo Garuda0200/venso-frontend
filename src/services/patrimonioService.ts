@@ -62,6 +62,38 @@ const patrimonioService = {
     }
   },
 
+  createItemsBatch: async (payload) => {
+    try {
+      const response = await axiosInstance.post(`${BASE_URL}/items/batch`, payload);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  createMovimientosBatch: async (itemIds, movement) => {
+    try {
+      const response = await axiosInstance.post(`${BASE_URL}/items/batch/movimientos`, {
+        item_ids: itemIds,
+        ...movement,
+      });
+      return response.data;
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  deleteItemsBatch: async (itemIds) => {
+    try {
+      const response = await axiosInstance.post(`${BASE_URL}/items/batch/delete`, {
+        item_ids: itemIds,
+      });
+      return response.data;
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
   updateItem: async (id, payload) => {
     try {
       const response = await axiosInstance.put(`${BASE_URL}/items/${id}`, payload);

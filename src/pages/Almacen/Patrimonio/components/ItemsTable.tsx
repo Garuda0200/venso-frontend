@@ -16,12 +16,13 @@ import {
   stateLabel,
 } from "../utils";
 
-export default function ItemsTable({ items, onView, onEdit, onDelete }) {
+export default function ItemsTable({ items, onView, onEdit, onDelete, isSelected, onToggleSelect }) {
   return (
     <div className="patrimonio-table-card">
       <table className="patrimonio-table">
         <thead>
           <tr>
+            <th className="patrimonio-select-col" aria-label="Seleccionar" />
             <th>Código Code 128</th>
             <th>Bien patrimonial</th>
             <th>Responsable actual</th>
@@ -34,7 +35,7 @@ export default function ItemsTable({ items, onView, onEdit, onDelete }) {
         <tbody>
           {items.length === 0 && (
             <tr>
-              <td colSpan="7" className="patrimonio-empty">
+              <td colSpan="8" className="patrimonio-empty">
                 No existen bienes para los filtros aplicados.
               </td>
             </tr>
@@ -43,7 +44,18 @@ export default function ItemsTable({ items, onView, onEdit, onDelete }) {
             const state = itemState(item);
             const specs = itemSpecifications(item);
             return (
-              <tr key={item.id} className={!item.is_active ? "inactive" : ""}>
+              <tr
+                key={item.id}
+                className={`${!item.is_active ? "inactive" : ""} ${isSelected(item) ? "selected" : ""}`}
+              >
+                <td className="patrimonio-select-col">
+                  <input
+                    type="checkbox"
+                    checked={isSelected(item)}
+                    onChange={() => onToggleSelect(item)}
+                    aria-label={`Seleccionar ${item.codigo}`}
+                  />
+                </td>
                 <td>
                   <button
                     className="patrimonio-barcode-button"

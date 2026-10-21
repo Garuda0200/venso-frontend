@@ -143,12 +143,16 @@ const normalizeAttributeValue = (key, value) => {
   return typeof value === "string" ? value.trim() : value;
 };
 
-export const toPayload = (form) => {
-  const attributes = Object.entries(form.atributos || {}).reduce((result, [key, value]) => {
+/** Normaliza atributos del formulario y descarta los vacíos. */
+export const normalizeAttributes = (attributes = {}) =>
+  Object.entries(attributes || {}).reduce((result, [key, value]) => {
     const normalized = normalizeAttributeValue(key, value);
     if (normalized !== null && normalized !== "") result[key] = normalized;
     return result;
   }, {});
+
+export const toPayload = (form) => {
+  const attributes = normalizeAttributes(form.atributos);
 
   return {
     codigo: normalizeCode(form.codigo) || null,
@@ -167,6 +171,15 @@ export const toPayload = (form) => {
     },
   };
 };
+
+export const customAttributeKey = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
 
 export const attributeLabel = (key) =>
   ATTRIBUTE_LABELS[key] ||
@@ -192,7 +205,23 @@ export const itemSpecifications = (item, limit = 3) =>
     .map(([key, value]) => `${attributeLabel(key)}: ${formatAttributeValue(value)}`)
     .join(" · ");
 
-export const buildMovementPayload = (movement, currentItem) => {
+/** Devuelve el mensaje de error del movimiento, o "" si es válido. */
+export const validateMovement = (movement) => {
+  if (
+    ["asignacion", "reasignacion"].includes(movement.tipo) &&
+    !movement.responsable_nombre.trim() &&
+    !movement.responsable_dni.trim()
+  ) {
+    return "Registra el nombre o DNI de la persona responsable.";
+  }
+  if (movement.tipo === "traslado" && !movement.ubicacion_nueva.trim()) {
+    return "Indica la nueva ubicación del bien.";
+  }
+  return "";
+};
+
+/** Sin `currentItem` (movimiento por lote) el backend completa `item_nombre`. */
+export const buildMovementPayload = (movement, currentItem = null) => {
   const info = {
     observacion: movement.observacion.trim() || undefined,
   };
@@ -219,10 +248,7 @@ export const buildMovementPayload = (movement, currentItem) => {
 
   return {
     tipo: movement.tipo,
-    info: {
-      ...info,
-      item_nombre: itemName(currentItem),
-    },
+    info: currentItem ? { ...info, item_nombre: itemName(currentItem) } : info,
   };
 };
 

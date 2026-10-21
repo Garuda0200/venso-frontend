@@ -28,6 +28,7 @@ import {
   itemState,
   movementInfo,
   movementTypeLabel,
+  validateMovement,
   responsibleLabel,
   stateLabel,
 } from "../utils";
@@ -143,20 +144,9 @@ export default function DetailModal({ item, onClose, onEdit, onMovementCreated }
 
   const saveMovement = async (event) => {
     event.preventDefault();
-    setError("");
-
-    if (
-      ["asignacion", "reasignacion"].includes(movement.tipo) &&
-      !movement.responsable_nombre.trim() &&
-      !movement.responsable_dni.trim()
-    ) {
-      setError("Registra el nombre o DNI de la persona responsable.");
-      return;
-    }
-    if (movement.tipo === "traslado" && !movement.ubicacion_nueva.trim()) {
-      setError("Indica la nueva ubicación del bien.");
-      return;
-    }
+    const validationError = validateMovement(movement);
+    setError(validationError);
+    if (validationError) return;
 
     setSaving(true);
     const response = await patrimonioService.createMovimiento(

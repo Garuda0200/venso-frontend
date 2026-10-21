@@ -2,14 +2,24 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   FaBarcode,
   FaCamera,
+  FaExchangeAlt,
+  FaLayerGroup,
   FaPlus,
+  FaPrint,
   FaSyncAlt,
   FaTimes,
+  FaTrash,
 } from "react-icons/fa";
 import LoadingSpinner from "../../../components/LoadingSpinner";
+import BulkSelectionBar from "../../../components/common/BulkSelectionBar";
+import useBulkSelection from "../../../hooks/useBulkSelection";
 import patrimonioService from "../../../services/patrimonioService";
+import { mergeCategoryOptions } from "../../../utils/categoryOptions";
 import { CATEGORY_DEFINITIONS } from "./constants";
+import { printLabels } from "./labels";
 import { getResponseData, itemName } from "./utils";
+import BatchCreateModal from "./components/BatchCreateModal";
+import BatchMovementModal from "./components/BatchMovementModal";
 import ConfirmModal from "./components/ConfirmModal";
 import DetailModal from "./components/DetailModal";
 import FiltersToolbar from "./components/FiltersToolbar";
@@ -40,6 +50,8 @@ const EMPTY_SUMMARY = {
   categorias: 0,
 };
 
+const getItemId = (item) => item.id;
+
 export default function Patrimonio() {
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState(
@@ -54,11 +66,19 @@ export default function Patrimonio() {
   const [scannerOpen, setScannerOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [notice, setNotice] = useState("");
+  const [batchCreateOpen, setBatchCreateOpen] = useState(false);
+  const [batchMovementOpen, setBatchMovementOpen] = useState(false);
+  const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
+  const [batchBusy, setBatchBusy] = useState(false);
+  const selection = useBulkSelection(getItemId);
+  const { sync: syncSelection } = selection;
 
   const normalizedCategories = useMemo(
-    () => [...new Set([...CATEGORY_DEFINITIONS.map(({ value }) => value), ...categories])],
+    () => mergeCategoryOptions(CATEGORY_DEFINITIONS.map(({ value }) => value), categories),
     [categories],
   );
+  const visibleSelectedCount = items.filter(selection.isSelected).length;
+  const selectedActiveItems = selection.items.filter((item) => item.is_active);
 
   const loadData = useCallback(async (page = 1, activeFilters = filters) => {
     setLoading(true);
@@ -79,6 +99,7 @@ export default function Patrimonio() {
 
     const listData = getResponseData(itemsResponse, {});
     setItems(listData?.items || []);
+    syncSelection(listData?.items || []);
     setPageInfo((current) => ({
       page: listData?.page || page,
       page_size: listData?.page_size || current.page_size,
@@ -89,7 +110,7 @@ export default function Patrimonio() {
     if (Array.isArray(categoryData)) setCategories(categoryData);
     setSummary(getResponseData(summaryResponse, EMPTY_SUMMARY) || EMPTY_SUMMARY);
     setLoading(false);
-  }, [filters, pageInfo.page_size]);
+  }, [filters, pageInfo.page_size, syncSelection]);
 
   useEffect(() => {
     const timeout = setTimeout(() => loadData(1, filters), filters.q ? 320 : 0);
@@ -142,6 +163,42 @@ export default function Patrimonio() {
     loadData(page, filters);
   };
 
+  const printSelectedLabels = (selectedItems) => {
+    const opened = printLabels(
+      selectedItems.map((selected) => ({ code: selected.codigo, title: itemName(selected) })),
+    );
+    if (!opened) setNotice("Permite las ventanas emergentes para imprimir las etiquetas.");
+  };
+
+  const onBatchCreated = async (createdItems, message) => {
+    setBatchCreateOpen(false);
+    setNotice(message || `${createdItems.length} bienes registrados.`);
+    await loadData(1, filters);
+  };
+
+  const onBatchMovement = async (updatedItems, message) => {
+    setBatchMovementOpen(false);
+    selection.clear();
+    setNotice(message || `Movimiento registrado en ${updatedItems.length} bienes.`);
+    await loadData(pageInfo.page, filters);
+  };
+
+  const confirmBatchDelete = async () => {
+    setBatchBusy(true);
+    const response = await patrimonioService.deleteItemsBatch(
+      selectedActiveItems.map((selected) => selected.id),
+    );
+    setBatchBusy(false);
+    if (response?.success === false) {
+      setNotice(response.message || "No se pudo desactivar el lote.");
+      return;
+    }
+    setBatchDeleteOpen(false);
+    selection.clear();
+    setNotice(response?.message || "Bienes desactivados. El historial se conserva.");
+    await loadData(pageInfo.page, filters);
+  };
+
   const handleMovementCreated = async (updatedItem) => {
     if (updatedItem) setDetailItem(updatedItem);
     setNotice("Movimiento patrimonial registrado en el historial.");
@@ -165,6 +222,13 @@ export default function Patrimonio() {
           </button>
           <button type="button" className="patrimonio-scan-btn" onClick={() => setScannerOpen(true)}>
             <FaCamera /> Escanear Code 128
+          </button>
+          <button
+            type="button"
+            className="patrimonio-ghost-btn"
+            onClick={() => setBatchCreateOpen(true)}
+          >
+            <FaLayerGroup /> Alta por lote
           </button>
           <button
             type="button"
@@ -230,6 +294,36 @@ export default function Patrimonio() {
           <strong>{pageInfo.total} registros</strong>
         </div>
 
+        <div className="patrimonio-bulk-bar">
+          <BulkSelectionBar
+            visibleCount={items.length}
+            visibleSelectedCount={visibleSelectedCount}
+            selectedCount={selection.count}
+            onToggleVisible={() => selection.toggleAll(items)}
+            onClear={selection.clear}
+            itemLabel="bienes"
+          >
+            <button
+              type="button"
+              onClick={() => setBatchMovementOpen(true)}
+              disabled={selection.overLimit}
+            >
+              <FaExchangeAlt /> Movimiento
+            </button>
+            <button type="button" onClick={() => printSelectedLabels(selection.items)}>
+              <FaPrint /> Imprimir etiquetas
+            </button>
+            <button
+              type="button"
+              className="danger"
+              onClick={() => setBatchDeleteOpen(true)}
+              disabled={selection.overLimit || selectedActiveItems.length === 0}
+            >
+              <FaTrash /> Desactivar
+            </button>
+          </BulkSelectionBar>
+        </div>
+
         {loading ? (
           <div className="patrimonio-loading"><LoadingSpinner /></div>
         ) : (
@@ -240,6 +334,8 @@ export default function Patrimonio() {
                 onView={setDetailItem}
                 onEdit={(selectedItem) => setFormState({ item: selectedItem })}
                 onDelete={setDeleteTarget}
+                isSelected={selection.isSelected}
+                onToggleSelect={selection.toggle}
               />
             </div>
             <div className="patrimonio-mobile-only">
@@ -248,6 +344,8 @@ export default function Patrimonio() {
                 onView={setDetailItem}
                 onEdit={(selectedItem) => setFormState({ item: selectedItem })}
                 onDelete={setDeleteTarget}
+                isSelected={selection.isSelected}
+                onToggleSelect={selection.toggle}
               />
             </div>
           </>
@@ -278,6 +376,32 @@ export default function Patrimonio() {
           onClose={() => setDetailItem(null)}
           onEdit={(selectedItem) => setFormState({ item: selectedItem })}
           onMovementCreated={handleMovementCreated}
+        />
+      )}
+
+      {batchCreateOpen && (
+        <BatchCreateModal
+          categories={normalizedCategories}
+          onClose={() => setBatchCreateOpen(false)}
+          onSaved={onBatchCreated}
+          onPrintLabels={printSelectedLabels}
+        />
+      )}
+
+      {batchMovementOpen && (
+        <BatchMovementModal
+          items={selection.items}
+          onClose={() => setBatchMovementOpen(false)}
+          onSaved={onBatchMovement}
+        />
+      )}
+
+      {batchDeleteOpen && (
+        <ConfirmModal
+          items={selectedActiveItems}
+          busy={batchBusy}
+          onClose={() => setBatchDeleteOpen(false)}
+          onConfirm={confirmBatchDelete}
         />
       )}
 
