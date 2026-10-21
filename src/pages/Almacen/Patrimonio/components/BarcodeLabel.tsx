@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { FaDownload, FaPrint } from "react-icons/fa";
 import { clearCode128Svg, renderCode128Svg } from "../code128";
+import { printLabels } from "../labels";
 import { normalizeCode } from "../utils";
 
 export default function BarcodeLabel({
@@ -39,38 +40,7 @@ export default function BarcodeLabel({
   };
 
   const printLabel = () => {
-    if (!svgRef.current || !canonicalCode) return;
-    const popup = window.open("", "_blank", "width=620,height=420");
-    if (!popup) return;
-    popup.document.write(`
-      <!doctype html>
-      <html>
-        <head>
-          <title>${canonicalCode}</title>
-          <style>
-            @page { size: 70mm 35mm; margin: 3mm; }
-            body { margin: 0; font-family: Arial, sans-serif; color: #102a24; }
-            .label { width: 64mm; min-height: 27mm; display: grid; place-items: center; text-align: center; }
-            h1 { margin: 0 0 2mm; font-size: 12px; }
-            svg { max-width: 60mm; height: 13mm; }
-            strong { display: block; margin-top: 1mm; font-size: 13px; letter-spacing: 1.5px; }
-            small { font-size: 8px; text-transform: uppercase; letter-spacing: .8px; }
-          </style>
-        </head>
-        <body>
-          <div class="label">
-            <div>
-              ${title ? `<h1>${String(title).replace(/[<>&]/g, "")}</h1>` : ""}
-              ${svgRef.current.outerHTML}
-              <strong>${canonicalCode}</strong>
-              <small>Code 128 · Patrimonio</small>
-            </div>
-          </div>
-          <script>window.onload = () => { window.print(); window.close(); };</script>
-        </body>
-      </html>
-    `);
-    popup.document.close();
+    if (canonicalCode) printLabels([{ code: canonicalCode, title }]);
   };
 
   if (!canonicalCode) {
