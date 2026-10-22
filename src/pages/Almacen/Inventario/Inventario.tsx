@@ -3,7 +3,6 @@ import {
   MdAddPhotoAlternate,
   MdCheckCircle,
   MdClose,
-  MdDelete,
   MdDriveFileMove,
   MdEdit,
   MdFolder,
@@ -13,18 +12,36 @@ import {
   MdSave,
   MdSearch,
   MdUploadFile,
+  MdVisibility,
   MdVisibilityOff,
 } from "react-icons/md";
 import BulkSelectionBar from "../../../components/common/BulkSelectionBar";
 import CategoryCombobox from "../../../components/common/CategoryCombobox";
 import { useAuth } from "../../../context/AuthContext";
 import useBulkSelection from "../../../hooks/useBulkSelection";
+import CategoryChipBar from "./CategoryChipBar";
 import mediaService from "../../../services/mediaService";
 import { canonicalCategory, mergeCategoryOptions } from "../../../utils/categoryOptions";
 import "./Inventario.scss";
 
 const DEFAULT_CATEGORY = "General";
 const MAX_BATCH_FILES = 50;
+// Tipo MIME propio para arrastrar imágenes de la biblioteca entre categorías.
+const MEDIA_DRAG_TYPE = "application/x-venso-media";
+
+const hasDragType = (event, type) => Array.from(event.dataTransfer?.types || []).includes(type);
+// "move": imágenes de la biblioteca; "files": archivos desde el escritorio.
+const dragKind = (event) =>
+  hasDragType(event, MEDIA_DRAG_TYPE) ? "move" : hasDragType(event, "Files") ? "files" : null;
+
+const parseDraggedIds = (data) => {
+  try {
+    const ids = JSON.parse(data);
+    return Array.isArray(ids) ? ids : [];
+  } catch {
+    return [];
+  }
+};
 
 const formatBytes = (bytes = 0) => {
   if (!bytes) return "0 KB";
@@ -45,7 +62,15 @@ const createClientId = () =>
   globalThis.crypto?.randomUUID?.() ||
   `media-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-function CategorySelector({ label, value, categories, onChange, disabled = false }) {
+function CategorySelector({
+  label,
+  value,
+  categories,
+  onChange,
+  disabled = false,
+  commitMode = false,
+  hint = "",
+}) {
   return (
     <div className="media-category-field">
       <div className="media-category-field__head">
@@ -56,14 +81,17 @@ function CategorySelector({ label, value, categories, onChange, disabled = false
           value={value}
           onChange={onChange}
           options={categories}
+          commitMode={commitMode}
           placeholder="Ej. Valle Sagrado / Pisac"
         />
       </fieldset>
+      {hint && <small className="media-category-field__hint">{hint}</small>}
     </div>
   );
 }
 
 const getAssetId = (asset) => asset.id;
+const getUploadId = (item) => item.clientId;
 
 export function Inventario() {
   const { getCurrentUser } = useAuth();
@@ -81,43 +109,95 @@ export function Inventario() {
   const [category, setCategory] = useState("all");
   const [status, setStatus] = useState("active");
   const [editing, setEditing] = useState(null);
-  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [bulkCategory, setBulkCategory] = useState(null);
+  // Diálogo "Cambiar categoría" para la selección de la biblioteca o del lote.
+  const [moveDialog, setMoveDialog] = useState(null);
   const [confirmBulkDeactivate, setConfirmBulkDeactivate] = useState(false);
+  // Zona de la biblioteca bajo el cursor: { key, kind }.
+  const [dropOver, setDropOver] = useState(null);
+  const [dragCount, setDragCount] = useState(0);
+  // Contenido soltado en "Nueva categoría" a la espera de nombre: { ids } o { files }.
+  const [newCategoryDrop, setNewCategoryDrop] = useState(null);
+  const [newCategoryName, setNewCategoryName] = useState("");
   const uploadItemsRef = useRef([]);
   const selection = useBulkSelection(getAssetId);
+  const uploadSelection = useBulkSelection(getUploadId);
   const { sync: syncSelection } = selection;
 
-  // Las categorías salen de la propia biblioteca (incluye inactivas) y se
-  // amplían cuando el usuario escribe una nueva.
+  // Las imágenes del lote sin categoría propia (`category: null`) heredan la
+  // categoría del lote.
+  const effectiveCategory = (item) => item.category ?? defaultCategory;
+
+  // Las categorías salen de la propia biblioteca (incluye inactivas) y del lote
+  // en curso, para que una categoría nueva se sugiera en todos los campos.
   const categories = useMemo(
-    () => mergeCategoryOptions([DEFAULT_CATEGORY], assets.map((asset) => asset.category)),
-    [assets],
+    () =>
+      mergeCategoryOptions(
+        [DEFAULT_CATEGORY],
+        assets.map((asset) => asset.category),
+        [defaultCategory],
+        uploadItems.map((item) => item.category),
+      ),
+    [assets, defaultCategory, uploadItems],
   );
   const resolveCategory = (value) =>
     canonicalCategory(value, categories) || DEFAULT_CATEGORY;
 
-  const filteredAssets = useMemo(() => {
-    const tokens = query
-      .toLowerCase()
-      .split(/\s+/)
-      .map((token) => token.trim())
-      .filter(Boolean);
+  const libraryCategories = useMemo(
+    () => mergeCategoryOptions(assets.map((asset) => asset.category || DEFAULT_CATEGORY)),
+    [assets],
+  );
 
-    return assets.filter((asset) => {
-      if (category !== "all" && asset.category !== category) return false;
+  const matchesStatusAndQuery = useCallback(
+    (asset) => {
       if (status === "active" && !asset.isActive) return false;
       if (status === "inactive" && asset.isActive) return false;
+      const tokens = query.toLowerCase().split(/\s+/).filter(Boolean);
       if (!tokens.length) return true;
       const haystack = [asset.title, asset.category, asset.originalFilename]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
       return tokens.every((token) => haystack.includes(token));
+    },
+    [query, status],
+  );
+
+  // Chips de la biblioteca: filtran por categoría y aceptan imágenes soltadas.
+  const libraryChips = useMemo(() => {
+    const counts = new Map();
+    let total = 0;
+    assets.filter(matchesStatusAndQuery).forEach((asset) => {
+      const key = asset.category || DEFAULT_CATEGORY;
+      counts.set(key, (counts.get(key) || 0) + 1);
+      total += 1;
     });
-  }, [assets, category, query, status]);
+    return [
+      { category: null, label: "Todas", count: total, active: category === "all" },
+      ...libraryCategories.map((item) => ({
+        category: item,
+        label: item,
+        count: counts.get(item) || 0,
+        active: category === item,
+      })),
+    ];
+  }, [assets, category, libraryCategories, matchesStatusAndQuery]);
+
+  // Si la categoría filtrada se queda vacía (p. ej. tras mover todo), volver a "Todas".
+  useEffect(() => {
+    if (category !== "all" && !libraryCategories.includes(category)) setCategory("all");
+  }, [category, libraryCategories]);
+
+  const filteredAssets = useMemo(
+    () =>
+      assets.filter(
+        (asset) =>
+          (category === "all" || (asset.category || DEFAULT_CATEGORY) === category) &&
+          matchesStatusAndQuery(asset),
+      ),
+    [assets, category, matchesStatusAndQuery],
+  );
 
   const groupedAssets = useMemo(() => {
     const grouped = new Map();
@@ -143,7 +223,7 @@ export function Inventario() {
   const groupedUploadItems = useMemo(() => {
     const grouped = new Map();
     uploadItems.forEach((item) => {
-      const key = item.category?.trim() || DEFAULT_CATEGORY;
+      const key = (item.category ?? defaultCategory)?.trim() || DEFAULT_CATEGORY;
       if (!grouped.has(key)) grouped.set(key, []);
       grouped.get(key).push(item);
     });
@@ -151,7 +231,7 @@ export function Inventario() {
       category: groupCategory,
       items,
     }));
-  }, [uploadItems]);
+  }, [uploadItems, defaultCategory]);
 
   const mediaStats = useMemo(() => {
     const active = assets.filter((asset) => asset.isActive).length;
@@ -188,6 +268,13 @@ export function Inventario() {
     uploadItemsRef.current = uploadItems;
   }, [uploadItems]);
 
+  // Quitar de la selección las imágenes que salen del lote (subidas o quitadas).
+  const { sync: syncUploadSelection } = uploadSelection;
+  useEffect(() => {
+    const existing = new Set(uploadItems.map(getUploadId));
+    syncUploadSelection(uploadItems, (item) => existing.has(item.clientId));
+  }, [uploadItems, syncUploadSelection]);
+
   useEffect(
     () => () => {
       uploadItemsRef.current.forEach((item) => {
@@ -197,9 +284,13 @@ export function Inventario() {
     [],
   );
 
-  const addFiles = (fileList) => {
+  // `targetCategory` asigna una categoría propia (al soltar archivos sobre una
+  // categoría de la biblioteca); sin ella, las imágenes heredan la del lote.
+  const addFiles = (fileList, targetCategory = null) => {
     const incoming = Array.from(fileList || []);
     if (!incoming.length) return;
+    const resolved = targetCategory ? resolveCategory(targetCategory) : null;
+    const itemCategory = resolved && resolved !== defaultCategory ? resolved : null;
 
     const invalid = incoming.filter((file) => !file.type?.startsWith("image/"));
     const valid = incoming.filter((file) => file.type?.startsWith("image/"));
@@ -225,7 +316,7 @@ export function Inventario() {
           file,
           previewUrl: URL.createObjectURL(file),
           title: fileBaseName(file),
-          category: defaultCategory || DEFAULT_CATEGORY,
+          category: itemCategory,
           status: "pending",
           error: "",
         }));
@@ -253,15 +344,19 @@ export function Inventario() {
   };
 
   const handleDrop = (event) => {
+    if (dragKind(event) !== "files") return;
     event.preventDefault();
     setDragging(false);
     addFiles(event.dataTransfer.files);
   };
 
-  const applyDefaultCategoryToAll = () => {
-    const nextCategory = resolveCategory(defaultCategory);
+  const moveUploadItems = (clientIds, nextCategory) => {
+    const target = resolveCategory(nextCategory);
+    // Volver a la categoría del lote equivale a heredarla de nuevo.
+    const category = target === defaultCategory ? null : target;
+    const moving = new Set(clientIds);
     setUploadItems((current) =>
-      current.map((item) => ({ ...item, category: nextCategory })),
+      current.map((item) => (moving.has(item.clientId) ? { ...item, category } : item)),
     );
   };
 
@@ -279,7 +374,10 @@ export function Inventario() {
 
     try {
       const response = await mediaService.uploadReferenceImagesBatch(
-        uploadItems.map((item) => ({ ...item, category: resolveCategory(item.category) })),
+        uploadItems.map((item) => ({
+          ...item,
+          category: resolveCategory(effectiveCategory(item)),
+        })),
         (progressEvent) => {
           if (!progressEvent.total) return;
           setUploadProgress(
@@ -366,30 +464,35 @@ export function Inventario() {
     }
   };
 
-  const deleteAsset = async (asset) => {
+  const toggleAssetActive = async (asset) => {
     if (!canManage) return;
     setSaving(true);
     setError("");
     try {
-      const updated = await mediaService.deleteReferenceImage(asset.id);
+      const updated = await mediaService.updateReferenceImage(asset.id, {
+        is_active: !asset.isActive,
+      });
       setAssets((current) =>
         current.map((item) => (item.id === updated.id ? updated : item)),
       );
-      setMessage("Media desactivada");
-      setConfirmDeleteId(null);
+      setMessage(
+        updated.isActive
+          ? "Imagen visible de nuevo en el editor PDF"
+          : "Imagen oculta del editor PDF — la encuentras en el filtro Inactivas",
+      );
     } catch (err) {
-      setError(err.response?.data?.message || err.message || "No se pudo desactivar");
+      setError(err.response?.data?.message || err.message || "No se pudo actualizar");
     } finally {
       setSaving(false);
     }
   };
 
-  const applyBulkPatch = async (patch, successMessage) => {
-    if (!canManage || !selection.count) return false;
+  const applyBulkPatch = async (ids, patch, successMessage) => {
+    if (!canManage || !ids.length) return false;
     setSaving(true);
     setError("");
     try {
-      const updated = await mediaService.updateReferenceImagesBatch(selection.ids, patch);
+      const updated = await mediaService.updateReferenceImagesBatch(ids, patch);
       const byId = new Map(updated.map((asset) => [asset.id, asset]));
       setAssets((current) => current.map((asset) => byId.get(asset.id) || asset));
       selection.clear();
@@ -403,17 +506,115 @@ export function Inventario() {
     }
   };
 
-  const saveBulkCategory = async () => {
-    const nextCategory = resolveCategory(bulkCategory);
-    const done = await applyBulkPatch(
-      { category: nextCategory },
-      (count) => `${count} imagen(es) movidas a ${nextCategory}`,
+  const moveAssets = async (ids, nextCategory) => {
+    const target = resolveCategory(nextCategory);
+    const moving = assets
+      .filter((asset) => ids.includes(asset.id) && asset.category !== target)
+      .map(getAssetId);
+    if (!moving.length) return true;
+    return applyBulkPatch(
+      moving,
+      { category: target },
+      (count) => `${count} imagen(es) movidas a ${target}`,
     );
-    if (done) setBulkCategory(null);
+  };
+
+  // Al arrastrar una tarjeta seleccionada se mueve toda la selección.
+  const startCardDrag = (event, asset) => {
+    const ids = selection.isSelected(asset) ? selection.ids : [asset.id];
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData(MEDIA_DRAG_TYPE, JSON.stringify(ids));
+    // Fuera del dragstart: cambiar el DOM dentro del evento puede cancelar el arrastre en Chrome.
+    setTimeout(() => setDragCount(ids.length), 0);
+  };
+
+  const endCardDrag = () => {
+    setDragCount(0);
+    setDropOver(null);
+  };
+
+  const filesAddedMessage = (count, target) =>
+    setMessage(
+      `${count} imagen(es) añadidas al lote en «${resolveCategory(target)}». Revisa los títulos y pulsa «Optimizar y subir».`,
+    );
+
+  // Props de una zona de la biblioteca que acepta tarjetas y archivos. Firefox
+  // solo acepta el drop si se cancelan dragenter y dragover.
+  const libraryDropZone = (key, { onMove, onFiles }) => {
+    const accept = (event) => {
+      const kind = dragKind(event);
+      if (!kind) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = kind === "move" ? "move" : "copy";
+      if (dropOver?.key !== key || dropOver?.kind !== kind) setDropOver({ key, kind });
+    };
+    return {
+      onDragEnter: accept,
+      onDragOver: accept,
+      onDragLeave: (event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) {
+          setDropOver((current) => (current?.key === key ? null : current));
+        }
+      },
+      onDrop: (event) => {
+        const kind = dragKind(event);
+        if (!kind) return;
+        event.preventDefault();
+        if (kind === "move") {
+          const ids = parseDraggedIds(event.dataTransfer.getData(MEDIA_DRAG_TYPE));
+          endCardDrag();
+          if (ids.length) onMove(ids);
+        } else {
+          setDropOver(null);
+          onFiles(event.dataTransfer.files);
+        }
+      },
+    };
+  };
+
+  // `target` ya viene formateado: «Cusco» o "una nueva categoría".
+  const dropHint = (key, target) => {
+    if (dropOver?.key !== key) return null;
+    return dropOver.kind === "move"
+      ? `Suelta para mover ${dragCount ? `${dragCount} ` : ""}imagen(es) a ${target}`
+      : `Suelta para añadir al lote en ${target}`;
+  };
+
+  const confirmNewCategory = () => {
+    const name = newCategoryName.trim();
+    const pending = newCategoryDrop;
+    setNewCategoryDrop(null);
+    setNewCategoryName("");
+    if (!name || !pending) return;
+    if (pending.ids) moveAssets(pending.ids, name);
+    if (pending.files) {
+      addFiles(pending.files, name);
+      filesAddedMessage(pending.files.length, name);
+    }
+  };
+
+  const openMoveDialog = (kind) =>
+    setMoveDialog({
+      kind,
+      ids: kind === "upload" ? uploadSelection.ids : selection.ids,
+      value: "",
+    });
+
+  const saveMoveDialog = async () => {
+    if (!moveDialog) return;
+    if (moveDialog.kind === "upload") {
+      moveUploadItems(moveDialog.ids, moveDialog.value);
+      uploadSelection.clear();
+      setMoveDialog(null);
+      return;
+    }
+    const done = await moveAssets(moveDialog.ids, moveDialog.value);
+    if (done) setMoveDialog(null);
   };
 
   const deactivateSelected = async () => {
     const done = await applyBulkPatch(
+      selection.ids,
       { is_active: false },
       (count) => `${count} imagen(es) desactivadas`,
     );
@@ -421,7 +622,7 @@ export function Inventario() {
   };
 
   const reactivateSelected = () =>
-    applyBulkPatch({ is_active: true }, (count) => `${count} imagen(es) reactivadas`);
+    applyBulkPatch(selection.ids, { is_active: true }, (count) => `${count} imagen(es) reactivadas`);
 
   const toggleGroup = (items) => selection.toggleAll(items);
 
@@ -483,6 +684,7 @@ export function Inventario() {
           <div
             className={`media-upload__dropzone ${dragging ? "dragging" : ""}`}
             onDragOver={(event) => {
+              if (dragKind(event) !== "files") return;
               event.preventDefault();
               setDragging(true);
             }}
@@ -522,20 +724,31 @@ export function Inventario() {
 
           <div className="media-upload__batch-tools">
             <CategorySelector
-              label="Categoría para nuevas imágenes"
+              label="Categoría del lote"
               value={defaultCategory}
               categories={categories}
               onChange={setDefaultCategory}
+              commitMode
               disabled={!canManage || saving}
+              hint="Se aplica a las imágenes del lote sin categoría propia."
+
             />
-            <button
-              type="button"
-              onClick={applyDefaultCategoryToAll}
-              disabled={!uploadItems.length || saving}
-            >
-              <MdFolder /> Aplicar a todo el lote
-            </button>
           </div>
+
+          {uploadItems.length > 0 && (
+            <BulkSelectionBar
+              visibleCount={uploadItems.length}
+              visibleSelectedCount={uploadItems.filter(uploadSelection.isSelected).length}
+              selectedCount={uploadSelection.count}
+              onToggleVisible={() => uploadSelection.toggleAll(uploadItems)}
+              onClear={uploadSelection.clear}
+              itemLabel="imágenes"
+            >
+              <button type="button" onClick={() => openMoveDialog("upload")} disabled={saving}>
+                <MdDriveFileMove /> Cambiar categoría
+              </button>
+            </BulkSelectionBar>
+          )}
 
           {groupedUploadItems.length > 0 && (
             <div className="media-upload__groups">
@@ -543,14 +756,26 @@ export function Inventario() {
                 <section className="media-upload__group" key={group.category}>
                   <header>
                     <span><MdFolder /> {group.category}</span>
+                    {group.category === defaultCategory && (
+                      <em className="media-upload__group-tag">categoría del lote</em>
+                    )}
                     <small>{group.items.length}</small>
                   </header>
                   <div className="media-upload__queue">
                     {group.items.map((item) => (
                       <article
-                        className={`media-upload-item media-upload-item--${item.status}`}
+                        className={`media-upload-item media-upload-item--${item.status} ${uploadSelection.isSelected(item) ? "selected" : ""}`}
                         key={item.clientId}
                       >
+                        <label className="media-upload-item__select" title="Seleccionar">
+                          <input
+                            type="checkbox"
+                            checked={uploadSelection.isSelected(item)}
+                            onChange={() => uploadSelection.toggle(item)}
+                            disabled={saving}
+                            aria-label={`Seleccionar ${item.title || item.file.name}`}
+                          />
+                        </label>
                         <img src={item.previewUrl} alt="" />
                         <div className="media-upload-item__fields">
                           <input
@@ -563,11 +788,10 @@ export function Inventario() {
                           />
                           <CategorySelector
                             label="Categoría"
-                            value={item.category}
+                            value={effectiveCategory(item)}
                             categories={categories}
-                            onChange={(nextCategory) =>
-                              updateUploadItem(item.clientId, { category: nextCategory })
-                            }
+                            onChange={(nextCategory) => moveUploadItems([item.clientId], nextCategory)}
+                            commitMode
                             disabled={saving}
                           />
                           {item.error && <small className="media-upload-item__error">{item.error}</small>}
@@ -616,18 +840,18 @@ export function Inventario() {
                 placeholder="Buscar por destino, categoría o archivo"
               />
             </div>
-            <select value={category} onChange={(event) => setCategory(event.target.value)}>
-              <option value="all">Todas las categorías</option>
-              {categories.map((item) => (
-                <option key={item} value={item}>{item}</option>
-              ))}
-            </select>
             <select value={status} onChange={(event) => setStatus(event.target.value)}>
               <option value="active">Activas</option>
               <option value="inactive">Inactivas</option>
               <option value="all">Todas</option>
             </select>
           </div>
+
+          <CategoryChipBar
+            className="media-chipbar--sticky"
+            chips={libraryChips}
+            onSelect={(next) => setCategory(next === null || next === category ? "all" : next)}
+          />
 
           {canManage && (
             <BulkSelectionBar
@@ -640,7 +864,7 @@ export function Inventario() {
             >
               <button
                 type="button"
-                onClick={() => setBulkCategory("")}
+                onClick={() => openMoveDialog("library")}
                 disabled={saving || selection.overLimit}
               >
                 <MdDriveFileMove /> Cambiar categoría
@@ -668,7 +892,22 @@ export function Inventario() {
           ) : filteredAssets.length ? (
             <div className="media-library__groups">
               {groupedAssets.map((group) => (
-                <section className="media-library__group" key={group.category}>
+                <section
+                  className={`media-library__group ${dropOver?.key === group.category ? "is-drop-over" : ""}`}
+                  key={group.category}
+                  {...(canManage
+                    ? libraryDropZone(group.category, {
+                        onMove: (ids) => moveAssets(ids, group.category),
+                        onFiles: (files) => {
+                          addFiles(files, group.category);
+                          filesAddedMessage(files.length, group.category);
+                        },
+                      })
+                    : {})}
+                >
+                  {dropHint(group.category, `«${group.category}»`) && (
+                    <div className="media-library__drop-hint">{dropHint(group.category, `«${group.category}»`)}</div>
+                  )}
                   <header>
                     {canManage && (
                       <input
@@ -693,6 +932,10 @@ export function Inventario() {
                       <article
                         className={`media-card ${asset.isActive ? "" : "inactive"} ${selection.isSelected(asset) ? "selected" : ""}`}
                         key={asset.id}
+                        data-asset-id={asset.id}
+                        draggable={canManage && !saving}
+                        onDragStart={(event) => startCardDrag(event, asset)}
+                        onDragEnd={endCardDrag}
                       >
                         {canManage && (
                           <label className="media-card__select" title="Seleccionar">
@@ -704,7 +947,7 @@ export function Inventario() {
                             />
                           </label>
                         )}
-                        <img src={asset.previewSrc || asset.proxyUrl || asset.src} alt="" />
+                        <img src={asset.previewSrc || asset.proxyUrl || asset.src} alt="" draggable={false} />
                         <div className="media-card__body">
                           <strong>{asset.title}</strong>
                           <span>{asset.category}</span>
@@ -715,21 +958,14 @@ export function Inventario() {
                             <button type="button" onClick={() => startEdit(asset)} title="Editar"><MdEdit /></button>
                             <button
                               type="button"
-                              onClick={() =>
-                                setConfirmDeleteId((current) => current === asset.id ? null : asset.id)
-                              }
-                              title="Desactivar"
-                            ><MdDelete /></button>
-                            {confirmDeleteId === asset.id && (
-                              <div className="media-card__confirm">
-                                <strong>Desactivar imagen</strong>
-                                <span>No se mostrará en el selector PDF.</span>
-                                <div>
-                                  <button type="button" onClick={() => deleteAsset(asset)}>Desactivar</button>
-                                  <button type="button" onClick={() => setConfirmDeleteId(null)}>Cancelar</button>
-                                </div>
-                              </div>
-                            )}
+                              className={asset.isActive ? "" : "is-hidden"}
+                              onClick={() => toggleAssetActive(asset)}
+                              disabled={saving}
+                              title={asset.isActive ? "Ocultar del editor PDF" : "Mostrar en el editor PDF"}
+                              aria-pressed={!asset.isActive}
+                            >
+                              {asset.isActive ? <MdVisibility /> : <MdVisibilityOff />}
+                            </button>
                           </div>
                         )}
                       </article>
@@ -741,34 +977,88 @@ export function Inventario() {
           ) : (
             <div className="media-library__state"><MdImageSearch /> No hay imágenes para los filtros actuales.</div>
           )}
+
+          {canManage && !loading && (
+            <div
+              className={`media-library__new-category ${dropOver?.key === "__new" ? "is-drop-over" : ""}`}
+              {...libraryDropZone("__new", {
+                onMove: (ids) => setNewCategoryDrop({ ids }),
+                onFiles: (files) => setNewCategoryDrop({ files: Array.from(files) }),
+              })}
+            >
+              {newCategoryDrop ? (
+                <label>
+                  {newCategoryDrop.ids
+                    ? `Nueva categoría para ${newCategoryDrop.ids.length} imagen(es)`
+                    : `Nueva categoría para ${newCategoryDrop.files.length} archivo(s) del lote`}
+                  <input
+                    autoFocus
+                    value={newCategoryName}
+                    placeholder="Ej. Valle Sagrado / Pisac"
+                    onChange={(event) => setNewCategoryName(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") confirmNewCategory();
+                      if (event.key === "Escape") {
+                        setNewCategoryDrop(null);
+                        setNewCategoryName("");
+                      }
+                    }}
+                  />
+                  <span>
+                    <button type="button" onClick={confirmNewCategory} disabled={!newCategoryName.trim()}>
+                      <MdCheckCircle /> Crear
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewCategoryDrop(null);
+                        setNewCategoryName("");
+                      }}
+                    >
+                      Cancelar
+                    </button>
+                  </span>
+                </label>
+              ) : (
+                <>
+                  <MdAddPhotoAlternate />
+                  <strong>
+                    {dropHint("__new", "una nueva categoría") || "Nueva categoría"}
+                  </strong>
+                  <small>Arrastra aquí imágenes de la galería o archivos de tu equipo.</small>
+                </>
+              )}
+            </div>
+          )}
         </section>
       </section>
 
-      {bulkCategory !== null && (
-        <div className="media-edit" onClick={() => !saving && setBulkCategory(null)}>
+      {moveDialog && (
+        <div className="media-edit" onClick={() => !saving && setMoveDialog(null)}>
           <div className="media-edit__panel" onClick={(event) => event.stopPropagation()}>
             <header>
               <h2>Cambiar categoría</h2>
-              <button type="button" onClick={() => setBulkCategory(null)} disabled={saving}><MdClose /></button>
+              <button type="button" onClick={() => setMoveDialog(null)} disabled={saving}><MdClose /></button>
             </header>
             <p className="media-edit__hint">
-              {selection.count} imagen(es) seleccionadas. La categoría también influye en cómo
-              el editor PDF sugiere y rotula las imágenes automáticamente.
+              {moveDialog.ids.length} imagen(es)
+              {moveDialog.kind === "upload" ? " del lote" : ""}. La categoría también influye en
+              cómo el editor PDF sugiere y rotula las imágenes automáticamente.
             </p>
             <CategorySelector
               label="Nueva categoría"
-              value={bulkCategory}
+              value={moveDialog.value}
               categories={categories}
-              onChange={setBulkCategory}
+              onChange={(value) => setMoveDialog((current) => current && { ...current, value })}
               disabled={saving}
             />
             <button
               type="button"
               className="media-edit__save"
-              onClick={saveBulkCategory}
-              disabled={saving || !bulkCategory.trim()}
+              onClick={saveMoveDialog}
+              disabled={saving || !moveDialog.value.trim()}
             >
-              <MdSave /> {saving ? "Guardando..." : `Mover ${selection.count} imagen(es)`}
+              <MdSave /> {saving ? "Guardando..." : `Mover ${moveDialog.ids.length} imagen(es)`}
             </button>
           </div>
         </div>
@@ -783,8 +1073,8 @@ export function Inventario() {
             </header>
             <p className="media-edit__hint">
               {selectedAssets.filter((asset) => asset.isActive).length} imagen(es) dejarán de
-              mostrarse en el selector PDF. Puedes reactivarlas después; los PDF ya guardados
-              conservan sus imágenes.
+              aparecer al elegir imágenes en el editor de cotizaciones PDF. Puedes reactivarlas
+              después; los PDF ya guardados conservan sus imágenes.
             </p>
             <button
               type="button"
@@ -825,8 +1115,12 @@ export function Inventario() {
                 checked={editing.isActive}
                 onChange={(event) => setEditing({ ...editing, isActive: event.target.checked })}
               />
-              Activa en el selector PDF
+              Visible en el editor de cotizaciones PDF
             </label>
+            <p className="media-edit__hint">
+              Si la desactivas no aparecerá al elegir imágenes para una cotización; los PDF ya
+              guardados no cambian.
+            </p>
             <button type="button" className="media-edit__save" onClick={saveEdit} disabled={saving}>
               <MdSave /> Guardar cambios
             </button>

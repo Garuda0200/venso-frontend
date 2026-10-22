@@ -254,7 +254,7 @@
 
 .media-library__toolbar {
   display: grid;
-  grid-template-columns: minmax(260px, 1fr) minmax(160px, 230px) minmax(120px, 160px);
+  grid-template-columns: minmax(220px, 1fr) minmax(120px, 160px);
   gap: 10px;
   margin-bottom: 14px;
 
@@ -407,59 +407,6 @@
   }
 }
 
-.media-card__confirm {
-  position: absolute;
-  top: 38px;
-  right: 0;
-  z-index: 4;
-  width: 220px;
-  display: grid;
-  gap: 8px;
-  border: 1px solid #fecaca;
-  border-radius: 10px;
-  padding: 10px;
-  background: #fff;
-  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.18);
-
-  strong {
-    color: #991b1b;
-    font-size: 12px;
-    font-weight: 900;
-  }
-
-  span {
-    color: #6f6f6f;
-    font-size: 11px;
-    line-height: 1.35;
-  }
-
-  div {
-    display: flex;
-    gap: 7px;
-  }
-
-  button {
-    width: auto;
-    height: 30px;
-    border-radius: 7px;
-    padding: 0 10px;
-    background: #f1f5f9;
-    color: #171717;
-    font-size: 11px;
-    font-weight: 900;
-
-    &:first-child {
-      background: #dc2626;
-      color: #fff;
-    }
-
-    &:hover {
-      background: #991b1b;
-      color: #fff;
-    }
-  }
-}
-
 .media-library__state {
   min-height: 280px;
   display: grid;
@@ -583,26 +530,6 @@
 .media-upload__batch-tools {
   display: grid;
   gap: 9px;
-
-  > button {
-    height: 36px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    border: 1px solid #f4b6d5;
-    border-radius: 8px;
-    background: #f0fdf4;
-    color: #ff007e;
-    font-size: 12px;
-    font-weight: 900;
-    cursor: pointer;
-
-    &:disabled {
-      cursor: not-allowed;
-      opacity: 0.5;
-    }
-  }
 }
 
 .media-upload__groups {
@@ -657,7 +584,7 @@
 .media-upload-item {
   position: relative;
   display: grid;
-  grid-template-columns: 78px minmax(0, 1fr) 28px;
+  grid-template-columns: 22px 78px minmax(0, 1fr) 28px;
   gap: 9px;
   align-items: start;
   border: 1px solid #e2e8f0;
@@ -768,7 +695,7 @@
 
 @media (max-width: 520px) {
   .media-upload-item {
-    grid-template-columns: 60px minmax(0, 1fr) 28px;
+    grid-template-columns: 22px 60px minmax(0, 1fr) 28px;
   }
 
   .media-upload-item > img {
@@ -1042,17 +969,6 @@
   color: var(--media-primary);
 }
 
-.media-upload__batch-tools > button {
-  border-color: #f4b6d5;
-  background: var(--media-soft);
-  color: var(--media-primary);
-
-  &:hover:not(:disabled) {
-    border-color: var(--media-primary);
-    background: #ffe8f4;
-  }
-}
-
 .media-upload__group {
   border-color: #f2d6e4;
   border-radius: 13px;
@@ -1103,7 +1019,6 @@
 
 .media-library__toolbar select:focus,
 .media-category-field select:focus,
-.media-category-field input:focus,
 .media-upload-item__fields > input:focus,
 .media-edit__panel input:focus {
   border-color: var(--media-primary);
@@ -1339,5 +1254,307 @@
 
   &:hover:not(:disabled) {
     background: #8f1c13;
+  }
+}
+
+/* Un solo anillo de foco: el contenedor dibuja `:focus-within`, así que el
+   input interno no debe sumar el outline global de venso-brand ni su borde. */
+.media-library__search input {
+  background: transparent;
+
+  &:focus,
+  &:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+}
+
+/* El input del combobox no debe ocupar el 100%: dejaría fuera los botones
+   limpiar (×) y desplegar. */
+.media-manager .media-category-field__control .combobox-actions {
+  flex-shrink: 0;
+}
+
+.media-manager .media-category-field__control .combobox-input {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+
+  &:focus,
+  &:focus-visible {
+    border: 0;
+    box-shadow: none;
+    outline: none;
+  }
+}
+
+.media-category-field__hint {
+  color: #6f6f6f;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+/* Arrastrar entre categorías */
+.media-card[draggable="true"] {
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.media-card__actions button.is-hidden {
+  background: #fff1f8;
+  color: var(--media-primary, #ff007e);
+}
+
+.media-upload-item__select {
+  align-self: center;
+  display: grid;
+  place-items: center;
+  height: 40px;
+  cursor: pointer;
+
+  input {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: var(--media-primary, #ff007e);
+    cursor: pointer;
+  }
+}
+
+.media-upload-item.selected {
+  border-color: var(--media-primary, #ff007e);
+  box-shadow: 0 0 0 1px var(--media-primary, #ff007e);
+}
+
+/* La barra de lote del panel de subida usa los mismos colores que la biblioteca */
+.media-upload {
+  --bulk-accent: var(--media-primary, #ff007e);
+  --bulk-accent-soft: var(--media-soft, #fff1f8);
+}
+
+.media-upload__group-tag {
+  margin-right: auto;
+  color: #6f6f6f;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+/* Chips de categoría: filtro de la biblioteca */
+.media-chipbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+
+  // Se pega al borde del scroll de `.almacen-content`, cuyo padding superior
+  // (22px; 12px en móvil) dejaría ver el contenido por encima.
+  &--sticky {
+    position: sticky;
+    top: -22px;
+    z-index: 3;
+    margin: 0 -16px 12px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--media-line, #e2e8f0);
+    background: #fff;
+  }
+}
+
+.media-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  border: 1px solid #e4e4e7;
+  border-radius: 999px;
+  padding: 0 12px;
+  background: #fff;
+  color: #303030;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+
+  small {
+    min-width: 20px;
+    border-radius: 999px;
+    padding: 1px 6px;
+    background: #f4f4f5;
+    color: #6f6f6f;
+    font-size: 10px;
+    font-weight: 900;
+    text-align: center;
+  }
+
+  &:hover {
+    border-color: #efb4d1;
+  }
+
+  &--active {
+    border-color: var(--media-primary, #ff007e);
+    background: var(--media-primary, #ff007e);
+    color: #fff;
+
+    small {
+      background: rgba(255, 255, 255, 0.25);
+      color: #fff;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .media-chipbar--sticky {
+    top: -12px;
+  }
+}
+
+/* Categorías de la biblioteca como zonas de soltar (mismo lenguaje visual que
+   la zona de carga del lote) */
+.media-card[draggable="true"] {
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.media-library__group {
+  position: relative;
+  // Margen negativo = padding: el resaltado respira sin mover la cuadrícula.
+  margin: -10px;
+  padding: 10px;
+  border: 1px dashed transparent;
+  border-radius: 15px;
+  transition: border-color 120ms ease, background-color 120ms ease;
+
+  &.is-drop-over {
+    border-color: var(--media-primary, #ff007e);
+    background: #fff0f8;
+    box-shadow: inset 0 0 0 2px rgba(255, 0, 126, 0.08);
+  }
+}
+
+// El aviso no captura el puntero: si no, el dragleave lo trataría como salida.
+.media-library__drop-hint {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  z-index: 4;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  padding: 6px 14px;
+  background: var(--media-primary, #ff007e);
+  box-shadow: 0 8px 18px rgba(255, 0, 126, 0.25);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.media-library__new-category {
+  min-height: 130px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 6px;
+  margin-top: 18px;
+  border: 1px dashed #efb4d1;
+  border-radius: 15px;
+  padding: 18px;
+  background: linear-gradient(145deg, #fff 0%, #fff6fb 100%);
+  color: #6f6f6f;
+  text-align: center;
+  transition: border-color 120ms ease, background-color 120ms ease;
+
+  > svg {
+    width: 28px;
+    height: 28px;
+    color: var(--media-primary, #ff007e);
+  }
+
+  strong {
+    color: #171717;
+    font-size: 14px;
+  }
+
+  small {
+    font-size: 12px;
+  }
+
+  &.is-drop-over {
+    border-color: var(--media-primary, #ff007e);
+    background: #fff0f8;
+    box-shadow: inset 0 0 0 2px rgba(255, 0, 126, 0.08);
+
+    strong {
+      color: var(--media-primary, #ff007e);
+    }
+  }
+
+  label {
+    width: min(420px, 100%);
+    display: grid;
+    gap: 8px;
+    color: #303030;
+    font-size: 12px;
+    font-weight: 900;
+    text-align: left;
+  }
+
+  input {
+    height: 38px;
+    border: 1px solid #d7dee8;
+    border-radius: 8px;
+    padding: 0 11px;
+    background: #fff;
+    color: #171717;
+    font-weight: 600;
+
+    &:focus {
+      border-color: var(--media-primary, #ff007e);
+      box-shadow: 0 0 0 3px rgba(255, 0, 126, 0.08);
+      outline: none;
+    }
+  }
+
+  span {
+    display: flex;
+    gap: 8px;
+  }
+
+  button {
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid #e4e4e7;
+    border-radius: 8px;
+    padding: 0 12px;
+    background: #fff;
+    color: #303030;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+
+    &:first-child {
+      border-color: var(--media-primary, #ff007e);
+      background: var(--media-primary, #ff007e);
+      color: #fff;
+    }
+
+    &:disabled {
+      cursor: default;
+      opacity: 0.5;
+    }
   }
 }
