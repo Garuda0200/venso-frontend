@@ -185,12 +185,14 @@ const menuConfig = {
       path: "/almacen/inventario",
       icon: "inventarioIcon",
     },
+    /*
     {
       key: "patrimonio",
       name: "Patrimonio",
       path: "/almacen/patrimonio",
       icon: "inventarioIcon",
     },
+    */
   ],
 };
 
