@@ -120,6 +120,9 @@ export function Inventario() {
   // Contenido soltado en "Nueva categoría" a la espera de nombre: { ids } o { files }.
   const [newCategoryDrop, setNewCategoryDrop] = useState(null);
   const [newCategoryName, setNewCategoryName] = useState("");
+  // Una categoría es solo un texto en cada imagen: al vaciarla desaparecería de
+  // `assets`. Se recuerdan las vistas durante la sesión para poder repoblarlas.
+  const [knownCategories, setKnownCategories] = useState([]);
   const uploadItemsRef = useRef([]);
   const selection = useBulkSelection(getAssetId);
   const uploadSelection = useBulkSelection(getUploadId);
@@ -138,15 +141,30 @@ export function Inventario() {
         assets.map((asset) => asset.category),
         [defaultCategory],
         uploadItems.map((item) => item.category),
+        knownCategories,
       ),
-    [assets, defaultCategory, uploadItems],
+    [assets, defaultCategory, uploadItems, knownCategories],
   );
   const resolveCategory = (value) =>
     canonicalCategory(value, categories) || DEFAULT_CATEGORY;
 
+  useEffect(() => {
+    setKnownCategories((current) => {
+      const next = mergeCategoryOptions(
+        current,
+        assets.map((asset) => asset.category || DEFAULT_CATEGORY),
+      );
+      return next.length === current.length ? current : next;
+    });
+  }, [assets]);
+
   const libraryCategories = useMemo(
-    () => mergeCategoryOptions(assets.map((asset) => asset.category || DEFAULT_CATEGORY)),
-    [assets],
+    () =>
+      mergeCategoryOptions(
+        assets.map((asset) => asset.category || DEFAULT_CATEGORY),
+        knownCategories,
+      ),
+    [assets, knownCategories],
   );
 
   const matchesStatusAndQuery = useCallback(
@@ -180,9 +198,10 @@ export function Inventario() {
         label: item,
         count: counts.get(item) || 0,
         active: category === item,
+        dropOver: dropOver?.key === `chip:${item}`,
       })),
     ];
-  }, [assets, category, libraryCategories, matchesStatusAndQuery]);
+  }, [assets, category, dropOver, libraryCategories, matchesStatusAndQuery]);
 
   // Si la categoría filtrada se queda vacía (p. ej. tras mover todo), volver a "Todas".
   useEffect(() => {
@@ -201,8 +220,14 @@ export function Inventario() {
 
   const groupedAssets = useMemo(() => {
     const grouped = new Map();
+    // Sin búsqueda, las categorías vacías siguen visibles como zonas de soltar.
+    if (!query.trim()) {
+      libraryCategories.forEach((item) => {
+        if (category === "all" || item === category) grouped.set(item, []);
+      });
+    }
     filteredAssets.forEach((asset) => {
-      const key = asset.category || DEFAULT_CATEGORY;
+      const key = canonicalCategory(asset.category || DEFAULT_CATEGORY, libraryCategories);
       if (!grouped.has(key)) grouped.set(key, []);
       grouped.get(key).push(asset);
     });
@@ -210,7 +235,7 @@ export function Inventario() {
     return [...grouped.entries()]
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([groupCategory, items]) => ({ category: groupCategory, items }));
-  }, [filteredAssets]);
+  }, [filteredAssets, libraryCategories, category, query]);
 
   useEffect(() => {
     const existing = new Set(assets.map(getAssetId));
@@ -572,6 +597,15 @@ export function Inventario() {
     };
   };
 
+  // Qué hace soltar imágenes o archivos sobre una categoría concreta.
+  const categoryDropActions = (target) => ({
+    onMove: (ids) => moveAssets(ids, target),
+    onFiles: (files) => {
+      addFiles(files, target);
+      filesAddedMessage(files.length, target);
+    },
+  });
+
   // `target` ya viene formateado: «Cusco» o "una nueva categoría".
   const dropHint = (key, target) => {
     if (dropOver?.key !== key) return null;
@@ -851,6 +885,14 @@ export function Inventario() {
             className="media-chipbar--sticky"
             chips={libraryChips}
             onSelect={(next) => setCategory(next === null || next === category ? "all" : next)}
+            getDropProps={
+              canManage
+                ? (chip) =>
+                    chip.category === null
+                      ? {}
+                      : libraryDropZone(`chip:${chip.category}`, categoryDropActions(chip.category))
+                : undefined
+            }
           />
 
           {canManage && (
@@ -889,27 +931,21 @@ export function Inventario() {
 
           {loading ? (
             <div className="media-library__state"><MdImageSearch /> Cargando galería...</div>
-          ) : filteredAssets.length ? (
+          ) : groupedAssets.length ? (
             <div className="media-library__groups">
               {groupedAssets.map((group) => (
                 <section
                   className={`media-library__group ${dropOver?.key === group.category ? "is-drop-over" : ""}`}
                   key={group.category}
                   {...(canManage
-                    ? libraryDropZone(group.category, {
-                        onMove: (ids) => moveAssets(ids, group.category),
-                        onFiles: (files) => {
-                          addFiles(files, group.category);
-                          filesAddedMessage(files.length, group.category);
-                        },
-                      })
+                    ? libraryDropZone(group.category, categoryDropActions(group.category))
                     : {})}
                 >
                   {dropHint(group.category, `«${group.category}»`) && (
                     <div className="media-library__drop-hint">{dropHint(group.category, `«${group.category}»`)}</div>
                   )}
                   <header>
-                    {canManage && (
+                    {canManage && group.items.length > 0 && (
                       <input
                         type="checkbox"
                         className="media-library__group-select"
@@ -927,6 +963,14 @@ export function Inventario() {
                     <h2>{group.category}</h2>
                     <span>{group.items.length} imágenes</span>
                   </header>
+                  {!group.items.length && (
+                    <div className="media-library__empty-group">
+                      <MdAddPhotoAlternate />
+                      {canManage
+                        ? "Categoría vacía. Arrastra aquí imágenes de la galería o archivos de tu equipo."
+                        : "Categoría vacía."}
+                    </div>
+                  )}
                   <div className="media-library__grid">
                     {group.items.map((asset) => (
                       <article
