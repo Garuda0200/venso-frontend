@@ -200,3 +200,8 @@
     }
   }
 }
+
+.dropdown-option--create {
+  color: var(--combobox-create-color, #ff007e) !important;
+  font-weight: 700;
+}

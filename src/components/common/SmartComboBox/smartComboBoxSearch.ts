@@ -38,3 +38,18 @@ export const filterSmartComboBoxOptions = (options = [], searchValue = "") => {
     .sort((a, b) => a.rank - b.rank || a.originalIndex - b.originalIndex)
     .map((entry) => entry.option);
 };
+
+/**
+ * Opciones a mostrar. Con `filterOnTyping`, un valor ya cargado (p. ej. al
+ * editar) no filtra: se listan todas hasta que el usuario escribe.
+ */
+export const visibleSmartComboBoxOptions = (
+  options = [],
+  searchValue = "",
+  { filterOnTyping = false, typed = false } = {},
+) =>
+  filterOnTyping && !typed
+    ? Array.isArray(options)
+      ? options
+      : []
+    : filterSmartComboBoxOptions(options, searchValue);

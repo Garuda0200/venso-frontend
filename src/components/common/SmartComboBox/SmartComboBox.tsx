@@ -1,7 +1,7 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { MdArrowDropDown, MdClose } from "react-icons/md";
-import { filterSmartComboBoxOptions } from "./smartComboBoxSearch";
+import { visibleSmartComboBoxOptions } from "./smartComboBoxSearch";
 import "./SmartComboBox.scss";
 
 /**
@@ -16,6 +16,11 @@ import "./SmartComboBox.scss";
  * @param {boolean} loading - Indicador de carga de opciones
  * @param {string} className - Clases CSS adicionales
  * @param {boolean} portalDropdown - Renderiza las sugerencias en body para escapar de overflow/stacking contexts
+ * @param {boolean} filterOnTyping - Muestra todas las opciones al abrir y filtra solo cuando el usuario escribe
+ * @param {boolean} hideEmpty - No muestra el panel "sin coincidencias"; el dropdown se oculta
+ * @param {function} onCommit - Confirma el valor al elegir una opción, con Enter o al salir del campo.
+ *   Si devuelve un string, el input se actualiza con ese valor normalizado.
+ * @param {string|null} createLabel - Fila extra al final del dropdown que confirma el texto escrito
  */
 const SmartComboBox = ({
   value = "",
@@ -29,18 +34,30 @@ const SmartComboBox = ({
   autoFocus = false,
   maxVisibleOptions = 60,
   portalDropdown = false,
+  filterOnTyping = false,
+  hideEmpty = false,
+  onCommit = undefined,
+  createLabel = null,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [inputValue, setInputValue] = useState(value);
+  const [inputValue, setInputValueState] = useState(value);
+  const [typed, setTyped] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  // Refs para que blur/Enter lean el valor actual aunque el render no haya ocurrido.
+  const inputValueRef = useRef(value);
+  const committedRef = useRef(value);
+  const setInputValue = (next) => {
+    inputValueRef.current = next;
+    setInputValueState(next);
+  };
   const containerRef = useRef(null);
   const inputRef = useRef(null);
   const dropdownRef = useRef(null);
   const [portalStyle, setPortalStyle] = useState(null);
 
   const filteredOptions = useMemo(
-    () => filterSmartComboBoxOptions(options, inputValue),
-    [inputValue, options],
+    () => visibleSmartComboBoxOptions(options, inputValue, { filterOnTyping, typed }),
+    [filterOnTyping, typed, inputValue, options],
   );
   const visibleOptions = useMemo(
     () => filteredOptions.slice(0, Math.max(1, maxVisibleOptions)),
@@ -50,6 +67,7 @@ const SmartComboBox = ({
   // Sincronizar con prop value
   useEffect(() => {
     setInputValue(value);
+    committedRef.current = value;
   }, [value]);
 
   useEffect(() => {
@@ -141,20 +159,49 @@ const SmartComboBox = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const commitValue = (next) => {
+    committedRef.current = next;
+    if (!onCommit) return;
+    const normalized = onCommit(next);
+    if (typeof normalized === "string") {
+      committedRef.current = normalized;
+      setInputValue(normalized);
+    }
+  };
+
+  const closeDropdown = () => {
+    setIsOpen(false);
+    setHighlightedIndex(-1);
+    setTyped(false);
+  };
+
   const handleInputChange = (e) => {
     const newValue = e.target.value;
     setInputValue(newValue);
     setHighlightedIndex(-1);
+    setTyped(true);
     setIsOpen(true);
-    onChange(newValue);
+    onChange?.(newValue);
   };
 
   const handleOptionSelect = (option) => {
     setInputValue(option);
-    setIsOpen(false);
-    setHighlightedIndex(-1);
-    onChange(option);
+    closeDropdown();
+    onChange?.(option);
+    commitValue(option);
     inputRef.current?.blur();
+  };
+
+  const handleCommitTyped = () => {
+    closeDropdown();
+    commitValue(inputValueRef.current);
+    inputRef.current?.blur();
+  };
+
+  const handleInputBlur = () => {
+    if (onCommit && inputValueRef.current !== committedRef.current) {
+      commitValue(inputValueRef.current);
+    }
   };
 
   const handleClear = (e) => {
@@ -162,11 +209,12 @@ const SmartComboBox = ({
     setInputValue("");
     setHighlightedIndex(-1);
     setIsOpen(true);
-    onChange("");
+    onChange?.("");
     inputRef.current?.focus();
   };
 
   const handleInputFocus = () => {
+    setTyped(false);
     setIsOpen(true);
   };
 
@@ -199,9 +247,17 @@ const SmartComboBox = ({
       return;
     }
 
+    if (e.key === "Enter" && onCommit && !multiline) {
+      // Evita que Enter envíe el formulario contenedor.
+      e.preventDefault();
+      e.stopPropagation();
+      handleCommitTyped();
+      return;
+    }
+
     if (e.key === "Escape") {
-      setIsOpen(false);
-      setHighlightedIndex(-1);
+      if (onCommit) setInputValue(committedRef.current);
+      closeDropdown();
       inputRef.current?.blur();
     }
 
@@ -211,10 +267,13 @@ const SmartComboBox = ({
   const toggleDropdown = () => {
     setIsOpen((current) => !current);
     setHighlightedIndex(-1);
+    setTyped(false);
     inputRef.current?.focus();
   };
 
-  const dropdown = isOpen ? (
+  const showCreate = Boolean(createLabel) && !loading;
+  const isEmpty = !loading && visibleOptions.length === 0 && !showCreate;
+  const dropdown = isOpen && !(hideEmpty && isEmpty) ? (
     <div
       ref={dropdownRef}
       className={`combobox-dropdown${portalDropdown ? " combobox-dropdown--portal" : ""}`}
@@ -222,7 +281,7 @@ const SmartComboBox = ({
     >
       {loading ? (
         <div className="dropdown-loading">Cargando opciones...</div>
-      ) : visibleOptions.length > 0 ? (
+      ) : visibleOptions.length > 0 || showCreate ? (
         <>
           <ul className="dropdown-list" role="listbox">
             {visibleOptions.map((option, index) => (
@@ -237,6 +296,17 @@ const SmartComboBox = ({
                 {option}
               </li>
             ))}
+            {showCreate && (
+              <li
+                className="dropdown-option dropdown-option--create"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={handleCommitTyped}
+                role="option"
+                aria-selected={false}
+              >
+                {createLabel}
+              </li>
+            )}
           </ul>
           {filteredOptions.length > visibleOptions.length && (
             <div className="dropdown-more">
@@ -264,6 +334,7 @@ const SmartComboBox = ({
             value={inputValue}
             onChange={handleInputChange}
             onFocus={handleInputFocus}
+            onBlur={handleInputBlur}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             className="combobox-input combobox-textarea"
@@ -279,6 +350,7 @@ const SmartComboBox = ({
             value={inputValue}
             onChange={handleInputChange}
             onFocus={handleInputFocus}
+            onBlur={handleInputBlur}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             className="combobox-input"
@@ -292,6 +364,8 @@ const SmartComboBox = ({
             <button
               type="button"
               className="clear-btn"
+              // Mantiene el foco en el input: un blur confirmaría el texto a medio escribir.
+              onMouseDown={(event) => event.preventDefault()}
               onClick={handleClear}
               title="Limpiar"
             >
@@ -301,6 +375,8 @@ const SmartComboBox = ({
           <button
             type="button"
             className="dropdown-btn"
+            // Mantiene el foco en el input: un blur confirmaría el texto a medio escribir.
+            onMouseDown={(event) => event.preventDefault()}
             onClick={toggleDropdown}
             title="Ver opciones"
           >
