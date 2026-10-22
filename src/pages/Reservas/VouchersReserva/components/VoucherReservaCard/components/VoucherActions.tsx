@@ -8,10 +8,10 @@ import {
   MdWarningAmber,
   MdPayment,
   MdFolderOpen,
-  MdAttachFile,
-  MdReceiptLong,
+  MdPermMedia,
+  MdAssessment,
+  MdPictureAsPdf,
 } from "react-icons/md";
-import { FaRegFilePdf } from "react-icons/fa";
 import ExpandableActions, {
   ExpandableActionItem,
 } from "../../../../../../components/common/ExpandableActions";
@@ -106,16 +106,16 @@ const VoucherActions = ({
       items.push({
         key: "agency-payment",
         label: "Ver informe de pago",
-        icon: <MdReceiptLong />,
+        icon: <MdAssessment />,
         onClick: () => onAgencyPayment(voucher),
-        tone: "info",
+        tone: "success",
       });
     }
     if (onVoucherMedia) {
       items.push({
         key: "voucher-media",
         label: "Archivo del voucher",
-        icon: <MdAttachFile />,
+        icon: <MdPermMedia />,
         onClick: () => onVoucherMedia(voucher),
         tone: "info",
       });
@@ -133,7 +133,7 @@ const VoucherActions = ({
       items.push({
         key: "pdf",
         label: "Ver PDF",
-        icon: <FaRegFilePdf />,
+        icon: <MdPictureAsPdf />,
         onClick: () => onPreviewPDF(voucher),
         tone: "info",
       });
@@ -184,6 +184,7 @@ const VoucherActions = ({
         actions={actionItems}
         label={`Opciones de ${voucher.voucher_code || "la reserva"}`}
         compact
+        maxInline={3}
       />
 
       {showDeletePopover && (

@@ -16,6 +16,7 @@ export type ExpandableActionTone =
   | "neutral"
   | "info"
   | "warning"
+  | "success"
   | "danger";
 
 export interface ExpandableActionItem {
@@ -34,6 +35,11 @@ interface ExpandableActionsProps {
   className?: string;
   align?: "start" | "end";
   compact?: boolean;
+  /**
+   * How many of the first actions render as icon buttons next to the "more"
+   * toggle; the rest stay in the popover. Defaults to 0 (popover only).
+   */
+  maxInline?: number;
   /** Context shown before the actionable controls in the expanded panel. */
   panelHeader?: ReactNode;
 }
@@ -54,6 +60,7 @@ const ExpandableActions = ({
   className = "",
   align = "end",
   compact = false,
+  maxInline = 0,
   panelHeader,
 }: ExpandableActionsProps) => {
   const [expanded, setExpanded] = useState(false);
@@ -69,6 +76,8 @@ const ExpandableActions = ({
   const closeTimerRef = useRef<number | null>(null);
   const panelId = useId();
   const visibleActions = actions.filter((action) => !action.hidden);
+  const inlineActions = visibleActions.slice(0, Math.max(0, maxInline));
+  const overflowActions = visibleActions.slice(inlineActions.length);
 
   const clearCloseTimer = useCallback(() => {
     if (closeTimerRef.current !== null) {
@@ -140,7 +149,7 @@ const ExpandableActions = ({
       window.removeEventListener("resize", handleViewportChange);
       window.removeEventListener("scroll", handleViewportChange, true);
     };
-  }, [renderPanel, updatePanelPosition, visibleActions.length]);
+  }, [renderPanel, updatePanelPosition, overflowActions.length]);
 
   useEffect(() => {
     if (!expanded) return undefined;
@@ -175,6 +184,8 @@ const ExpandableActions = ({
 
   if (visibleActions.length === 0) return null;
 
+  const hasOverflow = overflowActions.length > 0;
+
   const panelStyle = {
     top: `${panelPosition.top}px`,
     left: `${panelPosition.left}px`,
@@ -189,7 +200,7 @@ const ExpandableActions = ({
   } as CSSProperties;
 
   const panel =
-    renderPanel && typeof document !== "undefined"
+    hasOverflow && renderPanel && typeof document !== "undefined"
       ? createPortal(
           <div
             ref={panelRef}
@@ -206,7 +217,7 @@ const ExpandableActions = ({
                 {panelHeader}
               </div>
             )}
-            {visibleActions.map((action) => (
+            {overflowActions.map((action) => (
               <button
                 key={action.key}
                 type="button"
@@ -240,24 +251,46 @@ const ExpandableActions = ({
       ref={rootRef}
       className={`expandable-actions expandable-actions--${align} ${
         compact ? "expandable-actions--compact" : ""
-      } ${expanded ? "is-expanded" : ""} ${className}`.trim()}
+      } ${inlineActions.length > 0 ? "expandable-actions--inline" : ""} ${
+        expanded ? "is-expanded" : ""
+      } ${className}`.trim()}
     >
-      <button
-        ref={toggleRef}
-        type="button"
-        className="expandable-actions__toggle"
-        onClick={(event) => {
-          event.stopPropagation();
-          if (expanded) closePanel();
-          else openPanel();
-        }}
-        aria-label={expanded ? `Cerrar ${label}` : `Abrir ${label}`}
-        aria-expanded={expanded}
-        aria-controls={panelId}
-        title={expanded ? "Cerrar opciones" : label}
-      >
-        {expanded ? <MdClose /> : <MdMoreHoriz />}
-      </button>
+      {inlineActions.map((action) => (
+        <button
+          key={action.key}
+          type="button"
+          className={`expandable-actions__item expandable-actions__item--${
+            action.tone || "neutral"
+          }`}
+          onClick={(event) => {
+            event.stopPropagation();
+            if (!action.disabled) action.onClick();
+          }}
+          disabled={action.disabled}
+          title={action.label}
+          aria-label={action.label}
+        >
+          <span className="expandable-actions__icon">{action.icon}</span>
+        </button>
+      ))}
+      {hasOverflow && (
+        <button
+          ref={toggleRef}
+          type="button"
+          className="expandable-actions__toggle"
+          onClick={(event) => {
+            event.stopPropagation();
+            if (expanded) closePanel();
+            else openPanel();
+          }}
+          aria-label={expanded ? `Cerrar ${label}` : `Abrir ${label}`}
+          aria-expanded={expanded}
+          aria-controls={panelId}
+          title={expanded ? "Cerrar opciones" : label}
+        >
+          {expanded ? <MdClose /> : <MdMoreHoriz />}
+        </button>
+      )}
       {panel}
     </div>
   );

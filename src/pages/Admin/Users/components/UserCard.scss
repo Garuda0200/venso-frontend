@@ -240,8 +240,7 @@
 }
 
 .user-row__actions {
-  .expandable-actions.is-expanded .expandable-actions__rail {
-    max-width: min(440px, calc(100vw - 150px));
-    flex-wrap: wrap;
+  .expandable-actions--inline {
+    flex-wrap: nowrap;
   }
 }

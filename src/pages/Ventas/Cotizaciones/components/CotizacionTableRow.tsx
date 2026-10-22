@@ -4,7 +4,12 @@ import {
   MdEdit,
   MdDelete,
   MdContentCopy,
-  MdVisibility,
+  MdViewList,
+  MdCalculate,
+  MdAssessment,
+  MdPermMedia,
+  MdMiscellaneousServices,
+  MdAutoAwesome,
   MdPerson,
   MdChildCare,
   MdPictureAsPdf,
@@ -15,8 +20,6 @@ import {
   MdLockOpen,
   MdHourglassTop,
   MdClose,
-  MdReceiptLong,
-  MdAttachFile,
 } from "react-icons/md";
 import ExpandableTitle from "./ExpandableTitle";
 import ExpandableActions, {
@@ -211,7 +214,7 @@ const CotizacionTableRow = ({
   const actionItems: ExpandableActionItem[] = [];
 
   if (onPreLiquidacion) {
-    actionItems.push({ key: "preliquidacion", label: "Ver preliquidación", icon: <MdReceiptLong />, onClick: onPreLiquidacion, tone: "info" });
+    actionItems.push({ key: "preliquidacion", label: "Ver preliquidación", icon: <MdCalculate />, onClick: onPreLiquidacion, tone: "neutral" });
   }
 
   if (isInactive) {
@@ -219,7 +222,7 @@ const CotizacionTableRow = ({
       actionItems.push({
         key: "summary",
         label: "Ver resumen",
-        icon: <MdVisibility />,
+        icon: <MdViewList />,
         onClick: onSummary,
         tone: "primary",
       });
@@ -252,27 +255,18 @@ const CotizacionTableRow = ({
       actionItems.push({
         key: "summary",
         label: "Ver resumen",
-        icon: <MdVisibility />,
+        icon: <MdViewList />,
         onClick: onSummary,
         tone: "neutral",
       });
     }
-    if (onAgencyPayment) {
+    if (onDuplicateModel) {
       actionItems.push({
-        key: "agency-payment",
-        label: "Ver informe de pago",
-        icon: <MdReceiptLong />,
-        onClick: onAgencyPayment,
-        tone: "info",
-      });
-    }
-    if (onVoucherMedia) {
-      actionItems.push({
-        key: "voucher-media",
-        label: "Archivo del voucher",
-        icon: <MdAttachFile />,
-        onClick: onVoucherMedia,
-        tone: "info",
+        key: "clone",
+        label: "Clonar cotización",
+        icon: <MdContentCopy />,
+        onClick: onDuplicateModel,
+        tone: "neutral",
       });
     }
     if (cotizacion.es_procesado && onPdfPreview) {
@@ -281,6 +275,24 @@ const CotizacionTableRow = ({
         label: "Ver PDF",
         icon: <MdPictureAsPdf />,
         onClick: onPdfPreview,
+        tone: "info",
+      });
+    }
+    if (onAgencyPayment) {
+      actionItems.push({
+        key: "agency-payment",
+        label: "Ver informe de pago",
+        icon: <MdAssessment />,
+        onClick: onAgencyPayment,
+        tone: "success",
+      });
+    }
+    if (onVoucherMedia) {
+      actionItems.push({
+        key: "voucher-media",
+        label: "Archivo del voucher",
+        icon: <MdPermMedia />,
+        onClick: onVoucherMedia,
         tone: "info",
       });
     }
@@ -297,18 +309,9 @@ const CotizacionTableRow = ({
       actionItems.push({
         key: "services",
         label: "Servicios y pagos",
-        icon: <MdOutlineConfirmationNumber />,
+        icon: <MdMiscellaneousServices />,
         onClick: onViewServices,
         tone: "info",
-      });
-    }
-    if (onDuplicateModel) {
-      actionItems.push({
-        key: "clone",
-        label: "Clonar cotización",
-        icon: <MdContentCopy />,
-        onClick: onDuplicateModel,
-        tone: "neutral",
       });
     }
     if (cotizacion.tiene_voucher && onRequestPostSaleEdit) {
@@ -356,10 +359,10 @@ const CotizacionTableRow = ({
         icon: isProcessingN8N ? (
           <span className="spinner-icon">⟳</span>
         ) : (
-          <MdPictureAsPdf />
+          <MdAutoAwesome />
         ),
         onClick: onTriggerN8N,
-        tone: "info",
+        tone: "primary",
         disabled: isProcessingN8N,
       });
     }
@@ -545,6 +548,7 @@ const CotizacionTableRow = ({
               label={`Opciones de ${cotizacion.titulo || "la cotización"}`}
               compact
               panelHeader={postSalePermissionPanel}
+              maxInline={3}
             />
           </div>
 

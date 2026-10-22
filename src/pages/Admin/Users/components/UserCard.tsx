@@ -6,7 +6,6 @@ import {
   FaKey,
   FaToggleOn,
   FaToggleOff,
-  FaTrash,
   FaClock,
   FaUserShield,
 } from "react-icons/fa";
@@ -73,15 +72,8 @@ const UserCard = React.memo(({
         onClick: () => onToggleStatus(user),
         tone: user.is_active ? "warning" : "primary",
       },
-      {
-        key: "delete",
-        label: "Eliminar usuario",
-        icon: <FaTrash />,
-        onClick: () => onDelete(user),
-        tone: "danger",
-      },
     ],
-    [onDelete, onEdit, onResetPassword, onToggleStatus, user],
+    [onEdit, onResetPassword, onToggleStatus, user],
   );
 
   return (
@@ -143,6 +135,7 @@ const UserCard = React.memo(({
           actions={actions}
           label={`Opciones de ${displayName}`}
           compact
+          maxInline={3}
         />
       </section>
     </article>

@@ -11,15 +11,16 @@ import {
   MdCheckCircle,
   MdCancel,
   MdPayment, // Icono para gestionar pagos
-  MdAttachFile, // Icono para gestionar documentos
-  MdReceiptLong,
+  MdFolderOpen, // Icono para gestionar documentos
+  MdPermMedia,
+  MdAssessment,
+  MdPictureAsPdf,
 } from "react-icons/md";
 import "./VoucherCard.scss";
 import { formatCurrency } from "../../../../../utils/formatters";
 import PassengerPortal from "../PassengerPortal/PassengerPortal";
 import QuotationVersionHistory from "../../../../Reservas/VouchersReserva/components/QuotationVersionHistory/QuotationVersionHistory";
 import pasajeroService from "../../../../../services/pasajeroService"; // Import pasajero service
-import { FaRegFilePdf } from "react-icons/fa";
 import ExpandableActions, {
   ExpandableActionItem,
 } from "../../../../../components/common/ExpandableActions";
@@ -144,20 +145,11 @@ function VoucherCard({
   const actionItems = useMemo<ExpandableActionItem[]>(() => {
     const items: ExpandableActionItem[] = [];
 
-    if (onPreview) {
-      items.push({
-        key: "preview",
-        label: "Ver voucher",
-        icon: <MdVisibility />,
-        onClick: () => onPreview(voucher),
-        tone: "primary",
-      });
-    }
     if (onPreviewPDF) {
       items.push({
         key: "pdf",
         label: "Ver PDF",
-        icon: <FaRegFilePdf />,
+        icon: <MdPictureAsPdf />,
         onClick: () => onPreviewPDF(voucher),
         tone: "info",
       });
@@ -171,31 +163,31 @@ function VoucherCard({
         tone: paymentStatus.className === "completed" ? "primary" : "warning",
       });
     }
+    if (onManageDocuments) {
+      items.push({
+        key: "documents",
+        label: "Gestionar documentos",
+        icon: <MdFolderOpen />,
+        onClick: () => onManageDocuments(voucher),
+        tone: "neutral",
+      });
+    }
     if (onAgencyPayment) {
       items.push({
         key: "agency-payment",
         label: "Ver informe de pago",
-        icon: <MdReceiptLong />,
+        icon: <MdAssessment />,
         onClick: () => onAgencyPayment(voucher),
-        tone: "info",
+        tone: "success",
       });
     }
     if (onVoucherMedia) {
       items.push({
         key: "voucher-media",
         label: "Archivo del voucher",
-        icon: <MdAttachFile />,
+        icon: <MdPermMedia />,
         onClick: () => onVoucherMedia(voucher),
         tone: "info",
-      });
-    }
-    if (onManageDocuments) {
-      items.push({
-        key: "documents",
-        label: "Gestionar documentos",
-        icon: <MdAttachFile />,
-        onClick: () => onManageDocuments(voucher),
-        tone: "neutral",
       });
     }
     if (onEdit) {
@@ -205,6 +197,15 @@ function VoucherCard({
         icon: <MdEdit />,
         onClick: () => onEdit(voucher),
         tone: voucher.status === "EDITABLE_ONCE" ? "warning" : "primary",
+      });
+    }
+    if (onPreview) {
+      items.push({
+        key: "preview",
+        label: "Ver voucher",
+        icon: <MdVisibility />,
+        onClick: () => onPreview(voucher),
+        tone: "primary",
       });
     }
     if (onDelete && canManageVoucher && canDeleteVoucher) {
@@ -304,6 +305,7 @@ function VoucherCard({
           actions={actionItems}
           label={`Opciones de ${voucherCode}`}
           compact
+          maxInline={3}
         />
       </nav>
 

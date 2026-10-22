@@ -10,6 +10,17 @@
     --expandable-actions-size: 32px;
   }
 
+  &--inline {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+
+    .expandable-actions__item {
+      width: var(--expandable-actions-size);
+      padding: 0;
+    }
+  }
+
   &__toggle,
   &__item {
     display: inline-flex;
@@ -126,6 +137,12 @@
       border-color: rgba(54, 185, 204, 0.25);
       background: var(--color-info-light);
       color: var(--color-info-dark);
+    }
+
+    &--success {
+      border-color: rgba(28, 200, 138, 0.3);
+      background: var(--color-success-light);
+      color: var(--color-success-dark);
     }
 
     &--warning {
