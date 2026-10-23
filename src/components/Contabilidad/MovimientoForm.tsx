@@ -1355,7 +1355,7 @@ const MovimientoForm = ({
       // Extraer payment_request_id de contexto_pago si existe
       const paymentRequestId =
         typeof movimientoData.contexto_pago === "object"
-          ? movimientoData.contexto_pago.payment_request_id
+          ? movimientoData.contexto_pago?.payment_request_id
           : null;
 
       // REGLAS CORREGIDAS para vouchers_pagos:
@@ -1842,7 +1842,7 @@ const MovimientoForm = ({
           // Emitir evento si el movimiento está asociado a un payment_request
           const paymentRequestId =
             typeof submitData.contexto_pago === "object"
-              ? submitData.contexto_pago.payment_request_id
+              ? submitData.contexto_pago?.payment_request_id
               : null;
 
           if (paymentRequestId) {
