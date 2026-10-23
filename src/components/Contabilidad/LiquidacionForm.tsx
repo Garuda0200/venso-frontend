@@ -5,6 +5,7 @@ import { registerLocale } from "react-datepicker";
 import { es } from "date-fns/locale";
 import { FaSave, FaTimes } from "react-icons/fa";
 import { toast } from "react-toastify";
+import { requestPaymentCurrency, requestAssignedExchangeRate, paymentExchangeRatePrefill, paymentCurrency, convertPaymentAmount, paymentConversionContext, formatPaymentMoney } from "../../utils/paymentCurrency";
 import contabilidadService from "../../services/contabilidadService";
 import vouchersPagosService from "../../services/vouchersPagosService";
 import { useFileUpload } from "../../hooks/useFileUpload";
@@ -25,6 +26,7 @@ import "./LiquidacionForm.scss";
 import "react-datepicker/dist/react-datepicker.css";
 
 registerLocale("es", es);
+const roundToTwoDecimals = value => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
 
 const PagoLoteForm = ({
   isOpen,
@@ -41,8 +43,10 @@ const PagoLoteForm = ({
   const { uploadFile, deleteFile, isUploading, uploadProgress, uploadError } =
     useFileUpload();
   const { getCurrentUser } = useAuth();
-  const selectedPaymentSignature = JSON.stringify(selectedPayments.map((payment) => [payment.id, payment.amount]));
+  const selectedPaymentSignature = JSON.stringify(selectedPayments.map((payment) => [payment.id, payment.amount, payment.currency, payment.assigned_tasa_cambio, payment.platform, payment.business_type]));
   const currentUser = getCurrentUser();
+  const obligationCurrency = requestPaymentCurrency(selectedPayments[0] || {});
+  const hasMixedPaymentCurrencies = selectedPayments.some(payment => requestPaymentCurrency(payment) !== obligationCurrency);
 
   const [formData, setFormData] = useState({
     descripcion: "",
@@ -85,6 +89,7 @@ const PagoLoteForm = ({
 
         // Se conserva el contexto histórico para que reportes y evidencias existentes sigan conciliando.
         const contextoPago = {
+          obligation_currency: obligationCurrency,
           tipo: "LiquidacionServicioProveedor",
           payment_request_ids: selectedPayments.map((p) => p.id),
           cantidad_pagos: selectedPayments.length,
@@ -94,6 +99,7 @@ const PagoLoteForm = ({
           ...prev,
           descripcion: prev.descripcion || `Pago por lote de ${selectedPayments.length} servicio(s)`,
           monto: montoTotalRedondeado,
+          tipo_cambio: String(paymentExchangeRatePrefill(selectedPayments[0])),
           contexto_pago: contextoPago,
         }));
       }
@@ -202,23 +208,17 @@ const PagoLoteForm = ({
   // ============================================================================
   // CONVERSIÓN DE MONEDAS (USD Soles) - igual que MovimientoForm
   // ============================================================================
-  const roundToTwoDecimals = (num) => Math.round(num * 100) / 100;
 
-  // Moneda de los pagos seleccionados (del tariff)
-  const monedaPagos = useMemo(() => {
-    if (selectedPayments.length === 0) return "soles";
-    return (
-      selectedPayments[0]?.service_data?.tariff?.moneda ||
-      selectedPayments[0]?.service_data?.moneda ||
-      (selectedPayments[0]?.moneda === "USD" ? "dolares" : "soles")
-    );
-  }, [selectedPayments]);
-
-  // Mostrar dual currency cuando el fondo seleccionado es en SOLES (como MovimientoForm)
+  // Convert only when the obligation currency differs from the selected fund.
   const showDualCurrency = useMemo(() => {
     const monedaFondo = formData.moneda?.toLowerCase() || "soles";
-    return monedaFondo === "soles";
-  }, [formData.moneda]);
+    return paymentCurrency(monedaFondo) !== obligationCurrency;
+  }, [formData.moneda, obligationCurrency]);
+
+  useEffect(() => {
+    setMontoSecundario(showDualCurrency && Number(formData.tipo_cambio) > 0
+      ? String(convertPaymentAmount(formData.monto, obligationCurrency, formData.moneda, formData.tipo_cambio)) : "");
+  }, [showDualCurrency, formData.monto, formData.moneda, formData.tipo_cambio, obligationCurrency]);
 
   // Cuando cambia el tipo de cambio → recalcular equivalente en soles
   const handleTipoCambioChange = (e) => {
@@ -228,7 +228,7 @@ const PagoLoteForm = ({
     if (formData.monto && nuevoTC) {
       const tc = parseFloat(nuevoTC);
       if (!isNaN(tc) && tc > 0) {
-        const montoSoles = roundToTwoDecimals(parseFloat(formData.monto) * tc);
+        const montoSoles = convertPaymentAmount(formData.monto, obligationCurrency, formData.moneda, tc);
         setMontoSecundario(montoSoles.toString());
       }
     } else {
@@ -367,6 +367,11 @@ const PagoLoteForm = ({
   };
 
   const handleSubmit = async (e) => {
+    if (hasMixedPaymentCurrencies) {
+      e.preventDefault();
+      toast.error("Selecciona solicitudes de una misma moneda para registrar el lote");
+      return;
+    }
     e.preventDefault();
     if (pendingValidation || loading) {
       toast.warning("Espere a que se comprueben los pagos pendientes.");
@@ -387,6 +392,12 @@ const PagoLoteForm = ({
 
     if (selectedPayments.length === 0) {
       toast.error("No hay pagos seleccionados para liquidar");
+      return;
+    }
+    if (hasMixedPaymentCurrencies || selectedPayments.some(payment =>
+      payment.platform && selectedPayments[0].platform && payment.platform !== selectedPayments[0].platform
+      || payment.business_type && selectedPayments[0].business_type && payment.business_type !== selectedPayments[0].business_type)) {
+      toast.error("Selecciona pagos de una misma moneda y contexto comercial");
       return;
     }
 
@@ -570,7 +581,7 @@ const PagoLoteForm = ({
         // Calcular monto individual para este payment
         const montoIndividual =
           showDualCurrency && tipoCambio > 0
-            ? roundToTwoDecimals(paymentAmount * tipoCambio)
+            ? convertPaymentAmount(paymentAmount, obligationCurrency, formData.moneda, tipoCambio)
             : roundToTwoDecimals(paymentAmount);
 
         const descripcionPagoLote = `Pago por lote ${servicioTipo} - ${paymentVoucherCode || `VR-${paymentVoucherReservaId}`}`;
@@ -591,28 +602,23 @@ const PagoLoteForm = ({
           recepcionado_por: formData.recepcionado_por || null,
           contexto_pago: {
             ...formData.contexto_pago,
+            payment_request_id: payment.id,
+            assigned_tasa_cambio: requestAssignedExchangeRate(payment),
             payment_request_ids: [payment.id],
             cantidad_pagos: 1,
             facturacion: resolveFacturacionFromServiceData(
               payment.service_data,
             ),
             ...(showDualCurrency && {
-              conversion: {
-                tipo_cambio: tipoCambio,
-                moneda_base: "dolares",
-                moneda_fondo: "soles",
-                monto_base_usd: roundToTwoDecimals(paymentAmount),
-                monto_convertido_soles: montoIndividual,
-                saldo_id: parseInt(formData.saldo_id),
-              },
+              conversion: paymentConversionContext({ amount: paymentAmount, from: obligationCurrency, to: formData.moneda, rate: tipoCambio, saldoId: parseInt(formData.saldo_id) }),
             }),
           },
           voucher_code: paymentVoucherCode,
           referencia_voucher_reserva: paymentVoucherReservaId,
           referencia_voucher_venta: null,
           liq_movimiento_id: primeraEvidenciaId,
-          platform: currentUser?.platform || "venso",
-          business_type: currentUser?.business_type || "B2C",
+          platform: payment.platform || currentUser?.platform || "venso",
+          business_type: payment.business_type || currentUser?.business_type || "B2C",
         };
 
         try {
@@ -763,7 +769,7 @@ const PagoLoteForm = ({
                   );
                   const convertido =
                     showDualCurrency && tc > 0
-                      ? roundToTwoDecimals(amt * tc)
+                      ? convertPaymentAmount(amt, obligationCurrency, formData.moneda, tc)
                       : null;
                   return (
                     <tr key={payment.id}>
@@ -831,7 +837,7 @@ const PagoLoteForm = ({
           {/* Monto cuando fondo está en DÓLARES (misma moneda que pagos) */}
           {!showDualCurrency && (
             <div className="liq-field">
-              <label>Monto Total (USD)</label>
+              <label>Monto Total ({obligationCurrency})</label>
               <input
                 type="number"
                 name="monto"
@@ -849,7 +855,7 @@ const PagoLoteForm = ({
             <>
               <div className="liq-field">
                 <label>
-                  Monto USD <span className="calculated-badge">automático</span>
+                  Monto {obligationCurrency} <span className="calculated-badge">automático</span>
                 </label>
                 <input
                   type="number"
@@ -864,7 +870,7 @@ const PagoLoteForm = ({
 
               <div className="liq-field">
                 <label>
-                  Tipo de Cambio <span className="req">*</span>
+                  Tipo de Cambio (PEN por 1 USD) <span className="req">*</span>
                 </label>
                 <input
                   type="number"
@@ -885,7 +891,7 @@ const PagoLoteForm = ({
 
               <div className="liq-field">
                 <label>
-                  Equivalente en Soles{" "}
+                  Equivalente en {paymentCurrency(formData.moneda)}{" "}
                   <span className="calculated-badge">calculado</span>
                 </label>
                 <input
@@ -899,7 +905,7 @@ const PagoLoteForm = ({
                 />
                 <small className="liq-hint">
                   {formData.monto && formData.tipo_cambio
-                    ? `${formatCurrency(parseFloat(formData.monto), "dolares")} × ${formData.tipo_cambio} = ${montoSecundario ? formatCurrency(parseFloat(montoSecundario), "soles") : "..."}`
+                    ? `${formatPaymentMoney(formData.monto, obligationCurrency)} ${obligationCurrency === "USD" ? "×" : "÷"} ${formData.tipo_cambio} = ${montoSecundario ? formatPaymentMoney(montoSecundario, formData.moneda) : "..."}`
                     : "Ingrese el tipo de cambio para calcular"}
                 </small>
               </div>
@@ -929,21 +935,25 @@ const PagoLoteForm = ({
         </div>
 
         {/* ===== EVIDENCIAS ===== */}
-        <div className="liq-evidencias">
+        <div
+          ref={evidenceRef}
+          className={`liq-evidencias${evidenceError ? " liq-evidencias--invalid" : ""}`}
+          tabIndex={-1}
+          role="group"
+          aria-labelledby="liq-evidence-label"
+          aria-describedby={evidenceError ? "liq-evidence-error" : "liq-evidence-hint"}
+          aria-invalid={Boolean(evidenceError)}
+        >
           <div className="liq-ev-header">
-            <span>Evidencias</span>
-            {(() => {
-              const ctx =
-                typeof formData.contexto_pago === "object"
-                  ? formData.contexto_pago?.tipo
-                  : formData.contexto_pago;
-              return ctx === "LiquidacionServicioProveedor" ? (
-                <span className="ev-required">*Obligatorio</span>
-              ) : (
-                <span className="ev-optional">Opcional</span>
-              );
-            })()}
+            <span id="liq-evidence-label">Evidencias</span>
+            <span className={evidenceRequired ? "ev-required" : "ev-optional"}>
+              {evidenceRequired ? "*Obligatorio" : "Opcional"}
+            </span>
           </div>
+          <p id="liq-evidence-hint" className="liq-evidence-hint">
+            {evidenceRequired ? "Adjunta una imagen o PDF del comprobante de pago." : "No se requiere comprobante si el pago está cubierto por saldos a favor."}
+          </p>
+          {evidenceError && <p id="liq-evidence-error" className="liq-evidence-error" role="alert">{evidenceError}</p>}
           <FileDropZone
             files={evidencias}
             onFilesAdded={handleFilesAdded}

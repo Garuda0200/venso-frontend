@@ -8,6 +8,8 @@ import {
   MdChildCare,
 } from "react-icons/md";
 import { calculateCotizacionFinancialSummary } from "../../utils/cotizacionFinancialSummary";
+import { reconcileBeneficiaryParts } from "../../utils/serviceBeneficiaryPricingLedger";
+import { calculateAdditionalCostForAudience } from "../../utils/financialDisplayHelpers";
 import {
   aggregatePerRoomPricingByStayGroup,
   buildFinancialSummaryParts,
@@ -329,6 +331,8 @@ const getRoomIgvPerPerson = (room = {}) => {
 
 const AdditionalCosts = ({
   additionalCosts,
+  days = [],
+  externalDays = [],
   setAdditionalCosts,
   formatCurrency,
   contingencyTotal = 0,
@@ -1818,7 +1822,7 @@ const AdditionalCosts = ({
       externalChildTotal: externalChildAmount,
       externalConvertedChildTotal: externalConvertedChildAmount,
     }) || legacySummaryVisibleParts;
-  const summaryVisibleParts =
+  const legacySummaryVisiblePartsForCohorts =
     hotelRoomAdultParts.length > 0
       ? [
           ...hotelRoomAdultParts,
@@ -1860,6 +1864,14 @@ const AdditionalCosts = ({
             className: part.className,
           }))
         : defaultSummaryVisibleParts;
+  const summaryVisibleParts = reconcileBeneficiaryParts({
+    parts: legacySummaryVisiblePartsForCohorts.map(part => {
+      const match = effectiveHotelPerRoomPricing.find(room => part.key?.includes(room.key));
+      return { ...part, hotel: match?.hotelPerPerson ?? part.hotel ?? part.hotelBasePerPerson ?? 0 };
+    }),
+    days, externalDays, peopleDetails, additionalCosts,
+    calculateAdditional: calculateAdditionalCostForAudience, allowNoRoomFallback: effectiveHotelPerRoomPricing.length === 0,
+  });
   const visibleSummaryPayload = useMemo(
     () => buildVisibleSummaryPayload(summaryVisibleParts),
     [summaryVisibleParts],

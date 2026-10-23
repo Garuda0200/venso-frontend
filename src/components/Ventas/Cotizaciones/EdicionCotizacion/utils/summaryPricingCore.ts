@@ -16,6 +16,7 @@ import {
 } from "./financialDisplayHelpers";
 import { buildChildPricingRows } from "./passengerPricingPresentation";
 import { resolveCanonicalChildServicePrice } from "./childServicePricingReconciliation";
+import { reconcileBeneficiaryParts } from "./serviceBeneficiaryPricingLedger";
 
 const round2 = (value) =>
   Math.round((ensureNumber(value) + Number.EPSILON) * 100) / 100;
@@ -668,7 +669,11 @@ export const buildSummaryPricingCore = (
         ? roomParts
         : fallbackParts;
 
-  const parts = sourceParts
+  const parts = reconcileBeneficiaryParts({
+    parts: sourceParts, days: parseSummaryPricingArray(cotizacion.itinerario || cotizacion.dias || cotizacion.days || []),
+    externalDays: externalItinerary, peopleDetails, additionalCosts,
+    calculateAdditional: calculateAdditionalCostForAudience, allowNoRoomFallback: perRoomPricing.length === 0,
+  })
     .map((part, index) => {
       const beneficiaries = Math.max(
         1,

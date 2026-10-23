@@ -1,6 +1,7 @@
 import { createApiInstance } from "../../../../utils/apiUtils";
 import type { BibliaActivity } from "../utils/bibliaActivityMapper";
 import { buildBibliaTrainOptions } from "../utils/bibliaTrainCatalog";
+import { buildBibliaTransportOptions } from "../utils/bibliaTransportCatalog";
 
 export type BibliaCatalogField =
   | "hotelCusco" | "tickets" | "hotelValle" | "hotelMapi" | "restaurant" | "endorse"
@@ -24,6 +25,9 @@ const fieldCache = new Map<string, string[]>();
 const fieldRequests = new Map<string, Promise<string[]>>();
 let trainCatalogCache: { outbound: string[]; return: string[] } | null = null;
 let trainCatalogRequest: Promise<{ outbound: string[]; return: string[] }> | null = null;
+let transportCatalogCache: { providers: any[]; vehicles: any[] } | null = null;
+let transportCatalogRequest: Promise<{ providers: any[]; vehicles: any[] }> | null = null;
+let catalogRevision = 0;
 
 const text = (...values: unknown[]) => {
   for (const value of values) {
@@ -88,6 +92,7 @@ const loadTrainCatalog = async () => {
   if (trainCatalogRequest) return trainCatalogRequest;
 
   const api = createApiInstance(true);
+  const revision = catalogRevision;
   trainCatalogRequest = Promise.all([
     api.get("/turismo/trenes"),
     api.get("/turismo/vagones"),
@@ -95,14 +100,15 @@ const loadTrainCatalog = async () => {
     .then(([trainsResponse, wagonsResponse]) => {
       const trains = normalizeResponse(trainsResponse);
       const wagons = normalizeResponse(wagonsResponse);
-      trainCatalogCache = {
+      const catalog = {
         outbound: buildBibliaTrainOptions(trains, wagons, "outbound"),
         return: buildBibliaTrainOptions(trains, wagons, "return"),
       };
-      return trainCatalogCache;
+      if (revision === catalogRevision) trainCatalogCache = catalog;
+      return catalog;
     })
     .finally(() => {
-      trainCatalogRequest = null;
+      if (revision === catalogRevision) trainCatalogRequest = null;
     });
 
   return trainCatalogRequest;
@@ -113,11 +119,30 @@ const loadTrainOptions = async (field: "trainOutbound" | "trainReturn") => {
   return field === "trainOutbound" ? catalog.outbound : catalog.return;
 };
 
+const loadTransportCatalog = async () => {
+  if (transportCatalogCache) return transportCatalogCache;
+  if (transportCatalogRequest) return transportCatalogRequest;
+  const revision = catalogRevision;
+  const api = createApiInstance(true);
+  transportCatalogRequest = Promise.all([api.get("/turismo/transportes"), api.get("/turismo/movilidades")])
+    .then(([providers, vehicles]) => {
+      const catalog = { providers: normalizeResponse(providers), vehicles: normalizeResponse(vehicles) };
+      if (revision === catalogRevision) transportCatalogCache = catalog;
+      return catalog;
+    })
+    .finally(() => { if (revision === catalogRevision) transportCatalogRequest = null; });
+  return transportCatalogRequest;
+};
+
 export const isBibliaCatalogField = (field: keyof BibliaActivity): field is BibliaCatalogField =>
   Object.prototype.hasOwnProperty.call(ENDPOINTS, String(field));
 
 export const bibliaCatalogService = {
-  async getOptions(field: BibliaCatalogField): Promise<string[]> {
+  async getOptions(field: BibliaCatalogField, context: { pax?: number } = {}): Promise<string[]> {
+    if (field === "transport") {
+      const { providers, vehicles } = await loadTransportCatalog();
+      return buildBibliaTransportOptions(providers, vehicles, context.pax);
+    }
     // La clave es el campo, no sólo el endpoint: ida y retorno comparten datos
     // pero necesitan priorizar sentidos de viaje diferentes.
     const cacheKey = field;
@@ -125,6 +150,7 @@ export const bibliaCatalogService = {
     if (cached) return cached;
     const pending = fieldRequests.get(cacheKey);
     if (pending) return pending;
+    const revision = catalogRevision;
 
     const request = (isTrainField(field)
       ? loadTrainOptions(field as "trainOutbound" | "trainReturn")
@@ -138,19 +164,22 @@ export const bibliaCatalogService = {
             return [...new Set(labels)].sort((a, b) => a.localeCompare(b, "es"));
           }))
       .then((options) => {
-        fieldCache.set(cacheKey, options);
+        if (revision === catalogRevision) fieldCache.set(cacheKey, options);
         return options;
       })
-      .finally(() => fieldRequests.delete(cacheKey));
+      .finally(() => { if (revision === catalogRevision) fieldRequests.delete(cacheKey); });
 
     fieldRequests.set(cacheKey, request);
     return request;
   },
 
   clear() {
+    catalogRevision++;
     fieldCache.clear();
     fieldRequests.clear();
     trainCatalogCache = null;
     trainCatalogRequest = null;
+    transportCatalogCache = null;
+    transportCatalogRequest = null;
   },
 };

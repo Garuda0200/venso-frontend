@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from "react";
 import { MdAttachMoney } from "react-icons/md";
 
-export default function PaymentBatchBar({ count, selectedCount, total, formatAmount, onSelectAll, onRequest, disabled = false }: {
+export default function PaymentBatchBar({ count, selectedCount, total, totalDisplay, formatAmount, onSelectAll, onRequest, disabled = false }: {
   count: number; selectedCount: number; total: number; formatAmount: (value: number) => string;
+  totalDisplay?: string;
   onSelectAll: () => void; onRequest: () => void; disabled?: boolean;
 }) {
   const checkbox = useRef<HTMLInputElement>(null);
@@ -14,7 +15,7 @@ export default function PaymentBatchBar({ count, selectedCount, total, formatAmo
       <span>{count > 0 ? `Seleccionar disponibles (${count})` : "Sin servicios disponibles para solicitar"}</span>
     </label>
     <div className="batch-selection-summary" aria-live="polite">
-      <span>{selectedCount} seleccionados</span><strong>{formatAmount(total)}</strong>
+      <span>{selectedCount} seleccionados</span><strong>{totalDisplay || formatAmount(total)}</strong>
     </div>
     <button type="button" className="batch-request-button" onClick={onRequest}
       disabled={disabled || selectedCount === 0 || selectedCount > 100}>

@@ -1,4 +1,5 @@
 import axiosInstance, { invalidateGetCache } from "../utils/axiosInstance";
+import { requestPaymentCurrency } from "../utils/paymentCurrency";
 
 export const pendingPaymentsKey = ["payment-requests", "pending"] as const;
 export const pendingPaymentsEndpoint = "/turismo/vouchers-reserva/payment-requests/pending";
@@ -31,7 +32,9 @@ export async function validatePendingPaymentBatch(selected: any[]) {
   const pending = await getPendingPaymentRequests();
   for (const request of selected) {
     const current = pending.find((item) => String(item.id) === String(request.id));
-    if (!current || Number(current.amount) !== Number(request.amount)) {
+    if (!current || Number(current.amount) !== Number(request.amount)
+      || requestPaymentCurrency(current) !== requestPaymentCurrency(request)
+      || String(current.assigned_tasa_cambio ?? "") !== String(request.assigned_tasa_cambio ?? "")) {
       throw new Error("El lote cambió: hay pagos completados, cancelados o con otro importe. Actualice los pendientes.");
     }
   }

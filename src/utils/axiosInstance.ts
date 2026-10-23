@@ -11,7 +11,7 @@ import {
   reportBackendAvailable,
   reportBackendUnavailable,
 } from "./backendStatus";
-import { queryClient } from "../config/queryClient";
+import { queryClient, queryKeys } from "../config/queryClient";
 
 const API_TIMEOUT =
   Number.parseInt(import.meta.env.VITE_API_TIMEOUT || "15000", 10) || 15000;
@@ -73,6 +73,7 @@ const recoverCsrfAndRetry = async (instance, error) => {
 const _inflightGets = new Map();
 const _responseCache = new Map();
 const CACHE_TTL_MS = 12_000;
+let cacheRevision = 0;
 
 function _getCacheKey(config) {
   const params = config.params
@@ -107,13 +108,14 @@ axiosInstance.get = function deduplicatedGet(url, config = {}) {
     return _inflightGets.get(key);
   }
 
+  const revision = cacheRevision;
   const promise = _originalGet(url, config)
     .then((response) => {
-      _responseCache.set(key, { data: response, ts: Date.now() });
+      if (revision === cacheRevision) _responseCache.set(key, { data: response, ts: Date.now() });
       return response;
     })
     .finally(() => {
-      _inflightGets.delete(key);
+      if (_inflightGets.get(key) === promise) _inflightGets.delete(key);
     });
 
   _inflightGets.set(key, promise);
@@ -121,6 +123,10 @@ axiosInstance.get = function deduplicatedGet(url, config = {}) {
 };
 
 export const invalidateGetCache = (urlPattern) => {
+  cacheRevision += 1;
+  for (const key of _inflightGets.keys()) {
+    if (key.includes(urlPattern)) _inflightGets.delete(key);
+  }
   for (const key of _responseCache.keys()) {
     if (key.includes(urlPattern)) {
       _responseCache.delete(key);
@@ -138,7 +144,7 @@ const setupInterceptors = () => {
   );
 
   axiosInstance.interceptors.response.use(
-    (response) => {
+    async (response) => {
       reportBackendAvailable("http");
 
       const method = response.config?.method?.toLowerCase();
@@ -146,6 +152,12 @@ const setupInterceptors = () => {
         const url = response.config?.url || "";
         const basePath = url.replace(/\/\d+$/, "").replace(/\/\d+\//, "/");
         invalidateGetCache(basePath);
+        if (url.startsWith("/turismo/paquetes-turisticos")) {
+          invalidateGetCache("/turismo/paquetes-turisticos");
+          await queryClient.cancelQueries({ queryKey: queryKeys.paquetes.all });
+          void queryClient.invalidateQueries({ queryKey: queryKeys.paquetes.all });
+          if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("paqueteTuristicoUpdated", { detail: { source: "mutation" } }));
+        }
 
         if (url.startsWith("/turismo/")) {
           queryClient.invalidateQueries({ queryKey: ["turismo"] });

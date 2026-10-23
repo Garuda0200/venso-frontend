@@ -1,0 +1,24 @@
+.ticket-payments {
+  padding: 16px; display: grid; gap: 12px; min-width: 0;
+  &__toolbar, &__actions, &__card header, &__card footer { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+  &__toolbar { justify-content: space-between; color: #6b6070; font-size: .85rem; }
+  &__error { padding: 12px; border-radius: 10px; color: #a30048; background: #fff0f5; }
+  &__card { border: 1px solid #e7dfe8; border-radius: 14px; padding: 16px; background: white; }
+  &__card.is-selected { border-color: #ff0080; box-shadow: 0 0 0 1px #ff0080; }
+  &__card header > div { flex: 1; min-width: 140px; }
+  &__card h3 { margin: 4px 0; font-size: 1rem; }
+  &__card small { color: #706372; }
+  &__card fieldset { margin: 12px 0; border: 1px solid #eee4ec; border-radius: 10px; min-width: 0; }
+  &__card legend { font-size: .8rem; color: #786774; }
+  &__prices { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; padding: 8px; }
+  &__prices label { display: grid; gap: 4px; font-size: .8rem; }
+  &__prices input { width: 110px; padding: 8px; border: 1px solid #ddcddd; border-radius: 8px; }
+  button { border: 1px solid #e5cbdb; background: #fff; padding: 9px 14px; border-radius: 9px; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  button:focus-visible { outline: 3px solid #ff0080; outline-offset: 2px; }
+  &__currencies button[aria-pressed="true"], &__actions button:last-child { background: #ff0080; border-color: #ff0080; color: #fff; }
+  &__actions { position: sticky; bottom: 0; padding: 12px; background: #fff8fc; border-radius: 12px; }
+  &__actions strong { flex: 1; }
+  &__payment-layer { position: fixed; inset: 0; z-index: 8000; }
+  &__payment-layer .modal-overlay { z-index: 8001; }
+}

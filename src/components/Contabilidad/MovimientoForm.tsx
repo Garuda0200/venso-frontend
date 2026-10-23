@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
+import { paymentCurrency, requestPaymentCurrency, requestAssignedExchangeRate, paymentExchangeRatePrefill, convertPaymentAmount, paymentConversionContext, storedPaymentCurrency } from "../../utils/paymentCurrency";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import DatePicker from "react-datepicker";
@@ -304,6 +305,13 @@ const MovimientoForm = ({
           formData.contexto_pago.payment_request_ids.length > 0),
     );
   }, [formData.contexto_pago]);
+  const [paymentSettlementError, setPaymentSettlementError] = useState("");
+  const [paymentSettlementLoading, setPaymentSettlementLoading] = useState(false);
+
+  // Service obligations keep their native currency; file receipts keep the legacy USD flow.
+  const obligationCurrency = hasPaymentRequestAssociation
+    ? requestPaymentCurrency({ currency: paymentRequestPreview.currency || initialData?.obligation_currency || formData.contexto_pago?.obligation_currency || formData.contexto_pago?.conversion?.moneda_base, service_data: paymentRequestPreview.serviceData || initialData?.payment_request_service_data, moneda: initialData?.obligation_currency ? undefined : initialData?.currency })
+    : "USD";
 
   const facturacionActual = useMemo(() => {
     if (
@@ -349,8 +357,14 @@ const MovimientoForm = ({
   const showDualCurrency = useMemo(() => {
     // Siempre mostrar dual cuando el fondo seleccionado es en SOLES
     const monedaFondo = formData.moneda?.toLowerCase() || "soles";
-    return monedaFondo === "soles";
-  }, [formData.moneda]);
+    return hasPaymentRequestAssociation ? paymentCurrency(monedaFondo) !== obligationCurrency : monedaFondo === "soles";
+  }, [formData.moneda, hasPaymentRequestAssociation, obligationCurrency]);
+
+  useEffect(() => {
+    if (!hasPaymentRequestAssociation) return;
+    setMontoSecundario(showDualCurrency && Number(formData.tipo_cambio) > 0 && formData.monto !== ""
+      ? String(convertPaymentAmount(formData.monto, obligationCurrency, formData.moneda, formData.tipo_cambio)) : "");
+  }, [hasPaymentRequestAssociation, showDualCurrency, obligationCurrency, formData.moneda, formData.tipo_cambio, formData.monto]);
 
   // Calcular el monto convertido (para compatibilidad con lógica existente)
   // El tipo de cambio siempre es "Soles por 1 USD"
@@ -362,8 +376,8 @@ const MovimientoForm = ({
     if (isNaN(monto) || isNaN(tc) || tc <= 0) return null;
 
     // Convertir USD a Soles: monto_usd * tipo_cambio
-    return roundToTwoDecimals(monto * tc);
-  }, [showDualCurrency, formData.monto, formData.tipo_cambio]);
+    return hasPaymentRequestAssociation ? convertPaymentAmount(monto, obligationCurrency, formData.moneda, tc) : roundToTwoDecimals(monto * tc);
+  }, [showDualCurrency, formData.monto, formData.tipo_cambio, hasPaymentRequestAssociation, obligationCurrency, formData.moneda]);
 
   // Filtrar saldos por año de la fecha del movimiento y plataforma
   const saldosFiltrados = useMemo(() => {
@@ -619,13 +633,15 @@ const MovimientoForm = ({
           initialData.tipo_cambio ||
           initialConversion.tipo_cambio ||
           initialData.contexto_pago?.tipo_cambio ||
+          (initialData.contexto_pago?.payment_request_id || initialData.contexto_pago?.payment_request_ids?.length
+            ? paymentExchangeRatePrefill({currency:initialData.obligation_currency || initialData.contexto_pago?.obligation_currency,assigned_tasa_cambio:initialData.assigned_tasa_cambio ?? initialData.contexto_pago?.assigned_tasa_cambio,service_data:initialData.payment_request_service_data}) : "") ||
           "";
         const montoValue = initialData.monto
           ? parseFloat(parseFloat(initialData.monto).toFixed(2))
           : "";
-        const montoUsdValue = initialConversion.monto_base_usd
+        const montoUsdValue = initialConversion.monto_base ?? (initialConversion.monto_base_usd
           ? parseFloat(parseFloat(initialConversion.monto_base_usd).toFixed(2))
-          : montoValue;
+          : montoValue);
         const montoSolesValue = initialConversion.monto_convertido_soles
           ? parseFloat(
               parseFloat(initialConversion.monto_convertido_soles).toFixed(2),
@@ -645,7 +661,7 @@ const MovimientoForm = ({
           mes: mesValue,
           fecha: fechaValue,
           monto: montoUsdValue,
-          moneda: initialData.moneda || "soles",
+          moneda: storedPaymentCurrency(initialData.moneda || "soles"),
           saldo_id: initialData.saldo_id || "",
           contexto_pago: initialData.contexto_pago || null,
           referencia_voucher: initialData.referencia_voucher || "",
@@ -669,6 +685,8 @@ const MovimientoForm = ({
           datos_extra: initialData.datos_extra || {},
         });
         setPaymentRequestPreview({
+          currency: initialData.obligation_currency || initialData.contexto_pago?.obligation_currency,
+          assignedTasaCambio: initialData.assigned_tasa_cambio ?? initialData.contexto_pago?.assigned_tasa_cambio,
           serviceData: normalizePaymentServiceData(
             initialData.payment_request_service_data ||
               (typeof initialData.contexto_pago === "object"
@@ -730,7 +748,7 @@ const MovimientoForm = ({
     let active = true;
 
     const loadDefaultExchangeRate = async () => {
-      if (!isOpen || parsePositiveNumber(formData.tipo_cambio)) {
+      if (!isOpen || hasPaymentRequestAssociation || initialData?.contexto_pago?.payment_request_id || initialData?.contexto_pago?.payment_request_ids?.length || parsePositiveNumber(formData.tipo_cambio)) {
         return;
       }
 
@@ -776,6 +794,7 @@ const MovimientoForm = ({
     initialData?.contexto_pago?.platform,
     initialData?.platform,
     isOpen,
+    hasPaymentRequestAssociation,
   ]);
 
   // Resetear evidencias cuando cambia el payment_request_id
@@ -803,20 +822,22 @@ const MovimientoForm = ({
         : null;
 
     if (!isOpen || !paymentRequestId) {
+      setPaymentSettlementError("");
+      setPaymentSettlementLoading(false);
       return () => {
         active = false;
       };
     }
 
     const hydratePaymentRequestContext = async () => {
+      setPaymentSettlementLoading(true);
+      setPaymentSettlementError("");
       const result =
         await paymentRequestService.getPendingEnrichedById(paymentRequestId);
-
-      if (
-        !active ||
-        !result.success ||
-        (!result.data?.service_data && !result.data?.itinerario_servicio_id)
-      ) {
+      if (!active) return;
+      setPaymentSettlementLoading(false);
+      if (!result.success || !result.data || result.data.status !== "pending" || result.data.is_active === false) {
+        setPaymentSettlementError("No se pudo confirmar la solicitud pendiente. Actualiza antes de pagar.");
         return;
       }
 
@@ -829,21 +850,22 @@ const MovimientoForm = ({
         const nextItinerarioServicioId =
           result.data.itinerario_servicio_id || prev.itinerarioServicioId;
 
-        if (
-          currentType === nextType &&
-          prev.itinerarioServicioId === nextItinerarioServicioId
-        ) {
-          return prev;
-        }
-
         return {
+          ...prev,
+          currency: result.data.currency || prev.currency,
+          assignedTasaCambio: result.data.assigned_tasa_cambio,
           serviceData: normalizedServiceData,
           itinerarioServicioId: nextItinerarioServicioId || null,
         };
       });
     };
 
-    hydratePaymentRequestContext();
+    hydratePaymentRequestContext().catch(() => {
+      if (active) {
+        setPaymentSettlementLoading(false);
+        setPaymentSettlementError("No se pudo verificar la solicitud pendiente. Vuelve a abrir el pago.");
+      }
+    });
 
     return () => {
       active = false;
@@ -1028,6 +1050,7 @@ const MovimientoForm = ({
 
   // Cuando cambia el monto en USD → calcular Soles automáticamente
   const handleMontoUSDChange = (e) => {
+    if (hasPaymentRequestAssociation) { setFormData(prev => ({ ...prev, monto: e.target.value })); return; }
     const montoUSD = e.target.value;
     const normalized = normalizeDualCurrencyAmounts({
       usdValue: montoUSD,
@@ -1042,6 +1065,7 @@ const MovimientoForm = ({
 
   // Cuando cambia el monto en Soles → calcular USD automáticamente
   const handleMontoSolesChange = (e) => {
+    if (hasPaymentRequestAssociation) return;
     const montoSoles = e.target.value;
     const normalized = normalizeDualCurrencyAmounts({
       usdValue: formData.monto,
@@ -1056,6 +1080,7 @@ const MovimientoForm = ({
 
   // Cuando cambia el tipo de cambio → recalcular Soles basado en USD
   const handleTipoCambioChange = (e) => {
+    if (hasPaymentRequestAssociation) { setFormData(prev => ({ ...prev, tipo_cambio: e.target.value })); return; }
     const nuevoTC = e.target.value;
     const preserve = formData.monto ? "usd" : "soles";
     const normalized = normalizeDualCurrencyAmounts({
@@ -1482,8 +1507,12 @@ const MovimientoForm = ({
     });
     e.preventDefault();
     const form = e.currentTarget;
+    if (!isEditMode && hasPaymentRequestAssociation && (paymentSettlementLoading || paymentSettlementError)) {
+      toast.error(paymentSettlementError || "Espera a que se verifique la solicitud pendiente");
+      return;
+    }
 
-    const normalizedDualCurrency = showDualCurrency
+    const normalizedDualCurrency = showDualCurrency && !hasPaymentRequestAssociation
       ? normalizeDualCurrencyAmounts({
           usdValue: formData.monto,
           solesValue: montoSecundario,
@@ -1496,12 +1525,12 @@ const MovimientoForm = ({
           montoSoles: montoSecundario,
         };
 
-    const effectiveExchangeRate =
+    const effectiveExchangeRate = hasPaymentRequestAssociation ? parsePositiveNumber(formData.tipo_cambio) :
       parsePositiveNumber(formData.tipo_cambio) ||
       parsePositiveNumber(autoExchangeRate) ||
       DEFAULT_USD_TO_PEN_RATE;
     const normalizedMontoUsd = normalizedDualCurrency.montoUsd;
-    const normalizedMontoSoles = showDualCurrency
+    const normalizedMontoSoles = hasPaymentRequestAssociation ? montoSecundario : showDualCurrency
       ? normalizedDualCurrency.montoSoles
       : normalizedMontoUsd && effectiveExchangeRate
         ? roundToTwoDecimals(
@@ -1525,7 +1554,11 @@ const MovimientoForm = ({
       shouldValidate: !isEditMode && hasVoucherReferences,
     });
 
-    // Evidencias ahora son OPCIONALES - no bloquear el submit
+    if (!isEditMode && hasPaymentRequestAssociation && evidencias.length === 0) {
+      toast.error("Adjunta al menos una evidencia para registrar este pago");
+      return;
+    }
+    // Otros movimientos conservan su política de evidencias.
     if (!isEditMode && hasVoucherReferences && evidencias.length === 0) {
       console.log(" Advertencia: No hay evidencias adjuntas, pero es opcional");
       // Ya no retornamos, permitimos continuar sin evidencias
@@ -1541,13 +1574,13 @@ const MovimientoForm = ({
       if (!normalizedMontoUsd || parseFloat(normalizedMontoUsd) <= 0) {
         console.log(" Validación monto USD falló");
         toast.error(
-          "Debe ingresar el monto en dólares o calcularlo desde soles",
+          "Debe ingresar un monto válido en la moneda de la obligación",
         );
         return;
       }
       if (!normalizedMontoSoles || parseFloat(normalizedMontoSoles) <= 0) {
         console.log(" Validación monto Soles falló");
-        toast.error("Debe ingresar el monto en soles");
+        toast.error("Debe ingresar un importe convertido válido para el fondo");
         return;
       }
     }
@@ -1580,7 +1613,12 @@ const MovimientoForm = ({
         ? roundToTwoDecimals(parseFloat(normalizedMontoSoles))
         : null;
       const parsedSaldoId = Number.parseInt(formData.saldo_id, 10);
-      const contextoPagoPayload = buildContextoPagoPayload({
+      const contextoPagoPayload = hasPaymentRequestAssociation ? {
+        ...sanitizeContextoPagoForPersist({ ...formData.contexto_pago }),
+        obligation_currency: obligationCurrency,
+        assigned_tasa_cambio: requestAssignedExchangeRate({currency:obligationCurrency,assigned_tasa_cambio:paymentRequestPreview.assignedTasaCambio ?? initialData?.assigned_tasa_cambio ?? formData.contexto_pago?.assigned_tasa_cambio,service_data:paymentRequestPreview.serviceData}),
+        conversion: paymentConversionContext({ amount: formData.monto, from: obligationCurrency, to: formData.moneda, rate: effectiveExchangeRate, saldoId: parsedSaldoId }),
+      } : buildContextoPagoPayload({
         contextoPago: formData.contexto_pago,
         exchangeRate: effectiveExchangeRate,
         montoBaseUsd,
@@ -1598,7 +1636,7 @@ const MovimientoForm = ({
         contexto_pago: contextoPagoPayload,
       };
 
-      if (effectiveExchangeRate && montoBaseUsd) {
+      if (!hasPaymentRequestAssociation && effectiveExchangeRate && montoBaseUsd) {
         submitData.tipo_cambio = effectiveExchangeRate;
         submitData.datos_extra = {
           ...submitData.datos_extra,
@@ -2187,7 +2225,7 @@ const MovimientoForm = ({
           <div className="form-group">
             <label htmlFor="monto">
               <MdAttachMoney className="label-icon" />
-              Monto USD <span className="required-asterisk">*</span>
+              Monto {obligationCurrency} <span className="required-asterisk">*</span>
             </label>
             <input
               type="number"
@@ -2199,6 +2237,7 @@ const MovimientoForm = ({
               min="0.01"
               step="0.01"
               placeholder={
+                hasPaymentRequestAssociation ? `Importe de la obligación en ${obligationCurrency}` :
                 showDualCurrency
                   ? "Ingrese USD o complete soles + TC"
                   : "Ingrese el monto en dólares"
@@ -2220,10 +2259,10 @@ const MovimientoForm = ({
             </div>
           </div>
 
-          <div className="form-group">
+          {(!hasPaymentRequestAssociation || showDualCurrency) && <div className="form-group">
             <label htmlFor="tipo_cambio">
               <MdSwapHoriz className="label-icon" />
-              Tipo de Cambio <span className="required-asterisk">*</span>
+              Tipo de Cambio (PEN por 1 USD) <span className="required-asterisk">*</span>
             </label>
             <input
               type="number"
@@ -2246,13 +2285,13 @@ const MovimientoForm = ({
             <div className="feedback">
               Por favor ingrese el tipo de cambio o use el valor autocompletado.
             </div>
-          </div>
+          </div>}
 
           {showDualCurrency && (
             <div className="form-group">
               <label htmlFor="monto_soles">
                 <MdAccountBalance className="label-icon" />
-                Equivalente en Soles{" "}
+                Equivalente en {paymentCurrency(formData.moneda)}{" "}
                 <span className="calculated-badge">calculado</span>
               </label>
               <input
@@ -2261,6 +2300,7 @@ const MovimientoForm = ({
                 name="monto_soles"
                 value={montoSecundario}
                 onChange={handleMontoSolesChange}
+                readOnly={hasPaymentRequestAssociation}
                 min="0.01"
                 step="0.01"
                 placeholder="Se calcula automáticamente"
@@ -2268,7 +2308,7 @@ const MovimientoForm = ({
                 onKeyDown={preventArrowChange}
               />
               <small className="hint-text">
-                Edita este campo para recalcular el monto USD
+                {hasPaymentRequestAssociation ? "Importe a descontar del fondo seleccionado." : "Edita este campo para recalcular el monto USD"}
               </small>
             </div>
           )}

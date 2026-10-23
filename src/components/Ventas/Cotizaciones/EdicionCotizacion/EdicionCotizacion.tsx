@@ -95,6 +95,10 @@ import { shouldEnableHotelDictionary } from "./utils/editorRenderOptimization";
 import buildRoomOptionsByCategory from "./utils/buildRoomOptionsByCategory";
 import buildCategoryRowsFromDict from "./utils/buildCategoryRowsFromDict";
 import { sanitizeAdditionalCostsConfig } from "./utils/quotePricingEngine";
+import { buildQuotationSavePricing, requiresSoldPriceConfirmation } from "./utils/quotationSavePricing";
+import { reconcileBeneficiaryParts } from "./utils/serviceBeneficiaryPricingLedger";
+import { calculateAdditionalCostForAudience } from "./utils/financialDisplayHelpers";
+import QuotationPriceChangeDialog from "./components/QuotationPriceChangeDialog";
 import { autoMixWithConvertedChildren } from "./utils/hotelRoomMix";
 import {
   clearHotelRoomCalculationCache,
@@ -1491,6 +1495,7 @@ export function EdicionCotizacion({
   );
 
   const { user } = useAuth();
+  const [priceConfirmation, setPriceConfirmation] = useState(null);
   const normalizedUserRole = Number(userRole ?? user?.role ?? -1);
   const isSuperAdmin = normalizedUserRole === 0;
   const currentUserIdentifier = user?.dni || user?.dniuser || user?.sub || "";
@@ -4687,7 +4692,7 @@ export function EdicionCotizacion({
             externalItineraryBreakdown.convertedChildTotal || 0,
         })
       : [];
-    const visibleSummaryParts =
+    const legacyVisibleSummaryParts =
       roomBasedVisibleSummaryParts.length > 0
         ? roomBasedVisibleSummaryParts
         : buildFinancialSummaryParts({
@@ -4714,7 +4719,11 @@ export function EdicionCotizacion({
               externalItineraryBreakdown.convertedChildTotal || 0,
           }) || [];
     const visibleSummaryPayload =
-      buildVisibleSummaryPayload(visibleSummaryParts);
+      buildVisibleSummaryPayload(reconcileBeneficiaryParts({
+        parts: legacyVisibleSummaryParts, days: visibleDays, externalDays,
+        peopleDetails: normalizedExternalPeopleDetails, additionalCosts,
+        calculateAdditional: calculateAdditionalCostForAudience, allowNoRoomFallback: !hasActiveHotelSelection,
+      }));
 
     const enrichedAdditionalCosts = {
       ...additionalCosts,
@@ -4946,7 +4955,7 @@ export function EdicionCotizacion({
   );
 
   const handleSubmit = useCallback(
-    async (resetPdf = null) => {
+    async (resetPdf = null, confirmedPrice = null) => {
       if (submitInFlightRef.current || isSavingFromParent) {
         return;
       }
@@ -5146,7 +5155,7 @@ export function EdicionCotizacion({
                 externalItineraryBreakdown.convertedChildTotal || 0,
             })
           : [];
-        const visibleSummaryParts =
+        const legacyVisibleSummaryParts =
           roomBasedVisibleSummaryParts.length > 0
             ? roomBasedVisibleSummaryParts
             : buildFinancialSummaryParts({
@@ -5172,8 +5181,12 @@ export function EdicionCotizacion({
                 externalConvertedChildTotal:
                   externalItineraryBreakdown.convertedChildTotal || 0,
               }) || [];
-        const visibleSummaryPayload =
-          buildVisibleSummaryPayload(visibleSummaryParts);
+        const visibleSummaryParts = reconcileBeneficiaryParts({
+          parts: legacyVisibleSummaryParts, days: visibleDays, externalDays,
+          peopleDetails: normalizedExternalPeopleDetails, additionalCosts,
+          calculateAdditional: calculateAdditionalCostForAudience, allowNoRoomFallback: !hasActiveHotelSelection,
+        });
+        const visibleSummaryPayload = buildVisibleSummaryPayload(visibleSummaryParts);
 
         const enrichedAdditionalCosts = {
           ...additionalCosts,
@@ -5218,35 +5231,16 @@ export function EdicionCotizacion({
           summaryTotals.childFeeAmount || 0;
         cleanObjectForSerialization.calculatedChildExtraFee =
           summaryTotals.childExtraFeeAmount || 0;
-        const roomVisibleTotals = hasActiveHotelSelection
-          ? parseHotelRoomVisibleTotals(liveHotelPreviewHtml)
-          : null;
-        const additionalCostsForResolution = {
-          ...safeAdditionalCosts,
-          summaryVisibleParts: visibleSummaryPayload.parts,
-          visibleSummaryGrandTotal: visibleSummaryPayload.grandTotal,
-          summaryVisibleGrandTotal: visibleSummaryPayload.grandTotal,
-          acSummaryGrandTotal: visibleSummaryPayload.grandTotal,
-        };
-        const resolvedTotalFinal = resolveFinalTotalFromSources({
-          additionalCosts: additionalCostsForResolution,
-          roomVisibleTotals,
-          summaryTotals,
-          visibleParts: visibleSummaryPayload.parts,
-        });
-        const totalFinal =
-          visibleSummaryPayload.grandTotal > 0
-            ? visibleSummaryPayload.grandTotal
-            : resolvedTotalFinal;
-        const subtotalFinal = roundCurrencyValue(
-          visibleSummaryPayload.commissionableGrandTotal > 0
-            ? visibleSummaryPayload.commissionableGrandTotal
-            : Math.max(0, totalFinal - (externalItineraryBreakdown.grandTotal || 0)),
-        );
-        const visibleSummaryGrandTotalForSave =
-          visibleSummaryPayload.grandTotal > 0
-            ? visibleSummaryPayload.grandTotal
-            : totalFinal;
+        const savePricing = buildQuotationSavePricing({ parts: visibleSummaryParts, peopleCount, additionalCosts });
+        // Zero is a valid current price, not a reason to recover a stale total
+        // from additionalCosts or an old hotel HTML preview.
+        const totalFinal = savePricing.total_final;
+        const subtotalFinal = savePricing.subtotal_final;
+        const visibleSummaryGrandTotalForSave = totalFinal;
+        if (requiresSoldPriceConfirmation(editingCotizacion, totalFinal) && confirmedPrice !== totalFinal) {
+          setPriceConfirmation({ previous: Number(editingCotizacion.total_final), next: totalFinal, resetPdf });
+          return;
+        }
         cleanObjectForSerialization.finalTotal = totalFinal;
         cleanObjectForSerialization.final_total = totalFinal;
         cleanObjectForSerialization.grandTotal = totalFinal;
@@ -5340,6 +5334,7 @@ export function EdicionCotizacion({
             summaryTotals.additionalGrandTotal ?? summaryTotals.additionalTotal,
           total_final: totalFinal,
           subtotal_final: subtotalFinal,
+          pricing_snapshot: savePricing.pricing_snapshot,
 
           subtotal_nino: calculatedTotals.subtotalninos,
           subtotal_ninos: calculatedTotals.subtotalninos,
@@ -5543,6 +5538,7 @@ export function EdicionCotizacion({
         const newCotizacion = editingCotizacion
           ? {
               id: editingCotizacion.id,
+              expected_version: editingCotizacion.current_version ?? editingCotizacion.currentVersion,
               ...cotizacionData,
             }
           : { ...cotizacionData };
@@ -5563,9 +5559,7 @@ export function EdicionCotizacion({
         clearCurrentDraft();
       } catch (error) {
         console.error(" Error al procesar la cotización:", error);
-        alert(
-          "Hubo un error al procesar la cotización. Por favor, intenta de nuevo.",
-        );
+        showSnackbar(error?.response?.data?.message || error.message || "No se pudo guardar la cotización. Revisa los costos e intenta de nuevo.", "error");
       } finally {
         submitInFlightRef.current = false;
         setIsSubmitting(false);
@@ -6098,6 +6092,8 @@ export function EdicionCotizacion({
         {currentStep === STEPS.COSTOS && (
           <div className="step-content">
             <AdditionalCosts
+                days={visibleDays}
+                externalDays={externalDays}
               platform={effectivePlatform}
               businessType={effectiveBusinessType}
               isPrimaryAgency={isPrimaryAgency}
@@ -6708,6 +6704,17 @@ export function EdicionCotizacion({
           document.body,
         )}
       */}
+
+      {priceConfirmation && <QuotationPriceChangeDialog
+        previous={priceConfirmation.previous}
+        next={priceConfirmation.next}
+        onCancel={() => setPriceConfirmation(null)}
+        onConfirm={() => {
+          const confirmation = priceConfirmation;
+          setPriceConfirmation(null);
+          handleSubmit(confirmation.resetPdf, confirmation.next);
+        }}
+      />}
 
       {snackbar.open &&
         (() => {

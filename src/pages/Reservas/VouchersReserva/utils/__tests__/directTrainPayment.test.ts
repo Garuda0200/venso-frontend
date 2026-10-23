@@ -6,6 +6,7 @@ import ts from "typescript";
 import { canPayAssignedTrain, prepareDirectTrainPayment } from "../directTrainPayment";
 import { getPaymentServiceId } from "../reservationPaymentManagement";
 import { buildPaymentServiceComparison } from "../../../../../utils/paymentFacturacion";
+import { paymentRequestPrefill } from "../../../../../utils/paymentCurrency";
 
 const train = (extra: any = {}) => ({ id: 41, type_service: "trenes", is_assigned: true,
   assigned_parent_id: 5, assigned_child_id: 9, assigned_precio_total: "180.50", ...extra });
@@ -177,7 +178,7 @@ test("callback real: una respuesta de la reserva anterior no abre ni refresca la
 test("el formulario recibe monto, contexto y referencias contables sin perder el proveedor asignado", () => {
   const selected = pending({ amount: 180.50, service_data: { parentService: { id: 5, nombre_empresa: "PeruRail" } } });
   const context = { useMemo: (fn: any) => fn(), selectedPaymentRequest: selected, voucherReserva: voucher,
-    generatePaymentDescription: () => "Pago de tren - PeruRail" };
+    paymentRequestPrefill, generatePaymentDescription: () => "Pago de tren - PeruRail" };
   const initial = new Function(...Object.keys(context), `${callback("movimientoFormInitialData")} return movimientoFormInitialData;`)(...Object.values(context));
   assert.equal(initial.monto, 180.50); assert.equal(initial.contexto_pago.payment_request_id, "PR1");
   assert.equal(initial.referencia_voucher_reserva, "R1"); assert.equal(initial.referencia_voucher_venta, 7);

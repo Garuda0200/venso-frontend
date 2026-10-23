@@ -14,10 +14,7 @@ import {
   calculateCotizacionFinancialSummary,
 } from "../../../../components/Ventas/Cotizaciones/EdicionCotizacion/utils/cotizacionFinancialSummary";
 import { sanitizeAdditionalCostsConfig } from "../../../../components/Ventas/Cotizaciones/EdicionCotizacion/utils/quotePricingEngine";
-import {
-  resolveAuthoritativeQuotationTotal,
-  resolveVisibleSummaryTotalFromAdditionalCosts,
-} from "../../../../components/Ventas/Cotizaciones/EdicionCotizacion/utils/visibleSummaryTotals";
+import { resolveQuotationSavePricing, normalizeQuotationSaveCosts } from "../../../../components/Ventas/Cotizaciones/EdicionCotizacion/utils/quotationSavePricing";
 import { queryKeys } from "../../../../config/queryClient";
 import { isRequestCanceled } from "../../../../utils/apiUtils";
 import SecureStorage from "../../../../utils/secureStorage";
@@ -564,60 +561,9 @@ function useCotizaciones() {
         additionalCosts: data.additionalCosts || {},
       });
 
-      const storedVisibleTotal = resolveVisibleSummaryTotalFromAdditionalCosts(
-        data.additionalCosts || {},
-      );
-      const incomingTotalFinal = parseOptionalNumber(
-        data.total_final ?? data.totalAmount,
-      );
-      totalFinal = resolveAuthoritativeQuotationTotal({
-        additionalCosts: data.additionalCosts || {},
-        visibleParts:
-          data.additionalCosts?.summaryVisibleParts ||
-          data.additionalCosts?.visibleSummaryParts ||
-          data.additionalCosts?.acSummaryParts ||
-          [],
-        fallbackAdditionalTotal:
-          storedVisibleTotal > 0 ? storedVisibleTotal : incomingTotalFinal,
-        fallbackTotal: summaryTotals.grandTotal,
-      });
-
-      // USE TOTAL FINAL FROM EdicionCotizacion OR CALCULATE IF NOT PROVIDED
-      if (!totalFinal || totalFinal === 0) {
-        totalFinal = incomingTotalFinal ?? summaryTotals.grandTotal;
-      }
-
-      // La fuente canónica para guardar debe ser la misma fórmula visible de
-      // AdditionalCosts: SUMA(ceil(precio por grupo) * beneficiarios). Cuando
-      // hay niños mezclados entre beneficiarios_ninos y beneficiarios_adultos,
-      // el recálculo genérico puede diferir unos dólares; por eso se vuelve a
-      // priorizar el total visible transportado en additionalCosts.
-      const visibleTotalForSave = resolveVisibleSummaryTotalFromAdditionalCosts(
-        data.additionalCosts || {},
-      );
-      if (visibleTotalForSave > 0) {
-        totalFinal = visibleTotalForSave;
-      }
-
-      // El core conserva las cohortes infantiles: un niño puede llevar tarifa
-      // propia en un servicio y tarifa adulta en un externo. Multiplicar el
-      // promedio externo por todos los niños alteraría el subtotal final.
-      const actualExternalItineraryTotal = Number(
-        summaryTotals.externalItineraryTotal || 0,
-      );
-      const incomingSubtotalFinal = parseOptionalNumber(
-        data.subtotal_final ?? data.subtotalFinal,
-      );
-      const additionalSubtotalFinal = parseOptionalNumber(
-        data.additionalCosts?.subtotalFinal ??
-          data.additionalCosts?.subtotal_final ??
-          data.additionalCosts?.commissionableSubtotal ??
-          data.additionalCosts?.commissionable_subtotal,
-      );
-      const subtotalFinal =
-        incomingSubtotalFinal ??
-        additionalSubtotalFinal ??
-        Math.max(0, Number(totalFinal || 0) - actualExternalItineraryTotal);
+      const savePricing = resolveQuotationSavePricing({ ...data, peopleDetails: canonicalPeopleDetails, peopleCount: canonicalPeopleCount });
+      totalFinal = savePricing.total_final;
+      const subtotalFinal = savePricing.subtotal_final;
 
       // Determine if Peruvian passengers for IGV
       let hasIgv = false;
@@ -867,6 +813,7 @@ function useCotizaciones() {
           ...pricingBreakdownForSave,
           total_final: totalFinal,
           subtotal_final: subtotalFinal,
+          pricing_snapshot: savePricing.pricing_snapshot,
 
           // IGV fields (preserved for compatibility but not added to totals)
           hasigv: hasIgv,
@@ -1038,6 +985,7 @@ function useCotizaciones() {
           ...pricingBreakdownForSave,
           total_final: totalFinal,
           subtotal_final: subtotalFinal,
+          pricing_snapshot: savePricing.pricing_snapshot,
 
           // IGV fields (preserved for compatibility but not added to totals)
           hasigv: hasIgv,

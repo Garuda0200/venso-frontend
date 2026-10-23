@@ -3,9 +3,9 @@ import axiosInstance from "../../../../utils/axiosInstance";
 const BASE_URL = "/turismo/paquetes-turisticos";
 
 const paqueteService = {
-  getAllPaquetes: async () => {
+  getAllPaquetes: async (options: { signal?: AbortSignal; fresh?: boolean } = {}) => {
     try {
-      const response = await axiosInstance.get(BASE_URL);
+      const response = await axiosInstance.get(BASE_URL, { signal: options.signal, _skipDedup: options.fresh });
       return response.data;
     } catch (error) {
       console.error("Error al obtener paquetes:", error);
@@ -13,9 +13,9 @@ const paqueteService = {
     }
   },
 
-  getPaqueteById: async (id) => {
+  getPaqueteById: async (id, options: { signal?: AbortSignal; fresh?: boolean } = {}) => {
     try {
-      const response = await axiosInstance.get(`${BASE_URL}/${id}`);
+      const response = await axiosInstance.get(`${BASE_URL}/${id}`, { signal: options.signal, _skipDedup: options.fresh });
       return response.data;
     } catch (error) {
       console.error(`Error al obtener paquete ${id}:`, error);

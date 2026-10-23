@@ -2906,3 +2906,22 @@
   border-color: rgba(220, 38, 38, 0.35);
   background: rgba(220, 38, 38, 0.08);
 }
+
+.ec-price-confirm-overlay {
+  position: fixed; inset: 0; z-index: 12000;
+  display: grid; place-items: center; padding: 20px;
+  background: rgba(24, 16, 24, .5);
+}
+.ec-price-confirm {
+  width: min(540px, 100%); max-height: 90dvh; overflow: auto;
+  background: #fff; color: #211a22; border-radius: 18px; padding: 24px;
+  border-top: 4px solid #ff0080; box-shadow: 0 20px 60px #180f2433;
+  h2 { font-size: 1.2rem; margin: 0 0 12px; }
+  p { font-size: .9rem; line-height: 1.5; }
+  dl { display: flex; flex-wrap: wrap; gap: 20px; padding: 16px; background: #fff2f8; border-radius: 12px; }
+  dt { font-size: .8rem; } dd { margin: 4px 0 0; font-weight: 800; font-variant-numeric: tabular-nums; }
+  footer { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
+  button { border: 1px solid #ebccdd; border-radius: 10px; padding: 10px 16px; background: #fff; cursor: pointer; }
+  button:last-child { background: #ff0080; color: #fff; border-color: #ff0080; }
+  button:focus-visible { outline: 3px solid #bc0064; outline-offset: 3px; }
+}

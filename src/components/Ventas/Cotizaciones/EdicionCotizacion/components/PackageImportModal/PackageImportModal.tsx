@@ -12,6 +12,7 @@ import {
 import "./PackageImportModal.scss";
 import axios from "../../../../../../utils/axiosInstance";
 import { getProxyUrl } from "../../../../../../services/presignedUrlService";
+import { createLatestRequest } from "../../../../../../utils/latestRequest";
 
 const PackageImportModal = ({
   onClose,
@@ -28,6 +29,31 @@ const PackageImportModal = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState(null);
   const [selectedPackage, setSelectedPackage] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const listRequest = React.useRef(createLatestRequest());
+  const importRequest = React.useRef(createLatestRequest());
+  const selectedPackageRef = React.useRef(null);
+  selectedPackageRef.current = selectedPackage;
+
+  useEffect(() => {
+    let timer;
+    const changed = () => {
+      listRequest.current.cancel();
+      importRequest.current.cancel();
+      setImporting(false);
+      clearTimeout(timer);
+      timer = setTimeout(() => fetchPackages(), 100);
+    };
+    window.addEventListener("paqueteTuristicoUpdated", changed);
+    window.addEventListener("paqueteTuristicoDeleted", changed);
+    return () => {
+      clearTimeout(timer);
+      listRequest.current.cancel();
+      importRequest.current.cancel();
+      window.removeEventListener("paqueteTuristicoUpdated", changed);
+      window.removeEventListener("paqueteTuristicoDeleted", changed);
+    };
+  }, []);
   const [exportDetails, setExportDetails] = useState({
     nombre: "",
     descripcion: "",
@@ -125,26 +151,47 @@ const PackageImportModal = ({
   };
 
   const fetchPackages = async () => {
+    const token = listRequest.current.begin();
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get("/turismo/paquetes-turisticos");
+      const response = await axios.get("/turismo/paquetes-turisticos", { _skipDedup: true });
+      if (!listRequest.current.isCurrent(token)) return;
       if (response.data && response.data.success) {
-        setPackages(response.data.data || []);
+        const next = response.data.data || [];
+        setPackages(next);
+        setSelectedPackage(current => next.find(pkg => pkg.id === current?.id) || null);
+      } else {
+        throw new Error("No se pudo confirmar el catálogo de paquetes");
       }
     } catch (err) {
+      if (!listRequest.current.isCurrent(token)) return;
+      setSelectedPackage(null);
       setError(
         "Error al cargar paquetes: " + (err.message || "Error desconocido"),
       );
       console.error("Error fetching packages:", err);
     } finally {
-      setLoading(false);
+      if (listRequest.current.isCurrent(token)) setLoading(false);
     }
   };
 
-  const handleImport = () => {
-    if (selectedPackage) {
-      onImport(selectedPackage);
+  const handleImport = async () => {
+    if (!selectedPackage || importing || loading) return;
+    const id = selectedPackage.id;
+    const token = importRequest.current.begin();
+    setImporting(true);
+    setError(null);
+    try {
+      const response = await axios.get(`/turismo/paquetes-turisticos/${encodeURIComponent(id)}`, { _skipDedup: true });
+      if (!importRequest.current.isCurrent(token) || selectedPackageRef.current?.id !== id) return;
+      const fresh = response.data?.data;
+      if (!response.data?.success || !fresh || !Array.isArray(fresh.itinerario)) throw new Error("El paquete ya no está disponible");
+      await onImport(fresh);
+    } catch (error) {
+      if (importRequest.current.isCurrent(token)) setError(error?.response?.data?.message || error.message || "No se pudo importar el paquete");
+    } finally {
+      if (importRequest.current.isCurrent(token)) setImporting(false);
     }
   };
 
@@ -221,8 +268,8 @@ const PackageImportModal = ({
                 <strong> Nota:</strong> Los paquetes contienen precios base (1
                 persona). Al importar, los costos se ajustarán a los{" "}
                 <strong>{adultCount} adulto(s)</strong> de esta cotización:
-                transportes y guías se dividen entre pasajeros; trenes, vuelos,
-                tickets y restaurantes se multiplican. Los servicios de hotel no
+                cada servicio compartido se distribuye entre sus beneficiarios y
+                cada servicio privado conserva su precio por persona. Los hoteles no
                 se incluyen (se gestionan por separado).
               </div>
               <div className="search-container">
@@ -505,7 +552,7 @@ const PackageImportModal = ({
             <button
               className="confirm-button"
               onClick={handleImport}
-              disabled={!selectedPackage}
+              disabled={!selectedPackage || loading || importing}
             >
               Importar
             </button>

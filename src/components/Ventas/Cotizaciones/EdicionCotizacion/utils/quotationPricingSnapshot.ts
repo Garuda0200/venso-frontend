@@ -19,6 +19,7 @@ import { buildChildPricingRows } from "./passengerPricingPresentation";
 import { resolveCanonicalChildServicePrice } from "./childServicePricingReconciliation";
 import { groupEquivalentChildPricingParts } from "./pricingPartGrouping";
 import { normalizeChildRoomLabel } from "./childHotelAccommodation";
+import { reconcileBeneficiaryParts } from "./serviceBeneficiaryPricingLedger";
 
 const parseObject = (value) => {
   if (!value) return {};
@@ -115,27 +116,21 @@ export const buildQuotationPeopleDetails = (cotizacion = {}) => {
     return type === "child" || type === "niño" || type === "nino";
   });
 
+  const explicitCount = (...values) => values.map(value => value == null || value === "" ? NaN : Number(value))
+    .find(value => Number.isSafeInteger(value) && value >= 0);
+  const declaredAdults = explicitCount(cotizacion?.num_adults, cotizacion?.numAdults,
+    cotizacion?.peopleCount?.adults, cotizacion?.peoplecount?.adults);
+  const declaredChildren = explicitCount(cotizacion?.num_children, cotizacion?.numChildren,
+    cotizacion?.peopleCount?.children, cotizacion?.peoplecount?.children);
   const adultsCount =
     sourceAdults.length ||
     flatAdults.length ||
-    positiveInteger(
-      cotizacion?.num_adults,
-      cotizacion?.numAdults,
-      cotizacion?.peopleCount?.adults,
-      cotizacion?.peoplecount?.adults,
-      cotizacion?.cantidadpersonas,
-      cotizacion?.cantidadPersonas,
-    ) ||
-    1;
+    (declaredAdults ?? (sourceChildren.length || flatPassengers.length ? 0 :
+      Math.max(0, positiveInteger(cotizacion?.cantidadpersonas, cotizacion?.cantidadPersonas) - (declaredChildren ?? 0)) || 1));
   const childrenCount =
     sourceChildren.length ||
     flatChildren.length ||
-    positiveInteger(
-      cotizacion?.num_children,
-      cotizacion?.numChildren,
-      cotizacion?.peopleCount?.children,
-      cotizacion?.peoplecount?.children,
-    );
+    (declaredChildren ?? 0);
 
   const adultSource = sourceAdults.length > 0 ? sourceAdults : flatAdults;
   const childSource = sourceChildren.length > 0 ? sourceChildren : flatChildren;
@@ -834,12 +829,12 @@ export const buildQuotationPricingSnapshotFromCotizacion = (cotizacion = {}) => 
     })
     .filter(Boolean);
 
-  const perPerson = groupEquivalentChildPricingParts([
-    ...adultParts,
-    ...childParts,
-  ]).filter(
+  const perPerson = groupEquivalentChildPricingParts(reconcileBeneficiaryParts({
+    parts: [...adultParts, ...childParts], days, externalDays, peopleDetails, additionalCosts,
+    calculateAdditional: calculateAdditionalCostForAudience, allowNoRoomFallback: perRoomPricing.length === 0,
+  })).filter(
     (part) =>
-      Number(part?.beneficiaries || 0) > 0 &&
+      (part?.isServiceCharge || Number(part?.beneficiaries || 0) > 0) &&
       (Number(part?.displayValue || 0) > 0 || part?.isFree),
   );
   const grandTotal = perPerson.reduce(

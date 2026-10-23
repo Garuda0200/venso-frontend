@@ -122,3 +122,40 @@ test("avisos y recomendaciones no aparecen en las columnas exportadas", () => {
   assert.match(source, /const record = buildBibliaEditRecord\(activity, changes\)/);
   assert.doesNotMatch(source, /shouldSyncQuotation|BIBLIA_ITINERARY_SERVICE_FIELDS/);
 });
+
+test("los avisos de movilidad/tarifa persisten por fila al recargar un vínculo ya guardado", () => {
+  const saved = buildBibliaEditRecord(row("a", "Q1"), { transport: "Transportes Paul · City Tour · Auto" });
+  const synchronized = { ...saved, quotationSyncPending: false, syncWarnings: ["Revisa la tarifa de transporte", "Revisa la tarifa de transporte", " "] };
+  const [reloaded] = buildBibliaActivitiesFromSnapshots([quotation()], [{ id: "a", cotizacion_id: "Q1", actividad: synchronized }]);
+  const html = renderToStaticMarkup(<BibliaQuotationSyncPrompt activity={reloaded} busy={false} onConfirm={() => {}} />);
+  assert.match(html, /Vinculado/);
+  assert.match(html, /Revisar vínculo \(1\)/);
+  assert.match(html, /Última sincronización del día/);
+  assert.equal((html.match(/Revisa la tarifa de transporte/g) || []).length, 1);
+  assert.doesNotMatch(html, /Actualización pendiente/);
+  assert.doesNotMatch(JSON.stringify(buildBibliaDayExportMatrix([reloaded])), /Revisa la tarifa|syncWarnings/);
+});
+
+test("guardar cambios de transporte, excursión, PAX y modalidad no sincroniza ni inventa precio", () => {
+  const activity = row("a", "Q1", { excursion: "CITY TOUR AM, MARAS MORAY PM", serviceMode: "SIC", time: "08:00" });
+  const selected = "Transportes Paul · Hotel - Estación Ollantaytambo · Camioneta";
+  const record = buildBibliaEditRecord(activity, { transport: selected, excursion: "VALLE SAGRADO + CONEXIÓN", pax: 5, serviceMode: "PRIV" });
+  assert.equal(record.transport, selected);
+  assert.equal(record.syncQuotation, false);
+  assert.deepEqual(new Set(record.quotationSyncFields), new Set(["transport", "excursion", "pax", "serviceMode"]));
+  assert.equal("precioTotal" in record, false);
+  assert.equal("assignedPrecioTotal" in record, false);
+  const command = quotationSyncCommandRecords([record, { id: "otro-dia", syncQuotation: true }], String(record.id));
+  assert.deepEqual(command.map(item => item.syncQuotation), [true, false]);
+  assert.equal(command[0].transport, selected);
+  assert.equal(activity.transport, "Transporte A", "editar no muta el registro previo");
+});
+
+test("corregir y resincronizar quita avisos previos sin alterar la señal de vinculación", () => {
+  const [activity] = buildBibliaActivitiesFromSnapshots([quotation()], [{ id: "a", cotizacion_id: "Q1", actividad: {
+    ...buildBibliaEditRecord(row("a", "Q1"), {}), syncWarnings: [], quotationSyncPending: false,
+  } }]);
+  const html = renderToStaticMarkup(<BibliaQuotationSyncPrompt activity={activity} busy={false} onConfirm={() => {}} />);
+  assert.match(html, /Vinculado/);
+  assert.doesNotMatch(html, /Revisar vínculo/);
+});

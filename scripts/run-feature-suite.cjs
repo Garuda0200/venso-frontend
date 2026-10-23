@@ -17,6 +17,9 @@ const testSuites = [
       "src/pages/Almacen/Patrimonio/__tests__/batchCreate.test.js",
       "src/utils/__tests__/idempotency.test.js",
       "src/utils/__tests__/packageFeeUtils.test.js",
+      "src/utils/__tests__/paymentCurrency.test.js",
+      "src/utils/__tests__/latestRequest.test.js",
+      "src/utils/__tests__/packageCache.test.js",
       "src/utils/__tests__/pendingPayments.test.js",
       "src/utils/__tests__/quotationAgencyGroups.test.js",
       "src/components/common/Sidebar/__tests__/sidebarAccess.test.js",
@@ -29,6 +32,7 @@ const testSuites = [
       "src/utils/__tests__/servicePricingType.test.js",
       "src/pages/Ventas/Cotizaciones/utils/__tests__/preliquidacionQuotation.test.js",
       "src/pages/Ventas/Cotizaciones/utils/__tests__/cotizacionIgv.test.js",
+      "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/quotationSavePricing.test.js",
       "src/pages/Ventas/Cotizaciones/utils/__tests__/cotizacionListState.test.js",
       "src/pages/Ventas/Cotizaciones/utils/__tests__/postSaleEditState.test.js",
       "src/pages/Ventas/Cotizaciones/utils/__tests__/preliquidacionDocumentExport.test.js",
@@ -60,6 +64,7 @@ const testSuites = [
     tests: [
       "src/pages/Reservas/Servicios/utils/__tests__/cataloguePresentation.test.js",
       "src/pages/Reservas/Calendario/utils/__tests__/bibliaActivityMapper.test.js",
+      "src/pages/Reservas/Calendario/utils/__tests__/bibliaTransportCatalog.test.js",
       "src/pages/Reservas/Calendario/utils/__tests__/bibliaEditableValueSource.test.js",
       "src/pages/Reservas/Calendario/utils/__tests__/bibliaFileLinkPlacementSource.test.js",
       "src/pages/Reservas/Calendario/utils/__tests__/bibliaPopoverPosition.test.js",
@@ -77,6 +82,7 @@ const testSuites = [
       "src/pages/Reservas/VouchersReserva/utils/__tests__/specializedPaymentGroups.test.js",
       "src/pages/Reservas/VouchersReserva/utils/__tests__/reservationPaymentManagement.test.js",
       "src/pages/Reservas/VouchersReserva/utils/__tests__/directTrainPayment.test.js",
+      "src/pages/Reservas/VouchersReserva/utils/__tests__/ticketPayment.test.js",
     ],
   },
   {

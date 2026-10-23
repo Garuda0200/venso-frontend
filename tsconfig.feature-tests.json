@@ -17,7 +17,12 @@
     ]
   },
   "include": [
+    "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/quotationSavePricing.test.ts",
+    "src/utils/__tests__/paymentCurrency.test.ts",
+    "src/utils/__tests__/latestRequest.test.ts",
+    "src/utils/__tests__/packageCache.test.ts",
     "src/pages/Reservas/VouchersReserva/utils/__tests__/directTrainPayment.test.ts",
+    "src/pages/Reservas/VouchersReserva/utils/__tests__/ticketPayment.test.ts",
     "src/pages/Ventas/VouchersVenta/components/__tests__/voucherWorkflowParity.test.ts",
     "src/utils/__tests__/servicePricingType.test.ts",
     "src/pages/Reservas/Calendario/utils/__tests__/bibliaParticipantEditor.test.tsx",
@@ -45,6 +50,7 @@
     "src/utils/__tests__/idempotency.test.ts",
     "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/passengerPricingPresentation.test.ts",
     "src/pages/Reservas/Calendario/utils/__tests__/bibliaActivityMapper.test.ts",
+    "src/pages/Reservas/Calendario/utils/__tests__/bibliaTransportCatalog.test.ts",
     "src/pages/Reservas/Calendario/utils/__tests__/bibliaEditableValueSource.test.ts",
     "src/pages/Reservas/Calendario/utils/__tests__/bibliaFileLinkPlacementSource.test.ts",
     "src/pages/Reservas/Calendario/utils/__tests__/bibliaPopoverPosition.test.ts",

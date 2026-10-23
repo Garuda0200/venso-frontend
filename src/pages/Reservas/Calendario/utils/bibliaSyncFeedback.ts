@@ -11,3 +11,9 @@ export function getBibliaSaveError(error: any, fallback: string): string {
   const message = error?.response?.data?.message;
   return typeof message === "string" && message.trim() ? message.trim() : fallback;
 }
+
+/** Los avisos pertenecen a la última sincronización de esta fila. No deben
+ * desaparecer al recargar ni presentarse como errores de persistencia. */
+export function getBibliaActivitySyncWarnings(activity: { overrideRecord?: Record<string, any> | null }): string[] {
+  return getBibliaSyncWarnings({ actividad: activity.overrideRecord });
+}

@@ -1,7 +1,6 @@
 import { createApiInstance, isRequestCanceled } from "../../../../utils/apiUtils";
-import { calculateExternalItineraryBreakdown } from "../../../../components/Ventas/Cotizaciones/EdicionCotizacion/utils/cotizacionFinancialSummary";
 import { sanitizeAdditionalCostsConfig } from "../../../../components/Ventas/Cotizaciones/EdicionCotizacion/utils/quotePricingEngine";
-import { resolveVisibleSummaryTotalFromAdditionalCosts } from "../../../../components/Ventas/Cotizaciones/EdicionCotizacion/utils/visibleSummaryTotals";
+import { resolveQuotationSavePricing, normalizeQuotationSaveCosts } from "../../../../components/Ventas/Cotizaciones/EdicionCotizacion/utils/quotationSavePricing";
 import SecureStorage from "../../../../utils/secureStorage";
 import { invalidateCotizacionGraphCache } from "../../../../utils/cacheInvalidation";
 import { resolveCotizacionIgvInfo } from "../utils/cotizacionIgv";
@@ -52,60 +51,6 @@ const cleanAdditionalCostsData = (additionalCosts) => {
   }
 
   return sanitizeAdditionalCostsConfig(cleanCosts || {});
-};
-
-const toNumber = (value) => {
-  const parsed = Number.parseFloat(value);
-  return Number.isFinite(parsed) ? parsed : 0;
-};
-
-const round2 = (value) =>
-  Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100;
-
-const calculateFallbackTotalFinal = (cotizacionData) => {
-  const additional = toNumber(cotizacionData.total_adicionales);
-  const rawPeopleCount = cotizacionData.peopleCount ?? {};
-  const rawPeopleDetails = cotizacionData.peopleDetails ?? {};
-  const adultsFromDetails = Array.isArray(rawPeopleDetails?.adults)
-    ? rawPeopleDetails.adults.length
-    : 0;
-  const childrenFromDetails = Array.isArray(rawPeopleDetails?.children)
-    ? rawPeopleDetails.children.length
-    : 0;
-  const adults = Math.max(
-    1,
-    toNumber(rawPeopleCount?.adults ?? adultsFromDetails),
-  );
-  const children = Math.max(
-    0,
-    toNumber(rawPeopleCount?.children ?? childrenFromDetails),
-  );
-  const externalBreakdown = calculateExternalItineraryBreakdown(
-    cotizacionData.itinerario_externo ?? cotizacionData.itinerarioExterno,
-    rawPeopleDetails,
-  );
-  const adultPerPerson = toNumber(
-    cotizacionData.precio_it_adulto ?? cotizacionData.precioItAdulto,
-  );
-  const childPerPerson = toNumber(
-    cotizacionData.precio_it_ninos ?? cotizacionData.precioItNinos,
-  );
-  const externalAdultPerPerson = toNumber(
-    cotizacionData.precio_it_ext_adulto ??
-      cotizacionData.precioItExtAdulto ??
-      externalBreakdown.adultTotal,
-  );
-  const externalChildPerPerson = toNumber(
-    cotizacionData.precio_it_ext_ninos ??
-      cotizacionData.precioItExtNinos ??
-      round2(externalBreakdown.childTotal + externalBreakdown.convertedChildTotal),
-  );
-
-  return round2(
-    (adultPerPerson + externalAdultPerPerson) * adults +
-      (childPerPerson + externalChildPerPerson) * children +
-      additional,
-  );
 };
 
 // Get all cotizaciones
@@ -203,62 +148,7 @@ export const getCotizacionesByCreator = async (createdby) => {
 // Create new cotizacion
 export const createCotizacion = async (cotizacionData) => {
   try {
-    // ENSURE ADDITIONAL COSTS IS ALWAYS A CLEAN OBJECT (NOT STRING)
-    if (typeof cotizacionData.additionalcosts === "string") {
-      try {
-        cotizacionData.additionalcosts = JSON.parse(
-          cotizacionData.additionalcosts,
-        );
-      } catch (error) {
-        console.error(
-          " Failed to parse additionalcosts in create service:",
-          error,
-        );
-        cotizacionData.additionalcosts = {};
-      }
-    }
-
-    // Validate additionalcosts structure
-    if (
-      cotizacionData.additionalcosts &&
-      typeof cotizacionData.additionalcosts === "object"
-    ) {
-      const hasIndexedKeys = Object.keys(cotizacionData.additionalcosts).some(
-        (key) => /^\d+$/.test(key),
-      );
-      if (hasIndexedKeys) {
-        const cleanCosts = {};
-        Object.entries(cotizacionData.additionalcosts).forEach(
-          ([key, value]) => {
-            if (!/^\d+$/.test(key)) {
-              cleanCosts[key] = value;
-            }
-          },
-        );
-        cotizacionData.additionalcosts = cleanCosts;
-      }
-    }
-    cotizacionData.additionalcosts = sanitizeAdditionalCostsConfig(
-      cotizacionData.additionalcosts || {},
-    );
-
-    const visibleTotalForSave = resolveVisibleSummaryTotalFromAdditionalCosts(
-      cotizacionData.additionalcosts,
-    );
-    if (visibleTotalForSave > 0) {
-      cotizacionData.total_final = visibleTotalForSave;
-    }
-
-    // VALIDATE TOTAL FIELDS BEFORE SENDING TO BACKEND
-    if (
-      cotizacionData.total_final === undefined ||
-      cotizacionData.total_final === null
-    ) {
-      console.warn(
-        " total_final is missing in create, calculating from available data",
-      );
-      cotizacionData.total_final = calculateFallbackTotalFinal(cotizacionData);
-    }
+    cotizacionData = { ...cotizacionData, ...resolveQuotationSavePricing(cotizacionData), additionalcosts: normalizeQuotationSaveCosts(cotizacionData.additionalcosts ?? cotizacionData.additionalCosts) };
 
     const api = getApiInstance(); // Obtiene una instancia fresca cada vez
     const response = await api.post(BASE_URL, cotizacionData);
@@ -273,89 +163,18 @@ export const createCotizacion = async (cotizacionData) => {
 // Update cotizacion
 export const updateCotizacion = async (id, cotizacionData) => {
   try {
-    const hasAdditionalCosts = Object.prototype.hasOwnProperty.call(
-      cotizacionData,
-      "additionalcosts",
-    );
+    cotizacionData = { ...cotizacionData };
+    const financialKeys = ["itinerario", "itinerario_externo", "additionalcosts", "additionalCosts", "total_final", "subtotal_final", "precio_it_adulto", "precio_it_ninos", "precio_it_ext_adulto", "precio_it_ext_ninos", "cantidadpersonas", "pricing_snapshot"];
+    if (financialKeys.some(key => Object.hasOwn(cotizacionData, key))) {
+      Object.assign(cotizacionData, resolveQuotationSavePricing(cotizacionData));
+      cotizacionData.additionalcosts = normalizeQuotationSaveCosts(cotizacionData.additionalcosts ?? cotizacionData.additionalCosts);
+    }
 
     // Ensure updatedby field is always present
     if (!cotizacionData.updatedby) {
       const user = SecureStorage.getItem("user") || {};
       cotizacionData.updatedby =
         user.dni || user.id || SecureStorage.getItem("dniuser") || "12345678";
-    }
-
-    if (hasAdditionalCosts) {
-      // ENSURE ADDITIONAL COSTS IS ALWAYS A CLEAN OBJECT (NOT STRING)
-      if (typeof cotizacionData.additionalcosts === "string") {
-        try {
-          cotizacionData.additionalcosts = JSON.parse(
-            cotizacionData.additionalcosts,
-          );
-        } catch (error) {
-          console.error(" Failed to parse additionalcosts in service:", error);
-          cotizacionData.additionalcosts = {};
-        }
-      }
-
-      // Validate additionalcosts structure
-      if (
-        cotizacionData.additionalcosts &&
-        typeof cotizacionData.additionalcosts === "object"
-      ) {
-        const hasIndexedKeys = Object.keys(cotizacionData.additionalcosts).some(
-          (key) => /^\d+$/.test(key),
-        );
-        if (hasIndexedKeys) {
-          const cleanCosts = {};
-          Object.entries(cotizacionData.additionalcosts).forEach(
-            ([key, value]) => {
-              if (!/^\d+$/.test(key)) {
-                cleanCosts[key] = value;
-              }
-            },
-          );
-          cotizacionData.additionalcosts = cleanCosts;
-        }
-      }
-      cotizacionData.additionalcosts = sanitizeAdditionalCostsConfig(
-        cotizacionData.additionalcosts || {},
-      );
-
-      const visibleTotalForSave = resolveVisibleSummaryTotalFromAdditionalCosts(
-        cotizacionData.additionalcosts,
-      );
-      if (visibleTotalForSave > 0) {
-        cotizacionData.total_final = visibleTotalForSave;
-      }
-    }
-
-    // VALIDACIÓN MEJORADA: Proteger total_final de ser sobrescrito incorrectamente
-    if (
-      cotizacionData.total_final === undefined ||
-      cotizacionData.total_final === null ||
-      cotizacionData.total_final === 0
-    ) {
-      console.warn(
-        " total_final is missing or zero, checking if we should preserve existing value",
-      );
-
-      // Si estamos actualizando solo campos específicos (como tiene_voucher), no recalcular total_final
-      const isPartialUpdate = Object.keys(cotizacionData).length <= 3; // solo tiene_voucher, updated_by, y quizás otro campo
-
-      if (
-        isPartialUpdate &&
-        (cotizacionData.tiene_voucher !== undefined ||
-          cotizacionData.updated_by !== undefined)
-      ) {
-        // No tocar total_final en actualizaciones parciales
-        delete cotizacionData.total_final;
-      } else {
-        // Solo recalcular si es una actualización completa
-        console.warn(" Recalculating total_final from available data");
-        cotizacionData.total_final =
-          calculateFallbackTotalFinal(cotizacionData);
-      }
     }
 
     const currentVersion =

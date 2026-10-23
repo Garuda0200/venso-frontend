@@ -277,6 +277,7 @@ const EditableValue = ({
   const value = draftValue ?? String(rawValue ?? "");
   const [options, setOptions] = useState<string[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(false);
+  const [optionsError, setOptionsError] = useState(false);
   useEffect(() => { if (draftValue === undefined) setEditing(false); }, [savedVersion]);
   const setValue = (next: string) => onDraftChange(activity, field, next);
 
@@ -284,12 +285,13 @@ const EditableValue = ({
     let active = true;
     if (!editing || !isBibliaCatalogField(field)) return () => { active = false; };
     setLoadingOptions(true);
-    void bibliaCatalogService.getOptions(field)
+    setOptionsError(false);
+    void bibliaCatalogService.getOptions(field, { pax: Number(activity.pax) })
       .then((items) => { if (active) setOptions(items); })
-      .catch(() => { if (active) setOptions([]); })
+      .catch(() => { if (active) { setOptions([]); setOptionsError(true); } })
       .finally(() => { if (active) setLoadingOptions(false); });
     return () => { active = false; };
-  }, [editing, field]);
+  }, [editing, field, activity.pax]);
 
   const inputType = field === "dateKey" ? "date" : field === "pax" ? "number" : field === "time" ? "time" : "text";
   const isTrainField = field === "trainOutbound" || field === "trainReturn";
@@ -313,7 +315,7 @@ const EditableValue = ({
     tickets: "Busca ingreso o ticket...",
     restaurant: "Busca restaurante...",
     endorse: "Busca endose...",
-    transport: "Busca transporte...",
+    transport: "Busca proveedor, ruta o vehículo...",
     guide: "Busca guía o trasladista...",
     agency: "Busca agencia...",
     trainOutbound: "Busca empresa, tren, ruta u horario...",
@@ -384,6 +386,8 @@ const EditableValue = ({
           }}
         />
         )}
+        {field === "transport" && <small className="biblia-inline-editor__help">Elige solo el proveedor para resolver la movilidad por excursión, o indica proveedor · ruta · vehículo.</small>}
+        {optionsError && <small className="biblia-inline-editor__error" role="status">No se pudo cargar el catálogo. Puedes escribir el servicio o reabrir el campo para reintentar.</small>}
         {actions}
         {saveError && <small className="biblia-inline-editor__error" role="alert">{saveError}</small>}
       </div>
@@ -1282,7 +1286,9 @@ const Calendario = () => {
                             savedVersion={rowDrafts[activity.id]?.savedVersion || 0}
                             busy={saving || refreshing || savingDraftId !== null}
                             saveError={rowDrafts[activity.id]?.error}
-                            extraOptions={field === "trainOutbound"
+                            extraOptions={field === "transport"
+                              ? []
+                              : field === "trainOutbound"
                               ? historicalOutboundTrains
                               : field === "trainReturn"
                                 ? historicalReturnTrains
@@ -1445,7 +1451,7 @@ const Calendario = () => {
               </button>
             )}
             <div className="biblia-view-switcher"><button type="button" className={viewMode === "month" ? "active" : ""} onClick={() => setViewMode("month")}><MdCalendarMonth /> Mes</button><button type="button" className={viewMode === "day" ? "active" : ""} onClick={() => setViewMode("day")}><MdViewDay /> Día</button></div>
-            <button type="button" className={`biblia-toolbar__refresh${refreshing ? " is-loading" : ""}`} onClick={() => loadActivities(true)} disabled={refreshing || saving} aria-label="Actualizar"><MdRefresh /></button>
+            <button type="button" className={`biblia-toolbar__refresh${refreshing ? " is-loading" : ""}`} onClick={() => { bibliaCatalogService.clear(); void loadActivities(true); }} disabled={refreshing || saving} aria-label="Actualizar"><MdRefresh /></button>
           </div>
         </div>
       </section>

@@ -46,6 +46,8 @@ import {
   buildReservationPaymentCandidates,
 } from "../../utils/reservationPaymentManagement";
 import TicketChargeSummary from "./TicketChargeSummary";
+import TicketPaymentModal from "./TicketPaymentModal";
+import { assignedPaymentCurrency, formatPaymentMoney, formatPaymentTotals, paymentRequestPrefill, sumPaymentCurrencies } from "../../../../../utils/paymentCurrency";
 import PaymentBatchBar from "./PaymentBatchBar";
 import { canPayAssignedTrain, prepareDirectTrainPayment } from "../../utils/directTrainPayment";
 import "./PaymentManagementModal.scss";
@@ -567,9 +569,8 @@ const PaymentManagementModal = ({
     return getOperationalPaymentRequest(service);
   }, []);
 
-  const formatPaymentCurrency = useCallback((amount) => {
-    const numericAmount = parseFloat(amount || 0);
-    return `$ ${Number.isFinite(numericAmount) ? numericAmount.toFixed(2) : "0.00"}`;
+  const formatPaymentCurrency = useCallback((amount, currency = "USD") => {
+    return formatPaymentMoney(amount, currency);
   }, []);
 
   // Verificar si un servicio es pagable (TODOS los servicios asignados)
@@ -678,6 +679,7 @@ const PaymentManagementModal = ({
           description: `${ticket?.entrada || child?.entrada || "ENTRADA"}${variant ? ` ${variant}` : ""}`,
           unit,
           total,
+          currency: assignedPaymentCurrency(service),
         });
       });
     });
@@ -693,6 +695,7 @@ const PaymentManagementModal = ({
     return {
       lines,
       total,
+      totalDisplay: formatPaymentTotals(sumPaymentCurrencies(lines, line => line.total, line => line.currency)),
       paxName: paxName || voucherReserva?.pax_principal || voucherReserva?.nombre_pasajero || "PAX PRINCIPAL",
       agencyName:
         voucherReserva?.agency_name ||
@@ -1027,7 +1030,7 @@ const PaymentManagementModal = ({
       monto: selectedPaymentRequest.amount,
       payment_request_service_data: selectedPaymentRequest.service_data,
       itinerario_servicio_id: selectedPaymentRequest.itinerario_servicio_id,
-      moneda: "USD",
+        ...paymentRequestPrefill(selectedPaymentRequest),
       observaciones: selectedPaymentRequest.observaciones || "",
       contexto_pago: {
         payment_request_id: selectedPaymentRequest.id,
@@ -1045,6 +1048,10 @@ const PaymentManagementModal = ({
   }, [
     selectedPaymentRequest?.id,
     selectedPaymentRequest?.amount,
+    selectedPaymentRequest?.currency,
+    selectedPaymentRequest?.assigned_tasa_cambio,
+    selectedPaymentRequest?.platform,
+    selectedPaymentRequest?.business_type,
     selectedPaymentRequest?.observaciones,
     selectedPaymentRequest?.voucher_code,
     selectedPaymentRequest?.voucher_reserva_id,
@@ -1241,7 +1248,7 @@ const PaymentManagementModal = ({
                                 const price = getDirectPaymentAmount(service);
                                 return price > 0 ? (
                                   <span className="tariff-amount">
-                                    {formatPaymentCurrency(price)}
+                                    {formatPaymentCurrency(price, assignedPaymentCurrency(service))}
                                   </span>
                                 ) : null;
                               })()}
@@ -1419,6 +1426,7 @@ const PaymentManagementModal = ({
           </div>
           <PaymentBatchBar count={batchCandidates.length} selectedCount={selectedBatchItems.length}
             total={selectedBatchTotal} formatAmount={formatPaymentCurrency}
+            totalDisplay={formatPaymentTotals(sumPaymentCurrencies(selectedBatchItems, item => item.amount, item => assignedPaymentCurrency(item.service)))}
             onSelectAll={toggleAllBatchCandidates} onRequest={handleRequestSelectedPayments}
             disabled={paymentLoadError || refreshingPayments} />
         </div>
@@ -1440,15 +1448,11 @@ const PaymentManagementModal = ({
       )}
 
       {specializedPaymentType === "tickets" && specializedTicketGroups.length > 0 && (
-        <FlightPaymentModal
+        <TicketPaymentModal
           isOpen={true}
           onClose={() => setSpecializedPaymentType(null)}
-          flightsByDay={specializedTicketGroups}
-          servicesByDay={specializedTicketGroups}
-          serviceType="tickets"
-          cotizacionData={specializedCotizacionData}
-          passengerData={specializedPassengerData}
-          voucherId={voucherVentaId}
+          voucherId={voucherReserva?.reservationVoucher?.id || voucherReserva?.id || voucherReserva?.voucher_reserva_id}
+          voucherVentaId={voucherVentaId}
           voucherCode={voucherReserva?.voucher_code_venta || voucherReserva?.voucher_code}
           onPaymentSuccess={async () => { await loadVoucherData(); await onPaymentCompleted?.(); }}
         />

@@ -33,6 +33,7 @@ export function normalizePaymentItinerary(itinerary: any): any[] {
         assignedPrecioServicio: defined(service.assignedPrecioServicio, service.assigned_precio_servicio, wrapper.assignedPrecioServicio, wrapper.assigned_precio_servicio, wrapper.precioServicio, wrapper.precio_servicio),
         assignedPrecioTotal: defined(service.assignedPrecioTotal, service.assigned_precio_total, wrapper.assignedPrecioTotal, wrapper.assigned_precio_total, wrapper.precioTotal, wrapper.precio_total),
         assignedMoneda: defined(service.assignedMoneda, service.assigned_moneda, wrapper.moneda),
+        assignedTasaCambio: defined(service.assignedTasaCambio, service.assigned_tasa_cambio, wrapper.assignedTasaCambio, wrapper.assigned_tasa_cambio),
         assignedIgv: defined(service.assignedIgv, service.assigned_igv, wrapper.igv),
         assignedTipoPrecio: normalizePricingType(defined(sharedPriceFlag(service.assignedTipoPrecio), sharedPriceFlag(service.assigned_tipo_precio), sharedPriceFlag(wrapper.tipoPrecio), sharedPriceFlag(wrapper.tipo_precio))),
         assignedCapacidadLimite: defined(service.assignedCapacidadLimite, service.assigned_capacidad_limite, wrapper.capacidadLimite, wrapper.capacidad_limite),
