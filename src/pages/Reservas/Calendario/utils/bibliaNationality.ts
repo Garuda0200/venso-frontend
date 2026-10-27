@@ -11,10 +11,16 @@ export function isUnresolvedParticipantNationality(value: string): boolean {
 }
 
 export function participantCountryLabel(value: string): string {
-  const alias = ({ usa: "US", eeuu: "US", brasil: "BR", peru: "PE", peruana: "PE", peruano: "PE" } as Record<string, string>)[normalized(value)];
+  const alias = ({ usa: "US", us: "US", eeuu: "US", estadosunidos: "US", unitedstates: "US", unitedstatesofamerica: "US",
+    deu: "DE", germany: "DE", deutschland: "DE", bra: "BR", brazil: "BR", brasil: "BR", esp: "ES", spain: "ES",
+    gbr: "GB", uk: "GB", reinounido: "GB", unitedkingdom: "GB", ita: "IT", italy: "IT", fra: "FR", france: "FR",
+    mex: "MX", per: "PE", peru: "PE", peruana: "PE", peruano: "PE", peruvian: "PE" } as Record<string, string>)[normalized(value).replace(/[.\s-]/g, "")];
   return COUNTRIES.find(country => normalized(country.name) === normalized(value)
     || country.code === alias || country.code.toLowerCase() === normalized(value))?.name || value.trim();
 }
+
+/** Identidad de país, no procedencia: dos extranjeros distintos no son intercambiables. */
+export const participantNationalityKey = (value: string) => normalized(participantCountryLabel(value));
 
 /** La tabla y los documentos muestran países, nunca cantidades por país. */
 export function participantNationalityLabel(plan?: BibliaParticipantPlan | null, fallback: unknown = ""): string {

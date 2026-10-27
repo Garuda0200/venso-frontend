@@ -98,6 +98,55 @@ const quotation: Record<string, any> = {
 };
 
 const records = materializeQuotationBibliaRecords(quotation);
+test("vincular una fila no reconstruye otro registro del mismo día al recargar", () => {
+  const source = { id: "source-a", cotizacion_id: quotation.id, is_active: true, actividad: {
+    ...records[0], id: "excel:source-a", quotationOrigin: "linked", hotelCusco: "WARARI", time: "17:00",
+  } };
+  const before = JSON.stringify(source);
+  const generated = materializeQuotationBibliaRecords(quotation, [], [source]);
+  assert.equal(generated.length, 1, "el otro día de la cotización sí se materializa");
+  assert.equal(generated[0].dayNumber, 2);
+  const quote = { ...quotation, biblia_actividades: generated };
+  for (let refresh = 0; refresh < 3; refresh++) {
+    const visible = buildBibliaActivitiesFromSnapshots([quote], [source]);
+    assert.equal(visible.length, 2);
+    assert.equal(visible.filter(row => row.dateKey === records[0].dateKey).length, 1);
+    assert.equal(visible.find(row => row.standaloneRecordId === source.id)?.time, "17:00");
+    assert.equal(visible.find(row => row.standaloneRecordId === source.id)?.hotelCusco, "WARARI");
+  }
+  assert.equal(JSON.stringify(source), before);
+});
+
+test("dos excursiones del mismo file y día se conservan y los espejos históricos no se duplican", () => {
+  const sources = ["source-a", "source-b"].map((id, index) => ({ id, cotizacion_id: quotation.id, actividad: {
+    ...records[0], id: `excel:${id}`, quotationOrigin: "linked", excursion: `Tour ${index}`, time: index ? "10:00" : "12:45",
+  } }));
+  const oldMirror = { ...records[0] };
+  delete oldMirror.snapshotOrigin;
+  const quote = { ...quotation, biblia_actividades: [oldMirror, records[1]] };
+  const original = JSON.stringify(quote);
+  const visible = buildBibliaActivitiesFromSnapshots([quote], sources);
+  assert.equal(visible.length, 3);
+  assert.equal(visible.filter(row => row.dateKey === records[0].dateKey).length, 2);
+  assert.equal(buildBibliaDayExportMatrix(visible.filter(row => row.dateKey === records[0].dateKey)).rows.length, 2);
+  assert.equal(JSON.stringify(quote), original, "recuperar la vista no elimina datos persistidos");
+  assert.equal(buildBibliaActivitiesFromSnapshots([quote], []).length, 2, "sin vínculo no se ocultan días");
+  assert.equal(buildBibliaActivitiesFromSnapshots([quote], sources.map(row => ({ ...row, is_active: false }))).length, 2);
+});
+
+test("un vínculo no oculta filas manuales ni ediciones previas del snapshot", () => {
+  const source = { id: "source", cotizacion_id: quotation.id, actividad: { ...records[0], quotationOrigin: "linked" } };
+  for (const edit of [{ observations: "Nota operativa" }, { color: "#123456" }, { snapshotEdited: true },
+    { quotationOrigin: "biblia" }, { id: "manual:another", sourceItinerary: "manual" }]) {
+    const row = { ...records[0], ...edit };
+    if (!edit.snapshotEdited) delete row.snapshotOrigin;
+    assert.equal(buildBibliaActivitiesFromSnapshots([{ ...quotation, biblia_actividades: [row] }], [source]).length, 2);
+  }
+  const day = buildBibliaActivitiesFromSnapshots([{ ...quotation, biblia_actividades: [records[0]] }], [])[0];
+  assert.equal(materializeBibliaOverride(day, { time: "15:00" }).snapshotEdited, true);
+  assert.equal(materializeQuotationBibliaRecords({ ...quotation, itinerario: [{ numero: 1, servicios: [] }], itinerario_externo: [] }, [], [source]).length, 0,
+    "los avisos de catálogo no justifican reconstruir un día vacío duplicado");
+});
 assert.equal(records.length, 2, "debe existir exactamente una fila por día del file, no una por servicio");
 assert.ok(records.every((record) => record.schemaVersion === BIBLIA_SCHEMA_VERSION));
 assert.equal(records[0].transport, "TRANSPORTE COTIZADO", "debe priorizar el servicio cotizado sobre assigned*");

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { renderToStaticMarkup } from "react-dom/server";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { getCountryNames } from "../../../../../utils/countries";
+import { COUNTRIES, getCountryNames } from "../../../../../utils/countries";
 import ParticipantPlanEditor, { ParticipantPlanPanel } from "../../components/ParticipantPlanEditor";
 import { buildParticipantPlan, changeParticipantCategory, initialParticipantDraft, participantDraftError,
   bibliaParticipantPlanError, quotationParticipantDraft, resizeParticipantDraft, participantCountryLabel,
@@ -13,6 +13,30 @@ import { createBibliaDayExcelWorkbook } from "../bibliaDayExcelExport";
 import { buildBibliaEditRecord, getBibliaLinkUnavailableReason } from "../bibliaQuotationLinking";
 import { buildBibliaActivitiesFromSnapshots } from "../bibliaActivityMapper";
 import { buildBibliaDayExportMatrix } from "../bibliaDayJpegExport";
+import { participantNationalityKey } from "../bibliaNationality";
+
+test("los nombres visibles de países y los alias del padrón comparten identidad, no procedencia", () => {
+  const backendCountries = JSON.parse(readFileSync(resolve("../venso-tours-backend/src/services/turismo/biblia_actividad/nationality_countries.json"), "utf8"));
+  assert.deepEqual(backendCountries, Object.fromEntries(COUNTRIES.map(country => [country.code, country.name])),
+    "la validación backend reconoce los mismos códigos y países que el selector");
+  for (const country of COUNTRIES)
+    assert.equal(participantNationalityKey(country.code), participantNationalityKey(country.name));
+  for (const alias of ["USA", "US", "EE. UU.", "United States", "Estados Unidos"]) {
+    assert.equal(participantNationalityKey(alias), participantNationalityKey("Estados Unidos"));
+  }
+  for (const [a, b] of [["DE", "Alemania"], ["Brasil", "Brazil"], ["PE", "Perú"], ["UK", "Reino Unido"]])
+    assert.equal(participantNationalityKey(a), participantNationalityKey(b));
+  assert.notEqual(participantNationalityKey("Alemania"), participantNationalityKey("Estados Unidos"));
+  const quotation = { passengers: [
+    { tipo_pasajero: "adult", passenger_key: "adult-1", nacionalidad: "USA" },
+    { tipo_pasajero: "adult", passenger_key: "adult-2", nacionalidad: "USA" },
+    { tipo_pasajero: "child", passenger_key: "child-1", nacionalidad: "USA" },
+  ] };
+  assert.equal(participantQuotationError({ adults: ["Estados Unidos", "US"], children: ["EEUU"] }, 3, quotation), "");
+  assert.equal(participantQuotationError({ adults: ["Estados Unidos"], children: [] }, 1, quotation), "");
+  assert.match(participantQuotationError({ adults: ["Alemania"], children: [] }, 1, quotation), /suficientes/);
+  assert.match(participantQuotationError({ adults: [], children: ["USA", "USA"] }, 2, quotation), /niños/);
+});
 
 const activity = (extra = {}) => ({ id: "r1", pax: 7, nationality: "—", file: "FILE",
   dateKey: "2026-09-28", sourceType: "standalone", standaloneRecordId: "1", sourceQuotationId: "",

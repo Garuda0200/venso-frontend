@@ -1,5 +1,5 @@
 import type { BibliaActivity, BibliaParticipantPlan } from "./bibliaActivityMapper";
-import { isUnresolvedParticipantNationality } from "./bibliaNationality";
+import { isUnresolvedParticipantNationality, participantNationalityKey } from "./bibliaNationality";
 import { getCountryNames } from "../../../../utils/countries";
 export { participantCountryLabel } from "./bibliaNationality";
 
@@ -7,8 +7,7 @@ export type ParticipantKind = "adults" | "children";
 export interface ParticipantDraft { adults: string[]; children: string[] }
 const normalized = (value: unknown) => String(value ?? "").trim().toLowerCase()
   .normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/\s+/g, " ");
-const nationalityKey = (country: string) => ["peru", "peruana", "peruano", "peruvian"].includes(normalized(country))
-  ? "peru" : normalized(country);
+const nationalityKey = participantNationalityKey;
 const safeCount = (value: unknown) => Math.min(200, Math.max(0, Math.trunc(Number(value) || 0)));
 const claimCountryIndex = (available: string[], country: string) => {
   const exact = available.findIndex(value => nationalityKey(value) === nationalityKey(country));

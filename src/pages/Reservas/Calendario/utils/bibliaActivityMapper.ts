@@ -472,6 +472,7 @@ const baseRecordForDay = (
     category,
     color: getInitialBibliaColor(category),
     quotationOrigin: "quotation",
+    snapshotOrigin: "itinerary",
     syncQuotation: false,
     isDeleted: false,
     sourceVoucherMedia: voucherTarget.media,
@@ -540,6 +541,7 @@ const compactLegacyRecords = (records: Record<string, any>[], base: Record<strin
 export const materializeQuotationBibliaRecords = (
   quotation: Record<string, any>,
   agencies: Array<Record<string, any>> = [],
+  standaloneRows: Array<Record<string, any>> = [],
 ): Array<Record<string, any>> => {
   const agencyMap = new Map<number, string>(agencies.map((item) => [Number(item.id), String(item.name || item.nombre || "")]));
   const current = asArray<Record<string, any>>(quotation.biblia_actividades || quotation.bibliaActividades);
@@ -560,7 +562,12 @@ export const materializeQuotationBibliaRecords = (
     }));
   }
 
-  const days = mergeDays(quotation);
+  // A linked operational row already represents its day, even when no catalog
+  // service could be resolved. Reconstructing that day creates a second row.
+  const linkedDates = linkedStandaloneDates(quotation, standaloneRows);
+  const start = parseBibliaDate(quotation.fechainicio || quotation.fecha_inicio || quotation.startDate);
+  const days = mergeDays(quotation).filter(day => !start
+    || !linkedDates.has(toBibliaDateKey(addDays(start, Math.max(0, day.number - 1)))));
   const v3 = current.filter((record) => {
     const version = Number(record.schemaVersion || 1);
     return version >= 3 && version < BIBLIA_SCHEMA_VERSION;
@@ -723,7 +730,7 @@ export const buildBibliaActivitiesFromSnapshots = (
   quotations.forEach((quotation) => {
     asArray<Record<string, any>>(quotation.biblia_actividades || quotation.bibliaActividades).forEach((record) => {
       const activity = recordToActivity(record, quotation);
-      if (activity && !activity.isDeleted) result.push(activity);
+      if (activity && !activity.isDeleted && !isLinkedItineraryMirror(record, quotation, standaloneRows)) result.push(activity);
     });
   });
   standaloneRows.forEach((outer) => {
@@ -737,6 +744,32 @@ export const buildBibliaActivitiesFromSnapshots = (
     }
   });
   return result.sort((a, b) => a.dateKey.localeCompare(b.dateKey) || a.order - b.order || a.id.localeCompare(b.id));
+};
+
+const linkedStandaloneDates = (quotation: Record<string, any>, rows: Array<Record<string, any>>) => new Set(
+  rows.filter(row => row.is_active !== false && String(row.cotizacion_id || "") === String(quotation.id || ""))
+    .map(row => row.actividad || row.activity || {})
+    .filter(record => record.isDeleted !== true)
+    .map(record => parseBibliaDate(record.dateKey || record.date || record.fecha))
+    .filter((date): date is Date => Boolean(date))
+    .map(toBibliaDateKey),
+);
+
+/** Suppress only reconstructible itinerary mirrors, never independent rows or
+ * edited snapshots. Historical mirrors remain in storage for safe recovery. */
+const isLinkedItineraryMirror = (record: Record<string, any>, quotation: Record<string, any>, rows: Array<Record<string, any>>) => {
+  if (record.snapshotEdited === true || record.quotationOrigin !== "quotation"
+    || record.sourceType === "manual" || record.sourceItinerary === "manual"
+    || record.sourceExcel || record.participantPlan) return false;
+  const date = parseBibliaDate(record.dateKey);
+  if (!date || !linkedStandaloneDates(quotation, rows).has(toBibliaDateKey(date))) return false;
+  if (record.snapshotOrigin === "itinerary") return true;
+  // Older clients persisted mirrors without provenance. Recognize only an
+  // exact generated snapshot, preserving any manually edited content/color.
+  const day = mergeDays(quotation).find(day => String(record.id) === `${quotation.id}-day-${day.number}`);
+  if (!day) return false;
+  const expected = baseRecordForDay(quotation, day, new Map());
+  return editableKeys.every(key => JSON.stringify(record[key] ?? expected[key]) === JSON.stringify(expected[key]));
 };
 
 // Compatibilidad para callers/tests antiguos: primero materializa y luego renderiza snapshots.
@@ -765,6 +798,8 @@ export const materializeBibliaOverride = (
     quotationId: merged.sourceQuotationId || null,
     dayNumber: Number(merged.dayNumber || 0),
     quotationOrigin: merged.quotationOrigin || (activity.sourceType === "standalone" ? "standalone" : "quotation"),
+    ...(activity.sourceType !== "standalone" && Object.keys(changes).some(key => editableKeys.includes(key))
+      ? { snapshotEdited: true } : {}),
     syncQuotation: merged.syncQuotation === true,
     isDeleted: merged.isDeleted === true,
     order: Number(merged.order || 0),
