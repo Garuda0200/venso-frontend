@@ -129,9 +129,10 @@ test("los avisos de movilidad/tarifa persisten por fila al recargar un vínculo 
   const [reloaded] = buildBibliaActivitiesFromSnapshots([quotation()], [{ id: "a", cotizacion_id: "Q1", actividad: synchronized }]);
   const html = renderToStaticMarkup(<BibliaQuotationSyncPrompt activity={reloaded} busy={false} onConfirm={() => {}} />);
   assert.match(html, /Vinculado/);
-  assert.match(html, /Revisar vínculo \(1\)/);
-  assert.match(html, /Última sincronización del día/);
-  assert.equal((html.match(/Revisa la tarifa de transporte/g) || []).length, 1);
+  assert.match(html, /aria-label="Revisar vínculo \(1 aviso\)"/); assert.match(html, />!\?</);
+  assert.doesNotMatch(html, /Última sincronización del día/);
+  const source = readFileSync(resolve("src/pages/Reservas/Calendario/Calendario.tsx"), "utf8");
+  assert.doesNotMatch(source, /biblia-sync-notice|syncWarnings/);
   assert.doesNotMatch(html, /Actualización pendiente/);
   assert.doesNotMatch(JSON.stringify(buildBibliaDayExportMatrix([reloaded])), /Revisa la tarifa|syncWarnings/);
 });

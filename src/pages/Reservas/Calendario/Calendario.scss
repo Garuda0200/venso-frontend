@@ -446,23 +446,6 @@
   font-weight: 700;
 }
 
-.biblia-sync-notice {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  margin: 0 0 1rem;
-  padding: .85rem 1rem;
-  border: 1px solid #efd5ad;
-  border-radius: 12px;
-  background: #fff8ef;
-  color: #72511d;
-  summary { cursor: pointer; font-weight: 600; }
-  ul { margin: .6rem 0 0; padding-left: 1.2rem; }
-  li + li { margin-top: .35rem; }
-  button { border: 0; background: transparent; color: inherit; cursor: pointer; padding: .15rem; }
-}
-
 @keyframes biblia-spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 1100px) {
@@ -2001,14 +1984,18 @@
   display: inline-flex; align-items: center; gap: 3px;
   color: #08694e; font-size: 10px; font-weight: 700;
 }
-.biblia-quotation-sync-warnings {
-  width: 100%; max-width: 160px; border: 1px solid #e8cd88;
-  border-radius: 7px; background: #fffbef; color: #77500d;
-  text-align: left; white-space: normal; font-size: 10px;
-  summary { display: flex; gap: 4px; align-items: center; padding: 6px; cursor: pointer; font-weight: 800; }
-  summary:focus-visible { outline: 2px solid #a96b09; outline-offset: 2px; }
-  > div { padding: 0 7px 7px; overflow-wrap: anywhere; }
-  ul { margin: 6px 0 0; padding-left: 14px; }
+.biblia-link-row { display: inline-flex; align-items: center; gap: 6px; }
+.biblia-link-warning-trigger {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; padding: 0; line-height: 1;
+  border: 1px solid #e8cd88; border-radius: 50%;
+  background: #fffbef; color: #77500d;
+  font-size: 11px; font-weight: 800; cursor: pointer; flex: none;
+  &:focus-visible { outline: 2px solid #a96b09; outline-offset: 2px; }
+  &[aria-expanded="true"] { border-color: #a96b09; box-shadow: 0 0 0 2px rgba(169, 107, 9, 0.15); }
+}
+.biblia-sync-warnings-popover {
+  ul { margin: 8px 0 0; padding-left: 16px; font-size: 11px; line-height: 1.45; overflow-wrap: anywhere; }
   li + li { margin-top: 4px; }
 }
 .biblia-quotation-sync-prompt {
