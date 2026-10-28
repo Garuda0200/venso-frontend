@@ -69,6 +69,8 @@ const testSuites = [
       "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/vensoPdfCanvaDesign.test.js",
       "src/pages/Ventas/VouchersVenta/utils/__tests__/voucherFinancials.test.js",
       "src/pages/Ventas/VouchersVenta/components/__tests__/voucherWorkflowParity.test.js",
+      "src/pages/Ventas/VouchersVenta/utils/__tests__/voucherListingDates.test.js",
+      "src/pages/Ventas/VouchersVenta/components/VouchersFilters/__tests__/voucherTravelListingFlow.test.js",
       "src/pages/Ventas/VouchersVenta/utils/__tests__/salesPdfPresentation.test.js",
       "src/pages/Ventas/VouchersVenta/utils/__tests__/voucherPdfLayout.test.js",
     ],

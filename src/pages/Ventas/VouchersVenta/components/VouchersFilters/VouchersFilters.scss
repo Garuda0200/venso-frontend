@@ -434,3 +434,18 @@
     }
   }
 }
+
+.vouchers-filters .filter-actions .travel-dates-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #e8dce3;
+  background: #fff;
+  color: #51404c;
+  white-space: nowrap;
+  &.is-active {
+    border-color: #ff0080;
+    background: #fff0f7;
+    color: #b5005b;
+  }
+}

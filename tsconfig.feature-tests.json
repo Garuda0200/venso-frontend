@@ -93,6 +93,8 @@
     "src/pages/Contabilidad/Reportes/utils/__tests__/paymentReportUtils.test.ts",
     "src/pages/Reservas/VouchersReserva/utils/__tests__/specializedPaymentGroups.test.ts",
     "src/utils/__tests__/pendingPayments.test.ts",
-    "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/childTariffReversion.test.ts"
+    "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/childTariffReversion.test.ts",
+    "src/pages/Ventas/VouchersVenta/utils/__tests__/voucherListingDates.test.ts",
+    "src/pages/Ventas/VouchersVenta/components/VouchersFilters/__tests__/voucherTravelListingFlow.test.tsx"
   ]
 }

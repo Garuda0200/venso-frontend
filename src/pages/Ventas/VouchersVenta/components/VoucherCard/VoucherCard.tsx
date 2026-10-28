@@ -25,6 +25,7 @@ import ExpandableActions, {
   ExpandableActionItem,
 } from "../../../../../components/common/ExpandableActions";
 import { summarizeVoucherFinancials } from "../../utils/voucherFinancials";
+import { formatVoucherTravelDates } from "../../utils/voucherListingDates";
 function VoucherCard({
   voucher,
   dataUpdatedAt,
@@ -38,6 +39,7 @@ function VoucherCard({
   onAgencyPayment,
   userRole = 1,
   allVouchers = [],
+  showTravelDates = false,
 }) {
   const [showPassengers, setShowPassengers] = useState(false);
   const [passengers, setPassengers] = useState([]); // Load from API instead of passenger_data
@@ -261,6 +263,12 @@ function VoucherCard({
       </section>
 
       <section className="voucher-sale-row__people">
+        {showTravelDates && (
+          <div className="voucher-sale-row__travel">
+            <MdCalendarToday aria-hidden="true" />
+            <span>{formatVoucherTravelDates(voucher)}</span>
+          </div>
+        )}
         <button
           type="button"
           className="voucher-sale-row__passenger-button"

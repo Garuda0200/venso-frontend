@@ -3,6 +3,10 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
+import React from "react";
+import { act as legacyAct } from "react-dom/test-utils";
+import { createRoot } from "react-dom/client";
+import { parseHTML } from "linkedom";
 import { buildBibliaEditRecord, getBibliaLinkRecommendations, getBibliaLinkUnavailableReason,
   getBibliaPendingChangeLabels, quotationSyncCommandRecords } from "../bibliaQuotationLinking";
 import { buildBibliaActivitiesFromSnapshots, materializeBibliaOverride } from "../bibliaActivityMapper";
@@ -129,12 +133,55 @@ test("los avisos de movilidad/tarifa persisten por fila al recargar un vínculo 
   const [reloaded] = buildBibliaActivitiesFromSnapshots([quotation()], [{ id: "a", cotizacion_id: "Q1", actividad: synchronized }]);
   const html = renderToStaticMarkup(<BibliaQuotationSyncPrompt activity={reloaded} busy={false} onConfirm={() => {}} />);
   assert.match(html, /Vinculado/);
-  assert.match(html, /aria-label="Revisar vínculo \(1 aviso\)"/); assert.match(html, />!\?</);
+  assert.match(html, /aria-label="Revisar vínculo \(1 aviso\)"/);
+  assert.match(html, /aria-expanded="false">!<\/button>/);
   assert.doesNotMatch(html, /Última sincronización del día/);
   const source = readFileSync(resolve("src/pages/Reservas/Calendario/Calendario.tsx"), "utf8");
   assert.doesNotMatch(source, /biblia-sync-notice|syncWarnings/);
   assert.doesNotMatch(html, /Actualización pendiente/);
   assert.doesNotMatch(JSON.stringify(buildBibliaDayExportMatrix([reloaded])), /Revisa la tarifa|syncWarnings/);
+});
+
+test("el aviso guardado abre junto al vínculo, se cierra y no actualiza la cotización", async () => {
+  const { window, document } = parseHTML('<html><body><div id="root"></div><button id="outside">Fuera</button></body></html>');
+  const keys = ["window", "document", "HTMLElement", "IS_REACT_ACT_ENVIRONMENT"];
+  const previous = Object.fromEntries(keys.map(key => [key, globalThis[key]]));
+  Object.assign(window, {
+    innerWidth: 1024, innerHeight: 768,
+    requestAnimationFrame: callback => setTimeout(callback, 0),
+    cancelAnimationFrame: clearTimeout,
+  });
+  Object.assign(globalThis, { window, document, HTMLElement: window.HTMLElement, IS_REACT_ACT_ENVIRONMENT: true });
+  const act = React.act || legacyAct;
+  const root = createRoot(document.getElementById("root"));
+  const saved = { ...buildBibliaEditRecord(row("a", "Q1"), {}), quotationSyncPending: false,
+    syncWarnings: ["Revisa la tarifa de transporte", "Revisa la tarifa de transporte"] };
+  const [activity] = buildBibliaActivitiesFromSnapshots([quotation()], [{ id: "a", cotizacion_id: "Q1", actividad: saved }]);
+  let updates = 0;
+  const wait = () => new Promise(resolve => setTimeout(resolve, 10));
+  try {
+    await act(async () => { root.render(<BibliaQuotationSyncPrompt activity={activity} busy={false} onConfirm={() => updates++} />); });
+    const trigger = document.querySelector(".biblia-link-warning-trigger") as HTMLElement;
+    assert.equal(document.querySelector('[role="dialog"]'), null);
+    await act(async () => { trigger.click(); await wait(); });
+    assert.equal(trigger.getAttribute("aria-expanded"), "true");
+    assert.equal(document.querySelectorAll('[role="dialog"] li').length, 1);
+    assert.match(document.querySelector('[role="dialog"]').textContent, /Revisa la tarifa de transporte/);
+    const escape = new window.Event("keydown");
+    Object.defineProperty(escape, "key", { value: "Escape" });
+    await act(async () => document.dispatchEvent(escape));
+    assert.equal(document.querySelector('[role="dialog"]'), null);
+    await act(async () => { trigger.click(); await wait(); });
+    await act(async () => document.getElementById("outside").dispatchEvent(new window.Event("pointerdown", { bubbles: true })));
+    assert.equal(document.querySelector('[role="dialog"]'), null);
+    assert.equal(updates, 0);
+    assert.match(document.body.textContent, /Vinculado/);
+  } finally {
+    await act(async () => root.unmount());
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete globalThis[key]; else globalThis[key] = value;
+    }
+  }
 });
 
 test("guardar cambios de transporte, excursión, PAX y modalidad no sincroniza ni inventa precio", () => {

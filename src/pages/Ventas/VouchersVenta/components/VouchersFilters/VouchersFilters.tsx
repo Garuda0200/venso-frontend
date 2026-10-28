@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import {
   MdSearch,
@@ -18,65 +17,18 @@ const VouchersFilters = ({
   onFilterChange,
   onRefresh,
   sellers = [],
+  filters = { searchTerm: "", dateFrom: "", dateTo: "", seller: "" },
+  canScopeBySeller = false,
+  canChooseTravelDates = false,
+  listByTravelDates = false,
+  onTravelDatesChange = () => {},
 }) => {
-  // Filter states - only UI state, no data filtering
-  const [searchTerm, setSearchTerm] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [seller, setSeller] = useState("");
-
-  // Filtrado reactivo: cada cambio en los controles se envía al padre.
-  useEffect(() => {
-    onFilterChange({
-      searchTerm: searchTerm.trim(),
-      dateFrom,
-      dateTo,
-      seller,
-    });
-  }, [searchTerm, dateFrom, dateTo, seller, onFilterChange]);
-
-  // Handle search input change
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-  };
-
-  // Handle date from change
-  const handleDateFromChange = (e) => {
-    setDateFrom(e.target.value);
-  };
-
-  // Handle date to change
-  const handleDateToChange = (e) => {
-    setDateTo(e.target.value);
-  };
-
-  // Handle seller filter change
-  const handleSellerChange = (e) => {
-    setSeller(e.target.value);
-  };
-
-  // Clear all filters
-  const handleClearFilters = () => {
-    setSearchTerm("");
-    setDateFrom("");
-    setDateTo("");
-    setSeller("");
-    onFilterChange({
-      searchTerm: "",
-      dateFrom: "",
-      dateTo: "",
-      seller: "",
-    });
-  };
-
-  // Clear search only
-  const handleClearSearch = () => {
-    setSearchTerm("");
-  };
-
-  // Check if filters are active
+  const { searchTerm, dateFrom, dateTo, seller } = filters;
+  const update = (field, value) => onFilterChange({ ...filters, [field]: value });
   const hasActiveFilters = searchTerm || dateFrom || dateTo || seller;
-
+  const handleClearFilters = () => onFilterChange({
+    searchTerm: "", dateFrom: "", dateTo: "", seller: "",
+  });
   return (
     <div className="vouchers-filters">
       <div className="filters-row">
@@ -88,13 +40,13 @@ const VouchersFilters = ({
             className="search-input"
             placeholder="Buscar por código, título o cliente..."
             value={searchTerm}
-            onChange={handleSearchChange}
+            onChange={event => update("searchTerm", event.target.value)}
           />
           {searchTerm && (
             <button
               type="button"
               className="clear-search"
-              onClick={handleClearSearch}
+              onClick={() => update("searchTerm", "")}
               aria-label="Limpiar búsqueda"
             >
               <MdClear />
@@ -110,7 +62,8 @@ const VouchersFilters = ({
               type="date"
               className="date-input"
               value={dateFrom}
-              onChange={handleDateFromChange}
+              onChange={event => update("dateFrom", event.target.value)}
+              aria-label="Viajes desde"
             />
             <label className="date-label">Desde</label>
           </div>
@@ -121,7 +74,8 @@ const VouchersFilters = ({
               type="date"
               className="date-input"
               value={dateTo}
-              onChange={handleDateToChange}
+              onChange={event => update("dateTo", event.target.value)}
+              aria-label="Viajes hasta"
               min={dateFrom}
             />
             <label className="date-label">Hasta</label>
@@ -129,24 +83,40 @@ const VouchersFilters = ({
         </div>
 
         {/* Seller filter */}
-        <div className="voucher-select-filter seller-filter">
+        {canScopeBySeller && <div className="voucher-select-filter seller-filter">
           <MdFilterList className="filter-icon" />
           <select
             className="voucher-select"
             value={seller}
-            onChange={handleSellerChange}
+            onChange={event => update("seller", event.target.value)}
+            aria-label="Filtrar por vendedor"
           >
             <option value="">Todos los vendedores</option>
+            <option value="scope:mine">Propios</option>
+            <option value="scope:others">Otros vendedores</option>
             {sellers.map((s) => (
               <option key={s.dni} value={s.dni}>
                 {s.name}
               </option>
             ))}
           </select>
-        </div>
+        </div>}
 
         {/* Action buttons */}
         <div className="filter-actions">
+          {canChooseTravelDates && (
+            <button
+              type="button"
+              role="switch"
+              aria-label="Listar por fechas del viaje"
+              aria-checked={listByTravelDates}
+              className={'travel-dates-switch ' + (listByTravelDates ? "is-active" : "")}
+              onClick={() => onTravelDatesChange(!listByTravelDates)}
+            >
+              <MdCalendarToday />
+              <span>{listByTravelDates ? "Por viaje" : "Por cierre"}</span>
+            </button>
+          )}
           {hasActiveFilters && (
             <button
               type="button"
@@ -177,6 +147,11 @@ VouchersFilters.propTypes = {
   onFilterChange: PropTypes.func.isRequired,
   onRefresh: PropTypes.func.isRequired,
   sellers: PropTypes.array,
+  filters: PropTypes.object,
+  canScopeBySeller: PropTypes.bool,
+  canChooseTravelDates: PropTypes.bool,
+  listByTravelDates: PropTypes.bool,
+  onTravelDatesChange: PropTypes.func,
 };
 
 export default VouchersFilters;

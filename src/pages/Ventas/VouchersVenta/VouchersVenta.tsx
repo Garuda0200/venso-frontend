@@ -33,6 +33,10 @@ import { useAgencyDirectory } from "../../../hooks/useAgencyDirectory";
 import AgencyGroups from "../../../components/common/AgencyGroups/AgencyGroups";
 import "../../../components/common/AgencyGroups/AgencyGroups.scss";
 import "./VouchersVenta.scss";
+import { canUseVoucherTravelDates, parseVoucherListingDate, groupSalesVouchersByDate } from "./utils/voucherListingDates";
+
+const SELLER_MINE = "scope:mine";
+const SELLER_OTHERS = "scope:others";
 
 const getVoucherCotizacion = (voucher = {}) =>
   voucher?.cotizacion_data ||
@@ -40,26 +44,9 @@ const getVoucherCotizacion = (voucher = {}) =>
   voucher?.cotizacion ||
   null;
 
-const parseVoucherLocalDate = (value) => {
-  if (!value) return null;
-  if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
-
-  const raw = String(value).trim();
-  const dateOnly = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-
-  if (dateOnly) {
-    const [, year, month, day] = dateOnly;
-    const date = new Date(Number(year), Number(month) - 1, Number(day));
-    return isNaN(date.getTime()) ? null : date;
-  }
-
-  const date = new Date(raw);
-  return isNaN(date.getTime()) ? null : date;
-};
-
 const getVoucherReservationDate = (voucher = {}) => {
   const cotizacion = getVoucherCotizacion(voucher) || {};
-  return parseVoucherLocalDate(
+  return parseVoucherListingDate(
     cotizacion.fechainicio ||
       voucher.created_at ||
       voucher.createdAt,
@@ -134,7 +121,20 @@ const VouchersVenta = () => {
     dateTo: "",
     seller: "",
   });
-  const [sellerScope, setSellerScope] = useState("mine");
+  const [listByTravelDates, setListByTravelDates] = useState(false);
+  const canChooseTravelDates = canUseVoucherTravelDates(user || auth);
+  const useTravelDates = canChooseTravelDates && listByTravelDates;
+  const sellerScope = !filterCriteria.seller ? "all"
+    : filterCriteria.seller === SELLER_MINE || filterCriteria.seller === currentSellerDni
+      ? "mine" : "others";
+  const setSellerScope = (scope) => setFilterCriteria(previous => ({
+    ...previous, seller: scope === "mine" ? SELLER_MINE : scope === "others" ? SELLER_OTHERS : "",
+  }));
+  const handleTravelDatesChange = (enabled) => {
+    setListByTravelDates(enabled);
+    setExpandedYears({});
+    setExpandedMonths({});
+  };
 
   // Hook de notificaciones
   const {
@@ -223,17 +223,18 @@ const VouchersVenta = () => {
 
     // Apply search filter
     if (filterCriteria.searchTerm) {
-      const searchLower = filterCriteria.searchTerm.toLowerCase();
+      const searchLower = filterCriteria.searchTerm.trim().toLowerCase();
       results = results.filter((voucher) => {
+        const quotation = getVoucherCotizacion(voucher);
         return (
           voucher.id?.toString().includes(searchLower) ||
           voucher.voucher_code?.toLowerCase().includes(searchLower) ||
-          voucher.cotizacion?.titulo?.toLowerCase().includes(searchLower) ||
+          quotation?.titulo?.toLowerCase().includes(searchLower) ||
           voucher.cotizacion_id?.toLowerCase().includes(searchLower) ||
-          voucher.cotizacion?.client?.nombres
+          quotation?.client?.nombres
             ?.toLowerCase()
             .includes(searchLower) ||
-          voucher.cotizacion?.client?.apellidos
+          quotation?.client?.apellidos
             ?.toLowerCase()
             .includes(searchLower)
         );
@@ -242,7 +243,8 @@ const VouchersVenta = () => {
 
     // Apply date from filter
     if (filterCriteria.dateFrom) {
-      const startDate = new Date(filterCriteria.dateFrom);
+      const startDate = parseVoucherListingDate(filterCriteria.dateFrom);
+      if (!startDate) return [];
       startDate.setHours(0, 0, 0, 0);
       results = results.filter((voucher) => {
         const voucherDate = getVoucherReservationDate(voucher);
@@ -254,7 +256,8 @@ const VouchersVenta = () => {
 
     // Apply date to filter
     if (filterCriteria.dateTo) {
-      const endDate = new Date(filterCriteria.dateTo);
+      const endDate = parseVoucherListingDate(filterCriteria.dateTo);
+      if (!endDate) return [];
       endDate.setHours(23, 59, 59, 999);
       results = results.filter((voucher) => {
         const voucherDate = getVoucherReservationDate(voucher);
@@ -262,16 +265,8 @@ const VouchersVenta = () => {
       });
     }
 
-    // Apply seller filter
-    if (filterCriteria.seller) {
-      results = results.filter(
-        (voucher) =>
-          getVoucherSellerDni(voucher) === filterCriteria.seller,
-      );
-    }
-
     return results;
-  }, [vouchers, filterCriteria]);
+  }, [vouchers, filterCriteria.searchTerm, filterCriteria.dateFrom, filterCriteria.dateTo]);
 
   const sellerScopeCounts = useMemo(() => {
     return activeVouchers.reduce(
@@ -306,107 +301,20 @@ const VouchersVenta = () => {
     Boolean(currentSellerDni) &&
     hasExternalSellers;
 
-  useEffect(() => {
-    if (!showSellerScopeTabs) return;
-
-    if (
-      sellerScope === "mine" &&
-      sellerScopeCounts.mine === 0 &&
-      sellerScopeCounts.others > 0
-    ) {
-      setSellerScope("others");
-      return;
-    }
-
-    if (
-      sellerScope === "mine" &&
-      filterCriteria.seller &&
-      filterCriteria.seller !== currentSellerDni
-    ) {
-      setFilterCriteria((prev) => ({ ...prev, seller: "" }));
-      return;
-    }
-
-    if (sellerScope === "others" && filterCriteria.seller === currentSellerDni) {
-      setFilterCriteria((prev) => ({ ...prev, seller: "" }));
-    }
-  }, [
-    currentSellerDni,
-    filterCriteria.seller,
-    sellerScope,
-    sellerScopeCounts.mine,
-    sellerScopeCounts.others,
-    showSellerScopeTabs,
-  ]);
-
   const scopedVouchers = useMemo(() => {
-    if (!showSellerScopeTabs) {
-      return activeVouchers;
-    }
-
-    return activeVouchers.filter((voucher) => {
-      const isOwn =
-        currentSellerDni && getVoucherSellerDni(voucher) === currentSellerDni;
-      return sellerScope === "mine" ? isOwn : !isOwn;
+    if (!canScopeBySeller || !filterCriteria.seller) return activeVouchers;
+    return activeVouchers.filter(voucher => {
+      const dni = getVoucherSellerDni(voucher);
+      if (filterCriteria.seller === SELLER_MINE) return dni === currentSellerDni;
+      if (filterCriteria.seller === SELLER_OTHERS) return dni !== currentSellerDni;
+      return dni === filterCriteria.seller;
     });
-  }, [activeVouchers, currentSellerDni, sellerScope, showSellerScopeTabs]);
+  }, [activeVouchers, currentSellerDni, filterCriteria.seller, canScopeBySeller]);
 
-  // Helper function to get voucher date for grouping (by creation date)
-  const getVoucherDate = (voucher) =>
-    parseVoucherLocalDate(
-      voucher.created_at || voucher.createdAt,
-    );
-
-  // Agrupar por año / mes para acordeones (similar a VouchersReserva)
-  const yearGroups = useMemo(() => {
-    const yearsMap = {};
-
-    scopedVouchers.forEach((voucher) => {
-      const date = getVoucherDate(voucher);
-      if (!date) return;
-
-      const year = date.getFullYear();
-      const month = date.getMonth() + 1; // 1–12
-      const monthKey = `${year}-${String(month).padStart(2, "0")}`;
-
-      if (!yearsMap[year]) {
-        yearsMap[year] = {
-          year,
-          totalCount: 0,
-          monthsMap: {},
-        };
-      }
-
-      const yearObj = yearsMap[year];
-      yearObj.totalCount += 1;
-
-      if (!yearObj.monthsMap[monthKey]) {
-        const labelRaw = new Intl.DateTimeFormat("es-PE", {
-          month: "long",
-          year: "numeric",
-        }).format(date);
-
-        const label = labelRaw.charAt(0).toUpperCase() + labelRaw.slice(1);
-
-        yearObj.monthsMap[monthKey] = {
-          key: monthKey,
-          month,
-          label,
-          vouchers: [],
-        };
-      }
-
-      yearObj.monthsMap[monthKey].vouchers.push(voucher);
-    });
-
-    return Object.values(yearsMap)
-      .sort((a, b) => b.year - a.year)
-      .map((y) => ({
-        year: y.year,
-        totalCount: y.totalCount,
-        months: Object.values(y.monthsMap).sort((a, b) => b.month - a.month),
-      }));
-  }, [scopedVouchers]);
+  const yearGroups = useMemo(
+    () => groupSalesVouchersByDate(scopedVouchers, useTravelDates ? "travel" : "sale"),
+    [scopedVouchers, useTravelDates],
+  );
 
   // Inicializar año/mes actual como abiertos (solo cuando aparecen nuevos grupos)
   useEffect(() => {
@@ -420,7 +328,7 @@ const VouchersVenta = () => {
     const nextYears = { ...expandedYears };
     yearGroups.forEach((yg) => {
       if (!(yg.year in nextYears)) {
-        nextYears[yg.year] = yg.year === currentYear;
+        nextYears[yg.year] = yg.year === "undated" || yg.year === currentYear;
         hasYearChanges = true;
       }
     });
@@ -430,7 +338,7 @@ const VouchersVenta = () => {
       yg.months.forEach((m) => {
         const key = m.key;
         if (!(key in nextMonths)) {
-          nextMonths[key] = yg.year === currentYear && m.month === currentMonth;
+          nextMonths[key] = yg.year === "undated" || (yg.year === currentYear && m.month === currentMonth);
           hasMonthChanges = true;
         }
       });
@@ -458,13 +366,8 @@ const VouchersVenta = () => {
 
   // Handle filter change from VouchersFilters component
   const handleFilterChange = useCallback((newFilters) => {
-    if (newFilters?.seller && currentSellerDni) {
-      setSellerScope(
-        newFilters.seller === currentSellerDni ? "mine" : "others",
-      );
-    }
     setFilterCriteria(newFilters);
-  }, [currentSellerDni]);
+  }, []);
 
   // Manejar creación de nuevo voucher
   const handleNewVoucher = () => {
@@ -680,12 +583,29 @@ const VouchersVenta = () => {
         onFilterChange={handleFilterChange}
         onRefresh={loadVouchers}
         sellers={sellerOptions}
+        filters={filterCriteria}
+        canScopeBySeller={canScopeBySeller}
+        canChooseTravelDates={canChooseTravelDates}
+        listByTravelDates={useTravelDates}
+        onTravelDatesChange={handleTravelDatesChange}
       />
 
         {showSellerScopeTabs && (
           <div className="seller-scope-tabs" role="tablist" aria-label="Alcance de vouchers">
             <button
               type="button"
+              role="tab"
+              aria-selected={sellerScope === "all"}
+              className={'seller-scope-tab ' + (sellerScope === "all" ? "active" : "")}
+              onClick={() => setSellerScope("all")}
+            >
+              Todos los vendedores
+              <span>{sellerScopeCounts.all}</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={sellerScope === "mine"}
               className={`seller-scope-tab ${sellerScope === "mine" ? "active" : ""}`}
               onClick={() => setSellerScope("mine")}
             >
@@ -694,6 +614,8 @@ const VouchersVenta = () => {
             </button>
             <button
               type="button"
+              role="tab"
+              aria-selected={sellerScope === "others"}
               className={`seller-scope-tab ${sellerScope === "others" ? "active" : ""}`}
               onClick={() => setSellerScope("others")}
             >
@@ -747,7 +669,7 @@ const VouchersVenta = () => {
                       <MdCalendarToday />
                     </div>
                     <div className="year-title">
-                      <span className="year-text">{yearGroup.year}</span>
+                      <span className="year-text">{yearGroup.label || yearGroup.year}</span>
                       {isYearCurrent && (
                         <span className="year-badge current-year">ACTUAL</span>
                       )}
@@ -868,6 +790,7 @@ const VouchersVenta = () => {
                                     }
                                     userRole={roleToPass}
                                     allVouchers={vouchers}
+                                    showTravelDates={useTravelDates}
                                   />
                                 );
                               }} />
