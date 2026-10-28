@@ -1,5 +1,4 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   DndContext,
   DragEndEvent,
@@ -47,7 +46,7 @@ import { useAuth } from "../../../context/AuthContext";
 import SourceVoucherPreviewModal from "../../Ventas/Cotizaciones/components/SourceVoucherPreviewModal";
 import VentasSummaryPDFModal from "../../Ventas/VouchersVenta/components/VentasSummaryPDFModal/VentasSummaryPDFModal";
 import { bibliaActivityService } from "./services/bibliaActivityService";
-import { getBibliaSaveError, getBibliaSyncWarnings } from "./utils/bibliaSyncFeedback";
+import { getBibliaSaveError } from "./utils/bibliaSyncFeedback";
 import BibliaLinkRecommendations from "./components/BibliaLinkRecommendations";
 import BibliaQuotationSyncPrompt from "./components/BibliaQuotationSyncPrompt";
 import BibliaRowSave from "./components/BibliaRowSave";
@@ -85,7 +84,7 @@ import {
 import { BIBLIA_SHEET_COLUMNS, downloadBibliaDayJpeg } from "./utils/bibliaDayJpegExport";
 import { downloadBibliaDayExcel, downloadBibliaMonthExcel } from "./utils/bibliaDayExcelExport";
 import { compactBibliaTrainText, getHistoricalBibliaTrainOptions } from "./utils/bibliaTrainCatalog";
-import { calculateBibliaPopoverPosition } from "./utils/bibliaPopoverPosition";
+import FloatingBibliaPopover from "./components/FloatingBibliaPopover";
 import {
   buildBibliaQuotationCreationDraft,
   canCreateQuotationFromBiblia,
@@ -137,104 +136,6 @@ const activityStyle = (activity: BibliaActivity) => ({
   "--activity-color": normalizeBibliaColor(activity.color),
   "--activity-text": getReadableTextColor(activity.color),
 } as React.CSSProperties);
-
-const FloatingBibliaPopover = ({
-  anchor,
-  className,
-  ariaLabel,
-  onRequestClose,
-  children,
-}: {
-  anchor: HTMLElement | null;
-  className: string;
-  ariaLabel: string;
-  onRequestClose: () => void;
-  children: React.ReactNode;
-}) => {
-  const panelRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ top: 12, left: 12, maxWidth: 0, maxHeight: 0, ready: false });
-
-  const updatePosition = useCallback(() => {
-    const panel = panelRef.current;
-    if (!anchor || !panel || !anchor.isConnected) return;
-    const anchorRect = anchor.getBoundingClientRect();
-    const next = calculateBibliaPopoverPosition({
-      anchor: {
-        top: anchorRect.top,
-        left: anchorRect.left,
-        right: anchorRect.right,
-        width: anchorRect.width,
-        height: anchorRect.height,
-      },
-      panelWidth: panel.offsetWidth,
-      panelHeight: panel.offsetHeight,
-      viewportWidth: window.innerWidth,
-      viewportHeight: window.innerHeight,
-    });
-    setPosition((current) => (
-      current.ready
-      && current.top === next.top
-      && current.left === next.left
-      && current.maxWidth === next.maxWidth
-      && current.maxHeight === next.maxHeight
-        ? current
-        : { ...next, ready: true }
-    ));
-  }, [anchor]);
-
-  useLayoutEffect(() => {
-    if (!anchor) return undefined;
-    const frame = window.requestAnimationFrame(updatePosition);
-    const resizeObserver = typeof ResizeObserver === "undefined"
-      ? null
-      : new ResizeObserver(updatePosition);
-    if (panelRef.current) resizeObserver?.observe(panelRef.current);
-    window.addEventListener("resize", updatePosition);
-    window.addEventListener("scroll", updatePosition, true);
-    return () => {
-      window.cancelAnimationFrame(frame);
-      resizeObserver?.disconnect();
-      window.removeEventListener("resize", updatePosition);
-      window.removeEventListener("scroll", updatePosition, true);
-    };
-  }, [anchor, updatePosition]);
-
-  useEffect(() => {
-    if (!anchor) return undefined;
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target as Node;
-      if (!panelRef.current?.contains(target) && !anchor.contains(target)) onRequestClose();
-    };
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onRequestClose();
-    };
-    document.addEventListener("pointerdown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [anchor, onRequestClose]);
-
-  if (!anchor || typeof document === "undefined") return null;
-  return createPortal(
-    <div
-      ref={panelRef}
-      className={`${className} is-floating`}
-      role="dialog"
-      aria-label={ariaLabel}
-      onClick={(event) => event.stopPropagation()}
-      style={{
-        top: position.top,
-        left: position.left,
-        visibility: position.ready ? "visible" : "hidden",
-      }}
-    >
-      {children}
-    </div>,
-    document.body,
-  );
-};
 
 const ActivityChip = ({ activity, compact = false, onClick }: { activity: BibliaActivity; compact?: boolean; onClick: () => void }) => (
   <button
@@ -462,7 +363,6 @@ const Calendario = () => {
   const [saving, setSaving] = useState(false);
   const mutationInFlight = useRef(false);
   const { rows: rowDrafts, savingId: savingDraftId, store: draftStore } = useBibliaRowDrafts();
-  const [syncWarnings, setSyncWarnings] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
   const [colorActivityId, setColorActivityId] = useState<string | null>(null);
@@ -569,7 +469,6 @@ const Calendario = () => {
     setError("");
     try {
       const result = await bibliaActivityService.saveQuotationOverrides(quotationId, records);
-      setSyncWarnings(getBibliaSyncWarnings(result));
       const savedRecords = Array.isArray(result?.data?.biblia_actividades) ? result.data.biblia_actividades : records;
       setQuotations(current => current.map(quote => String(quote.id) === quotationId
         ? { ...quote, biblia_actividades: savedRecords } : quote));
@@ -599,7 +498,6 @@ const Calendario = () => {
     setError("");
     try {
       const result = await bibliaActivityService.updateStandaloneActivity(standaloneId, nextQuotationId, record);
-      setSyncWarnings(getBibliaSyncWarnings(result));
       setStandaloneRecords((current) => current.map((item) => String(item.id) === standaloneId
         ? { ...item, cotizacion_id: nextQuotationId, actividad: result?.actividad || record } : item));
       if (nextQuotationId || currentOuter.cotizacion_id) await loadActivities(true);
@@ -977,7 +875,6 @@ const Calendario = () => {
         voucherCode,
         title: newQuotationTitle.trim() || undefined,
       });
-      setSyncWarnings(getBibliaSyncWarnings(result));
       closeQuotationLinkPopover();
       await loadActivities(true);
     } catch (createError) {
@@ -1494,12 +1391,6 @@ const Calendario = () => {
 
       {saving && <div className="biblia-saving">Guardando cambios operativos…</div>}
       {error && <div className="biblia-error">{error}</div>}
-      {syncWarnings.length > 0 && <aside className="biblia-sync-notice" role="status">
-        <details><summary>Vinculación guardada · {syncWarnings.length} pendientes por revisar</summary>
-          <ul>{syncWarnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>
-        </details>
-        <button type="button" aria-label="Cerrar avisos de vinculación" onClick={() => setSyncWarnings([])}><MdClose /></button>
-      </aside>}
       <main className="biblia-content">{viewMode === "month" ? renderMonth() : renderDay()}</main>
 
       {pendingDelete && isSuperAdmin && (
