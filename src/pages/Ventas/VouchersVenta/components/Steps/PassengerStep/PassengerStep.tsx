@@ -946,7 +946,12 @@ const PassengerStep = ({
                   </div>
                 </div>
 
-                {/* Nombres y apellidos */}
+                  <div className="form-group">
+                    <label>Caducidad del documento</label>
+                    <input type="date" value={selectedPassenger.data.fecha_caducidad || ""}
+                      onChange={e => handlePersonChange(selectedPassenger.type, selectedPassenger.index, "fecha_caducidad", e.target.value)} />
+                  </div>
+                  {/* Nombres y apellidos */}
                 <div className="form-row">
                   <div className="form-group">
                     <label>Nombres *</label>

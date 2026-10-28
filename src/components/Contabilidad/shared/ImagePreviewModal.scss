@@ -12,7 +12,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
+  // Debe quedar por encima de MovimientoPreviewModal y de los modales de pagos.
+  z-index: 12000;
   padding: 20px;
   animation: fadeIn 0.2s ease;
 }
@@ -22,13 +23,20 @@
   background: white;
   border-radius: 16px;
   width: 100%;
-  max-width: 800px;
+  max-width: min(1200px, 96vw);
+  height: min(90vh, 900px);
   max-height: 90vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
   animation: zoomIn 0.2s ease;
+
+  &.pdf-mode {
+    max-width: min(1280px, 97vw);
+    height: 92vh;
+    max-height: 92vh;
+  }
 
   // Header
   .modal-header {
@@ -106,68 +114,81 @@
 
     // Contenedor de imagen
     .image-preview-container {
+      width: 100%;
+      height: 100%;
       max-width: 100%;
-      max-height: 60vh;
+      max-height: 76vh;
       display: flex;
       align-items: center;
       justify-content: center;
 
       .preview-image {
         max-width: 100%;
-        max-height: 60vh;
+        max-height: 76vh;
         object-fit: contain;
         border-radius: 8px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
       }
     }
 
-    // Preview de PDF
-    .pdf-preview {
+    // Preview embebido de PDF
+    .pdf-preview-container {
+      width: 100%;
+      height: 100%;
+      min-height: 65vh;
+      position: relative;
+      display: flex;
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+
+      .pdf-document-frame {
+        width: 100%;
+        height: 100%;
+        min-height: 65vh;
+        border: 0;
+        background: white;
+        position: relative;
+        z-index: 2;
+      }
+
+    }
+
+    .pdf-preview-error {
+      width: min(520px, 100%);
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 16px;
-      padding: 40px;
-      text-align: center;
+      gap: 12px;
+      padding: 32px;
+      border: 1px solid rgba($color-danger, 0.45);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.08);
       color: white;
+      text-align: center;
 
       .pdf-icon {
         font-size: 64px;
         color: $color-danger;
       }
 
-      .pdf-label {
-        font-size: 18px;
-        font-weight: 600;
+      strong {
+        font-size: 16px;
       }
 
-      .pdf-hint {
-        font-size: 14px;
-        opacity: 0.7;
+      span,
+      small {
+        max-width: 460px;
         margin: 0;
       }
 
-      .btn-open-pdf {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 12px 24px;
-        background: linear-gradient(
-          135deg,
-          $color-primary 0%,
-          darken($color-primary, 10%) 100%
-        );
-        color: white;
-        border-radius: 10px;
-        text-decoration: none;
-        font-weight: 600;
-        transition: all 0.2s ease;
-        margin-top: 8px;
+      span {
+        font-size: 14px;
+      }
 
-        &:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 20px rgba($color-primary, 0.5);
-        }
+      small {
+        font-size: 12px;
+        opacity: 0.72;
       }
     }
 
@@ -217,6 +238,32 @@
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba($color-success, 0.4);
       }
+    }
+
+    .btn-open-external {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: $color-primary;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover:not(:disabled) {
+        transform: translateY(-1px);
+        filter: brightness(0.92);
+      }
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
     }
 
     .btn-close {
@@ -270,7 +317,14 @@
 // Responsive
 @media (max-width: 640px) {
   .image-preview-modal {
+    width: 100%;
+    height: 95vh;
     max-height: 95vh;
+
+    &.pdf-mode {
+      height: 96vh;
+      max-height: 96vh;
+    }
 
     .modal-header {
       padding: 14px 16px;
@@ -284,7 +338,12 @@
       padding: 16px;
 
       .image-preview-container .preview-image {
-        max-height: 50vh;
+        max-height: 68vh;
+      }
+
+      .pdf-preview-container,
+      .pdf-preview-container .pdf-document-frame {
+        min-height: 68vh;
       }
     }
 
@@ -293,6 +352,7 @@
       flex-direction: column-reverse;
 
       .btn-download,
+      .btn-open-external,
       .btn-close {
         width: 100%;
         justify-content: center;

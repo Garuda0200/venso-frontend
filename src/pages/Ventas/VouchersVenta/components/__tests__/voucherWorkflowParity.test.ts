@@ -81,8 +81,9 @@ test("el dueño explícito prevalece sobre la posición histórica",()=>{
 });
 test("gestiones dedicadas cierran sin guardado comercial ni sync de pasajeros",()=>{
  const source=readFileSync(resolve(process.cwd(),"src/pages/Ventas/VouchersVenta/components/VoucherModal/VoucherModal.tsx"),"utf8");
- assert.match(source,/if\(isPaymentManagementMode\)\{onClose\(\);return;\}/);assert.match(source,/if\(isDedicatedManagement\) return;/);
+ assert.match(source,/if\(isPaymentsOnlyMode\)\{onSave\?\.\(\);onClose\(\);return;\}/);assert.match(source,/if\(isDedicatedManagement\) return;/);
  assert.match(source,/syncPassengersByVoucherVenta/);assert.match(source,/Guardar información de pasajeros/);assert.doesNotMatch(source,/passengersPayload.map|window.confirm/);
  const docs=readFileSync(resolve(process.cwd(),"src/pages/Ventas/VouchersVenta/components/Steps/PassengerDocuments/PassengerDocuments.tsx"),"utf8");
- assert.match(docs,/onDocumentsAdded\?\.\(\)/);assert.match(docs,/DocumentDeletePopover/);assert.doesNotMatch(docs,/window.confirm|useFileUpload|documentAiUi|PassengerIdentityModal/);
+ assert.match(docs,/onDocumentsAdded\?\.\(\)/);assert.match(docs,/DocumentDeletePopover/);assert.doesNotMatch(docs,/window.confirm|useFileUpload/);
+ assert.match(docs,/isDocumentAiUiEnabled\(import\.meta\.env\) && <PassengerIdentityModal/);
 });

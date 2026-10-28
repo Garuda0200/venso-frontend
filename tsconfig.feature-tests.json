@@ -17,6 +17,11 @@
     ]
   },
   "include": [
+    "src/pages/Ventas/VouchersVenta/components/Steps/PassengerDocuments/__tests__/*.test.ts",
+    "src/pages/Ventas/VouchersVenta/components/Steps/PassengerDocuments/__tests__/*.test.tsx",
+    "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/zeroAdultChildPricing.test.ts",
+    "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/editedTicketPrice.test.ts",
+    "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/ticketPackageRoundtrip.test.ts",
     "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/quotationSavePricing.test.ts",
     "src/utils/__tests__/paymentCurrency.test.ts",
     "src/utils/__tests__/latestRequest.test.ts",
@@ -31,6 +36,7 @@
     "src/pages/Contabilidad/Files/domain/__tests__/movementFiles.test.tsx",
     "src/pages/Reservas/VouchersReserva/components/ServiceAssignmentModal/utils/__tests__/assignmentSaveQueue.test.ts",
     "src/services/__tests__/pendingPaymentService.test.ts",
+    "src/services/__tests__/paymentDetailRead.test.ts",
     "src/pages/Contabilidad/Liquidaciones/domain/__tests__/pendingPaymentGroups.test.ts",
     "src/pages/Reservas/VouchersReserva/utils/__tests__/reservationPaymentManagement.test.tsx",
     "src/utils/__tests__/quotationAgencyGroups.test.tsx",

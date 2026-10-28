@@ -27,6 +27,8 @@ import { hydrateDocumentDraft, reconcileDocumentListing } from "./documentListin
 import { getDocumentPreviewUrl, getDocumentFilename, getDocumentMimeType } from "./documentPreview";
 import DocumentDeletePopover from "./DocumentDeletePopover";
 import { canDeletePassengerDocument } from "./documentPermissions";
+import PassengerIdentityModal from "./PassengerIdentityModal";
+import { isDocumentAiUiEnabled } from "./documentAiUi";
 
 const ACCEPTED_TYPES = [
   "image/jpeg",
@@ -512,6 +514,21 @@ const PassengerDocuments = ({
 
   return (
     <div className="passenger-documents">
+      {isDocumentAiUiEnabled(import.meta.env) && <PassengerIdentityModal
+        key={`${cotizacionId}:${voucherId}`}
+        cotizacionId={cotizacionId} voucherId={voucherId} passengerData={passengerData}
+        documentMap={passengerDocuments} unassignedDocuments={unassignedDocuments}
+        hasUnsavedPassengers={hasUnsavedPassengers} onIdentityApplied={onIdentityApplied}
+        onUnassignedDocumentsChange={setUnassignedDocuments}
+        onDocumentsReload={(listing) => {
+          const next = reconcileDocumentListing(allPassengers, documentsMapRef.current, listing, makeProxyUrlAbsolute);
+          documentsMapRef.current = next.documents;
+          setPassengerDocuments(next.documents);
+          setUnassignedDocuments(next.unassigned || []);
+          syncToParent();
+        }}
+        onPersistDocuments={onPersistDocuments} documentsSaving={documentsSaving}
+      />}
       <div className="documents-header">
         <h2>Documentos de Pasajeros</h2>
         <p>

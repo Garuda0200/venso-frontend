@@ -1,4 +1,5 @@
 import { sharedPriceFlag } from "../../../../../utils/servicePricingType";
+import { getServiceBeneficiarySnapshot } from "./passengerPricingState";
 
 /**
  * Utilidades compartidas para tickets.
@@ -391,9 +392,10 @@ const getTicketChildRate = (source = {}) =>
 
 export const resolveTicketAdultUnitPrice = (source = {}) => {
   const direct = firstDefined(
+    // A manually edited fare, including zero, overrides picker metadata.
+    source?.tariff?.precio,
     source?.ticketAdultUnitPrice,
     source?.childService?.ticketAdultUnitPrice,
-    source?.tariff?.precio,
     source?.precio,
     source?.precioServicio,
   );
@@ -687,8 +689,8 @@ const getConvertedChildIdsFromService = (service = {}) => {
     }
   });
 
-  getServiceSelectedIds(service).forEach((id) => {
-    if (String(id).startsWith("child:")) childIds.add(String(id));
+  getServiceBeneficiarySnapshot(service).convertedEntries.forEach(({childId}) => {
+    childIds.add(childId);
   });
 
   return [...childIds];
@@ -934,6 +936,20 @@ export const expandTicketServiceForPersistence = (service = {}) => {
     (Object.keys(childPriceMapForService).length > 0 ? "student_tariff" : "student_tariff");
   const persistChildrenAsStudentAdults = ticketChildPricingMode !== "manual";
 
+  // A price split adds tariff rows; only one may keep the original DB identity.
+  // Reusing it overwrites the same row twice when an existing quote is edited.
+  const withUniqueIdentities = rows => rows.map((row, index) => index === 0 ? row : {
+    ...row, id:undefined, servicioId:undefined, versionUid:undefined, version_uid:undefined,
+    // Only the original row owns its reservation/payment assignment.
+    isAssigned:false, assignedService:undefined, paymentRequest:undefined, isPaid:false, assignedParentId:undefined, assignedChildId:undefined,
+    assignedTariff:undefined, assignedPassengerSelection:undefined,
+    assignedMoneda:undefined, assignedTasaCambio:undefined,
+    assignedPrecioServicio:undefined, assignedPrecioTotal:undefined,
+    assignedBeneficiariosAdultos:undefined, assignedBeneficiariosNinos:undefined,
+    assignedTipoPrecio:undefined, assignedCapacidadLimite:undefined,
+    assignedIgv:undefined,
+  });
+
   const makeTicketChildService = ({
     ids,
     unitPrice,
@@ -977,6 +993,9 @@ export const expandTicketServiceForPersistence = (service = {}) => {
 
     return {
       ...service,
+      beneficiariosAdultos: asAdultEquivalent ? ids.map(id => ({id, child_origin:id})) : [],
+      beneficiariosNinos: asAdultEquivalent ? [] : ids.map(id => ({id,precio:explicitPriceMap[id] ?? 0})),
+      beneficiarios_adultos: undefined, beneficiarios_ninos: undefined,
       childService: {
         ...(getTicketChildRate(service) || childService || {}),
         entrada: getTicketEntrada(service),
@@ -1054,7 +1073,9 @@ export const expandTicketServiceForPersistence = (service = {}) => {
     const adultSelectedIds = hasStudentTariff
       ? [...adultIds, ...childIdsWithAdultTariff]
       : [...adultIds, ...childIds];
-    const zeroChildPriceMap = hasStudentTariff ? {} : buildZeroChildPriceMap(childIdsForStudentTariff);
+    const explicitChildPriceMap = hasStudentTariff ? {} : Object.fromEntries(
+      childIdsForStudentTariff.map(id => [id, round2(childPriceMapForService[id] ?? 0)]));
+    const explicitChildTotal = round2(Object.values(explicitChildPriceMap).reduce((sum,price) => sum+price,0));
     const adultConvertedMap = buildChildConvertedMap(childIdsWithAdultTariff);
     const adultPassengerSelection = {
       ...(selection || {}),
@@ -1071,10 +1092,10 @@ export const expandTicketServiceForPersistence = (service = {}) => {
       treatChildrenAsAdults: childIdsWithAdultTariff.length > 0,
       convertedChildToAdultMap: adultConvertedMap,
       ninosComoAdulto: adultConvertedMap,
-      assignedChildExplicitPriceMap: zeroChildPriceMap,
-      assignedChildExplicitPriceSum: 0,
-      assignedChildExplicitCount: Object.keys(zeroChildPriceMap).length,
-      hasChildExplicitPrices: Object.keys(zeroChildPriceMap).length > 0,
+      assignedChildExplicitPriceMap: explicitChildPriceMap,
+      assignedChildExplicitPriceSum: explicitChildTotal,
+      assignedChildExplicitCount: Object.keys(explicitChildPriceMap).length,
+      hasChildExplicitPrices: Object.keys(explicitChildPriceMap).length > 0,
     };
 
     // A homogeneous shared ticket keeps the catalog group amount, including
@@ -1084,6 +1105,9 @@ export const expandTicketServiceForPersistence = (service = {}) => {
       : round2((adultUnitPrice || 0) * (adultIds.length + childIdsWithAdultTariff.length));
     expanded.push({
       ...service,
+      beneficiariosAdultos: [...adultIds.map(id => ({id})), ...childIdsWithAdultTariff.map(id => ({id,child_origin:id}))],
+      beneficiariosNinos: Object.entries(explicitChildPriceMap).map(([id,precio]) => ({id,precio})),
+      beneficiarios_adultos: undefined, beneficiarios_ninos: undefined,
       childService: {
         ...(getTicketAdultRate(service) || childService || {}),
         entrada: getTicketEntrada(service),
@@ -1100,10 +1124,10 @@ export const expandTicketServiceForPersistence = (service = {}) => {
       ticketChildrenUseStudentTariffAsAdult: persistChildrenAsStudentAdults,
       assignedPassengerIds: adultSelectedIds,
       assignedPassengerCount: adultSelectedIds.length,
-      assignedChildExplicitPriceMap: zeroChildPriceMap,
-      assignedChildExplicitPriceSum: 0,
-      assignedChildExplicitCount: Object.keys(zeroChildPriceMap).length,
-      hasChildExplicitPrices: Object.keys(zeroChildPriceMap).length > 0,
+      assignedChildExplicitPriceMap: explicitChildPriceMap,
+      assignedChildExplicitPriceSum: explicitChildTotal,
+      assignedChildExplicitCount: Object.keys(explicitChildPriceMap).length,
+      hasChildExplicitPrices: Object.keys(explicitChildPriceMap).length > 0,
       pricingMode: "fixed",
       treatChildrenAsAdults: childIdsWithAdultTariff.length > 0,
       convertedChildToAdultMap: adultConvertedMap,
@@ -1112,8 +1136,8 @@ export const expandTicketServiceForPersistence = (service = {}) => {
         ...(service?.tariff || {}),
         precio: round2(adultUnitPrice || 0),
         precio_original: adultRatedTotal,
-        childExtrasTotal: 0,
-        precio_original_with_child_extras: adultRatedTotal,
+        childExtrasTotal: explicitChildTotal,
+        precio_original_with_child_extras: round2(adultRatedTotal + explicitChildTotal),
       },
     });
   }
@@ -1158,7 +1182,7 @@ export const expandTicketServiceForPersistence = (service = {}) => {
     }
   }
 
-  return expanded.length > 0 ? expanded : [service];
+  return expanded.length > 0 ? withUniqueIdentities(expanded) : [service];
 };
 
 export const consolidateTicketServicesByEntradaProcedencia = (

@@ -97,6 +97,8 @@ const isTicketStudentPassengerService = (service = {}) => {
 
   if (serviceType !== "tickets") return false;
 
+  if (firstDefined(service.ticketChildPricingMode, service.passengerSelection?.ticketChildPricingMode) === "manual") return false;
+
   const targetGroup = getTicketPassengerTargetGroupFromService(service);
   const tipoUsuario = getTicketTipoUsuarioFromService(service);
 

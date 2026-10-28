@@ -7,6 +7,7 @@ export function normalizePassengerForDraft(p: any = {}, type = "adult") {
     nacionalidad:first(p.nacionalidad,p.nationality,p.pais),procedencia:first(p.procedencia),sexo:first(p.sexo,p.genero),
     tipoDocumento:first(p.tipoDocumento,p.tipo_documento,p.docType),numeroDocumento:first(p.numeroDocumento,p.numero_documento,p.docNumber),
     correo:first(p.correo,p.email),telefono:first(p.telefono,p.phone),observaciones:first(p.observaciones,p.notes),
+    fecha_caducidad:first(p.fecha_caducidad,p.fechaCaducidad,p.documentExpiry),
     passenger_key:first(p.passenger_key) || `${type}-pending`};
 }
 export const normalizePassengerData = (data: any = {}) => ({

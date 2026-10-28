@@ -85,12 +85,19 @@ export const buildServiceBeneficiaryPricingLedger = ({
           : service,
         );
         const quotedIds = beneficiaries.selectedIds;
+        const quotedChildPrices = beneficiaries.childPriceMap;
+        const quotedConversions = Object.fromEntries(beneficiaries.convertedEntries.map(({ childId }) => [childId, true]));
         const pricedService = {
           ...service,
           assignedPassengerIds: quotedIds,
+          assignedChildExplicitPriceMap: quotedChildPrices,
+          convertedChildToAdultMap: quotedConversions,
+          children: undefined,
           passengerSelection: {
             ...(service.passengerSelection || {}),
             selectedIds: quotedIds,
+            assignedChildExplicitPriceMap: quotedChildPrices,
+            convertedChildToAdultMap: quotedConversions,
           },
         };
 

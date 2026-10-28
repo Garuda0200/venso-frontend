@@ -106,7 +106,7 @@ const computePricesFromFlags = (
   // Not divided: precioServicio = per-person unit
   return {
     perPerson: precioServicio,
-    precioOriginal: precioServicio * Math.max(1, numAdults),
+    precioOriginal: precioServicio * Math.max(0, numAdults),
   };
 };
 
@@ -117,7 +117,7 @@ const computePricesFromFlags = (
  * tariff.precio (per-person) and tariff.precio_original (total).
  */
 const buildTariffFromFlatFields = (service) => {
-  const storedPrecioServicio = parseFloat(service.precioServicio || 0);
+  const storedPrecioServicio = parseFloat(service.precioServicio ?? 0);
   const moneda = service.moneda || "dolares";
   const igv = Boolean(service.igv);
   const dividido = Boolean(sharedPriceFlag(service.tipoPrecio));
@@ -148,35 +148,29 @@ const buildTariffFromFlatFields = (service) => {
     ? service.beneficiariosNinos
     : [];
 
-  const numAdults = beneficiariosAdultos.length || 1;
+  const hasExplicitBeneficiarySelection =
+    Array.isArray(service.beneficiariosAdultos) ||
+    Array.isArray(service.beneficiariosNinos);
+  // A service with selected children but no adults has an adult subtotal of 0.
+  // Keep the historical single-unit fallback only for legacy rows that did not
+  // persist any beneficiary selection at all.
+  const numAdults = hasExplicitBeneficiarySelection
+    ? beneficiariosAdultos.length
+    : 1;
 
-  // precioTotal returned by the backend follows precioServicio. For hotels we
-  // deliberately rebuild the runtime total from the canonical base + igv flag.
-  let perPerson, precioOriginal;
-  if (!isHotelService && service.precioTotal != null) {
-    precioOriginal = parseFloat(service.precioTotal);
-    perPerson = dividido
-      ? (() => {
-          let divisor = Math.max(1, numAdults);
-          if (capacidadLimite && shouldCapacityCapPriceDivisor(service)) {
-            const cap = getCapacityFromService(service);
-            if (cap > 0 && cap < divisor) divisor = cap;
-          }
-          return precioOriginal / divisor;
-        })()
-      : storedPrecioServicio;
-  } else {
-    ({ perPerson, precioOriginal } = computePricesFromFlags(
-      runtimePrecioServicio,
-      numAdults,
-      dividido,
-      capacidadLimite,
-      service,
-    ));
-  }
+  // `precioTotal` is the persisted grand total and now includes explicit child
+  // tariffs. Rebuild the adult component from precioServicio instead; otherwise
+  // a paid child would be counted once as adult and once as child on hydration.
+  const { perPerson, precioOriginal } = computePricesFromFlags(
+    runtimePrecioServicio,
+    numAdults,
+    dividido,
+    capacidadLimite,
+    service,
+  );
 
   const childExtrasTotal = beneficiariosNinos.reduce(
-    (sum, child) => sum + parseFloat(child.precio || 0),
+    (sum, child) => sum + parseFloat(child.precio ?? 0),
     0,
   );
 
@@ -264,6 +258,15 @@ const usesNewFlatSchema = (service) =>
  * - beneficiariosAdultos → [{id}, {id, child_origin}] (NO precio)
  * - beneficiariosNinos → [{id, precio}]
  */
+const firstExplicitFinitePrice = (...values) => {
+  for (const value of values) {
+    if (value === undefined || value === null || value === "") continue;
+    const parsed = Number.parseFloat(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return null;
+};
+
 const buildFlatPricingFields = (tariff, pricingState, service = {}) => {
   const moneda = tariff?.moneda || service.moneda || "dolares";
   const igv = Boolean(tariff?.tieneIgv || tariff?.tiene_igv || service.igv);
@@ -290,8 +293,8 @@ const buildFlatPricingFields = (tariff, pricingState, service = {}) => {
   // precioServicio: the value stored in DB
   // For divided: precio_original (total); for non-divided: precio (per-person)
   let precioServicio = sharedPriceFlag(flags.tipoPrecio)
-    ? parseFloat(tariff?.precio_original || tariff?.precio || 0)
-    : parseFloat(tariff?.precio || tariff?.precio_original || 0);
+    ? (firstExplicitFinitePrice(tariff?.precio_original, tariff?.precio) ?? 0)
+    : (firstExplicitFinitePrice(tariff?.precio, tariff?.precio_original) ?? 0);
 
   if (isHotelService) {
     const canonicalHotelBasePrice = parseFloat(
@@ -328,8 +331,11 @@ const buildFlatPricingFields = (tariff, pricingState, service = {}) => {
     precioServicio = existingPrecioServicio;
   }
 
+  // Zero is an explicit price, not a missing value.
+  const hasExplicitZeroTariff = firstExplicitFinitePrice(tariff?.precio_original, tariff?.precio) === 0;
   // Fallback: If tariff didn't provide a valid price, use existing flat field
   if (
+    !hasExplicitZeroTariff &&
     !precioServicio &&
     (service.precioServicio != null || service.precio_servicio != null)
   ) {
@@ -512,6 +518,15 @@ export const hydrateServiceFromDB = (service) => {
 
   // Convert new flat DB fields to internal tariff/passengerSelection format
   if (usesNewFlatSchema(service)) {
+    // Recover manual student pricing from the persisted canonical arrays.
+    const ticketUser = String(service.childService?.tipo_usuario ?? service.childService?.ticket?.tipo_usuario ?? "");
+    if ((service.typeService ?? service.parentService?.typeService) === "tickets"
+        && /estudiante|student|niño|nino|menor|child/i.test(ticketUser)
+        && Number(service.precioServicio) === 0
+        && !(service.beneficiariosAdultos || []).length
+        && (service.beneficiariosNinos || []).length) {
+      service = {...service,ticketChildPricingMode:"manual",ticketChildrenUseStudentTariffAsAdult:false};
+    }
     service = {
       ...service,
       tariff: buildTariffFromFlatFields(service),
@@ -828,8 +843,8 @@ export const cleanServiceForDB = (service) => {
 
     // precioServicio for assigned: total if dividido, per-person if not
     cleaned.assignedPrecioServicio = sharedPriceFlag(assignedFlags.tipoPrecio)
-      ? parseFloat(at.precio_original || at.precio || 0)
-      : parseFloat(at.precio || at.precio_original || 0);
+      ? (firstExplicitFinitePrice(at.precio_original, at.precio) ?? 0)
+      : (firstExplicitFinitePrice(at.precio, at.precio_original) ?? 0);
 
     const aps = service.assignedPassengerSelection || {};
     const assignedSelectedIds =

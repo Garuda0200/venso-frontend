@@ -1,3 +1,5 @@
+import { sharedPriceFlag } from "../../../../../utils/servicePricingType";
+
 const isPlainObject = (value) =>
   value != null && typeof value === "object" && !Array.isArray(value);
 
@@ -115,14 +117,20 @@ const normalizeChildBeneficiaries = (value = []) => {
 const readBeneficiaryState = (source = {}) => {
   if (!isPlainObject(source)) return {};
 
+  const hasBeneficiaryLists =
+    hasOwn(source, "beneficiariosAdultos") ||
+    hasOwn(source, "beneficiarios_adultos") ||
+    hasOwn(source, "beneficiariosNinos") ||
+    hasOwn(source, "beneficiarios_ninos");
+
   const adultBeneficiaries = normalizeAdultBeneficiaries(
-    source.beneficiariosAdultos,
+    source.beneficiariosAdultos ?? source.beneficiarios_adultos,
   );
   const childBeneficiaries = normalizeChildBeneficiaries(
-    source.beneficiariosNinos,
+    source.beneficiariosNinos ?? source.beneficiarios_ninos,
   );
 
-  if (adultBeneficiaries.length === 0 && childBeneficiaries.length === 0) {
+  if (!hasBeneficiaryLists) {
     return {};
   }
 
@@ -495,10 +503,16 @@ export const getServicePassengerPricingState = (
       selectionState.assignedPassengerCount,
       selectedIds.length,
     ) ?? selectedIds.length;
-  const assignedPassengerCount =
-    getServiceType(service) === "endoses" && getTourCapacity(service) != null
-      ? selectedIds.length
-      : rawAssignedPassengerCount;
+  const hasIdentifiedBeneficiaries =
+    Array.isArray(service?.beneficiariosAdultos) ||
+    Array.isArray(service?.beneficiarios_adultos) ||
+    Array.isArray(service?.beneficiariosNinos) ||
+    Array.isArray(service?.beneficiarios_ninos) ||
+    Array.isArray(service?.assignedPassengerIds) ||
+    Array.isArray(service?.passengerSelection?.selectedIds);
+  const assignedPassengerCount = hasIdentifiedBeneficiaries
+    ? selectedIds.length
+    : rawAssignedPassengerCount;
 
   const assignedChildExplicitCount =
     pickDefined(
@@ -554,11 +568,14 @@ export const getServiceBeneficiarySnapshot = (
 ) => {
   const pricingState = getServicePassengerPricingState(service, selection);
   const adultBeneficiaries = normalizeAdultBeneficiaries(
-    service?.beneficiariosAdultos,
+    service?.beneficiariosAdultos ?? service?.beneficiarios_adultos,
   );
   const childBeneficiaries = normalizeChildBeneficiaries(
-    service?.beneficiariosNinos,
+    service?.beneficiariosNinos ?? service?.beneficiarios_ninos,
   );
+  const hasExplicitRuntimeSelection =
+    Array.isArray(service?.assignedPassengerIds) ||
+    Array.isArray(service?.passengerSelection?.selectedIds);
   const runtimeChildren = isPlainObject(service?.children)
     ? service.children
     : {};
@@ -586,8 +603,11 @@ export const getServiceBeneficiarySnapshot = (
   const pushConvertedEntry = (childId, revertKey) => {
     const normalizedChildId = canonicalizeToSelectedSlot(childId);
     const slot = getPassengerSlotKey(normalizedChildId);
+    const selectedAsAdultAlias = isAdultPassengerId(revertKey) &&
+      selectedIdBySlot.has(getPassengerSlotKey(revertKey));
     if (
       !isChildPassengerId(normalizedChildId) ||
+      (hasExplicitRuntimeSelection && !selectedIdBySlot.has(slot) && !selectedAsAdultAlias) ||
       convertedChildSlotSet.has(slot)
     ) {
       return;
@@ -622,7 +642,7 @@ export const getServiceBeneficiarySnapshot = (
     },
   );
 
-  if (!hasAuthoritativeConvertedState) {
+  if (!hasAuthoritativeConvertedState && !hasExplicitRuntimeSelection) {
     adultBeneficiaries.forEach((adult) => {
       if (!adult.child_origin) return;
 
@@ -657,7 +677,7 @@ export const getServiceBeneficiarySnapshot = (
 
   // Only merge beneficiary child prices when selectedIds has no children —
   // avoids duplicate entries from ID-format mismatch.
-  if (!selectedHasChildren) {
+  if (!selectedHasChildren && !hasExplicitRuntimeSelection) {
     childBeneficiaries.forEach((child) => {
       if (!(child.id in childPriceMap)) {
         childPriceMap[child.id] = child.precio;
@@ -665,7 +685,7 @@ export const getServiceBeneficiarySnapshot = (
     });
   }
 
-  Object.entries(runtimeChildren).forEach(([childId, rawValue]) => {
+  Object.entries(hasExplicitRuntimeSelection ? {} : runtimeChildren).forEach(([childId, rawValue]) => {
     if (!isChildPassengerId(childId)) return;
 
     const asAdult =
@@ -725,7 +745,7 @@ export const getServiceBeneficiarySnapshot = (
   // Only add from beneficiarios if selectedIds had no adults —
   // the two sources use different ID formats (long vs short)
   // and exact-match dedup won't catch them.
-  if (!selectedHasAdults) {
+  if (!selectedHasAdults && !hasExplicitRuntimeSelection) {
     adultBeneficiaries.forEach((adult) => {
       if (!adult.child_origin) {
         pushAdultId(adult.id);
@@ -749,11 +769,11 @@ export const getServiceBeneficiarySnapshot = (
   Object.keys(childPriceMap).forEach(pushChildId);
   // Only add from beneficiarios if selectedIds had no children (same
   // ID-format mismatch reason as adult dedup above).
-  if (!selectedHasChildren) {
+  if (!selectedHasChildren && !hasExplicitRuntimeSelection) {
     childBeneficiaries.forEach((child) => pushChildId(child.id));
   }
   convertedEntries.forEach(({ childId }) => pushChildId(childId));
-  if (!selectedHasChildren) {
+  if (!selectedHasChildren && !hasExplicitRuntimeSelection) {
     if (!hasAuthoritativeConvertedState) {
       adultBeneficiaries.forEach((adult) => {
         if (adult.child_origin) {
@@ -762,7 +782,7 @@ export const getServiceBeneficiarySnapshot = (
       });
     }
   }
-  Object.keys(runtimeChildren).forEach(pushChildId);
+  if (!hasExplicitRuntimeSelection) Object.keys(runtimeChildren).forEach(pushChildId);
 
   return {
     pricingState,
@@ -870,17 +890,52 @@ export const buildPersistedPassengerSelection = (state = {}) => {
  * Operational assignedBeneficiarios* fields are deliberately preserved. */
 export const syncQuotedBeneficiariesFromRuntime = (service = {}) => {
   const snapshot = getServiceBeneficiarySnapshot(service);
+  const type = service.typeService || service.parentService?.typeService;
+  const childMode = service.ticketChildPricingMode ?? service.passengerSelection?.ticketChildPricingMode;
+  const ticketUser = String(service.childService?.tipo_usuario ?? service.childService?.ticket?.tipo_usuario ?? "");
+  const studentFare = type === "tickets" && childMode !== "manual" &&
+    /estudiante|student|niño|nino|menor|child/i.test(ticketUser);
+  // Student rows use the unit fare with child_origin. A default zero in the
+  // generic child map is not a manual discount for that tariff.
+  const studentEntries = studentFare
+    ? snapshot.childIds.map(childId => ({childId, revertKey:childId})) : [];
   const beneficiariosAdultos = [
     ...snapshot.adultIds.map((id) => ({ id })),
-    ...snapshot.convertedEntries.map(({ childId, revertKey }) => ({
+    ...[...snapshot.convertedEntries, ...studentEntries].map(({ childId, revertKey }) => ({
       id: revertKey || childId, child_origin: childId,
     })),
   ];
-  const beneficiariosNinos = snapshot.childIds.map((id) => ({
-    id, precio: Number(snapshot.childPriceMap[id]) || 0,
+  const beneficiariosNinos = (studentFare ? [] : snapshot.childIds).map((id) => ({
+    id, precio: Math.round(((Number(snapshot.childPriceMap[id]) || 0) + Number.EPSILON) * 100) / 100,
   }));
+  // Imported services also carry flat persisted totals. A child-price edit
+  // used to update tariff/beneficiaries only, leaving precioTotal from the
+  // package. The ledger then rejected its valid allocation as an overcharge
+  // and summaries fell back to aggregate (possibly mixed) child cohorts.
+  const divided = sharedPriceFlag(service.tipoPrecio ?? service.tipo_precio ?? service.tariff?.tipo_precio);
+  const unit = toFiniteNumber(service.tariff?.precio) ??
+    toFiniteNumber(service.precioServicio ?? service.precio_servicio) ?? 0;
+  const adultTotal = toFiniteNumber(service.tariff?.precio_original) ??
+    (divided ? toFiniteNumber(service.precioServicio ?? service.precio_servicio) ?? unit
+      : unit * beneficiariosAdultos.length);
+  const childTotal = beneficiariosNinos.reduce((sum, child) => sum + child.precio, 0);
+  const childPriceMap = Object.fromEntries(beneficiariosNinos.map(child => [child.id, child.precio]));
+  const total = Math.round((adultTotal + childTotal + Number.EPSILON) * 100) / 100;
   return {
     ...service, beneficiariosAdultos, beneficiariosNinos,
+    childPriceMap,
+    assignedChildExplicitPriceMap: childPriceMap,
+    assignedChildExplicitPriceSum: childTotal,
+    ...(studentFare ? {convertedChildToAdultMap:Object.fromEntries(
+      beneficiariosAdultos.filter(b => b.child_origin).map(b => [b.child_origin,true])),
+    } : {}),
+    ...(service.passengerSelection ? { passengerSelection: { ...service.passengerSelection,
+      preciosNinos: childPriceMap, assignedChildExplicitPriceMap: childPriceMap,
+      assignedChildExplicitPriceSum: childTotal } } : {}),
+    precioTotal: total,
+    ...(Object.hasOwn(service, "precio_total") ? { precio_total: total } : {}),
+    ...(service.tariff ? { tariff: { ...service.tariff, childExtrasTotal: childTotal,
+      precio_original_with_child_extras: total } } : {}),
     // Pricing snapshots are derived from the edited tariff/selection, never reused.
     children: undefined, precio_adult: undefined, amount_per_adult: undefined, amount_per_child: undefined,
     ...(Object.hasOwn(service, "beneficiarios_adultos") ? { beneficiarios_adultos: beneficiariosAdultos } : {}),

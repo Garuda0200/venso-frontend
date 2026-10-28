@@ -12,6 +12,7 @@ import {
 import SecureStorage from "../../../../../utils/secureStorage";
 import axiosInstance from "../../../../../utils/axiosInstance"; // Para crear movimientos
 import { documentSnapshot, mergeConfirmedDocuments, persistVoucherDocuments } from "../../../../../services/voucherDocumentPersistence";
+import { getDocumentAiService } from "../../../../../services/documentAiService";
 import { normalizePassengerData, passengerRowsToDraft, passengerDraftFingerprint, toVoucherPassengerSyncPayload, mergeNominalRoster } from "../passengerDraft";
 import { hasPendingDocumentUploads } from "../Steps/PassengerDocuments/documentPermissions";
 import { reconcileDocumentListing } from "../Steps/PassengerDocuments/documentListing";
@@ -136,11 +137,13 @@ const VoucherModal = ({
   isEditMode = false,
   skipCotizacionSelector = false,
   isPaymentManagementMode = false,
+  isPaymentReadOnly = false,
   isDocumentManagementMode = false,
   onPassengerInfoSaved = null,
 }) => {
-  const isPassengerInfoOnlyMode = isEditMode && !isPaymentManagementMode && !isDocumentManagementMode;
-  const isDedicatedManagement = isEditMode;
+  const isPaymentsOnlyMode = isPaymentManagementMode || isPaymentReadOnly;
+  const isPassengerInfoOnlyMode = isEditMode && !isPaymentsOnlyMode && !isDocumentManagementMode;
+  const isDedicatedManagement = isEditMode || isPaymentsOnlyMode || isDocumentManagementMode;
   const currentUserRole = Number(SecureStorage.getItem("userRole") ?? -1);
   const isSuperAdmin = currentUserRole === 0;
   const currentUserIdentifier = SecureStorage.getItem("dniuser") || "";
@@ -242,7 +245,7 @@ const VoucherModal = ({
         setCreatorUsers(response?.accounts || response?.data?.accounts || []);
       })
       .catch((error) => {
-        console.error("Error cargando usuarios creadores del voucher:", error);
+        console.error("Error cargando usuarios creadores del voucher:");
         if (isMounted) setCreatorUsers([]);
       })
       .finally(() => {
@@ -256,13 +259,13 @@ const VoucherModal = ({
 
   // Efecto para forzar step a 'payments' cuando está en modo gestión de pagos
   useEffect(() => {
-    if (isPaymentManagementMode) {
+    if (isPaymentsOnlyMode) {
       const paymentsStepIndex = STEPS.findIndex(
         (step) => step.id === "payments",
       );
       setCurrentStep(paymentsStepIndex);
     }
-  }, [isPaymentManagementMode]);
+  }, [isPaymentsOnlyMode]);
 
   // Efecto para forzar step a 'documents' cuando está en modo gestión de documentos
   useEffect(() => {
@@ -309,7 +312,7 @@ const VoucherModal = ({
               voucherData.id,
             );
 
-          console.log(" Response getVoucherWithCotizacionById:", response);
+          console.log(" Response getVoucherWithCotizacionById:");
           if(!isCurrent()) return;
 
           if (response && response.success && response.data) {
@@ -335,10 +338,7 @@ const VoucherModal = ({
                   fullVoucherData,
                 );
               } catch (cotizacionErr) {
-                console.warn(
-                  "No se pudo cargar la cotización fresca; usando datos embebidos del voucher:",
-                  cotizacionErr,
-                );
+                console.warn("No se pudo cargar la cotización fresca; usando datos embebidos del voucher:");
               }
             }
 
@@ -352,10 +352,7 @@ const VoucherModal = ({
 
               parsedPassengerData=passengerRowsToDraft(passengersResponse);
             } catch (passengerErr) {
-              console.error(
-                " Error cargando pasajeros del voucher:",
-                passengerErr,
-              );
+              console.error(" Error cargando pasajeros del voucher:");
               // Sin fallback legacy - pasajeros vacíos si falla la API
               parsedPassengerData = { adults: [], children: [] };
             }
@@ -397,7 +394,7 @@ const VoucherModal = ({
                       backendDocs[category].forEach((doc) => {
                         // Construir passengerKey desde passenger_id
                         if (!doc.passengerId) {
-                          console.warn(" Documento sin passengerId:", doc);
+                          console.warn(" Documento sin passengerId:");
                           return;
                         }
 
@@ -444,7 +441,7 @@ const VoucherModal = ({
                 );
               }
             } catch (docErr) {
-              console.error(" Error cargando documentos del voucher:", docErr);
+              console.error(" Error cargando documentos del voucher:");
               parsedDocumentData = {};
             }
 
@@ -507,10 +504,7 @@ const VoucherModal = ({
                   setCotizacion(cotizacionResponse);
                 }
               } catch (err) {
-                console.warn(
-                  "No se pudo cargar la información de la cotización:",
-                  err,
-                );
+                console.warn("No se pudo cargar la información de la cotización:");
                 // No es crítico, podemos continuar sin los datos de la cotización
               }
             }
@@ -521,7 +515,7 @@ const VoucherModal = ({
             throw new Error("Formato de respuesta inválido");
           }
         } catch (err) {
-          console.error("Error al cargar datos del voucher:", err);
+          console.error("Error al cargar datos del voucher:");
           setError(
             `Error al cargar datos: ${err.message || "Error desconocido"}`,
           );
@@ -546,10 +540,7 @@ const VoucherModal = ({
               cotizacionData: resolvedCotizacion,
             }));
           } catch (cotizacionErr) {
-            console.warn(
-              "No se pudo cargar la cotización completa para el voucher; usando datos recibidos:",
-              cotizacionErr,
-            );
+            console.warn("No se pudo cargar la cotización completa para el voucher; usando datos recibidos:");
             setCotizacion(cotizacionData);
           }
         }
@@ -561,9 +552,7 @@ const VoucherModal = ({
                 cotizacionData.id,
               );
             if (cotPassengers && cotPassengers.length > 0) {
-              console.log(
-                ` Cargados ${cotPassengers.length} pasajeros de cotización ${cotizacionData.id}`,
-              );
+              console.log("Operación de voucher; datos personales omitidos");
               const parsedData = { adults: [], children: [] };
               cotPassengers.forEach((p) => {
                 const obj = {
@@ -610,9 +599,7 @@ const VoucherModal = ({
               }));
             }
           } catch (err) {
-            console.log(
-              "No cotizacion passengers found, will init from peopleDetails",
-            );
+            console.log("No cotizacion passengers found, will init from peopleDetails");
           }
         }
         setVoucherCode(
@@ -641,6 +628,21 @@ const VoucherModal = ({
   }, []);
 
   // Manejo de cambios en los documentos
+  const handleIdentityApplied = useCallback(async () => {
+    const expected = passengerDraftFingerprint(passengerDraftRef.current);
+    if (expected !== passengerPersistedFingerprintRef.current) throw new Error("Guarda primero los cambios pendientes de pasajeros");
+    const id = voucherIdRef.current || createdVoucherId || voucherData?.id;
+    if (!id) throw new Error("Voucher no disponible");
+    const rows = await pasajeroService.getPassengersByVoucherVenta(id, { _skipDedup: true });
+    if (passengerDraftFingerprint(passengerDraftRef.current) !== expected || (voucherIdRef.current || createdVoucherId || voucherData?.id) !== id)
+      throw new Error("La ficha cambió durante la lectura; se conserva su borrador");
+    const canonical = passengerRowsToDraft(rows);
+    passengerDraftRef.current = canonical;
+    passengerPersistedFingerprintRef.current = passengerDraftFingerprint(canonical);
+    setEditedVoucherData(prev => ({ ...prev, passengerData: canonical }));
+    await onPassengerInfoSaved?.();
+  }, [createdVoucherId, voucherData?.id, onPassengerInfoSaved]);
+
   const handleDocumentDataChange = useCallback((newDocumentData) => {
     documentDraftRef.current=newDocumentData;
     setEditedVoucherData(prev=>({...prev,documentData:newDocumentData}));
@@ -692,6 +694,8 @@ const VoucherModal = ({
       passengerDraftRef.current=null; passengerPersistedFingerprintRef.current=null;
       passengerPersistedVoucherIdRef.current=null;
       passengerSavePromiseRef.current=null; documentDraftRef.current={};
+      setDocumentsPreparing(false);setDocumentsSaving(false);
+      savingDocumentsRef.current=null;documentsResaveRef.current=false;
       documentsSavedInStepRef.current = false;
       // Reset voucher refs to prevent stale IDs on next open
       voucherIdRef.current = null;
@@ -772,7 +776,7 @@ const VoucherModal = ({
           );
         }
 
-        console.log(" Creando voucher inicial...", initialVoucherData);
+        console.log(" Creando voucher inicial...");
         const result = await voucherVentaService.createVoucher(
           initialVoucherData,
           {
@@ -794,9 +798,7 @@ const VoucherModal = ({
         voucherIdRef.current = voucherId;
         voucherCodeRef.current = voucherCodeFromBackend;
 
-        console.log(
-          ` Voucher inicial resuelto: ID=${voucherId}, Code=${voucherCodeFromBackend}`,
-        );
+        console.log("Operación de voucher; datos personales omitidos");
 
         setShowToast({
           type: "success",
@@ -807,7 +809,7 @@ const VoucherModal = ({
 
         return true;
       } catch (error) {
-        console.error(" Error creando voucher inicial:", error);
+        console.error(" Error creando voucher inicial:");
         setShowToast({
           type: "error",
           message: `Error al crear voucher: ${error.message}`,
@@ -881,6 +883,7 @@ const VoucherModal = ({
           try {
             await persistVoucherDocuments({documentData:snapshot,passengerData:passengerDraftRef.current || editedVoucherData.passengerData,
               quote:cotizacion?.id || cotizacionData?.id || voucherData?.cotizacion_id,voucher:voucherId,code:voucherCode},{
+              ai: await getDocumentAiService(),
               authorize:async (id,passengerIds)=>{
                 const roster=await pasajeroService.getPassengersByVoucherVenta(id,{_skipDedup:true});
                 return passengerIds.every(passengerId=>roster.some(row=>Number(row.id_pasajero)===passengerId));
@@ -928,14 +931,14 @@ const VoucherModal = ({
       !voucherIdRef.current &&
       !createdVoucherId
     ) {
-      console.log(` Creando voucher inicial antes de guardar pasajeros...`);
+      console.log("Operación de voucher; datos personales omitidos");
       const success = await createInitialVoucher();
       if (!success) {
-        console.log(` Error creando voucher, no avanzaremos`);
+        console.log("Operación de voucher; datos personales omitidos");
         return; // No avanzar si falló la creación
       }
       // CONTINUAR con el flujo de guardar pasajeros (no hacer return aquí)
-      console.log(` Voucher creado, ahora guardando pasajeros...`);
+      console.log("Operación de voucher; datos personales omitidos");
     }
 
     // NUEVO: Si estamos en el step de pasajeros (step 0), guardar pasajeros antes de avanzar
@@ -946,12 +949,8 @@ const VoucherModal = ({
       voucherCodeRef.current || createdVoucherCode || voucherData?.voucher_code;
 
     if (currentStep === 0 && voucherIdToUse) {
-      console.log(
-        ` Guardando pasajeros antes de avanzar a Step 1 (Documentos)...`,
-      );
-      console.log(
-        ` Usando voucherId=${voucherIdToUse}, voucherCode=${voucherCodeToUse}`,
-      );
+      console.log("Operación de voucher; datos personales omitidos");
+      console.log("Operación de voucher; datos personales omitidos");
       setIsSubmitting(true);
       const success = await savePassengers();
       setIsSubmitting(false);
@@ -974,7 +973,7 @@ const VoucherModal = ({
         documentsSavedInStepRef.current = true;
         setCurrentStep((prev) => Math.min(prev + 1, STEPS.length - 1));
       } catch (error) {
-        console.error("No se pudo guardar los documentos del voucher:", error);
+        console.error("No se pudo guardar los documentos del voucher:");
         setShowToast({
           type: "error",
           message:
@@ -1034,7 +1033,7 @@ const VoucherModal = ({
         if (!documentsSaved) return;
         documentsSavedInStepRef.current = true;
       } catch (error) {
-        console.error("No se pudo guardar los documentos del voucher:", error);
+        console.error("No se pudo guardar los documentos del voucher:");
         setShowToast({
           type: "error",
           message:
@@ -1068,16 +1067,16 @@ const VoucherModal = ({
       if(hasPendingDocumentUploads(documentDraftRef.current)){
         setShowToast({type:"error",message:"Reintenta guardar los documentos o retira los archivos pendientes antes de cerrar."});return;
       }
-      onClose();return;
+      onSave?.();onClose();return;
     }
-    if(isPaymentManagementMode){onClose();return;}
+    if(isPaymentsOnlyMode){onSave?.();onClose();return;}
     if(!isVoucherLoaded){onClose();return;}
     if(passengerPersistedFingerprintRef.current!==null &&
         passengerDraftFingerprint(passengerDraftRef.current || editedVoucherData.passengerData)!==passengerPersistedFingerprintRef.current){
       setShowUnsavedWarning(true);return;
     }
     onClose();
-  },[isSubmitting,documentsPreparing,documentsSaving,isVoucherLoaded,isDocumentManagementMode,isPaymentManagementMode,editedVoucherData.passengerData,onClose]);
+  },[isSubmitting,documentsPreparing,documentsSaving,isVoucherLoaded,isDocumentManagementMode,isPaymentsOnlyMode,editedVoucherData.passengerData,onSave,onClose]);
   const handleForceClose=useCallback(()=>{
     if(isSubmitting || documentsPreparing || documentsSaving || hasPendingDocumentUploads(documentDraftRef.current))return;
     onClose();
@@ -1243,10 +1242,7 @@ const VoucherModal = ({
         try {
           await onSave(result.data || result);
         } catch (callbackError) {
-          console.error(
-            "El voucher se guardó, pero falló la actualización de la vista padre:",
-            callbackError,
-          );
+          console.error("El voucher se guardó, pero falló la actualización de la vista padre:");
         }
 
         setTimeout(() => {
@@ -1255,7 +1251,7 @@ const VoucherModal = ({
 
         return result;
       } catch (error) {
-        console.error("Error al completar el voucher:", error);
+        console.error("Error al completar el voucher:");
         setShowToast({
           type: "error",
           message: `Error: ${error.response?.data || error.message || "Error desconocido"}`,
@@ -1281,7 +1277,7 @@ const VoucherModal = ({
 
   // Renderizar contenido según el paso currentStep
   const renderStepContent = () => {
-    const step = isPassengerInfoOnlyMode ? "passengers" : isDocumentManagementMode ? "documents" : isPaymentManagementMode ? "payments" : STEPS[currentStep].id;
+    const step = isPassengerInfoOnlyMode ? "passengers" : isDocumentManagementMode ? "documents" : isPaymentsOnlyMode ? "payments" : STEPS[currentStep].id;
     switch (step) {
       case "passengers":
         return (
@@ -1314,6 +1310,9 @@ const VoucherModal = ({
             onDocumentDataChange={handleDocumentDataChange}
             cotizacionId={cotizacion?.id || cotizacionData?.id}
             onDocumentsAdded={handleDocumentsAdded}
+            onPersistDocuments={handleDocumentsAdded}
+            onIdentityApplied={handleIdentityApplied}
+            hasUnsavedPassengers={hasPassengerChanges}
             onPreparingChange={setDocumentsPreparing}
             documentsSaving={documentsSaving}
             isEditMode={isEditMode}
@@ -1328,6 +1327,7 @@ const VoucherModal = ({
       case "payments":
         return (
           <PaymentStep
+            readOnly={isPaymentReadOnly}
             paymentData={editedVoucherData.paymentData}
             onPaymentDataChange={handlePaymentDataChange}
             passengerData={editedVoucherData.passengerData}
@@ -1419,7 +1419,7 @@ const VoucherModal = ({
                 {isEditMode ? <MdEdit /> : <MdAddCircleOutline />}
               </div>
               <div className="header-info">
-                <h2>{isPassengerInfoOnlyMode ? "Información de pasajeros" : isDocumentManagementMode ? "Documentos del file" : isPaymentManagementMode ? "Pagos del file" : "Crear Nuevo Voucher"}</h2>
+                <h2>{isPassengerInfoOnlyMode ? "Información de pasajeros" : isDocumentManagementMode ? "Documentos del file" : isPaymentsOnlyMode ? "Pagos del file" : "Crear Nuevo Voucher"}</h2>
                 {cotizacion && (
                   <span className="header-subtitle">
                     {voucherCode || "Sin código"}
@@ -1548,7 +1548,7 @@ const VoucherModal = ({
               {/* Footer con navegación o botón guardar según modo */}
               {isDedicatedManagement ? (
                 <div className="voucher-modal-footer document-management">
-                  <span role="status" aria-live="polite">{isDocumentManagementMode
+                  <span className="document-autosave-status" role="status" aria-live="polite">{isDocumentManagementMode
                     ? documentsPreparing ? "Preparando documentos..." : documentsSaving ? "Guardando documentos..." :
                       hasPendingDocumentUploads(editedVoucherData.documentData) ? "Hay documentos pendientes de guardar." : "Los documentos se guardan automáticamente."
                     : isPassengerInfoOnlyMode ? hasPassengerChanges ? "Información de pasajeros pendiente de guardar." : needsPassengerLink ? "Los pasajeros cotizados necesitan vincularse al voucher." : "Sin cambios pendientes."
@@ -1589,16 +1589,16 @@ const VoucherModal = ({
                   <button
                     className="prev-button"
                     onClick={handlePrevStep}
-                    disabled={currentStep === 0}
+                    disabled={currentStep === 0 || isSubmitting || documentsPreparing || documentsSaving}
                   >
                     <MdNavigateBefore /> Anterior
                   </button>
                   <button
                     className="next-button"
                     onClick={handleNextStep}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || documentsPreparing || documentsSaving}
                   >
-                    {isSubmitting ? "Guardando..." : "Siguiente"}{" "}
+                    {documentsPreparing ? "Preparando..." : documentsSaving || isSubmitting ? "Guardando..." : "Siguiente"}{" "}
                     <MdNavigateNext />
                   </button>
                 </div>

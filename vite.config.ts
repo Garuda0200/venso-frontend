@@ -41,11 +41,15 @@ export default defineConfig(({ mode }) => ({
   build: {
     outDir: "build",
     sourcemap: false,
-    minify: "esbuild",
-    rollupOptions: {
+    minify: true,
+    rolldownOptions: {
+      treeshake: {
+        manualPureFunctions: mode === "production" ? ["console.log", "console.info", "console.debug", "console.trace"] : [],
+      },
       external: ["quill"],
       output: {
-        manualChunks: {
+        codeSplitting: {
+          groups: Object.entries({
           react: ["react", "react-dom", "react-router-dom"],
           data: ["@tanstack/react-query", "axios"],
           ui: ["primereact", "react-icons"],
@@ -54,15 +58,13 @@ export default defineConfig(({ mode }) => ({
           charts: ["chart.js", "react-chartjs-2"],
           excel: ["xlsx", "exceljs", "file-saver"],
           pdf: ["pdf-lib", "html2canvas", "html-to-image"]
+          }).map(([name, packages]) => ({
+            name,
+            test: (id) => packages.some((pkg) => id.replaceAll("\\", "/").includes(`/node_modules/${pkg}/`)),
+          })),
         }
       }
     }
-  },
-  esbuild: {
-    drop: mode === "production" ? ["debugger"] : [],
-    pure: mode === "production"
-      ? ["console.log", "console.info", "console.debug", "console.trace"]
-      : []
   },
   envPrefix: "VITE_"
 }));

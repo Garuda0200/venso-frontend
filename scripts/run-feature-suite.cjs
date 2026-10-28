@@ -7,6 +7,20 @@ const tmpDir = path.join(root, ".tmp-feature-tests");
 
 const testSuites = [
   {
+    name: "documentos e identidad",
+    tests: [
+      "src/pages/Ventas/VouchersVenta/components/Steps/PassengerDocuments/__tests__/identityBatch.test.js",
+      "src/pages/Ventas/VouchersVenta/components/Steps/PassengerDocuments/__tests__/documentAiUi.test.js",
+      "src/pages/Ventas/VouchersVenta/components/Steps/PassengerDocuments/__tests__/documentPrivacy.test.js",
+      "src/pages/Ventas/VouchersVenta/components/Steps/PassengerDocuments/__tests__/voucherDocumentNavigation.test.js",
+      "src/pages/Ventas/VouchersVenta/components/Steps/PassengerDocuments/__tests__/identityReviewDates.test.js",
+      "src/pages/Ventas/VouchersVenta/components/Steps/PassengerDocuments/__tests__/privateDocuments.test.js",
+      "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/zeroAdultChildPricing.test.js",
+      "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/editedTicketPrice.test.js",
+      "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/ticketPackageRoundtrip.test.js",
+    ],
+  },
+  {
     name: "shared infrastructure",
     tests: [
       "src/components/common/__tests__/backendStatusBanner.test.js",
@@ -89,6 +103,7 @@ const testSuites = [
     name: "contabilidad e integración",
     tests: [
       "src/services/__tests__/pendingPaymentService.test.js",
+      "src/services/__tests__/paymentDetailRead.test.js",
       "src/pages/Contabilidad/Files/domain/__tests__/movementFiles.test.js",
       "src/pages/Contabilidad/Liquidaciones/domain/__tests__/pendingPaymentGroups.test.js",
       "src/pages/Contabilidad/Reportes/utils/__tests__/paymentReportUtils.test.js",

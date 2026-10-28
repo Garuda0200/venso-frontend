@@ -65,21 +65,11 @@ export const paymentRequestService = {
   getPendingEnrichedById: async (id) => {
     try {
       const response = await axiosInstance.get(
-        "/turismo/vouchers-reserva/payment-requests/pending",
+        `${API_BASE}/${encodeURIComponent(id)}`,
         { _skipDedup: true },
       );
-
-      const requests = Array.isArray(response.data)
-        ? response.data
-        : Array.isArray(response.data?.data)
-          ? response.data.data
-          : [];
-
-      const match = requests.find(
-        (request) => String(request.id) === String(id),
-      );
-
-      return { success: true, data: match || null };
+      const body = response.data;
+      return { success: body?.success !== false, data: body?.data ?? null };
     } catch (error) {
       console.error("Error fetching enriched pending payment request:", error);
       return {

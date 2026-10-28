@@ -13,17 +13,18 @@ export const voucherDocumentService = {
    * @param {number} voucherId - ID del voucher
    * @returns {Promise} - { idCards: [], passports: [], otherDocuments: [] }
    */
-  getDocumentsByVoucherId: async (voucherId) => {
+  getDocumentsByVoucherId: async (voucherId, options = {}) => {
     try {
       const response = await axiosInstance.get(
         `${API_BASE}/${voucherId}/documentos`,
+        options,
       );
       return {
         success: true,
         data: response.data,
       };
     } catch (error) {
-      console.error("Error fetching voucher documents:", error);
+      console.error("Error fetching voucher documents:");
       return {
         success: false,
         error:
@@ -48,7 +49,7 @@ export const voucherDocumentService = {
         data: response.data,
       };
     } catch (error) {
-      console.error("Error fetching document:", error);
+      console.error("Error fetching document:");
       return {
         success: false,
         error: error.response?.data?.message || "Error al obtener documento",
@@ -73,7 +74,7 @@ export const voucherDocumentService = {
         data: response.data,
       };
     } catch (error) {
-      console.error("Error uploading document:", error);
+      console.error("Error uploading document:");
       return {
         success: false,
         error: error.response?.data?.message || "Error al subir documento",
@@ -96,7 +97,7 @@ export const voucherDocumentService = {
         data: response.data,
       };
     } catch (error) {
-      console.error("Error deleting document:", error);
+      console.error("Error deleting document:");
       return {
         success: false,
         error: error.response?.data?.message || "Error al eliminar documento",
@@ -138,6 +139,7 @@ export const voucherDocumentService = {
             // ID del documento en la DB
             id: doc.id,
             dbId: doc.id, // Guardar también como dbId para referencia
+            documentAssetId: doc.documentAssetId ?? null,
 
             // Información del archivo
             name: doc.filename,
