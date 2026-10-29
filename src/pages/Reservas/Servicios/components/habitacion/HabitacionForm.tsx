@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import useAuditInfo from "../../hooks/useAuditInfo";
 import { TIPOS_HABITACION } from "../../utils/constants";
 import { FaEdit, FaTimes } from "react-icons/fa";
 import { fetchHabitacionesByHotel } from "../../services/api";
-import { getHotelRoomCapacity } from "../../../../../utils/hotelRoomTypes";
+import { positiveRoomCapacity, roomCatalogDefaults, defaultRoomCapacity } from "../../../../../utils/roomCapacity";
 
 const HabitacionForm = ({
   habitacion,
@@ -15,21 +15,24 @@ const HabitacionForm = ({
   // Obtener información de auditoría
   const { userId } = useAuditInfo();
 
-  const initialState = {
+  const initialState = roomCatalogDefaults({
     id_hotel: hotelId || "",
     tipo_habitacion: "",
-    capacidad: 2,
+    capacidad: "",
+    tipo_unidad: habitacion ? "" : "habitacion",
     estado: "disponible",
+    mostrar_en_servicepicker: true,
     created_by: userId, // Establecer por defecto
     ...habitacion,
-  };
+  });
+
+  const capacityEdited = useRef(habitacion?.capacidad != null);
 
   const [formData, setFormData] = useState(initialState);
   const [errors, setErrors] = useState({});
   const [isCustomTipoHabitacion, setIsCustomTipoHabitacion] = useState(false);
   const [tiposHabitacionUnicos, setTiposHabitacionUnicos] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [capacityTouched, setCapacityTouched] = useState(Boolean(habitacion?.capacidad));
 
   // Determinar los tipos de habitación predefinidos disponibles
   const tiposDisponiblesPredefinidos = tiposHabitacion || TIPOS_HABITACION;
@@ -67,12 +70,12 @@ const HabitacionForm = ({
   }, [hotelId, tiposDisponiblesPredefinidos]);
 
   useEffect(() => {
+    capacityEdited.current = habitacion?.capacidad != null;
     if (habitacion) {
-      setFormData({
+      setFormData(roomCatalogDefaults({
         ...initialState,
         ...habitacion,
-      });
-      setCapacityTouched(Boolean(habitacion?.capacidad));
+      }));
     } else if (hotelId) {
       setFormData((prev) => ({
         ...prev,
@@ -97,10 +100,11 @@ const HabitacionForm = ({
     if (!formData.tipo_habitacion?.trim()) {
       newErrors.tipo_habitacion = "El tipo de habitación es obligatorio";
     }
-
-    const capacidad = Number(formData.capacidad);
-    if (!Number.isInteger(capacidad) || capacidad < 1 || capacidad > 20) {
-      newErrors.capacidad = "La capacidad debe estar entre 1 y 20 pasajeros";
+    if (formData.capacidad !== "" && formData.capacidad != null && (!positiveRoomCapacity(formData.capacidad) || Number(formData.capacidad)>20)) {
+      newErrors.capacidad = "Ingresa una capacidad entera positiva";
+    }
+    if (!positiveRoomCapacity(formData.capacidad)) {
+      newErrors.capacidad = "Confirma la capacidad de la habitación";
     }
 
     setErrors(newErrors);
@@ -109,36 +113,28 @@ const HabitacionForm = ({
 
   const handleChange = useCallback((e) => {
     const { name, value } = e.target;
-
-    if (name === "capacidad") {
-      setCapacityTouched(true);
-      setFormData((prev) => ({
-        ...prev,
-        capacidad: value === "" ? "" : Number(value),
-      }));
-      return;
-    }
+    if (name === "capacidad") capacityEdited.current = true;
 
     if (name === "tipo_habitacion" && value === "Otro") {
       setIsCustomTipoHabitacion(true);
-      setFormData((prev) => ({ ...prev, tipo_habitacion: "" }));
-      return;
+      setFormData((prev) => ({ ...prev, tipo_habitacion: "", ...(!capacityEdited.current ? { capacidad: "" } : {}) }));
+    } else {
+      setFormData((prev) => {
+        const next = { ...prev, [name]: value };
+        if (!capacityEdited.current && ["tipo_habitacion", "tipo_unidad"].includes(name)) {
+          next.capacidad = !next.tipo_unidad || next.tipo_unidad === "habitacion" ? defaultRoomCapacity(next.tipo_habitacion) ?? "" : "";
+          if (next.capacidad !== "" && !next.tipo_unidad) next.tipo_unidad = "habitacion";
+        }
+        return next;
+      });
     }
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-      ...(name === "tipo_habitacion" && !capacityTouched
-        ? { capacidad: getHotelRoomCapacity(value, 2) }
-        : {}),
-    }));
-  }, [capacityTouched]);
+  }, []);
 
   const toggleCustomTipoHabitacion = useCallback(() => {
     setIsCustomTipoHabitacion((prevState) => {
       // Si estamos activando el modo personalizado, limpiar el campo
       if (!prevState) {
-        setFormData((prev) => ({ ...prev, tipo_habitacion: "" }));
+        setFormData((prev) => ({ ...prev, tipo_habitacion: "", ...(!capacityEdited.current ? { capacidad: "" } : {}) }));
       }
       return !prevState;
     });
@@ -151,7 +147,8 @@ const HabitacionForm = ({
       // Agregar información de auditoría
       const formDataWithAudit = {
         ...formData,
-        capacidad: Number(formData.capacidad),
+        capacidad: positiveRoomCapacity(formData.capacidad),
+        tipo_unidad: formData.tipo_unidad || undefined,
         created_by: userId,
         updated_by: userId,
       };
@@ -233,31 +230,25 @@ const HabitacionForm = ({
         )}
       </div>
 
-      <div className="form-group room-capacity-field">
-        <label htmlFor="capacidad">Capacidad máxima *</label>
-        <div className="room-capacity-control">
-          <input
-            type="number"
-            id="capacidad"
-            name="capacidad"
-            min="1"
-            max="20"
-            step="1"
-            value={formData.capacidad ?? ""}
-            onChange={handleChange}
-            className={errors.capacidad ? "error" : ""}
-            disabled={isSubmitting}
-          />
-          <span>pasajeros</span>
-        </div>
-        <small className="text-muted">
-          Se usa para distribuir pasajeros en HotelPricingModal. Puedes escribir
-          cualquier tipo de habitación y definir aquí su capacidad real.
-        </small>
-        {errors.capacidad && (
-          <div className="error-message">{errors.capacidad}</div>
-        )}
+      <div className="form-group">
+        <label htmlFor="tipo_unidad">Unidad vendida</label>
+        <select id="tipo_unidad" name="tipo_unidad" value={formData.tipo_unidad || ""} onChange={handleChange} disabled={isSubmitting}>
+          <option value="">Pendiente de clasificar</option>
+          <option value="habitacion">Habitación completa</option><option value="plaza">Plaza en dormitorio</option>
+          <option value="complemento">Cama / persona adicional</option><option value="otro">Otro concepto</option>
+        </select>
       </div>
+      <div className="form-group">
+        <label htmlFor="capacidad">Capacidad máxima de personas</label>
+        <input id="capacidad" name="capacidad" type="number" min="1" step="1" value={formData.capacidad ?? ""} onChange={handleChange} disabled={isSubmitting} />
+        <small>No es la ocupación incluida en la tarifa ni la cantidad de habitaciones.</small>
+        {errors.capacidad && <div role="alert" className="error-message">{errors.capacidad}</div>}
+      </div>
+      <label className="habitacion-visibility-field">
+        <input type="checkbox" checked={formData.mostrar_en_servicepicker !== false} disabled={isSubmitting}
+          onChange={event=>setFormData(previous=>({...previous,mostrar_en_servicepicker:event.target.checked}))}/>
+        Disponible para seleccionar servicios
+      </label>
 
       <div className="button-group">
         <button

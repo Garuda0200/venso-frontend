@@ -1,0 +1,11 @@
+.reservation-service-times {
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px;
+  .service-time-header {display:flex;align-items:center;gap:7px;font-size:13px;}
+  input {min-width:100px;background:white;border:1px solid #bfd8cd;border-radius:7px;padding:6px;color:#134e35;}
+  small {color:#65766e;font-size:12px;flex-basis:100%;}
+  &__toggle {display:flex;align-items:center;gap:7px;border:0;background:transparent;color:#24553d;cursor:pointer;font-size:13px;padding:6px;}
+  &__track {width:30px;height:17px;border-radius:12px;background:#c3cdc8;position:relative;flex:none;
+    &::after{content:"";position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:white;transition:transform .15s;}}
+  [aria-checked="true"] &__track {background:#08764b;&::after{transform:translateX(13px);}}
+  button:focus-visible,input:focus-visible{outline:2px solid #ee950f;outline-offset:2px;}
+}

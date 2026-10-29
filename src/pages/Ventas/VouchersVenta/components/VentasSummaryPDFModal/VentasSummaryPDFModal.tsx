@@ -1,3 +1,6 @@
+import {canEditVentasVoucherPdfContent} from "../../../../../utils/permissions";
+import { useAuth } from "../../../../../context/AuthContext";
+import VoucherPdfVersionManager from "../VoucherPdfVersionManager/VoucherPdfVersionManager";
 import {
   Fragment,
   useState,
@@ -2759,6 +2762,7 @@ const VoucherView = ({
   datosPdf = {},
   onDatosPdfChange,
   onDatosPdfTouch,
+  canEdit = true,
   idioma = "es",
 }) => {
   const emptyFlightForm = {
@@ -2940,7 +2944,7 @@ const VoucherView = ({
   };
   const renderFlightTextInput = (flight, info, field, label, procedencia, placeholder = "—") => (
     <textarea key={`${field}-${getFlightEditableValue(flight,info,field)}`} className="flight-edit-input flight-edit-input--text"
-      rows={1} defaultValue={getFlightEditableValue(flight,info,field)} aria-label={label.replace(/:$/, "")}
+      rows={1} readOnly={!canEdit} defaultValue={getFlightEditableValue(flight,info,field)} aria-label={label.replace(/:$/, "")}
       placeholder={placeholder} ref={resizeFlightTextField} onInput={event=>resizeFlightTextField(event.currentTarget)}
       onKeyDown={event=>{if(event.key==="Enter" && !event.shiftKey){event.preventDefault();event.currentTarget.blur();}}}
       onBlur={event=>handleFlightFieldBlur(flight,field,event.currentTarget.value,procedencia)} />
@@ -2949,7 +2953,7 @@ const VoucherView = ({
     <div className="pax-row flight-edit-row">
       {type === "text" ? renderFlightTextInput(flight,info,field,label,procedencia,placeholder || "—") : (
         <input key={`${field}-${getFlightEditableValue(flight,info,field)}`} className="flight-edit-input"
-          type={type} defaultValue={getFlightEditableValue(flight,info,field)} aria-label={label.replace(/:$/, "")}
+          type={type} readOnly={!canEdit} defaultValue={getFlightEditableValue(flight,info,field)} aria-label={label.replace(/:$/, "")}
           onBlur={event=>handleFlightFieldBlur(flight,field,event.currentTarget.value,procedencia)} />
       )}
     </div>
@@ -4048,7 +4052,7 @@ const VoucherView = ({
           : renderFlightInput(flight,info,field,headers[field],type,
               field === "date" ? "date" : field === "depTime" || field === "arrTime" ? "time" : "text");
       }}
-      renderAction={flight => canRemoveFlight(flight) ? <button type="button" className="flight-remove-button"
+      renderAction={flight => canEdit && canRemoveFlight(flight) ? <button type="button" className="flight-remove-button"
         onClick={() => handleRemoveFlight(flight)} title={labels.removeFlight} aria-label={labels.removeFlight}>
         <MdDeleteOutline size={13} />
       </button> : null}
@@ -4668,7 +4672,7 @@ const VoucherView = ({
         </div>
       )}
 
-      <div className="voucher-page-actions" data-voucher-editor-controls="true">
+      {canEdit && <div className="voucher-page-actions" data-voucher-editor-controls="true">
         <button
           type="button"
           className="voucher-page-actions__button voucher-page-actions__button--international"
@@ -4707,7 +4711,7 @@ const VoucherView = ({
             <span>{labels.addObservations}</span>
           </button>
         )}
-      </div>
+      </div>}
 
       <div
         ref={(node) => {
@@ -4969,8 +4973,12 @@ const VentasSummaryPDFModal = ({
   voucher,
   onVoucherUpdated,
 }) => {
+  const { getCurrentUser } = useAuth();
+  const currentUser = getCurrentUser();
+  const [showPdfHistory, setShowPdfHistory] = useState(false);
   const [loading, setLoading] = useState(true);
   const [voucherData, setVoucherData] = useState(null);
+  const canRestorePdf = canEditVentasVoucherPdfContent(currentUser);
   const [passengers, setPassengers] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [activeTab, setActiveTab] = useState("voucher");
@@ -5713,7 +5721,7 @@ const VentasSummaryPDFModal = ({
 
       latestDatosPdfRef.current = nextDatosPdf;
       setDatosPdf(nextDatosPdf);
-      setDatosPdfDirty(!areDatosPdfEqual(nextDatosPdf, savedDatosPdf));
+      setDatosPdfDirty(canRestorePdf && !areDatosPdfEqual(nextDatosPdf, savedDatosPdf));
     } catch (error) {
       console.error("No se pudo cambiar el idioma del voucher:", error);
       toast.error("No se pudo cambiar el idioma del voucher");
@@ -5724,25 +5732,27 @@ const VentasSummaryPDFModal = ({
 
   // Callback para cambios en datos editables del PDF
   const handleDatosPdfChange = (change) => {
+    if (!canRestorePdf) return;
     const nextDatosPdf = syncDatosPdfCurrentLanguageVersion(
       applyDatosPdfChange(latestDatosPdfRef.current, change),
     );
     latestDatosPdfRef.current = nextDatosPdf;
     setDatosPdf(nextDatosPdf);
-    setDatosPdfDirty(!areDatosPdfEqual(nextDatosPdf, savedDatosPdf));
+    setDatosPdfDirty(canRestorePdf && !areDatosPdfEqual(nextDatosPdf, savedDatosPdf));
   };
 
   const handleDatosPdfTouch = (change) => {
+    if (!canRestorePdf) return;
     const nextDatosPdf = syncDatosPdfCurrentLanguageVersion(
       applyDatosPdfChange(latestDatosPdfRef.current, change),
     );
     latestDatosPdfRef.current = nextDatosPdf;
-    setDatosPdfDirty(!areDatosPdfEqual(nextDatosPdf, savedDatosPdf));
+    setDatosPdfDirty(canRestorePdf && !areDatosPdfEqual(nextDatosPdf, savedDatosPdf));
   };
 
   // Guardar datos editables del PDF
   const handleSaveDatosPdf = async () => {
-    if (!voucher?.id || !datosPdfDirty) return;
+    if (!canRestorePdf || !voucher?.id || !datosPdfDirty) return;
 
     if (
       document.activeElement instanceof HTMLElement &&
@@ -5806,6 +5816,17 @@ const VentasSummaryPDFModal = ({
 
   return (
     <div className="ventas-pdf-overlay">
+      <VoucherPdfVersionManager isOpen={showPdfHistory} voucherId={voucher?.id}
+        canRestore={canRestorePdf} canDelete={Number(currentUser?.role) === 0} onClose={()=>setShowPdfHistory(false)}
+        onRestored={async restored => {
+          if (!restored) return;
+          const next=restored.datos_pdf || {};
+          latestDatosPdfRef.current=next;
+          setDatosPdf(next); setSavedDatosPdf(next); setDatosPdfDirty(false);
+          setExternalFlights(restored.vuelos_externos || []);
+          setVoucherData(previous=>({...previous,...restored}));
+          await onVoucherUpdated?.(restored);
+        }}/>
       <div className="ventas-pdf-modal">
         {/* Header principal del modal */}
         <div className="modal-header">
@@ -5822,6 +5843,11 @@ const VentasSummaryPDFModal = ({
             </div>
           </div>
           <div className="header-actions">
+            <button type="button" className="btn-pdf-history" disabled={loading || savingPdf || changingIdioma}
+              onClick={() => {
+                if (datosPdfDirty && !window.confirm("Hay cambios del PDF sin guardar. ¿Deseas consultar el historial?")) return;
+                setShowPdfHistory(true);
+              }}>Historial</button>
             <div
               className="voucher-language-selector"
               title={modalLabels.languageTitle}
@@ -5850,7 +5876,7 @@ const VentasSummaryPDFModal = ({
                 </span>
               )}
             </div>
-            {datosPdfDirty && (
+            {canRestorePdf && datosPdfDirty && (
               <button
                 className="btn-save-pdf"
                 onClick={handleSaveDatosPdf}
@@ -5904,8 +5930,9 @@ const VentasSummaryPDFModal = ({
                   onRemoveExternalFlight={handleRemoveExternalFlight}
                   onUpsertFlightOverride={handleUpsertFlightOverride}
                   datosPdf={datosPdf}
-                  onDatosPdfChange={handleDatosPdfChange}
-                  onDatosPdfTouch={handleDatosPdfTouch}
+                  canEdit={canRestorePdf}
+                  onDatosPdfChange={canRestorePdf ? handleDatosPdfChange : undefined}
+                  onDatosPdfTouch={canRestorePdf ? handleDatosPdfTouch : undefined}
                   idioma={currentIdioma}
                 />
               </div>
@@ -5925,6 +5952,7 @@ const VentasSummaryPDFModal = ({
               </div>
               <textarea
                 className="pdf-indications-panel__textarea"
+                readOnly={!canRestorePdf}
                 value={datosPdf?.indicaciones_pdf || ""}
                 onChange={(event) =>
                   handleDatosPdfChange({

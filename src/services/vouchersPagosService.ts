@@ -25,6 +25,11 @@ const processProxyUrls = (data) => {
  * Tabla: vouchers_pagos
  */
 export const vouchersPagosService = {
+  patchMovementEvidence: async (id, formData) => {
+    const response = await axiosInstance.patch(`/turismo/movimientos/${id}/evidencias`, formData, { timeout: 120000 });
+    return { ...response.data, data: processProxyUrls(response.data.data || []) };
+  },
+
   /**
    * Crear múltiples evidencias de pago en batch
    * @param {Array<Object>} evidencias - Array de objetos CreateVoucherPagoDto

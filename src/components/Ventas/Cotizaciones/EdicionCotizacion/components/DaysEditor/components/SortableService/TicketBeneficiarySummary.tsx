@@ -7,6 +7,7 @@ type TicketBeneficiarySummaryProps = {
   convertedChildIds: string[];
   isStudentRow: boolean;
   childControl?: React.ReactNode;
+  adultControl?: React.ReactNode;
 };
 
 // Only summarize the existing selection. Nominal identities and tariff editing
@@ -17,6 +18,7 @@ const TicketBeneficiarySummary = ({
   convertedChildIds,
   isStudentRow,
   childControl,
+  adultControl,
 }: TicketBeneficiarySummaryProps) => {
   const adultCount = new Set(adultIds).size;
   const studentCount = new Set(studentChildIds).size;
@@ -33,7 +35,7 @@ const TicketBeneficiarySummary = ({
           <span className="sr__pax-label">{studentCount === 1 ? "niño" : "niños"}</span>
         </span>
       )}
-      {!isStudentRow && hasAdultTariff && (
+      {adultControl || (!isStudentRow && hasAdultTariff && (
         <span
           className="sr__pax-tag sr__pax-tag--adult"
           aria-label={`Adultos beneficiarios: ${adultCount}${convertedCount > 0 ? `. Niños con tarifa adulto: ${convertedCount}` : ""}`}
@@ -44,7 +46,7 @@ const TicketBeneficiarySummary = ({
           <span className="sr__pax-label">{adultCount === 1 ? "adulto" : "adultos"}</span>
           {convertedCount > 0 && <span className="sr__pax-converted">+{convertedCount}n</span>}
         </span>
-      )}
+      ))}
       {!isStudentRow && childControl}
       {!hasPrimaryBeneficiaries && (isStudentRow || !childControl) && (
         <span className="sr-ticket__empty-beneficiaries">Sin beneficiarios</span>

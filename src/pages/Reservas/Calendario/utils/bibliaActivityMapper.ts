@@ -1,3 +1,4 @@
+import { normalizeBibliaServiceLinkModes, type BibliaServiceLinkModes } from "./bibliaServiceLinkModes";
 import { compactBibliaTrainText } from "./bibliaTrainCatalog";
 import { participantNationalityLabel } from "./bibliaNationality";
 
@@ -57,6 +58,7 @@ export interface BibliaActivity {
   pax: number;
   nationality: string;
   participantPlan?: BibliaParticipantPlan | null;
+  serviceLinkModes?: BibliaServiceLinkModes;
   language: string;
   serviceMode: "SIC" | "PRIV" | string;
   time: string;
@@ -699,6 +701,7 @@ const recordToActivity = (
     participantPlan: record.participantPlan && typeof record.participantPlan === "object"
       ? record.participantPlan as BibliaParticipantPlan
       : null,
+    serviceLinkModes: normalizeBibliaServiceLinkModes(record.serviceLinkModes),
     language: firstText(record.language) || EMPTY, serviceMode: firstText(record.serviceMode) || "SIC",
     time: firstText(record.time) || "Sin hora", excursion,
     hotelCusco: firstText(record.hotelCusco) || EMPTY, tickets: firstText(record.tickets) || EMPTY,
@@ -798,13 +801,14 @@ export const materializeBibliaOverride = (
     quotationId: merged.sourceQuotationId || null,
     dayNumber: Number(merged.dayNumber || 0),
     quotationOrigin: merged.quotationOrigin || (activity.sourceType === "standalone" ? "standalone" : "quotation"),
-    ...(activity.sourceType !== "standalone" && Object.keys(changes).some(key => editableKeys.includes(key))
+    ...(activity.sourceType !== "standalone" && Object.keys(changes).some(key => editableKeys.includes(key) || key === "serviceLinkModes")
       ? { snapshotEdited: true } : {}),
     syncQuotation: merged.syncQuotation === true,
     isDeleted: merged.isDeleted === true,
     order: Number(merged.order || 0),
   };
   BIBLIA_EDITABLE_FIELDS.forEach((field) => { record[field] = merged[field]; });
+  record.serviceLinkModes = normalizeBibliaServiceLinkModes(merged.serviceLinkModes);
   if (merged.participantPlan) record.participantPlan = merged.participantPlan;
   if (merged.sourceExcel) record.sourceExcel = merged.sourceExcel;
   return record;

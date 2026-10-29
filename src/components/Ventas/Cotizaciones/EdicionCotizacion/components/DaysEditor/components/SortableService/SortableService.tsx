@@ -1,3 +1,4 @@
+import ChildBeneficiariesPanel from "./ChildBeneficiariesPanel";
 // components/SortableService.jsx - Excel-like table row design
 import React, { useState } from "react";
 import {
@@ -62,6 +63,7 @@ import {
   getServiceName,
 } from "../../utils/serviceTypeMapper";
 
+import AdultsPanel from "./AdultsPanel";
 import ChildrenPanel from "./ChildrenPanel";
 import TicketBeneficiarySummary from "./TicketBeneficiarySummary";
 import { getServiceObservations } from "../../utils/serviceObservations";
@@ -274,12 +276,18 @@ const SortableService = React.memo(({
   applyUniformChildPrice,
   applyIndividualChildPrice,
   onChangeService,
+  readOnly = false,
+  childPassengers = [],
+  onToggleChildBeneficiary,
+  adultPassengers = [],
+  onToggleAdultBeneficiary,
   days = [],
   hideServiceTotal = false,
   quotationExchangeRate = null,
   onApplyQuotationExchangeRate,
 }) => {
   const [showChildPanel, setShowChildPanel] = useState(false);
+  const [showAdultPanel, setShowAdultPanel] = useState(false);
 
   const isVoucherLinked = isOperationallyAssignedService(service);
   const serviceExchangeRate = resolveServiceExchangeRate(service);
@@ -415,6 +423,16 @@ const SortableService = React.memo(({
   const displayAdultIds = serviceType === "tickets"
     ? displayTicketAdultIds
     : adultIds;
+  const availableAdultRows = serviceType === "tickets" ? isTicketStudentRow ? [] : adultPassengers.filter(row =>
+    ticketProcedencia === "nacional" ? row.isNational : ticketProcedencia === "extranjero" ? !row.isNational : true) : adultPassengers;
+  const canEditAdults = availableAdultRows.length > 0 && !isVoucherLinked && !readOnly && typeof onToggleAdultBeneficiary === "function";
+  const renderAdultControl = () => !isTicketStudentRow && (availableAdultRows.length > 0 || adultCount > 0 || convertedCount > 0) &&
+    <button type="button" className={`sr__pax-tag sr__pax-tag--adult ${showAdultPanel ? "active" : ""}`}
+      disabled={!canEditAdults} aria-label={`Adultos beneficiarios: ${adultCount}. Gestionar adultos`} aria-expanded={showAdultPanel}
+      onClick={event=>{event.stopPropagation();if(canEditAdults)setShowAdultPanel(open=>!open);}}>
+      <FaUser/> {adultCount}{convertedCount>0 && <span className="sr__pax-converted">+{convertedCount}n</span>}{showAdultPanel?<MdExpandLess/>:<MdExpandMore/>}
+    </button>;
+  const canSelectChildren = serviceType !== "tickets" && serviceType !== "hoteles" && typeof onToggleChildBeneficiary === "function" && childPassengers.length > 0;
   const ticketDisplayChildPriceMap = isTicketStudentRow ? {} : childPriceMap;
 
   const unitPrice = calculatedPrice.pricePerPerson || 0;
@@ -506,7 +524,7 @@ const SortableService = React.memo(({
         className={`sr__pax-tag sr__pax-tag--child ${showChildPanel ? "active" : ""}`}
         onClick={(e) => {
           e.stopPropagation();
-          if (!isVoucherLinked) setShowChildPanel(!showChildPanel);
+          if (!isVoucherLinked && !readOnly) setShowChildPanel(!showChildPanel);
         }}
         disabled={isVoucherLinked}
         aria-expanded={showChildPanel}
@@ -569,6 +587,7 @@ const SortableService = React.memo(({
             studentChildIds={ticketStudentChildIds}
             convertedChildIds={convertedChildIds}
             isStudentRow={isTicketStudentRow}
+            adultControl={renderAdultControl()}
             childControl={renderTicketChildControl()}
           />
 
@@ -683,7 +702,8 @@ const SortableService = React.memo(({
         </div>
       )}
 
-      {!isVoucherLinked && showChildPanel && ticketAllManagedChildIds.length > 0 && (
+      {canEditAdults && showAdultPanel && <AdultsPanel service={service} rows={availableAdultRows} onChange={(row,included)=>onToggleAdultBeneficiary(dayIndex,serviceIndex,row,included)}/>}
+      {!isVoucherLinked && !readOnly && showChildPanel && ticketAllManagedChildIds.length > 0 && (
           <ChildrenPanel
             childIds={ticketManagedChildIds}
             convertedEntries={convertedEntries}
@@ -799,30 +819,16 @@ const SortableService = React.memo(({
 
         <div className="sr__pax">
           {tourCapacity != null && <span className="sr__pax-tag" title="Capacidad máxima del tour; incluye adultos y niños"><MdGroup /> Máx. {tourCapacity}</span>}
-          {adultCount > 0 && (
-            <span
-              className="sr__pax-tag sr__pax-tag--adult"
-              title={
-                convertedCount > 0
-                  ? `${adultCount} adultos`
-                  : `${adultCount} adultos`
-              }
-            >
-              <FaUser /> {adultCount}
-              {convertedCount > 0 && (
-                <span className="sr__pax-converted">+{convertedCount}n</span>
-              )}
-            </span>
-          )}
-          {allChildIds.length > 0 && (
+          {renderAdultControl()}
+          {(allChildIds.length > 0 || canSelectChildren) && (
             <button
               type="button"
               className={`sr__pax-tag sr__pax-tag--child ${showChildPanel ? "active" : ""}`}
               onClick={(e) => {
                 e.stopPropagation();
-                if (!isVoucherLinked) setShowChildPanel(!showChildPanel);
+                if (!isVoucherLinked && !readOnly) setShowChildPanel(!showChildPanel);
               }}
-              disabled={isVoucherLinked}
+              disabled={isVoucherLinked || readOnly}
               title={
                 isVoucherLinked
                   ? "Vinculado a voucher — beneficiarios bloqueados"
@@ -1002,7 +1008,10 @@ const SortableService = React.memo(({
       </div>
 
       {/* Child management sub-panel */}
-      {!isVoucherLinked && showChildPanel && allChildIds.length > 0 && (
+      {canEditAdults && showAdultPanel &&
+        <AdultsPanel service={service} rows={availableAdultRows} onChange={(row,included) => onToggleAdultBeneficiary(dayIndex,serviceIndex,row,included)} />}
+      {!isVoucherLinked && !readOnly && showChildPanel && canSelectChildren && <ChildBeneficiariesPanel service={service} rows={childPassengers} onChange={(row,included)=>onToggleChildBeneficiary(dayIndex,serviceIndex,row,included)}/>}
+      {!isVoucherLinked && !readOnly && showChildPanel && allChildIds.length > 0 && (
         <ChildrenPanel
           childIds={childIds}
           convertedEntries={convertedEntries}

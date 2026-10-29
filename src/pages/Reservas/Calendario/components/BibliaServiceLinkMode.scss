@@ -1,0 +1,14 @@
+.biblia-service-link-mode {
+  min-width: 0; margin: 3px 0 1px; padding: 0; border: 0; text-align: left; white-space: normal;
+  legend { padding: 0; margin-bottom: 5px; font-size: 10px; font-weight: 700; color: #62545e; }
+  &__options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
+  label { position: relative; display: flex; align-items: center; justify-content: center; min-height: 30px;
+    padding: 5px 4px; border: 1px solid #e5dce2; border-radius: 7px; background: #fff; color: #665963;
+    font-size: 10px; font-weight: 700; line-height: 1.2; cursor: pointer;
+    &.is-selected { background: #fff0f7; color: #b50059; border-color: #f583b9; }
+    &:focus-within { outline: 2px solid #ff007e; outline-offset: 2px; }
+  }
+  input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  small { display: block; margin-top: 5px; font-size: 10px; line-height: 1.4; color: #6f626b; }
+  &:disabled { opacity: .6; label { cursor: default; } }
+}

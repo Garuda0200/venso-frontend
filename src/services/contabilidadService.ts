@@ -1,12 +1,62 @@
-import axiosInstance from "../utils/axiosInstance";
+import { publishConfirmedServicePayments } from "../utils/confirmedServicePayments";
+import axiosInstance, { invalidateGetCache } from "../utils/axiosInstance";
 import { handleApiError } from "../utils/apiUtils";
 import SecureStorage from "../utils/secureStorage";
 import { invalidateCotizacionGraphCache } from "../utils/cacheInvalidation";
 
 const contabilidadService = {
-  getSaldos: async () => {
+  getMovementCurrencyCorrection: async (id) => {
+    const response = await axiosInstance.get(`/turismo/movimientos/${id}/correccion-moneda`, { _skipDedup: true });
+    return response.data;
+  },
+  previewMovementCurrencyCorrection: async (id, payload) => {
+    const response = await axiosInstance.post(`/turismo/movimientos/${id}/correccion-moneda/previsualizar`, payload);
+    return response.data;
+  },
+  correctMovementCurrency: async (id, payload) => {
+    const response = await axiosInstance.post(`/turismo/movimientos/${id}/correccion-moneda`, payload);
+    if (response.data?.success !== true || !response.data?.data?.movement?.id) throw new Error("El servidor no confirmó la corrección");
+    invalidateCotizacionGraphCache();
+    invalidateGetCache("/turismo/movimientos");
+    invalidateGetCache("/turismo/saldos");
+    invalidateGetCache("/turismo/payment-requests");
+    if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("movimientoUpdated", { detail: {
+      movimiento_id: Number(id), currency_corrected: true, movement: response.data.data.movement,
+    } }));
+    return response.data;
+  },
+  patchPaymentReceipt: async (id, patch) => {
+    const response = await axiosInstance.patch(`/turismo/movimientos/${id}/recepcion`, patch);
+    invalidateCotizacionGraphCache();
+    return response.data;
+  },
+  patchServicePaymentDate: async (id, patch) => {
+    const response = await axiosInstance.patch(`/turismo/movimientos/${id}/fecha-pago`, patch);
+    invalidateCotizacionGraphCache();
+    return response.data;
+  },
+
+
+  getSaldos: async ({ forceRefresh = false } = {}) => {
     try {
-      const response = await axiosInstance.get("/turismo/saldos");
+      if (forceRefresh) {
+        invalidateGetCache("/turismo/saldos");
+      }
+      const response = await axiosInstance.get(
+        "/turismo/saldos",
+        forceRefresh
+          ? {
+              // Caja representa disponibilidad financiera viva. Un montaje o
+              // retorno a esa pantalla debe consultar al backend y no reciclar
+              // una promesa/response GET anterior al último movimiento.
+              _skipDedup: true,
+              headers: {
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                Pragma: "no-cache",
+              },
+            }
+          : undefined,
+      );
       return response.data;
     } catch (error) {
       return handleApiError(error);
@@ -190,6 +240,7 @@ const contabilidadService = {
         movimientoData,
       );
 
+      publishConfirmedServicePayments(response.data);
       // Invalidar caché de vouchers (los movimientos afectan los totales)
       invalidateCotizacionGraphCache();
 

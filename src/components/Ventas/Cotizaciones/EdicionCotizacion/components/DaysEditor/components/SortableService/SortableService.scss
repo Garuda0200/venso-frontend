@@ -1352,3 +1352,11 @@
   background: rgba(255, 0, 126, 0.08);
   border-color: rgba(255, 0, 126, 0.55);
 }
+
+.sr__adults { padding: 10px 14px; background: #fff7fb; border-top: 1px solid #f3dce7; }
+.sr__adults-heading { font-size: 11px; color: #6a4559; margin-bottom: 8px; }
+.sr__adults-chips { display:flex; flex-wrap:wrap; gap:6px; }
+.sr__adults-chip { display:flex; align-items:center; gap:5px; border:1px solid #dfd6dc; border-radius:8px; background:#fff; padding:6px 8px; color:#665963; }
+.sr__adults-chip--selected { border-color:#ec93bd; color:#b50059; background:#fff0f7; }
+.sr__adults-chip-name { max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sr__adults-chip small { font-size:9px; }

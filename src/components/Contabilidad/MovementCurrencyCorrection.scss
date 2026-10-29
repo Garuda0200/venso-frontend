@@ -1,0 +1,12 @@
+.mcc-launch { border: 1px solid #bfd4c9; color: #07543a; background: #f6fbf8; border-radius: 9px; padding: 10px 14px; font: inherit; cursor: pointer; margin-bottom: 14px; }
+.movement-currency-correction {
+  width: min(640px, calc(100vw - 28px));
+  .modal-body { padding: 20px; font-size: 14px; }
+  .mcc-current { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; padding: 14px; border: 1px solid #dde6e0; border-radius: 10px; background: #f8faf9; strong { font-size: 19px; } span:last-child { width: 100%; color: #63756c; } }
+  .mcc-obligation { margin: 12px 0 18px; display: flex; justify-content: space-between; gap: 10px; }
+  .mcc-fields { border: 0; padding: 0; display: grid; gap: 8px; legend { margin-bottom: 12px; font-weight: 650; } label { margin-top: 7px; font-weight: 600; } select,input,textarea { width: 100%; box-sizing: border-box; border: 1px solid #cbd9d1; border-radius: 8px; padding: 10px; font: inherit; background: white; color: #233c30; } }
+  .mcc-currencies { display: flex; gap: 8px; button { border: 1px solid #b8cec1; border-radius: 24px; padding: 9px 16px; background: white; color: #15563c; font: inherit; cursor: pointer; &[aria-pressed="true"] { background: #07543a; color: white; } &:disabled { opacity: .5; cursor: default; } } }
+  .mcc-preview { margin-top: 18px; padding: 14px; background: #f0f8f3; border: 1px solid #bed9c8; border-radius: 10px; div { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 8px 0; } p { margin: 12px 0 0; color: #4f6a5b; } }
+  .mcc-error { border-left: 3px solid #bc483a; padding: 10px; background: #fff4f2; color: #8e3028; }
+  .mcc-history { margin-top: 18px; summary { cursor: pointer; font-weight: 600; } article { padding: 12px 0; border-bottom: 1px solid #e4ebe7; p { margin: 6px 0; } small { color: #60756a; } } }
+}

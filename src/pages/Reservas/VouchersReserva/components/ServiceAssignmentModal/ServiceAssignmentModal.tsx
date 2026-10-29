@@ -1,3 +1,8 @@
+import { flushFlightCodeDrafts } from "../../../../../utils/flightCodeDrafts";
+import { flightServiceId } from "../../../../../utils/flightOperationalCode";
+import HotelAssignmentModal from "../HotelAssignmentModal/HotelAssignmentModal";
+import { assignHotelSlots } from "../../utils/hotelSlotAssignment";
+import { FLIGHT_METADATA_EVENT, sameFlight } from "../../../../../utils/flightOperationalCode";
 import { sharedPriceFlag, normalizePricingType } from "../../../../../utils/servicePricingType";
 import React, {
   useState,
@@ -795,7 +800,18 @@ const ServiceAssignmentModal = ({
   const [editMode, setEditMode] = useState(false);
   const autosave = useAssignmentAutosave(voucher, buildFlatAssignedPayload, isOpen);
   const [validationInProgress, setValidationInProgress] = useState(false);
+  const [showHotelAssignments,setShowHotelAssignments] = useState(false);
   const [closing, setClosing] = useState(false);
+  useEffect(() => {
+    const receive = event => {
+      const update = days => days.map(day=>({...day,servicios:(day.servicios||[]).map(service=>sameFlight(service,event.detail)?{...service,codigo:event.detail.codigo,assignedService:service.assignedService?{...service.assignedService,codigo:event.detail.codigo}:service.assignedService}:service)}));
+      setVoucherItinerary(update);
+      autosave.latest.current = update(autosave.latest.current);
+    };
+    window.addEventListener(FLIGHT_METADATA_EVENT,receive);
+    return ()=>window.removeEventListener(FLIGHT_METADATA_EVENT,receive);
+  }, []);
+
   const closeInProgress = useRef(false);
   const activeVoucherId = useRef(voucher?.id);
   activeVoucherId.current = voucher?.id;
@@ -1308,6 +1324,11 @@ const ServiceAssignmentModal = ({
     closeInProgress.current = true;
     setClosing(true);
     try {
+      const flightIds = autosave.latest.current.flatMap(day => (day.servicios || []).map(flightServiceId)).filter(Boolean);
+      if (!(await flushFlightCodeDrafts(flightIds))) {
+        setValidationError("Hay un código de vuelo sin guardar. Reintenta antes de salir.");
+        return false;
+      }
       if (!(await autosave.flush())) {
         setValidationError("Hay cambios sin guardar. Reintenta antes de salir.");
         return false;
@@ -1902,7 +1923,23 @@ const ServiceAssignmentModal = ({
 
             {renderAssignmentSaveFeedback()}
             <fieldset className="assignment-editor-fieldset" disabled={autosave.draft.length > 0 || autosave.recovering}>
-            <ReservaServiceEditor
+
+          {(voucherItinerary || []).some(day=>(day.servicios||[]).some(service=>String(service.typeService || service.parentService?.typeService).includes("hotel"))) &&
+<button type="button" className="btn-manage-hotels" disabled={isSaving} onClick={()=>setShowHotelAssignments(true)}>Gestionar habitaciones</button>}
+
+<HotelAssignmentModal isOpen={showHotelAssignments} onClose={()=>setShowHotelAssignments(false)} days={voucherItinerary}
+ peopleDetails={peopleDetails || {}} totalPassengers={(peopleDetails?.adults?.length || 0)+(peopleDetails?.children?.length || 0)}
+ voucherReservaId={voucher?.id} onAddHotelToDays={async (selectedDays,rooms)=>{
+  const next=assignHotelSlots(voucherItinerary,selectedDays,rooms,(quoted,room)=>{
+   const selection=room.passengerSelection || room.assignedPassengerSelection;
+   const pricing=buildAssignedFlatPricingState({tariff:room.tariff,passengerSelection:selection,tipoPrecio:room.tipoPrecio});
+   return {...quoted,isAssigned:true,assignedService:{...room,hora:quoted.hora},assignedTariff:room.tariff,
+    assignedParentId:room.assignedParentId,assignedChildId:room.assignedChildId,assignedMoneda:room.assignedMoneda,
+    assignedTasaCambio:room.assignedTasaCambio,assignedPassengerSelection:selection,...pricing};
+  });
+  if ((await handleAssignmentChange(next))===false) throw new Error("No se guardaron las habitaciones; revisa el aviso de asignación");
+ }} />
+<ReservaServiceEditor
               key={String(voucher?.id)}
               cotizacionItinerary={cotizacionItinerary}
               voucherItinerary={voucherItinerary}
@@ -1919,6 +1956,7 @@ const ServiceAssignmentModal = ({
               headerActionsContainerId="assignment-page-editor-actions"
               onOpenReservationRequest={handleOpenSingleReservationRequest}
             />
+
             </fieldset>
           </div>,
           { showActions: true },
@@ -2060,7 +2098,22 @@ const ServiceAssignmentModal = ({
           {/* Usar el nuevo ReservaServiceEditor */}
           {renderAssignmentSaveFeedback()}
           <fieldset className="assignment-editor-fieldset" disabled={autosave.draft.length > 0 || autosave.recovering}>
-          <ReservaServiceEditor
+          {(voucherItinerary || []).some(day=>(day.servicios||[]).some(service=>String(service.typeService || service.parentService?.typeService).includes("hotel"))) &&
+<button type="button" className="btn-manage-hotels" disabled={isSaving} onClick={()=>setShowHotelAssignments(true)}>Gestionar habitaciones</button>}
+
+<HotelAssignmentModal isOpen={showHotelAssignments} onClose={()=>setShowHotelAssignments(false)} days={voucherItinerary}
+ peopleDetails={peopleDetails || {}} totalPassengers={(peopleDetails?.adults?.length || 0)+(peopleDetails?.children?.length || 0)}
+ voucherReservaId={voucher?.id} onAddHotelToDays={async (selectedDays,rooms)=>{
+  const next=assignHotelSlots(voucherItinerary,selectedDays,rooms,(quoted,room)=>{
+   const selection=room.passengerSelection || room.assignedPassengerSelection;
+   const pricing=buildAssignedFlatPricingState({tariff:room.tariff,passengerSelection:selection,tipoPrecio:room.tipoPrecio});
+   return {...quoted,isAssigned:true,assignedService:{...room,hora:quoted.hora},assignedTariff:room.tariff,
+    assignedParentId:room.assignedParentId,assignedChildId:room.assignedChildId,assignedMoneda:room.assignedMoneda,
+    assignedTasaCambio:room.assignedTasaCambio,assignedPassengerSelection:selection,...pricing};
+  });
+  if ((await handleAssignmentChange(next))===false) throw new Error("No se guardaron las habitaciones; revisa el aviso de asignación");
+ }} />
+<ReservaServiceEditor
             key={String(voucher?.id)}
             cotizacionItinerary={cotizacionItinerary}
             voucherItinerary={voucherItinerary}

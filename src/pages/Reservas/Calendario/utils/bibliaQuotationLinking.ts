@@ -1,3 +1,4 @@
+import { bibliaQuotationFieldValue, isBibliaHotelField } from "./bibliaServiceLinkModes";
 import { BIBLIA_EMPTY_VALUE, BibliaActivity, materializeBibliaOverride } from "./bibliaActivityMapper";
 import { bibliaParticipantPlanError } from "./bibliaParticipantEditor";
 
@@ -58,8 +59,8 @@ export function buildBibliaEditRecord(activity: BibliaActivity, changes: Partial
     .filter((field: string) => field in BIBLIA_QUOTATION_SYNC_LABELS));
   if (activity.sourceQuotationId) {
     for (const field of Object.keys(BIBLIA_QUOTATION_SYNC_LABELS)) {
-      if (Object.prototype.hasOwnProperty.call(changes, field)
-        && JSON.stringify(comparable(activity[field])) !== JSON.stringify(comparable(record[field]))) fields.add(field);
+      if ((Object.prototype.hasOwnProperty.call(changes, field) || (changes.serviceLinkModes !== undefined && isBibliaHotelField(field)))
+        && JSON.stringify(comparable(bibliaQuotationFieldValue(activity, field))) !== JSON.stringify(comparable(bibliaQuotationFieldValue(record, field)))) fields.add(field);
     }
   }
   record.syncQuotation = false;

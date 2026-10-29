@@ -73,3 +73,5 @@ export const getUserPlatform = (user) => {
   const platform = user?.platform || user?.auth?.platform || "venso";
   return platform;
 };
+
+export const canEditVentasVoucherPdfContent = user => [0,2].includes(normalizeRole(user));

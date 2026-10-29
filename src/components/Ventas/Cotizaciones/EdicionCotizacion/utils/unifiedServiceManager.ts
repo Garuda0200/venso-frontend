@@ -15,6 +15,7 @@ import {
   getPassengerSlotKey,
   getServicePassengerPricingState,
   mergePassengerPricingIntoTariff,
+  syncQuotedBeneficiariesFromRuntime,
 } from "./passengerPricingState";
 import { applyServicePricingRuntime } from "./servicePricingRuntime";
 import {
@@ -299,19 +300,21 @@ export const getTotalPassengerCount = (peopleDetails) => {
 export const getRoomCapacity = (roomOrType) =>
   getHotelRoomCapacity(roomOrType, 2);
 
+// Supplier names never choose a pricing category (e.g. an extra named ESTACION-HOTEL).
+const pricingServiceType = service => String(detectServiceType(service) || "unknown").toLowerCase();
+const finalizeServicePricing = service => applyServicePricingRuntime(
+  pricingServiceType(service) === "extras" ? syncQuotedBeneficiariesFromRuntime(service) : service,
+);
+
 export const shouldApplyIGV = (
   service,
   peopleDetails,
   passengerSelection = null,
 ) => {
   const parentService = service.parentService || service;
-  const typeService = (parentService.typeService || "").toLowerCase();
+  const typeService = pricingServiceType(service);
 
-  const isHotel =
-    typeService === "hoteles" ||
-    typeService.includes("hotel") ||
-    (parentService.nombre &&
-      parentService.nombre.toLowerCase().includes("hotel"));
+  const isHotel = typeService.includes("hotel");
 
   if (!isHotel) return false;
 
@@ -806,7 +809,7 @@ export const createUnifiedService = (
   console.log(unifiedTariff);
 
   // Devolvemos todo con la asignación de pax para que DaysEditor pueda reusar
-  return applyServicePricingRuntime({
+  return finalizeServicePricing({
     id: serviceId,
     typeService,
     parentService: finalParentService,
@@ -866,9 +869,7 @@ export const updateSingleServicePricesForPassengerChange = (
 
   const parentService = service.parentService || service;
   const childService = service.childService || service;
-  const typeService = (
-    parentService.typeService || service.typeService || ""
-  ).toLowerCase();
+  const typeService = pricingServiceType(service);
   const isEndose = typeService === "endoses";
   const tourCapacity = isEndose ? getTourCapacity(childService) : null;
 
@@ -960,7 +961,7 @@ export const updateSingleServicePricesForPassengerChange = (
 
   const assignedPassengerCount =
     assignedPassengerIds.length ||
-    (usesTicketProcedenciaFilter ? 0 : fallbackCount || 1);
+    (usesTicketProcedenciaFilter || (typeService === "extras" && (topLevelIds || dbIds)) ? 0 : fallbackCount || 1);
 
   // =========================
   // 1.c DIVISOR REAL (adultos + niños SIN precio explícito)
@@ -982,7 +983,7 @@ export const updateSingleServicePricesForPassengerChange = (
       });
       // Si todos tienen precio explícito (caso raro) igual aseguramos mínimo 1,
       // excepto tickets filtrados por procedencia, donde puede ser 0.
-      return usesTicketProcedenciaFilter
+      return usesTicketProcedenciaFilter || typeService === "extras"
         ? Math.max(0, idsSinPrecioExplicito.length || 0)
         : Math.max(1, idsSinPrecioExplicito.length || 1);
     }
@@ -990,7 +991,7 @@ export const updateSingleServicePricesForPassengerChange = (
     // Fallback cuando no hay IDs (modo antiguo). Tickets con filtro de
     // procedencia pueden tener 0 beneficiarios y no deben cobrarse como 1 pax.
     const divisorFallback = assignedPassengerCount - assignedChildExplicitCount;
-    if (usesTicketProcedenciaFilter) return Math.max(0, divisorFallback || 0);
+    if (usesTicketProcedenciaFilter || typeService === "extras") return Math.max(0, divisorFallback || 0);
     return Math.max(1, divisorFallback || 1);
   };
 
@@ -999,16 +1000,9 @@ export const updateSingleServicePricesForPassengerChange = (
   // =========================
   // 2. CLASIFICACIÓN DEL SERVICIO
   // =========================
-  const isHotel =
-    typeService === "hoteles" ||
-    typeService.includes("hotel") ||
-    (parentService.nombre &&
-      parentService.nombre.toLowerCase().includes("hotel"));
+  const isHotel = typeService.includes("hotel");
 
-  const isExtra =
-    typeService === "extras" ||
-    (parentService.nombre &&
-      parentService.nombre.toLowerCase().includes("extra"));
+  const isExtra = typeService === "extras";
 
   const isCapacityLimitedEndose = tourCapacity != null;
 
@@ -1044,7 +1038,7 @@ export const updateSingleServicePricesForPassengerChange = (
     const basePricePerPerson = parseFloat(newTariff.precio || 0) || 0;
 
     const paxMultiplier =
-      usesTicketProcedenciaFilter ? Math.max(0, divisor) : Math.max(1, divisor);
+      usesTicketProcedenciaFilter || typeService === "extras" ? Math.max(0, divisor) : Math.max(1, divisor);
     const baseOriginal = basePricePerPerson * paxMultiplier;
     const childExtrasTotal =
       !treatChildrenAsAdults && pricingMode === "percentage"
@@ -1074,7 +1068,7 @@ export const updateSingleServicePricesForPassengerChange = (
     const basePricePerPerson = parseFloat(newTariff.precio || 0) || 0;
 
     const paxMultiplier =
-      usesTicketProcedenciaFilter ? Math.max(0, divisor) : Math.max(1, divisor);
+      usesTicketProcedenciaFilter || typeService === "extras" ? Math.max(0, divisor) : Math.max(1, divisor);
     const baseOriginal = basePricePerPerson * paxMultiplier;
     const childExtrasTotal =
       !treatChildrenAsAdults && pricingMode === "percentage"
@@ -1178,7 +1172,7 @@ export const updateSingleServicePricesForPassengerChange = (
   // =========================
   // 5. DEVOLVER SERVICIO ACTUALIZADO
   // =========================
-  return applyServicePricingRuntime({
+  return finalizeServicePricing({
     ...service,
     // FIX: Limpiar campos runtime obsoletos (mismo fix que updateServicePricesForPassengerChange)
     precio_adult: undefined,
@@ -1431,9 +1425,7 @@ export const updateServicePricesForPassengerChange = (
 
     const parentService = service.parentService || service;
     const childService = service.childService || service;
-    const typeService = (
-      parentService.typeService || service.typeService || ""
-    ).toLowerCase();
+    const typeService = pricingServiceType(service);
     const isEndose = typeService === "endoses";
     const tourCapacity = isEndose ? getTourCapacity(childService) : null;
     const ticketProcedenciaSelection =
@@ -1551,6 +1543,7 @@ export const updateServicePricesForPassengerChange = (
     // (esto es clave para el caso sin niños, donde nunca se abrió el modal).
     if (
       !usesTicketProcedenciaFilter &&
+      !(typeService === "extras" && (Array.isArray(service.assignedPassengerIds) || Array.isArray(service.passengerSelection?.selectedIds))) &&
       assignedPassengerIds.length === 0 &&
       allPassengerIds.length > 0
     ) {
@@ -1726,16 +1719,9 @@ export const updateServicePricesForPassengerChange = (
     // =========================
     // 3. REGLAS POR TIPO DE SERVICIO
     // =========================
-    const isHotel =
-      typeService === "hoteles" ||
-      typeService.includes("hotel") ||
-      (parentService.nombre &&
-        parentService.nombre.toLowerCase().includes("hotel"));
+    const isHotel = typeService.includes("hotel");
 
-    const isExtra =
-      typeService === "extras" ||
-      (parentService.nombre &&
-        parentService.nombre.toLowerCase().includes("extra"));
+    const isExtra = typeService === "extras";
 
     const isCapacityLimitedEndose = tourCapacity != null;
     const isTicketChildTarget =
@@ -1757,11 +1743,11 @@ export const updateServicePricesForPassengerChange = (
 
       // MODIFICADO: Calcular divisor considerando el modo de tratamiento de niños
       let divisor =
-        usesTicketProcedenciaFilter ? assignedPassengerCount : assignedPassengerCount || 1;
+        usesTicketProcedenciaFilter || isExtra ? assignedPassengerIds.length : assignedPassengerCount || 1;
 
       // Si tratamos niños como adultos, contar todos los pasajeros
       if (treatChildrenAsAdults) {
-        divisor = usesTicketProcedenciaFilter
+        divisor = usesTicketProcedenciaFilter || isExtra
           ? assignedPassengerIds.length
           : assignedPassengerIds.length || 1;
       } else if (hasChildExplicitPrices || pricingMode === "percentage") {
@@ -1771,7 +1757,7 @@ export const updateServicePricesForPassengerChange = (
           // Usar la función shouldExcludeChild para determinar si excluir
           return !shouldExcludeChild(id);
         });
-        divisor = usesTicketProcedenciaFilter
+        divisor = usesTicketProcedenciaFilter || isExtra
           ? idsSinPrecioExplicito.length
           : idsSinPrecioExplicito.length || 1;
       }
@@ -1845,9 +1831,9 @@ export const updateServicePricesForPassengerChange = (
       const basePricePerPerson = parseFloat(newTariff.precio || 0) || 0;
 
       let divisor =
-        usesTicketProcedenciaFilter ? assignedPassengerCount : assignedPassengerCount || 1;
+        usesTicketProcedenciaFilter || isExtra ? assignedPassengerIds.length : assignedPassengerCount || 1;
       if (treatChildrenAsAdults) {
-        divisor = usesTicketProcedenciaFilter
+        divisor = usesTicketProcedenciaFilter || isExtra
           ? assignedPassengerIds.length
           : assignedPassengerIds.length || 1;
       } else if (hasChildExplicitPrices || pricingMode === "percentage") {
@@ -1855,13 +1841,13 @@ export const updateServicePricesForPassengerChange = (
           if (!id.startsWith("child:")) return true;
           return !shouldExcludeChild(id);
         });
-        divisor = usesTicketProcedenciaFilter
+        divisor = usesTicketProcedenciaFilter || isExtra
           ? idsSinPrecioExplicito.length
           : idsSinPrecioExplicito.length || 1;
       }
 
       const paxMultiplier =
-        usesTicketProcedenciaFilter ? Math.max(0, divisor) : Math.max(1, divisor);
+        usesTicketProcedenciaFilter || typeService === "extras" ? Math.max(0, divisor) : Math.max(1, divisor);
       let baseOriginal = basePricePerPerson * paxMultiplier;
       let childExtrasTotal =
         !treatChildrenAsAdults && pricingMode === "percentage"
@@ -1919,9 +1905,9 @@ export const updateServicePricesForPassengerChange = (
       const basePricePerPerson = parseFloat(newTariff.precio || 0) || 0;
 
       let divisor =
-        usesTicketProcedenciaFilter ? assignedPassengerCount : assignedPassengerCount || 1;
+        usesTicketProcedenciaFilter || isExtra ? assignedPassengerIds.length : assignedPassengerCount || 1;
       if (treatChildrenAsAdults) {
-        divisor = usesTicketProcedenciaFilter
+        divisor = usesTicketProcedenciaFilter || isExtra
           ? assignedPassengerIds.length
           : assignedPassengerIds.length || 1;
       } else if (hasChildExplicitPrices || pricingMode === "percentage") {
@@ -1929,13 +1915,13 @@ export const updateServicePricesForPassengerChange = (
           if (!id.startsWith("child:")) return true;
           return !shouldExcludeChild(id);
         });
-        divisor = usesTicketProcedenciaFilter
+        divisor = usesTicketProcedenciaFilter || isExtra
           ? idsSinPrecioExplicito.length
           : idsSinPrecioExplicito.length || 1;
       }
 
       const paxMultiplier =
-        usesTicketProcedenciaFilter ? Math.max(0, divisor) : Math.max(1, divisor);
+        usesTicketProcedenciaFilter || typeService === "extras" ? Math.max(0, divisor) : Math.max(1, divisor);
       let baseOriginal = basePricePerPerson * paxMultiplier;
       let childExtrasTotal =
         !treatChildrenAsAdults && pricingMode === "percentage"
@@ -1993,9 +1979,9 @@ export const updateServicePricesForPassengerChange = (
       const basePricePerPerson = parseFloat(newTariff.precio || 0) || 0;
 
       let divisor =
-        usesTicketProcedenciaFilter ? assignedPassengerCount : assignedPassengerCount || 1;
+        usesTicketProcedenciaFilter || isExtra ? assignedPassengerIds.length : assignedPassengerCount || 1;
       if (treatChildrenAsAdults) {
-        divisor = usesTicketProcedenciaFilter
+        divisor = usesTicketProcedenciaFilter || isExtra
           ? assignedPassengerIds.length
           : assignedPassengerIds.length || 1;
       } else if (hasChildExplicitPrices || pricingMode === "percentage") {
@@ -2003,13 +1989,13 @@ export const updateServicePricesForPassengerChange = (
           if (!id.startsWith("child:")) return true;
           return !shouldExcludeChild(id);
         });
-        divisor = usesTicketProcedenciaFilter
+        divisor = usesTicketProcedenciaFilter || isExtra
           ? idsSinPrecioExplicito.length
           : idsSinPrecioExplicito.length || 1;
       }
 
       const paxMultiplier =
-        usesTicketProcedenciaFilter ? Math.max(0, divisor) : Math.max(1, divisor);
+        usesTicketProcedenciaFilter || typeService === "extras" ? Math.max(0, divisor) : Math.max(1, divisor);
       const baseOriginal = basePricePerPerson * paxMultiplier;
 
       let effectiveChildExtrasSum = treatChildrenAsAdults
@@ -2148,7 +2134,7 @@ export const updateServicePricesForPassengerChange = (
     // =========================
     // 5. DEVOLVER SERVICIO ACTUALIZADO
     // =========================
-    return applyServicePricingRuntime({
+    return finalizeServicePricing({
       ...service,
       // FIX: Limpiar campos runtime obsoletos para que applyServicePricingRuntime
       // los recalcule desde el tariff fresco. Sin esto, precio_adult se queda
@@ -2346,7 +2332,7 @@ export const applyImportPriceAdjustments = (
 
   // LÓGICA ESPECIAL PARA HOTELES EN IMPORTACIÓN
   const parentService = adjustedService.parentService || adjustedService;
-  const typeService = (parentService.typeService || "").toLowerCase();
+  const typeService = pricingServiceType(service);
 
   if (
     typeService.includes("alojamiento") ||

@@ -1,3 +1,5 @@
+import { createRefreshCoordinator } from "../../../../../utils/refreshCoordinator";
+import { SERVICE_PAYMENTS_CONFIRMED_EVENT, applyConfirmedServicePayments, mergeConfirmedServicePayments } from "../../../../../utils/confirmedServicePayments";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Modal from "../../../../../components/UI/Modal/Modal";
 import PaymentVoucherModal from "../PaymentVoucherModal/PaymentVoucherModal";
@@ -217,6 +219,31 @@ const PaymentManagementModal = ({
   const [cancellingPaymentId, setCancellingPaymentId] = useState(null);
   const cancelTimerRef = React.useRef(null);
   const loadVoucherDataRef = React.useRef(null);
+  const refreshCoordinator = React.useRef(createRefreshCoordinator());
+  const confirmedPayments = React.useRef([]);
+  const currentPaymentScope = JSON.stringify([isOpen,voucherReserva?.id,voucherReserva?.voucher_id,voucherReserva?.voucherId]);
+  const paymentScopeRef = React.useRef(currentPaymentScope);
+  paymentScopeRef.current = currentPaymentScope;
+  useEffect(()=>{confirmedPayments.current=[];},[currentPaymentScope]);
+  const paymentScope = {
+    reservationId: voucherReserva?.reservationVoucher?.id || voucherReserva?.id || voucherReserva?.voucher_reserva_id,
+    voucherId: voucherReserva?.voucherId || voucherReserva?.voucher_id || voucherReserva?.voucher_venta_id,
+  };
+  useEffect(()=>{
+    if (!isOpen) return;
+    const handleConfirmed = event => {
+      const incoming=(event.detail?.payment_requests || []).filter(row =>
+        row.voucher_reserva_id != null && String(row.voucher_reserva_id) === String(paymentScope.reservationId));
+      if (!incoming.length) return;
+      confirmedPayments.current=mergeConfirmedServicePayments(confirmedPayments.current,incoming);
+      setAssignedItinerary(current=>applyConfirmedServicePayments(current,confirmedPayments.current,paymentScope));
+      setPaymentRequests(current=>mergeConfirmedServicePayments(current,incoming));
+      void refreshCoordinator.current(()=>loadVoucherDataRef.current?.());
+    };
+    window.addEventListener(SERVICE_PAYMENTS_CONFIRMED_EVENT,handleConfirmed);
+    return ()=>window.removeEventListener(SERVICE_PAYMENTS_CONFIRMED_EVENT,handleConfirmed);
+  },[currentPaymentScope]);
+
 
   // Cargar datos del voucher de reserva
   useEffect(() => {
@@ -279,7 +306,7 @@ const PaymentManagementModal = ({
         setRefreshingPayments(true);
         // Direct invocation to bypass useEffect dependency chain without
         // reopening or showing the initial full-screen loader.
-        setTimeout(() => loadVoucherDataRef.current?.(), 150);
+        void refreshCoordinator.current(()=>loadVoucherDataRef.current?.());
       }
     };
 
@@ -313,6 +340,8 @@ const PaymentManagementModal = ({
   }, []);
 
   const loadVoucherData = async () => {
+    const scope = currentPaymentScope;
+    const isCurrent = () => paymentScopeRef.current === scope;
     setRefreshingPayments(true);
     setPaymentLoadError(false);
     try {
@@ -342,9 +371,11 @@ const PaymentManagementModal = ({
             Array.isArray(normalizedItinerary) &&
             normalizedItinerary.length > 0
           ) {
+            if (!isCurrent()) return;
             itinerary = normalizeItinerary(normalizedItinerary);
           }
         } catch (normalizedError) {
+      if (!isCurrent()) return;
           console.warn(
             "Error cargando itinerario normalizado:",
             normalizedError,
@@ -359,6 +390,7 @@ const PaymentManagementModal = ({
             await voucherReservaService.getVoucherReservaWithRelationsById(
               voucherReservaId, { skipCache: true },
             );
+          if (!isCurrent()) return;
           const freshData = response?.data;
           if (freshData?.assigned_itinerary || freshData?.assignedItinerary) {
             itinerary = normalizeItinerary(
@@ -366,6 +398,7 @@ const PaymentManagementModal = ({
             );
           }
         } catch (fallbackError) {
+      if (!isCurrent()) return;
           console.warn("Error en fallback con relations:", fallbackError);
         }
       }
@@ -389,6 +422,7 @@ const PaymentManagementModal = ({
       if (voucherReservaId) {
         try {
           const pax = await pasajeroService.getPassengersByVoucherReserva(voucherReservaId);
+          if (!isCurrent()) return;
           const paxList = Array.isArray(pax) ? pax : pax?.data || [];
           const principal =
             paxList.find((item) =>
@@ -396,6 +430,7 @@ const PaymentManagementModal = ({
             ) || paxList[0] || null;
           setPrincipalPax(principal);
         } catch (paxError) {
+      if (!isCurrent()) return;
           console.warn("No se pudo resolver el PAX principal del voucher:", paxError);
           setPrincipalPax(null);
         }
@@ -408,32 +443,36 @@ const PaymentManagementModal = ({
             await voucherReservaService.getPaymentRequestsByVoucherReservaId(
               voucherReservaId, { skipCache: true },
             );
+          if (!isCurrent()) return;
           if (Array.isArray(allRequests) && allRequests.length > 0) {
             // Only match active (non-cancelled) payment requests to services
             const activeRequests = allRequests.filter(pr => getOperationalPaymentRequest({ paymentRequest: pr }));
             // Merge payment requests into itinerary services by itinerario_servicio_id
             const enriched = enrichPaymentItinerary(itinerary, activeRequests);
-            setAssignedItinerary(enriched);
-            setPaymentRequests(activeRequests);
+            setAssignedItinerary(applyConfirmedServicePayments(enriched,confirmedPayments.current,paymentScope));
+            setPaymentRequests(mergeConfirmedServicePayments(activeRequests,confirmedPayments.current));
           } else {
-            setAssignedItinerary(enrichPaymentItinerary(itinerary, []));
-            setPaymentRequests([]);
+            setAssignedItinerary(applyConfirmedServicePayments(enrichPaymentItinerary(itinerary, []),confirmedPayments.current,paymentScope));
+            setPaymentRequests(mergeConfirmedServicePayments([],confirmedPayments.current));
           }
         } catch (prError) {
+      if (!isCurrent()) return;
           console.warn("Error cargando payment requests:", prError);
           setPaymentLoadError(true);
-          setAssignedItinerary(itinerary);
-          setPaymentRequests([]);
+          setAssignedItinerary(applyConfirmedServicePayments(itinerary,confirmedPayments.current,paymentScope));
+          setPaymentRequests(mergeConfirmedServicePayments([],confirmedPayments.current));
         }
       } else {
-        setAssignedItinerary(itinerary);
-        setPaymentRequests([]);
+        setAssignedItinerary(applyConfirmedServicePayments(itinerary,confirmedPayments.current,paymentScope));
+        setPaymentRequests(mergeConfirmedServicePayments([],confirmedPayments.current));
       }
     } catch (error) {
+      if (!isCurrent()) return;
       console.error("Error cargando datos del voucher:", error);
       setPaymentLoadError(true);
       toast.error("Error al cargar los datos del voucher");
     } finally {
+      if (!isCurrent()) return;
       setLoading(false);
       setRefreshingPayments(false);
       initialLoadDone.current = true;

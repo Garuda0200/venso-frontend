@@ -17,6 +17,7 @@
     ]
   },
   "include": [
+    "src/tests/magicAdvanceExtras.test.ts",
     "src/pages/Ventas/VouchersVenta/components/Steps/PassengerDocuments/__tests__/*.test.ts",
     "src/pages/Ventas/VouchersVenta/components/Steps/PassengerDocuments/__tests__/*.test.tsx",
     "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/zeroAdultChildPricing.test.ts",
@@ -32,6 +33,7 @@
     "src/utils/__tests__/servicePricingType.test.ts",
     "src/pages/Reservas/Calendario/utils/__tests__/bibliaParticipantEditor.test.tsx",
     "src/pages/Reservas/Calendario/utils/__tests__/bibliaRowDrafts.test.tsx",
+    "src/pages/Reservas/Calendario/utils/__tests__/bibliaServiceLinkModes.test.tsx",
     "src/pages/Reservas/Calendario/utils/__tests__/bibliaQuotationLinking.test.tsx",
     "src/pages/Contabilidad/Files/domain/__tests__/movementFiles.test.tsx",
     "src/pages/Reservas/VouchersReserva/components/ServiceAssignmentModal/utils/__tests__/assignmentSaveQueue.test.ts",
@@ -95,6 +97,17 @@
     "src/utils/__tests__/pendingPayments.test.ts",
     "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/childTariffReversion.test.ts",
     "src/pages/Ventas/VouchersVenta/utils/__tests__/voucherListingDates.test.ts",
-    "src/pages/Ventas/VouchersVenta/components/VouchersFilters/__tests__/voucherTravelListingFlow.test.tsx"
+    "src/pages/Ventas/VouchersVenta/components/VouchersFilters/__tests__/voucherTravelListingFlow.test.tsx",
+    "src/tests/magicOperations.test.ts",
+    "src/pages/Ventas/VouchersVenta/utils/__tests__/voucherPdfVersionDiff.test.ts",
+    "src/pages/Ventas/VouchersVenta/components/__tests__/voucherPdfVersionManager.test.ts",
+    "src/components/Contabilidad/utils/__tests__/paymentReceiptPatch.test.ts",
+    "src/components/Contabilidad/__tests__/paymentReceiptEditor.test.ts",
+    "src/pages/Contabilidad/Reportes/__tests__/soldFlightReport.test.ts",
+    "src/pages/Contabilidad/Reportes/__tests__/soldFlightReportUi.test.ts",
+    "src/pages/Reservas/VouchersReserva/utils/__tests__/reservationSummaryServiceMatching.test.ts",
+    "src/pages/Reservas/VouchersReserva/utils/__tests__/reservationSummaryDate.test.ts",
+    "src/utils/__tests__/reservationHotelModalRuntime.test.ts",
+    "src/components/Contabilidad/__tests__/movementCurrencyCorrection.test.ts"
   ]
 }

@@ -1,3 +1,5 @@
+import ServiceTimeControls from "./ServiceTimeControls";
+import FlightCodeField from "../../../../../../components/common/FlightCode";
 /**
  * UnifiedServiceRow - A single row pairing cotizacion service with its assignment
  * Replaces the old two-column layout with a clear 1:1 visual mapping
@@ -645,17 +647,8 @@ const UnifiedServiceRow = ({
 
             {/* Time + action controls */}
             <div className="row-assigned-controls">
-              <div className="service-time-header">
-                <MdSchedule className="time-icon-header" />
-                <input
-                  type="time"
-                  value={service.assignedService.hora || ""}
-                  onChange={(e) =>
-                    onServiceTimeChange(dayIndex, serviceIndex, e.target.value)
-                  }
-                  className="time-input-header"
-                />
-              </div>
+              <ServiceTimeControls service={service} onChange={(field,value) => onServiceTimeChange(dayIndex,serviceIndex,value,field)} />
+              {String(service.typeService || service.assignedService?.typeService).toLowerCase()==="vuelos" && <FlightCodeField service={service} />}
               <div className="header-actions">
                 <button
                   className="btn-header-request"

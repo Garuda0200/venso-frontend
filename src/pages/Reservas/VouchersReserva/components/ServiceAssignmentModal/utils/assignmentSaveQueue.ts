@@ -12,8 +12,11 @@ export function assignmentUpdates(itinerary: any[], pricing: Serialize): Assignm
     const hour = Object.prototype.hasOwnProperty.call(wrapper, "hora") ? wrapper.hora
       : service.assignedHora ?? service.assigned_hora ?? service.hora;
     return [{ servicio_id: id, ...pricing(service),
-      assigned_parent_id: null, assigned_child_id: null,
-      hora: hour === "" ? null : hour ?? null, is_assigned: true }];
+      assigned_parent_id: String(service.typeService || service.parentService?.typeService).includes("hotel") ? service.assignedParentId ?? service.assignedService?.assignedParentId ?? null : null,
+      assigned_child_id: String(service.typeService || service.parentService?.typeService).includes("hotel") ? service.assignedChildId ?? service.assignedService?.assignedChildId ?? null : null,
+      hora: hour === "" ? null : hour ?? null,
+      ...(Object.hasOwn(wrapper,"hora_posterior") || Object.hasOwn(service,"hora_posterior") ? {hora_posterior:Object.hasOwn(wrapper,"hora_posterior") ? wrapper.hora_posterior || null : service.hora_posterior || null} : {}),
+      is_assigned: true }];
   }));
 }
 

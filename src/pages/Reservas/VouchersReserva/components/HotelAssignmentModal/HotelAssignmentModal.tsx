@@ -1,4 +1,6 @@
-import { useState, useEffect, useMemo } from "react";
+import {buildHotelAssignmentService} from "../../utils/hotelAssignmentPricing";
+import { readWithRetry } from "../../../../../utils/readWithRetry";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import axiosInstance from "../../../../../utils/axiosInstance";
 import { pasajeroService } from "../../../../../services/pasajeroService";
@@ -19,7 +21,6 @@ import {
   FaExclamationTriangle,
   FaInfoCircle,
   FaMoon,
-  FaDollarSign,
   FaRegCheckCircle,
 } from "react-icons/fa";
 import { MdSelectAll } from "react-icons/md";
@@ -28,7 +29,15 @@ import {
   getPassengerIdsByType,
 } from "../../../../../components/Ventas/Cotizaciones/EdicionCotizacion/utils/unifiedServiceManager";
 import { getParentId } from "../../../../../components/Ventas/Cotizaciones/EdicionCotizacion/components/ServicePicker/utils/serviceTypes";
-import { convertRoomTariffsToDollars } from "../../../../../components/Ventas/Cotizaciones/EdicionCotizacion/utils/tariffCurrency";
+import { assignedPaymentExchangeRate, DEFAULT_ASSIGNED_PEN_RATE, storedPaymentCurrency, formatPaymentMoney, formatPaymentTotals, sumPaymentCurrencies } from "../../../../../utils/paymentCurrency";
+import { hotelOccupantId, hotelPassengerIds, roomCapacity } from "../../../../../utils/roomCapacity";
+import { roomTariffPrice } from "../../../../../utils/roomTariff";
+import { normalizeReservationPassengerRows } from "../../utils/passengerClassification";
+import {
+  compatibleHotelDestinations, emptyHotelRoomDistribution, hasHotelAssignment,
+  hotelDestinationIds, hotelRoomSnapshot, hotelServiceId, isHotelPaymentCommitted, planHotelRoomDistribution,
+  quotedHotelPassengerIds, quotedHotelCategory,
+} from "../../utils/hotelAssignmentRooms";
 
 // Componentes modulares
 import {
@@ -36,39 +45,45 @@ import {
   HotelSelection,
   RoomSelection,
   ReviewSelection,
-  capacityFromRoom,
   getAssignedBedCountFromItinerary,
   isHotelService,
   getRoomCapacityFromType,
-  formatPrice,
 } from "../../../../../components/Ventas/Cotizaciones/EdicionCotizacion/components/DaysEditor/HotelItinerary";
 
-const round2 = (value) => Math.round((Number(value) || 0) * 100) / 100;
+const reservationRoomCapacity = room => roomCapacity(room, {allowLegacy:false}) || 0;
+const EMPTY_DAYS = [];
+const EMPTY_PEOPLE_DETAILS = {adults:[],children:[]};
 
 const STEP_ORDER = ["days", "category", "hotel", "room", "review"];
 
-const calculateAge = (birthDate) => {
-  if (!birthDate) return 30;
-  const today = new Date();
-  const birth = new Date(birthDate);
-  let age = today.getFullYear() - birth.getFullYear();
-  const monthDiff = today.getMonth() - birth.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-    age--;
+// La API de habitaciones con tarifas devuelve HabitacionConTarifas
+// ({ habitacion, tarifas }). El editor, la asignación y las tarifas trabajan
+// con la entidad habitación directamente. Conservar el wrapper aquí hacía que
+// `id_habitacion` quedara enterrado y se guardara `assigned_child_id = null`.
+const getHotelRoomEntity = (room = {}) => {
+  if (room?.id_habitacion != null) return room;
+  if (room?.habitacion?.id_habitacion != null) return room.habitacion;
+  if (room?.habitacion?.habitacion?.id_habitacion != null) {
+    return room.habitacion.habitacion;
   }
-  return age;
+  return room;
 };
 
-const hasReservationHotelAssignment = (service = {}) => {
-  if (service?.isAssigned === true) return true;
-  if (
-    service?.assignedService &&
-    Object.keys(service.assignedService).length > 0
-  ) {
-    return true;
-  }
-  return false;
+const normalizeHotelRoomWithTariffs = (room = {}) => {
+  const entity = getHotelRoomEntity(room);
+  return {
+    ...room,
+    ...entity,
+    habitacion: entity,
+    tarifas: Array.isArray(room?.tarifas)
+      ? room.tarifas
+      : Array.isArray(entity?.tarifas)
+        ? entity.tarifas
+        : [],
+  };
 };
+
+const hasReservationHotelAssignment = hasHotelAssignment;
 
 const getAssignableHotelServices = (day = {}) =>
   (day.servicios || []).filter((service) => {
@@ -90,44 +105,14 @@ const getAssignedHotelServices = (day = {}) =>
     hasReservationHotelAssignment(service),
   );
 
-const getQuotedHotelName = (day = {}) => {
-  const hotelServices = getAssignableHotelServices(day);
-  const unassigned = hotelServices.filter(
-    (svc) => !hasReservationHotelAssignment(svc),
-  );
-  const candidates = unassigned.length > 0 ? unassigned : hotelServices;
-  for (const svc of candidates) {
-    const name =
-      svc.parentService?.nombre ||
-      svc.parentService?.name ||
-      svc.hotel_nombre ||
-      svc.nombre ||
-      svc.serviceName;
-    if (name) return name;
-  }
-  return null;
-};
-
-const getQuotedHotelCategory = (day = {}) => {
-  const hotelServices = getAssignableHotelServices(day);
-  const unassigned = hotelServices.filter(
-    (svc) => !hasReservationHotelAssignment(svc),
-  );
-  const candidates = unassigned.length > 0 ? unassigned : hotelServices;
-  for (const svc of candidates) {
-    const cat =
-      svc.parentService?.categoria ||
-      svc.hotel_categoria ||
-      svc.categoria;
-    if (cat) return cat;
-  }
-  return null;
-};
-
 const buildSelectedRoomId = (hotel, room, tariff, priceType = null) => {
   const hotelId = hotel?.id_hotel || hotel?.id || "hotel";
+  const roomEntity = getHotelRoomEntity(room);
   const roomId =
-    room?.id_habitacion || room?.id || room?.tipo_habitacion || "room";
+    roomEntity?.id_habitacion ||
+    roomEntity?.id ||
+    roomEntity?.tipo_habitacion ||
+    "room";
   const tariffId = tariff?.id_tarifa || tariff?.id || "tariff";
   return `${hotelId}-${roomId}-${tariffId}-${priceType || "base"}`;
 };
@@ -138,14 +123,8 @@ const getRoomUnitPrice = (item) => {
     return Number(item.customPrice);
   }
   return Number(
-    tariff?.precio ??
-      tariff?.[`precio_${tariff?.selectedType || "compartido"}`] ?? 0,
+    tariff?.precio ?? roomTariffPrice(tariff),
   );
-};
-
-const buildHotelPassengerSelection = (peopleDetails = {}) => {
-  const passengerIds = getPassengerIdsByType(peopleDetails);
-  return buildHotelPassengerSelectionForIds(peopleDetails, passengerIds.allPassengerIds);
 };
 
 const buildHotelPassengerSelectionForIds = (peopleDetails = {}, selectedIds = []) => {
@@ -170,32 +149,6 @@ const buildHotelPassengerSelectionForIds = (peopleDetails = {}, selectedIds = []
     treatChildrenAsAdults: Object.keys(convertedChildToAdultMap).length > 0,
     convertedChildToAdultMap,
   };
-};
-
-const distributePassengerIdsToRooms = (roomItems = [], peopleDetails = {}) => {
-  const { adultIds, childIds, allPassengerIds } =
-    getPassengerIdsByType(peopleDetails);
-  const orderedIds =
-    adultIds.length + childIds.length > 0
-      ? [...adultIds, ...childIds]
-      : allPassengerIds;
-
-  const physicalRooms = [];
-  roomItems.forEach((item) => {
-    const qty = Math.max(1, item.quantity || 1);
-    for (let i = 0; i < qty; i++) {
-      physicalRooms.push(item);
-    }
-  });
-
-  let idx = 0;
-  return physicalRooms.map((room) => {
-    const ids = [];
-    while (ids.length < capacityFromRoom(room.room) && idx < orderedIds.length) {
-      ids.push(orderedIds[idx++]);
-    }
-    return ids;
-  });
 };
 
 const normalizePassengerIdList = (value) => {
@@ -242,25 +195,40 @@ const normalizePassengerIdList = (value) => {
 };
 
 const extractHotelAssignedPassengerIds = (service = {}) => {
-  const sources = [
+  const assignedAdults = service.assignedBeneficiariosAdultos ??
+    service.assigned_beneficiarios_adultos ??
+    service.assignedService?.assignedBeneficiariosAdultos ??
+    service.assignedService?.assigned_beneficiarios_adultos;
+  const assignedChildren = service.assignedBeneficiariosNinos ??
+    service.assigned_beneficiarios_ninos ??
+    service.assignedService?.assignedBeneficiariosNinos ??
+    service.assignedService?.assigned_beneficiarios_ninos;
+  if (Array.isArray(assignedAdults) || Array.isArray(assignedChildren)) {
+    return [...new Set([assignedAdults, assignedChildren]
+      .flatMap(normalizePassengerIdList).filter(Boolean))];
+  }
+  const selectedIds = [
     service.assignedPassengerIds,
-    service.assignedPassengerSelection?.selectedIds,
-    service.passengerSelection?.selectedIds,
     service.assignedService?.assignedPassengerIds,
+    service.assignedPassengerSelection?.selectedIds,
     service.assignedService?.assignedPassengerSelection?.selectedIds,
     service.assignedService?.passengerSelection?.selectedIds,
-    service.assigned_beneficiarios_adultos,
-    service.assigned_beneficiarios_ninos,
-    service.assignedService?.assigned_beneficiarios_adultos,
-    service.assignedService?.assigned_beneficiarios_ninos,
-  ];
-
-  return [...new Set(sources.flatMap(normalizePassengerIdList).filter(Boolean))];
+    service.passengerSelection?.selectedIds,
+  ].find(Array.isArray);
+  return [...new Set(normalizePassengerIdList(selectedIds).filter(Boolean))];
 };
 
 const getHotelServiceAssignedCount = (service = {}) => {
   const ids = extractHotelAssignedPassengerIds(service);
   if (ids.length > 0) return ids.length;
+  if ([
+    service.assignedBeneficiariosAdultos,
+    service.assigned_beneficiarios_adultos,
+    service.assignedBeneficiariosNinos,
+    service.assigned_beneficiarios_ninos,
+    service.assignedPassengerIds,
+    service.assignedPassengerSelection?.selectedIds,
+  ].some(Array.isArray)) return 0;
   return (
     Number(service.assignedPassengerCount) ||
     Number(service.assignedPassengerSelection?.assignedPassengerCount) ||
@@ -271,25 +239,7 @@ const getHotelServiceAssignedCount = (service = {}) => {
   );
 };
 
-const getHotelServiceCapacity = (service = {}) => {
-  const capacity =
-    service.habitacion_capacidad ||
-    service.assignedService?.habitacion_capacidad ||
-    service.childService?.habitacion?.capacidad ||
-    service.childService?.capacidad ||
-    service.assignedService?.childService?.habitacion?.capacidad ||
-    service.assignedService?.childService?.capacidad ||
-    getRoomCapacityFromType(
-      service.habitacion_tipo ||
-        service.childService?.tipo_habitacion ||
-        service.assignedService?.habitacion_tipo ||
-        service.assignedService?.childService?.tipo_habitacion ||
-        "",
-    );
-  return Math.max(0, Number(capacity) || 0);
-};
-
-const getDayHotelAssignmentProgress = (day = {}, totalPassengers = 0) => {
+const getDayHotelAssignmentProgress = (day = {}) => {
   const assignedHotels = getAssignedHotelServices(day);
   const uniqueIds = new Set();
   let fallbackAssignedCount = 0;
@@ -297,18 +247,20 @@ const getDayHotelAssignmentProgress = (day = {}, totalPassengers = 0) => {
 
   assignedHotels.forEach((service) => {
     const ids = extractHotelAssignedPassengerIds(service);
-    ids.forEach((id) => uniqueIds.add(id));
+    ids.map(hotelOccupantId).filter(Boolean).forEach((id) => uniqueIds.add(id));
     if (ids.length === 0) fallbackAssignedCount += getHotelServiceAssignedCount(service);
-    totalCapacity += getHotelServiceCapacity(service);
+    totalCapacity += hotelRoomSnapshot(service,true).capacity || 0;
   });
 
+  const quotedIds = new Set(getAssignableHotelServices(day).flatMap(quotedHotelPassengerIds));
+  const targetCount = quotedIds.size;
   const assignedCount = uniqueIds.size || fallbackAssignedCount;
   return {
-    assignedCount: Math.min(assignedCount, Math.max(assignedCount, totalPassengers)),
+    assignedCount,
     totalCapacity,
-    totalPassengers,
-    pendingCount: Math.max(0, totalPassengers - assignedCount),
-    isFullyAccommodated: totalPassengers > 0 && assignedCount >= totalPassengers,
+    totalPassengers: targetCount,
+    pendingCount: [...quotedIds].filter(id => !uniqueIds.has(id)).length,
+    isFullyAccommodated: targetCount > 0 && [...quotedIds].every(id => uniqueIds.has(id)),
   };
 };
 
@@ -322,7 +274,7 @@ const buildPhysicalRoomSlots = (selectedRooms = []) => {
         item,
         selectedIndex,
         roomIndex,
-        capacity: capacityFromRoom(item.room),
+        capacity: roomCapacity(item.room, {allowLegacy:false}) || 0,
         label:
           qty > 1
             ? `${item.room?.tipo_habitacion || "Habitación"} ${roomIndex + 1}`
@@ -335,13 +287,13 @@ const buildPhysicalRoomSlots = (selectedRooms = []) => {
 
 const getPassengerLabel = (passengerId, peopleDetails = {}) => {
   const { adultIds, childIds } = getPassengerIdsByType(peopleDetails);
-  const adultIndex = adultIds.indexOf(passengerId);
+  const adultIndex = adultIds.findIndex(id=>hotelOccupantId(id)===hotelOccupantId(passengerId));
   if (adultIndex >= 0) {
     const person = peopleDetails.adults?.[adultIndex] || {};
     return person.nombre || person.nombres || `Adulto ${adultIndex + 1}`;
   }
 
-  const childIndex = childIds.indexOf(passengerId);
+  const childIndex = childIds.findIndex(id=>hotelOccupantId(id)===hotelOccupantId(passengerId));
   if (childIndex >= 0) {
     const person = peopleDetails.children?.[childIndex] || {};
     return person.nombre || person.nombres || `Niño ${childIndex + 1}`;
@@ -353,43 +305,6 @@ const getPassengerLabel = (passengerId, peopleDetails = {}) => {
 const isChildPassengerId = (passengerId, peopleDetails = {}) => {
   const { childIds } = getPassengerIdsByType(peopleDetails);
   return childIds.includes(passengerId);
-};
-
-const normalizeRoomAssignmentsState = (
-  currentAssignments = {},
-  roomSlots = [],
-  peopleDetails = {},
-) => {
-  const { adultIds, childIds, allPassengerIds } = getPassengerIdsByType(peopleDetails);
-  const orderedPassengerIds =
-    adultIds.length + childIds.length > 0
-      ? [...adultIds, ...childIds]
-      : allPassengerIds;
-  const validPassengerIds = new Set(orderedPassengerIds);
-  const usedPassengers = new Set();
-  const next = {};
-
-  roomSlots.forEach((slot) => {
-    const currentIds = Array.isArray(currentAssignments?.[slot.id])
-      ? currentAssignments[slot.id]
-      : [];
-    next[slot.id] = currentIds
-      .filter((id) => validPassengerIds.has(id) && !usedPassengers.has(id))
-      .slice(0, slot.capacity);
-    next[slot.id].forEach((id) => usedPassengers.add(id));
-  });
-
-  orderedPassengerIds.forEach((passengerId) => {
-    if (usedPassengers.has(passengerId)) return;
-    const targetSlot = roomSlots.find(
-      (slot) => (next[slot.id] || []).length < slot.capacity,
-    );
-    if (!targetSlot) return;
-    next[targetSlot.id] = [...(next[targetSlot.id] || []), passengerId];
-    usedPassengers.add(passengerId);
-  });
-
-  return next;
 };
 
 const getCategoryKey = (categoryName) => {
@@ -436,6 +351,38 @@ const findMatchingCategory = (categoryName, categories = []) => {
   });
 };
 
+const HotelDestinationRecord = ({service,peopleDetails,roomNumber,onRemove}) => {
+  const quoted = hotelRoomSnapshot(service);
+  const actual = hotelRoomSnapshot(service,true);
+  const assigned=service.assignedService || {};
+  const currency=service.assignedMoneda || service.assigned_moneda || assigned.assignedMoneda || assigned.moneda || assigned.tariff?.moneda;
+  const amount=service.assignedPrecioTotal ?? service.assigned_precio_total ?? assigned.assignedPrecioTotal ?? assigned.precioTotal;
+  const rate=currency ? assignedPaymentExchangeRate(service) : null;
+  return <div className="hotel-destination-record" data-quoted-room={hotelServiceId(service)} aria-label={`Habitación ${roomNumber}`}>
+    <div className={`hotel-room-comparison ${hasReservationHotelAssignment(service) ? "" : "hotel-room-comparison--pending"}`}>
+      <div className="hotel-room-fact quoted">
+        <span className="hotel-room-label">Cotizado</span>
+        <div className="hotel-room-heading"><strong>{quoted.room}</strong>
+          <span className="hotel-category-badge" title="Categoría del hotel cotizado">{quotedHotelCategory(service)}</span></div>
+        <span className="hotel-room-passengers">{quoted.passengers.map(id=>getPassengerLabel(id,peopleDetails)).join(", ") || "Beneficiarios sin registrar"}</span>
+      </div>
+      <div className={`hotel-room-fact assigned ${hasReservationHotelAssignment(service) ? "" : "empty"}`}>
+        <span className="hotel-room-label">Asignado</span>
+        {hasReservationHotelAssignment(service) ? <>
+          <strong>{actual.hotel} · {actual.room}</strong>
+          <span className="hotel-room-passengers">{actual.passengers.map(id=>getPassengerLabel(id,peopleDetails)).join(", ") || "Beneficiarios sin registrar"}</span>
+          <div className="hotel-room-assignment-meta"><span title={actual.capacity == null ? "Capacidad histórica no registrada" : `Capacidad ${actual.capacity}`}>
+            {amount != null && currency ? formatPaymentMoney(amount,currency) : "Costo pendiente"}
+            {currency && storedPaymentCurrency(currency)==="soles" && <> · TC {rate ?? "pendiente"}</>}</span>
+          {onRemove && (isHotelPaymentCommitted(service)
+            ? <span className="hotel-room-lock" title="Con pago o solicitud comprometida"><FaLock aria-label="Asignación protegida" /></span>
+            : <button type="button" className="hotel-room-remove" onClick={onRemove} title="Quitar asignación" aria-label="Quitar asignación"><FaTimes /></button>)}</div>
+        </> : <strong>Por asignar</strong>}
+      </div>
+    </div>
+  </div>;
+};
+
 // Componente interno: tarjeta resumen lateral
 const SummarySidebar = ({
   selectedDays,
@@ -445,9 +392,10 @@ const SummarySidebar = ({
   totalPassengers,
   step,
   assignedPassengerCount = 0,
+  getSelectedRoomTotal,
 }) => {
   const totalCapacity = selectedRooms.reduce(
-    (sum, item) => sum + capacityFromRoom(item.room) * (item.quantity || 1),
+    (sum, item) => sum + reservationRoomCapacity(item.room) * (item.quantity || 1),
     0,
   );
   const totalRooms = selectedRooms.reduce(
@@ -455,15 +403,10 @@ const SummarySidebar = ({
     0,
   );
 
-  const currency =
-    selectedRooms[0]?.tariff?.moneda ||
-    selectedHotel?.moneda ||
-    "dolares";
-
-  const totalPrice = selectedRooms.reduce((sum, item) => {
-    const unit = getRoomUnitPrice(item);
-    return sum + unit * (item.quantity || 1) * selectedDays.length;
-  }, 0);
+  const totalPrice = formatPaymentTotals(sumPaymentCurrencies(selectedRooms.map(item => ({
+    amount: getSelectedRoomTotal ? getSelectedRoomTotal(item) : getRoomUnitPrice(item) * (item.quantity || 1) * selectedDays.length,
+    moneda: item.tariff?.moneda || item.room?.moneda || selectedHotel?.moneda || "dolares",
+  }))));
 
   const isAssignmentMet = assignedPassengerCount >= totalPassengers;
   const isOverCapacity = totalCapacity > totalPassengers;
@@ -514,7 +457,7 @@ const SummarySidebar = ({
           <ul className="room-summary-list">
             {selectedRooms.map((item, idx) => {
               const qty = item.quantity || 1;
-              const cap = capacityFromRoom(item.room);
+              const cap = reservationRoomCapacity(item.room);
               const unit = getRoomUnitPrice(item);
               return (
                 <li key={item.id || idx} className="room-summary-item">
@@ -528,7 +471,7 @@ const SummarySidebar = ({
                   </div>
                   <div className="room-summary-sub">
                     <span>{cap * qty} pax</span>
-                    <span>{formatPrice(unit * qty, currency)}</span>
+                    <span>{formatPaymentMoney(unit * qty, item.tariff?.moneda || item.room?.moneda || selectedHotel?.moneda || "dolares")}</span>
                   </div>
                 </li>
               );
@@ -570,8 +513,7 @@ const SummarySidebar = ({
               {selectedDays.length !== 1 ? "s" : ""}
             </span>
             <span className="total-price">
-              <FaDollarSign />
-              {formatPrice(totalPrice, currency)}
+              {totalPrice}
             </span>
           </div>
         </div>
@@ -585,8 +527,8 @@ const DayCard = ({
   dayInfo,
   isSelected,
   onToggle,
-  totalPassengers,
   onRemoveAssigned,
+  peopleDetails,
 }) => {
   const {
     day,
@@ -598,15 +540,8 @@ const DayCard = ({
     occupancy,
   } = dayInfo;
 
-  const quotedHotelName = getQuotedHotelName(day);
   const isFullyAssigned = Boolean(occupancy?.isFullyAccommodated);
   const canSelect = isDayAvailable || (hasAssignedHotels && !isFullyAssigned);
-  const occupancyPct = Math.min(
-    100,
-    Math.round(
-      (occupancy.assignedCount / Math.max(1, totalPassengers)) * 100,
-    ),
-  );
   const pendingCount = Math.max(0, occupancy.pendingCount || 0);
 
   return (
@@ -638,22 +573,10 @@ const DayCard = ({
           )}
         </div>
 
-        <div className="day-occupancy">
-          <div className="occupancy-header">
-            <span className="occupancy-label">Ocupación</span>
-            <span className="occupancy-value">
-              {occupancy.assignedCount}/{totalPassengers} pax
-            </span>
-          </div>
-          <div className="occupancy-bar-bg">
-            <div
-              className={`occupancy-bar-fill ${occupancyPct >= 100 ? "complete" : occupancyPct >= 70 ? "warning" : "low"}`}
-              style={{ width: `${occupancyPct}%` }}
-            />
-          </div>
-        </div>
-
         <div className="day-badges">
+          {occupancy.totalPassengers > 0 && <span className="day-occupancy-count">
+            {occupancy.assignedCount}/{occupancy.totalPassengers} pax cotizados
+          </span>}
           {(unassignedHotels.length > 0 || pendingCount > 0) && (
             <span className="badge badge-pending">
               {pendingCount > 0
@@ -673,70 +596,12 @@ const DayCard = ({
         </div>
       </div>
 
-      {quotedHotelName && (
-        <div className="day-quoted-hotel">
-          <FaHotel />
-          <span className="quoted-label">Cotizado:</span>
-          <span className="quoted-name" title={quotedHotelName}>
-            {quotedHotelName}
-          </span>
-        </div>
-      )}
+      <div className="day-room-comparisons">
+        {getAssignableHotelServices(day).map((service,index) => <HotelDestinationRecord
+          key={hotelServiceId(service)} service={service} peopleDetails={peopleDetails} roomNumber={index+1}
+          onRemove={()=>onRemoveAssigned(dayIndex,service.servicioId ?? service.id)} />)}
+      </div>
 
-      {assignedHotels.length > 0 && (
-        <div className="day-assigned-list">
-          {assignedHotels.map((hotel, hotelIdx) => {
-            const hotelName =
-              hotel.assignedService?.parentService?.nombre ||
-              hotel.hotel_nombre ||
-              hotel.parentService?.nombre ||
-              hotel.nombre ||
-              "Hotel";
-            const tipoHabitacion =
-              hotel.assignedService?.childService?.tipo_habitacion ||
-              hotel.childService?.tipo_habitacion ||
-              hotel.tipo_habitacion ||
-              "";
-            const displayName = tipoHabitacion
-              ? `${hotelName} · ${tipoHabitacion}`
-              : hotelName;
-            const hotelServiceId =
-              hotel.id || hotel.serviceId || `hotel-${dayIndex}-${hotelIdx}`;
-            const hasPaymentRequest =
-              hotel.paymentRequest &&
-              Object.keys(hotel.paymentRequest).length > 0;
-            const isPaid = hotel.paymentRequest?.status === "paid";
-            const isPending = hasPaymentRequest && !isPaid;
-            const canEdit = !hasPaymentRequest;
-
-            return (
-              <div
-                key={hotelServiceId}
-                className={`assigned-hotel-chip ${isPaid ? "paid" : isPending ? "pending" : ""}`}
-              >
-                <FaHotel />
-                <span className="assigned-name" title={displayName}>
-                  {displayName}
-                </span>
-                {canEdit ? (
-                  <button
-                    className="remove-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onRemoveAssigned(dayIndex, hotelServiceId);
-                    }}
-                    title="Quitar asignación"
-                  >
-                    <FaTimes />
-                  </button>
-                ) : (
-                  <FaLock className="locked-icon" title="No editable" />
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 };
@@ -749,16 +614,20 @@ const RoomAssignmentBoard = ({
   onAssignPassenger,
   onRemovePassenger,
   onAutoDistribute,
+  targetPassengerIds,
+  quotedDestinations,
+  compatibleDestinations,
+  roomDestinations,
+  onSelectDestination,
 }) => {
   if (roomSlots.length === 0) return null;
 
-  const { allPassengerIds } = getPassengerIdsByType(peopleDetails);
   const assignedIds = new Set(
     Object.values(roomAssignments || {})
       .flat()
       .filter(Boolean),
   );
-  const unassignedIds = allPassengerIds.filter((id) => !assignedIds.has(id));
+  const unassignedIds = targetPassengerIds.filter((id) => !assignedIds.has(id));
   const assignedCount = assignedIds.size;
   const totalCapacity = roomSlots.reduce((sum, slot) => sum + slot.capacity, 0);
 
@@ -773,7 +642,7 @@ const RoomAssignmentBoard = ({
           </span>
         </div>
         <button type="button" onClick={onAutoDistribute}>
-          Reasignar automático
+          Distribuir según cotización
         </button>
       </div>
 
@@ -815,14 +684,28 @@ const RoomAssignmentBoard = ({
                 <div>
                   <strong>{slot.label}</strong>
                   <span>
-                    {slot.item?.hotel?.nombre || "Hotel"} · {slot.capacity} pax
-                    máx.
+                    {slot.item?.hotel?.nombre || "Hotel"} · {slot.capacity ? `${slot.capacity} pax máx.` : "Capacidad por confirmar"}
                   </span>
                 </div>
                 <span className="ham-room-count">
                   {passengerIds.length}/{slot.capacity}
                 </span>
               </div>
+
+              <label className="ham-room-destination">
+                {slot.label} · destino cotizado
+                <select value={roomDestinations[slot.id] || ""} onChange={event=>onSelectDestination(slot,event.target.value)}>
+                  <option value="">Selecciona la habitación cotizada</option>
+                  {quotedDestinations.map((service,index) => {
+                    const quoted = hotelRoomSnapshot(service);
+                    const unavailable = !compatibleDestinations.includes(service) || quoted.passengers.length > slot.capacity ||
+                      Object.entries(roomDestinations).some(([key,value]) => key !== slot.id && value === hotelServiceId(service));
+                    return <option key={hotelServiceId(service)} value={hotelServiceId(service)} disabled={unavailable}>
+                      Hab. {index+1} · {quoted.room} · {quoted.hotel} · {quoted.passengers.length} pax · {quoted.passengers.map(id=>getPassengerLabel(id,peopleDetails)).join(", ")}
+                    </option>;
+                  })}
+                </select>
+              </label>
 
               <div className="ham-room-card__body">
                 {passengerIds.length === 0 ? (
@@ -863,13 +746,13 @@ const RoomAssignmentBoard = ({
 const HotelAssignmentModal = ({
   isOpen,
   onClose,
-  days = [],
+  days = EMPTY_DAYS,
   totalPassengers: propTotalPassengers,
   onAddHotelToDays,
   itinerary = {},
   removeHotelFromDay,
   packageType = "compartido",
-  peopleDetails: propPeopleDetails = {},
+  peopleDetails: propPeopleDetails = EMPTY_PEOPLE_DETAILS,
   voucherReservaId = null,
 }) => {
   const tariffType = "interna";
@@ -880,6 +763,7 @@ const HotelAssignmentModal = ({
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   const [selectedDays, setSelectedDays] = useState([]);
   const [step, setStep] = useState("days");
@@ -888,45 +772,51 @@ const HotelAssignmentModal = ({
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [selectedTariff, setSelectedTariff] = useState(null);
   const [selectedRooms, setSelectedRooms] = useState([]);
-  const [roomAssignments, setRoomAssignments] = useState({});
+  const [roomDistribution, setRoomDistribution] = useState(emptyHotelRoomDistribution);
+  const {assignments: roomAssignments, destinations: roomDestinations} = roomDistribution;
   const [customPrice, setCustomPrice] = useState(null);
   const [filters, setFilters] = useState({
     search: "",
     categoria: "",
     ciudad: "",
   });
+  const roomReadVersion = useRef(0);
+  const hotelReadVersion = useRef(0);
+  const categoryReadVersion = useRef(0);
 
   // Cargar pasajeros del voucher de reserva
   useEffect(() => {
+    let active = true;
+    setPassengers([]);
     const fetchPassengers = async () => {
       if (!voucherReservaId || !isOpen) return;
       try {
         const { passengers: fetchedPassengers } =
           await pasajeroService.getPassengersByVoucherReserva(voucherReservaId);
-        setPassengers(fetchedPassengers || []);
+        if (active) setPassengers(fetchedPassengers || []);
       } catch (error) {
-        setPassengers([]);
+        if (active) setPassengers([]);
       }
     };
     fetchPassengers();
+    return () => { active = false; };
   }, [voucherReservaId, isOpen]);
 
   const peopleDetails = useMemo(() => {
-    if (passengers.length > 0) {
-      const adults = [];
-      const children = [];
-      passengers.forEach((p) => {
-        const age =
-          p.edad || (p.fecha_nacimiento ? calculateAge(p.fecha_nacimiento) : 30);
-        if (age >= 18) {
-          adults.push({ nombre: p.nombre || p.nombres, edad: age, id: p.id });
-        } else {
-          children.push({ nombre: p.nombre || p.nombres, edad: age, id: p.id });
-        }
-      });
-      return { adults, children };
+    const normalized = normalizeReservationPassengerRows(passengers);
+    const fetched = [...normalized.adults, ...normalized.children, ...normalized.infants];
+    if ((propPeopleDetails.adults?.length || 0) + (propPeopleDetails.children?.length || 0) > 0) {
+      // Quotation order/row IDs define beneficiaries; fetching names cannot reorder them.
+      const enrich = person => {
+        const match = fetched.find(row =>
+          (person.id != null && String(row.id) === String(person.id)) ||
+          (person.passenger_key && row.passenger_key === person.passenger_key));
+        return match ? {...person, nombre: match.nombre || match.nombres || person.nombre} : person;
+      };
+      return {...propPeopleDetails, adults:(propPeopleDetails.adults || []).map(enrich),
+        children:(propPeopleDetails.children || []).map(enrich)};
     }
-    return propPeopleDetails;
+    return fetched.length ? {...normalized, children:[...normalized.children,...normalized.infants]} : propPeopleDetails;
   }, [passengers, propPeopleDetails]);
 
   const totalPassengers = useMemo(() => {
@@ -946,7 +836,7 @@ const HotelAssignmentModal = ({
       (days || []).map((day, index) => {
         const unassignedHotels = getUnassignedHotelServices(day);
         const assignedHotels = getAssignedHotelServices(day);
-        const occupancy = getDayHotelAssignmentProgress(day, totalPassengers);
+        const occupancy = getDayHotelAssignmentProgress(day);
         return {
           day,
           dayIndex: index,
@@ -970,7 +860,7 @@ const HotelAssignmentModal = ({
       setSelectedRoom(null);
       setSelectedTariff(null);
       setSelectedRooms([]);
-      setRoomAssignments({});
+      setRoomDistribution(emptyHotelRoomDistribution());
       setCustomPrice(null);
       setFilters({ search: "", categoria: "", ciudad: "" });
       setCategories([]);
@@ -978,41 +868,46 @@ const HotelAssignmentModal = ({
       setRooms([]);
       setError(null);
     }
+    return () => { hotelReadVersion.current += 1; };
   }, [isOpen]);
 
   // Cargar categorias al abrir
   useEffect(() => {
     if (isOpen) fetchHotelCategories();
+    return () => { categoryReadVersion.current += 1; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   // Cargar hoteles cuando cambia la categoria seleccionada
   useEffect(() => {
-    if (selectedCategory && categories.length > 0) {
+    if (isOpen && selectedCategory && categories.length > 0) {
       fetchHotelsByCategory(selectedCategory);
     } else {
       setHotels([]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCategory, categories]);
+  }, [isOpen, selectedCategory, categories]);
 
   // Cargar habitaciones cuando cambia el hotel seleccionado
   useEffect(() => {
-    if (selectedHotel) {
+    if (isOpen && selectedHotel) {
       fetchRooms(selectedHotel.id_hotel || selectedHotel.id);
     } else {
       setRooms([]);
     }
+    return () => { roomReadVersion.current += 1; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedHotel]);
+  }, [isOpen, selectedHotel]);
 
   const fetchHotelCategories = async () => {
+    const readVersion = ++categoryReadVersion.current;
     setLoading(true);
     setError(null);
     try {
-      const response = await axiosInstance.get("/turismo/hoteles", {
+      const response = await readWithRetry(()=>axiosInstance.get("/turismo/hoteles", {
         params: { activo: true },
-      });
+      }));
+      if (readVersion !== categoryReadVersion.current) return;
       let hotelsData =
         response.data?.success && Array.isArray(response.data.data)
           ? response.data.data
@@ -1032,14 +927,17 @@ const HotelAssignmentModal = ({
         Object.values(categoriesMap).sort((a, b) => b.count - a.count),
       );
     } catch (err) {
-      setError("Error al cargar categorias de hoteles");
-      setCategories([]);
+      if (readVersion === categoryReadVersion.current) {
+        setError("Error al cargar categorias de hoteles");
+        setCategories([]);
+      }
     } finally {
-      setLoading(false);
+      if (readVersion === categoryReadVersion.current) setLoading(false);
     }
   };
 
   const fetchHotelsByCategory = async (category) => {
+    const readVersion = ++hotelReadVersion.current;
     setLoading(true);
     try {
       const categoryData = categories.find((cat) => cat.name === category);
@@ -1051,38 +949,45 @@ const HotelAssignmentModal = ({
           "hoteles",
           tariffType,
         );
-        setHotels(filtered);
+        if (readVersion === hotelReadVersion.current) setHotels(filtered);
       } else {
-        setHotels([]);
+        if (readVersion === hotelReadVersion.current) setHotels([]);
       }
     } catch (err) {
-      setError("Error al cargar hoteles");
-      setHotels([]);
+      if (readVersion === hotelReadVersion.current) {
+        setError("Error al cargar hoteles");
+        setHotels([]);
+      }
     } finally {
-      setLoading(false);
+      if (readVersion === hotelReadVersion.current) setLoading(false);
     }
   };
 
   const fetchAllHotels = async () => {
+    const readVersion = ++hotelReadVersion.current;
     setLoading(true);
     setError(null);
     try {
       const response = await axiosInstance.get("/turismo/hoteles", {
         params: { activo: true },
       });
+      if (readVersion !== hotelReadVersion.current) return;
       if (response.data?.success && Array.isArray(response.data.data))
         setHotels(response.data.data);
       else if (Array.isArray(response.data)) setHotels(response.data);
       else setHotels([]);
     } catch (err) {
-      setError("Error al cargar hoteles");
-      setHotels([]);
+      if (readVersion === hotelReadVersion.current) {
+        setError("Error al cargar hoteles");
+        setHotels([]);
+      }
     } finally {
-      setLoading(false);
+      if (readVersion === hotelReadVersion.current) setLoading(false);
     }
   };
 
   const fetchRooms = async (hotelId) => {
+    const readVersion = ++roomReadVersion.current;
     setLoading(true);
     try {
       const response = await axiosInstance.get(
@@ -1101,17 +1006,15 @@ const HotelAssignmentModal = ({
         return room.tarifas.some((t) => t.tipo_tarifa === tariffType);
       });
 
-      // ReservaServiceEditor trabaja sus assigned_* en USD. Normalizar aquí
-      // evita que selección, totales y persistencia reutilicen el monto PEN.
-      const processedRooms = roomsWithMatchingTariffs.map((room) =>
-        convertRoomTariffsToDollars(room, tariffType),
-      );
-      setRooms(processedRooms);
+      const processedRooms = roomsWithMatchingTariffs.map(normalizeHotelRoomWithTariffs);
+      if (readVersion === roomReadVersion.current) setRooms(processedRooms);
     } catch (err) {
-      setError("Error al cargar habitaciones");
-      setRooms([]);
+      if (readVersion === roomReadVersion.current) {
+        setError("Error al cargar habitaciones");
+        setRooms([]);
+      }
     } finally {
-      setLoading(false);
+      if (readVersion === roomReadVersion.current) setLoading(false);
     }
   };
 
@@ -1120,15 +1023,16 @@ const HotelAssignmentModal = ({
     const results = await Promise.allSettled(
       categoryHotels.map(async (hotel) => {
         const hotelId = hotel.id_hotel || hotel.id;
-        const response = await axiosInstance.get(
+        const response = await readWithRetry(()=>axiosInstance.get(
           `/turismo/habitaciones/hotel/${hotelId}/con-tarifas`,
-        );
+        ));
         return response.data?.data || response.data || [];
       }),
     );
     results.forEach((r) => {
-      if (r.status === "fulfilled" && Array.isArray(r.value))
-        allRooms.push(...r.value);
+      if (r.status === "fulfilled" && Array.isArray(r.value)) {
+        allRooms.push(...r.value.map(normalizeHotelRoomWithTariffs));
+      }
     });
     return allRooms;
   };
@@ -1230,23 +1134,13 @@ const HotelAssignmentModal = ({
     setSelectedRoom(null);
     setSelectedTariff(null);
     setSelectedRooms([]);
-    setRoomAssignments({});
+    setRoomDistribution(emptyHotelRoomDistribution());
     setCustomPrice(null);
   };
 
   const handleFilterChange = (field, value) => {
     setFilters((prev) => ({ ...prev, [field]: value }));
   };
-
-  const totalSelectedCapacity = useMemo(
-    () =>
-      selectedRooms.reduce(
-        (sum, item) =>
-          sum + capacityFromRoom(item.room) * (item.quantity || 1),
-        0,
-      ),
-    [selectedRooms],
-  );
 
   const totalSelectedRoomsCount = useMemo(
     () =>
@@ -1261,17 +1155,40 @@ const HotelAssignmentModal = ({
     () => buildPhysicalRoomSlots(selectedRooms),
     [selectedRooms],
   );
+  const quotedDestinations = useMemo(() => getUnassignedHotelServices(days[selectedDays[0]] || {}), [days, selectedDays]);
+  const compatibleDestinations = useMemo(() => compatibleHotelDestinations(days,selectedDays), [days,selectedDays]);
+  const runtimePassengerIds = useMemo(() => getPassengerIdsByType(peopleDetails).allPassengerIds, [peopleDetails]);
+  const targetPassengerIds = useMemo(() => {
+    const quoted = new Set(quotedDestinations.flatMap(quotedHotelPassengerIds));
+    return runtimePassengerIds.filter(id => quoted.has(hotelOccupantId(id)));
+  }, [quotedDestinations,runtimePassengerIds]);
+  const assignmentTargetCount = targetPassengerIds.length;
 
-  useEffect(() => {
-    if (!isOpen || roomSlots.length === 0) {
-      if (roomSlots.length === 0) setRoomAssignments({});
+  const selectQuotedDestination = (slot, destinationId) => {
+    const destination = quotedDestinations.find(service => hotelServiceId(service) === destinationId);
+    const ids = destination ? quotedHotelPassengerIds(destination) : [];
+    if (ids.length > slot.capacity) {
+      setError("Los pasajeros cotizados no caben en esta habitación. Elige otra habitación");
       return;
     }
+    if (destination && Object.entries(roomDestinations).some(([key,value]) => key !== slot.id && value === destinationId)) {
+      setError("Esta habitación cotizada ya está relacionada con otra habitación seleccionada");
+      return;
+    }
+    setError(null);
+    setRoomDistribution(previous => ({
+      assignments:{...previous.assignments,[slot.id]:ids.map(id => runtimePassengerIds.find(current => hotelOccupantId(current) === id) || id)},
+      destinations:{...previous.destinations,[slot.id]:destinationId},
+      manualSlots:[...new Set([...previous.manualSlots,slot.id])],
+    }));
+  };
 
-    setRoomAssignments((current) =>
-      normalizeRoomAssignmentsState(current, roomSlots, peopleDetails),
-    );
-  }, [isOpen, roomSlots, peopleDetails]);
+  useEffect(() => {
+    if (!isOpen) return;
+    setRoomDistribution(current => planHotelRoomDistribution({
+      days, selectedDays, roomSlots, passengerIds:runtimePassengerIds, current,
+    }));
+  }, [isOpen, roomSlots, runtimePassengerIds, days, selectedDays]);
 
   const assignedPreviewPassengerIds = useMemo(
     () => [
@@ -1287,46 +1204,42 @@ const HotelAssignmentModal = ({
   const previewAssignedPassengerCount = assignedPreviewPassengerIds.length;
 
   const handleAssignPassengerToRoom = (passengerId, slotId) => {
-    const targetSlot = roomSlots.find((slot) => slot.id === slotId);
-    if (!targetSlot) return;
-
-    setRoomAssignments((current) => {
-      const next = {};
-      Object.entries(current || {}).forEach(([key, ids]) => {
-        next[key] = (Array.isArray(ids) ? ids : []).filter(
-          (id) => id !== passengerId,
-        );
+    const targetSlot = roomSlots.find(slot => slot.id === slotId);
+    if (!targetSlot || !targetPassengerIds.includes(passengerId)) return;
+    setRoomDistribution(current => {
+      if ((current.assignments[slotId] || []).length >= targetSlot.capacity) return current;
+      const assignments = {}, manualSlots = new Set([...current.manualSlots,slotId]);
+      Object.entries(current.assignments).forEach(([key,ids]) => {
+        assignments[key] = ids.filter(id => hotelOccupantId(id) !== hotelOccupantId(passengerId));
+        if (assignments[key].length !== ids.length) manualSlots.add(key);
       });
-
-      const targetIds = next[slotId] || [];
-      if (targetIds.length >= targetSlot.capacity) return current;
-
-      return {
-        ...next,
-        [slotId]: [...targetIds, passengerId],
-      };
+      assignments[slotId] = [...(assignments[slotId] || []),passengerId];
+      return {...current,assignments,manualSlots:[...manualSlots]};
     });
   };
 
   const handleRemovePassengerFromRoom = (passengerId, slotId) => {
-    setRoomAssignments((current) => ({
-      ...(current || {}),
-      [slotId]: (current?.[slotId] || []).filter((id) => id !== passengerId),
+    setRoomDistribution(current => ({...current,
+      assignments:{...current.assignments,[slotId]:(current.assignments[slotId] || []).filter(id => id !== passengerId)},
+      manualSlots:[...new Set([...current.manualSlots,slotId])],
     }));
   };
 
   const handleAutoDistributeRooms = () => {
-    setRoomAssignments(normalizeRoomAssignmentsState({}, roomSlots, peopleDetails));
+    setRoomDistribution(planHotelRoomDistribution({days,selectedDays,roomSlots,passengerIds:runtimePassengerIds}));
   };
 
   const toggleRoomSelection = (room, hotel, tariff, priceType = null) => {
+    if (!reservationRoomCapacity(room)) {
+      setError("Confirma la capacidad de la habitación en el catálogo antes de asignar");
+      return;
+    }
+    setError(null);
     const quantityDelta = typeof priceType === "number" ? priceType : null;
     const selectedType =
-      typeof priceType === "string" ? priceType : tariff?.selectedType || null;
+      typeof priceType === "string" ? priceType : tariff?.selectedType || tariff?.tipoPrecio || tariff?.tipo_precio || null;
     const hotelToUse = hotel || selectedHotel;
-    const tariffWithType = selectedType
-      ? { ...tariff, selectedType, tipoPrecio:selectedType, precio:tariff?.[`precio_${selectedType}`] }
-      : tariff;
+    const tariffWithType = {...tariff,selectedType,tipoPrecio:selectedType || packageType,precio:roomTariffPrice({...tariff,selectedType},packageType)};
     const selectionId = buildSelectedRoomId(
       hotelToUse,
       room,
@@ -1402,7 +1315,7 @@ const HotelAssignmentModal = ({
 
   const clearRoomSelection = () => {
     setSelectedRooms([]);
-    setRoomAssignments({});
+    setRoomDistribution(emptyHotelRoomDistribution());
   };
 
   const handleRemoveRoom = (roomIdentifier) => {
@@ -1440,6 +1353,12 @@ const HotelAssignmentModal = ({
     });
   };
 
+  const selectedRoomTotal = item => {
+    const mode=item.tariff?.tipoPrecio || item.tariff?.selectedType || packageType;
+    const multiplier=mode === "privado" ? roomSlots.filter(slot=>slot.item===item).reduce((sum,slot)=>sum+(roomAssignments[slot.id]?.length || 0),0) : (item.quantity || 1);
+    return getRoomUnitPrice(item) * multiplier * selectedDays.length;
+  };
+
   const buildServicesForSelectedDays = () => {
     if (selectedDays.length === 0 || selectedRooms.length === 0 || !selectedHotel)
       return [];
@@ -1447,6 +1366,7 @@ const HotelAssignmentModal = ({
     return roomSlots.map((slot) => {
       const item = slot.item;
       const { hotel, room, tariff, customPrice } = item;
+      const roomEntity = getHotelRoomEntity(room);
       const tariffToUse =
         customPrice !== null && customPrice !== undefined
           ? {
@@ -1455,38 +1375,37 @@ const HotelAssignmentModal = ({
               precio_compartido: Number(customPrice),
               precio: Number(customPrice),
             }
-          : tariff;
+          : {...tariff,precio:roomTariffPrice(tariff,packageType)};
 
       const roomWithHotel = {
-        ...room,
+        ...roomEntity,
         hotel_id: hotel?.id_hotel || hotel?.id,
-        habitacion: {
-          ...room,
-          tipo_habitacion: room.tipo_habitacion,
-          capacidad: capacityFromRoom(room),
-        },
+        habitacion: roomEntity,
+        tarifas: Array.isArray(room?.tarifas) ? room.tarifas : [],
       };
 
       const passengerIdsForRoom = roomAssignments?.[slot.id] || [];
-      if (passengerIdsForRoom.length === 0) return null;
+      if (passengerIdsForRoom.length === 0) throw new Error("Hay una habitación seleccionada sin pasajeros. Relaciónala con lo cotizado o quítala de la selección");
       const passengerSelection = buildHotelPassengerSelectionForIds(
         peopleDetails,
         passengerIdsForRoom,
       );
 
-      const hotelService = createUnifiedService(
-        hotel,
-        roomWithHotel,
-        tariffToUse,
-        peopleDetails,
-        packageType,
-        passengerSelection,
-      );
-      hotelService.habitacion_capacidad = capacityFromRoom(room);
+      const hotelService = buildHotelAssignmentService(hotel,roomWithHotel,tariffToUse,peopleDetails,passengerSelection,packageType);
+      const selectedDestination = roomDestinations[slot.id];
+      if (!selectedDestination) throw new Error("Relaciona cada habitación con su habitación cotizada antes de guardar");
+      if (!slot.capacity || passengerIdsForRoom.length > slot.capacity) throw new Error("Los pasajeros no caben en la habitación seleccionada. Confirma su capacidad");
+      hotelService.quotedHotelServiceIds = hotelDestinationIds(days,selectedDays,selectedDestination);
+      hotelService.habitacion_capacidad = slot.capacity;
       hotelService.hotel_nombre = hotel?.nombre;
       hotelService.hotel_categoria = hotel?.categoria;
       hotelService.hotel_ciudad = hotel?.ciudad;
-      hotelService.habitacion_tipo = room.tipo_habitacion;
+      hotelService.habitacion_tipo = roomEntity?.tipo_habitacion;
+      hotelService.assignedParentId = hotel?.id_hotel || hotel?.id || null;
+      hotelService.assigned_parent_id = hotelService.assignedParentId;
+      hotelService.assignedChildId =
+        roomEntity?.id_habitacion || roomEntity?.id || null;
+      hotelService.assigned_child_id = hotelService.assignedChildId;
       hotelService.tariffType = tariffType;
       hotelService.assignedPassengerIds = passengerIdsForRoom;
       hotelService.assignedPassengerCount = passengerIdsForRoom.length;
@@ -1495,7 +1414,8 @@ const HotelAssignmentModal = ({
     }).filter(Boolean);
   };
 
-  const handleAddToItinerary = () => {
+  const handleAddToItinerary = async () => {
+    if (saving) return;
     if (selectedDays.length === 0) {
       alert("Selecciona al menos un dia");
       return;
@@ -1504,23 +1424,29 @@ const HotelAssignmentModal = ({
       alert("Selecciona al menos una habitacion");
       return;
     }
-    if (previewAssignedPassengerCount < totalPassengers) {
+    if (previewAssignedPassengerCount < assignmentTargetCount) {
       if (
         !window.confirm(
-          `Hay ${previewAssignedPassengerCount} de ${totalPassengers} pasajeros asignados. ¿Deseas continuar de todos modos?`,
+          `Hay ${previewAssignedPassengerCount} de ${assignmentTargetCount} pasajeros asignados. ¿Deseas continuar de todos modos?`,
         )
       ) {
         return;
       }
     }
 
-    const services = buildServicesForSelectedDays();
-    if (services.length === 0) {
-      alert("No hay habitaciones validas para agregar");
+    try {
+      setError(null);
+      setSaving(true);
+      const services = buildServicesForSelectedDays();
+      if (!services.length) throw new Error("Asigna los pasajeros a sus habitaciones antes de guardar");
+      const saved = await onAddHotelToDays(selectedDays, services);
+      if (saved === false) throw new Error("No se guardaron las habitaciones. Reintenta sin perder la distribución.");
+    } catch (assignmentError) {
+      setError(assignmentError.message);
       return;
+    } finally {
+      setSaving(false);
     }
-
-    onAddHotelToDays(selectedDays, services);
 
     setStep("days");
     setSelectedDays([]);
@@ -1529,7 +1455,7 @@ const HotelAssignmentModal = ({
     setSelectedRoom(null);
     setSelectedTariff(null);
     setSelectedRooms([]);
-    setRoomAssignments({});
+    setRoomDistribution(emptyHotelRoomDistribution());
     setCustomPrice(null);
   };
 
@@ -1542,7 +1468,7 @@ const HotelAssignmentModal = ({
     if (!window.confirm("Eliminar todos los hoteles asignados del itinerario?"))
       return;
     days.forEach((day, dayIndex) => {
-      getAssignedHotelServices(day).forEach((service) => {
+      getAssignedHotelServices(day).filter(service=>!isHotelPaymentCommitted(service)).forEach((service) => {
         const serviceId =
           service.id || service.serviceId || `hotel-${dayIndex}-${service.id}`;
         removeHotelFromDay(dayIndex, serviceId);
@@ -1551,6 +1477,7 @@ const HotelAssignmentModal = ({
   };
 
   const navigateBack = () => {
+    if (saving) return;
     const idx = STEP_ORDER.indexOf(step);
     if (idx > 0) {
       setStep(STEP_ORDER[idx - 1]);
@@ -1580,7 +1507,7 @@ const HotelAssignmentModal = ({
 
   const modalContent = (
     <div className="hotel-itinerary-modal-overlay">
-      <div className="hotel-itinerary-modal">
+      <div className="hotel-itinerary-modal hotel-assignment-modal">
         {/* Header */}
         <div className="modal-header">
           <div className="modal-header-content">
@@ -1592,14 +1519,16 @@ const HotelAssignmentModal = ({
               Tarifa interna · {totalPassengers} pasajeros
             </span>
           </div>
-          <button className="close-button" onClick={onClose} title="Cerrar">
+          <button className="close-button" disabled={saving} onClick={onClose} title="Cerrar">
             <FaTimes />
           </button>
         </div>
 
-        <div className="modal-body">
+        <div className="modal-body" inert={saving ? "" : undefined} aria-busy={saving}>
+          {error && <div role="alert" className="info-card warning">{error}</div>}
           {/* Progress Steps */}
-          <div className="progress-steps">
+          <div className="hotel-assignment-toolbar">
+          <div className="progress-steps" aria-label="Pasos de asignación">
             {STEP_ORDER.map((s, idx) => {
               const label = stepLabels[s] || s;
               const isActive = currentStepIndex === idx;
@@ -1607,6 +1536,7 @@ const HotelAssignmentModal = ({
               return (
                 <div
                   key={s}
+                  aria-current={isActive ? "step" : undefined}
                   className={`step ${isActive ? "active" : ""} ${isCompleted ? "completed" : ""}`}
                 >
                   <div className="step-circle">
@@ -1625,10 +1555,6 @@ const HotelAssignmentModal = ({
 
           {/* Info pasajeros */}
           <div className="passenger-info">
-            <div className="info-card">
-              <FaUsers />
-              <span>{totalPassengers} pasajeros</span>
-            </div>
             {unassignedPassengers > 0 && (
               <div className="info-card warning">
                 <FaExclamationTriangle />
@@ -1637,28 +1563,35 @@ const HotelAssignmentModal = ({
             )}
             {step !== "days" && (
               <div
-                className={`info-card ${previewAssignedPassengerCount >= totalPassengers ? "success" : "info"}`}
+                className={`info-card ${previewAssignedPassengerCount >= assignmentTargetCount ? "success" : "info"}`}
               >
                 <FaBed />
                 <span>
                   {totalSelectedRoomsCount} hab. · {previewAssignedPassengerCount}/
-                  {totalPassengers} pax asignados
+                  {assignmentTargetCount} pax asignados
                 </span>
               </div>
             )}
           </div>
+          </div>
 
-          <div className="modal-workspace">
+          {step !== "days" && selectedDays.length > 0 && (
+            <details className="selected-hotel-destinations">
+              <summary>Cotizado y asignado · {selectedDays.length} días seleccionados</summary>
+              {selectedDays.map(dayIndex => <div key={dayIndex}>
+                <strong>Día {days[dayIndex]?.numero || dayIndex+1}</strong>
+                {getAssignableHotelServices(days[dayIndex]).map((service,index) =>
+                  <HotelDestinationRecord key={hotelServiceId(service)} service={service} peopleDetails={peopleDetails} roomNumber={index+1} />)}
+              </div>)}
+            </details>
+          )}
+          {step !== "days" && compatibleDestinations.length < quotedDestinations.length && (
+            <div role="status" className="info-card warning">Hay habitaciones con distinta distribución o pasajeros ya asignados entre estos días. Revisa los días y asígnalos por separado.</div>
+          )}
+
+          <div className={`modal-workspace ${step === "days" ? "modal-workspace--days" : ""}`}>
             {/* Contenido principal */}
             <div className="workspace-main">
-              {error && (
-                <div className="modal-alert error">
-                  <FaExclamationTriangle />
-                  <span>{error}</span>
-                  <button onClick={fetchHotelCategories}>Reintentar</button>
-                </div>
-              )}
-
               {step === "days" && (
                 <div className="panel days-panel">
                   <div className="panel-header">
@@ -1700,7 +1633,7 @@ const HotelAssignmentModal = ({
                           dayInfo={dayInfo}
                           isSelected={selectedDays.includes(dayInfo.dayIndex)}
                           onToggle={handleDayToggle}
-                          totalPassengers={totalPassengers}
+                          peopleDetails={peopleDetails}
                           onRemoveAssigned={handleRemoveHotelFromDay}
                         />
                       ))}
@@ -1719,7 +1652,7 @@ const HotelAssignmentModal = ({
                     setSelectedRoom(null);
                     setSelectedTariff(null);
                     setSelectedRooms([]);
-                    setRoomAssignments({});
+                    setRoomDistribution(emptyHotelRoomDistribution());
                     setStep("hotel");
                   }}
                   countHotelsUsedByCategory={countHotelsUsedByCategory}
@@ -1741,7 +1674,7 @@ const HotelAssignmentModal = ({
                     setSelectedRoom(null);
                     setSelectedTariff(null);
                     setSelectedRooms([]);
-                    setRoomAssignments({});
+                    setRoomDistribution(emptyHotelRoomDistribution());
                     setStep("room");
                   }}
                   onBack={() => {
@@ -1764,6 +1697,7 @@ const HotelAssignmentModal = ({
               {step === "room" && selectedHotel && (
                 <RoomSelection
                   rooms={rooms}
+                  capacityForRoom={reservationRoomCapacity}
                   selectedRoom={selectedRoom}
                   selectedTariff={selectedTariff}
                   selectedHotel={selectedHotel}
@@ -1797,12 +1731,17 @@ const HotelAssignmentModal = ({
                 />
               )}
 
-              {step === "room" && selectedHotel && selectedRooms.length > 0 && (
+              {(step === "room" || step === "review") && selectedHotel && selectedRooms.length > 0 && (
                 <RoomAssignmentBoard
                   roomSlots={roomSlots}
                   roomAssignments={roomAssignments}
                   peopleDetails={peopleDetails}
-                  totalPassengers={totalPassengers}
+                  totalPassengers={assignmentTargetCount}
+                  targetPassengerIds={targetPassengerIds}
+                  quotedDestinations={quotedDestinations}
+                  compatibleDestinations={compatibleDestinations}
+                  roomDestinations={roomDestinations}
+                  onSelectDestination={selectQuotedDestination}
                   onAssignPassenger={handleAssignPassengerToRoom}
                   onRemovePassenger={handleRemovePassengerFromRoom}
                   onAutoDistribute={handleAutoDistributeRooms}
@@ -1822,6 +1761,7 @@ const HotelAssignmentModal = ({
                     onBack={() => setStep("room")}
                     onPriceChange={(price) => setCustomPrice(price)}
                     selectedRooms={selectedRooms}
+                    getSelectedRoomTotal={selectedRoomTotal}
                     onRemoveRoom={handleRemoveRoom}
                     onUpdateRoomPrice={handleUpdateRoomPrice}
                     totalPassengers={totalPassengers}
@@ -1835,9 +1775,10 @@ const HotelAssignmentModal = ({
               days={days}
               selectedHotel={selectedHotel}
               selectedRooms={selectedRooms}
-              totalPassengers={totalPassengers}
+              totalPassengers={assignmentTargetCount}
               step={step}
               assignedPassengerCount={previewAssignedPassengerCount}
+              getSelectedRoomTotal={selectedRoomTotal}
             />
           </div>
         </div>
@@ -1887,14 +1828,14 @@ const HotelAssignmentModal = ({
                       setSelectedRoom(null);
                       setSelectedTariff(null);
                       setSelectedRooms([]);
-                      setRoomAssignments({});
+                      setRoomDistribution(emptyHotelRoomDistribution());
                       setRooms([]);
                       setStep("hotel");
                     }}
                   >
                     <FaHotel /> Elegir otro hotel
                   </button>
-                  <button className="confirm-btn" onClick={handleAddToItinerary}>
+                  <button className="confirm-btn" disabled={saving} aria-busy={saving} onClick={handleAddToItinerary}>
                     <FaCheck /> Guardar asignación
                   </button>
                 </>

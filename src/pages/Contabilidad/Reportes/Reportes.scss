@@ -221,3 +221,8 @@
     }
   }
 }
+
+.accounting-report-tabs { display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem;
+ button {padding:.7rem 1rem;border:1px solid #eadfe6;border-radius:10px;background:white;color:#30272e;font:inherit;cursor:pointer;}
+ button[aria-pressed="true"] {background:var(--color-primary,#ff007e);color:white;border-color:transparent;}
+}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "react-toastify";
@@ -71,6 +71,14 @@ const MovimientosList = ({
   const [selectedEvidencia, setSelectedEvidencia] = useState(null);
   const [evidenciasWithProxyUrls, setEvidenciasWithProxyUrls] = useState([]);
   const [loadingProxyUrls, setLoadingProxyUrls] = useState(false);
+  const deleteInFlight = useRef(false);
+  const [deletedMovimientoIds, setDeletedMovimientoIds] = useState(new Set<string>());
+  const [confirmedUpdates, setConfirmedUpdates] = useState<Record<string, any>>({});
+  useEffect(() => {
+    const onConfirmed = event => { const movement = event.detail?.movement; if (movement?.id) setConfirmedUpdates(current => ({ ...current, [movement.id]: movement })); };
+    window.addEventListener("movimientoUpdated", onConfirmed);
+    return () => window.removeEventListener("movimientoUpdated", onConfirmed);
+  }, []);
   const [pendingDeleteMovimiento, setPendingDeleteMovimiento] = useState(null);
   const [deletingMovimientoId, setDeletingMovimientoId] = useState(null);
 
@@ -223,28 +231,35 @@ const MovimientosList = ({
 
   const handleConfirmDelete = async () => {
     const movimiento = pendingDeleteMovimiento;
-    if (!movimiento) return;
+    if (!movimiento || deleteInFlight.current) return;
 
+    deleteInFlight.current = true;
     setDeletingMovimientoId(movimiento.id);
     try {
-      console.log(" Eliminando movimiento:", movimiento.id);
       const result = await contabilidadService.deleteMovimiento(movimiento.id);
 
-      if (!result.success) {
-        toast.error(`Error al eliminar el ${tipoMovimiento}: ${result.error}`);
-        return;
+      if (result?.success !== true) {
+        throw new Error(result?.message || result?.error || "No se pudo eliminar el movimiento");
       }
 
       toast.success(
-        `${tipoMovimiento === "ingreso" ? "Ingreso" : "Egreso"} eliminado correctamente`,
+        `${movimiento.tipo_movimiento?.toLowerCase() === "ingreso" ? "Ingreso" : "Egreso"} eliminado correctamente`,
       );
 
+      setDeletedMovimientoIds(current => new Set(current).add(String(movimiento.id)));
       setPendingDeleteMovimiento(null);
-      if (refreshData) refreshData();
+      // Un fallo al refrescar no convierte un DELETE confirmado en un fallo
+      // ni vuelve a mostrar el movimiento que ya se eliminó.
+      try {
+        await refreshData?.();
+      } catch {
+        toast.warn("El movimiento se eliminó. Actualiza la lista para recargar los saldos.");
+      }
     } catch (error) {
       console.error(" Error al eliminar movimiento:", error);
-      toast.error(`Error al eliminar el ${tipoMovimiento}`);
+      toast.error(error?.message || "No se pudo eliminar el movimiento");
     } finally {
+      deleteInFlight.current = false;
       setDeletingMovimientoId(null);
     }
   };
@@ -272,7 +287,8 @@ const MovimientosList = ({
   };
 
   // Aplicar filtros
-  const filteredMovimientos = movimientos.filter((m) => {
+  const filteredMovimientos = movimientos.map(m => ({ ...m, ...confirmedUpdates[m.id] })).filter((m) => {
+    if (deletedMovimientoIds.has(String(m.id))) return false;
     // Filtro por tipo (ingreso/egreso) - solo si no es "todos"
     if (
       tipoMovimiento !== "todos" &&

@@ -1,3 +1,4 @@
+import { repriceServicesPreservingOperationalAssignments } from "./utils/passengerAwareServiceRepricing";
 "use client";
 
 import React, {
@@ -146,21 +147,7 @@ import {
 
 import { pruneEmptyMutableTicketCohorts } from "./utils/passengerPricingReconciliation";
 
-const repriceServicesPreservingOperationalAssignments = (
-  services,
-  peopleDetails,
-  options,
-) => {
-  const current = Array.isArray(services) ? services : [];
-  const recalculated = updateServicePricesForPassengerChange(
-    current,
-    peopleDetails,
-    options,
-  );
-  return pruneEmptyMutableTicketCohorts(
-    preserveOperationallyAssignedServices(current, recalculated),
-  );
-};
+
 import PredecesoresExpander from "../../../../pages/Ventas/Cotizaciones/components/PredecesoresExpander";
 import {
   formatRemainingApprovalTime,
@@ -2655,7 +2642,7 @@ export function EdicionCotizacion({
           servicios: repriceServicesPreservingOperationalAssignments(
             servicios,
             normalizedExternalPeopleDetails,
-            { preserveExistingSelection: !countsChanged },
+            { preserveExistingSelection: true, previousAdultsCount: prevCounts.adults, previousChildrenCount: prevCounts.children },
           ),
         };
       });

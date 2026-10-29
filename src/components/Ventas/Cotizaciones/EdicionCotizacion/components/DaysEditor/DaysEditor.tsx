@@ -1,3 +1,5 @@
+import {buildChildServiceRows,setChildServiceBeneficiary} from "../../utils/childServiceBeneficiaries";
+import { buildAdultServiceRows, setAdultServiceBeneficiary } from "../../utils/adultServiceBeneficiaries";
 // components/DaysEditor.jsx
 import React, {
   useState,
@@ -3336,6 +3338,17 @@ const DaysEditor = forwardRef(
                                         service={service}
                                         serviceIndex={service.originalIndex}
                                         dayIndex={dayIndex}
+                                        readOnly={readOnly}
+                                        childPassengers={buildChildServiceRows(peopleDetails.children || [])}
+                                        onToggleChildBeneficiary={(di,si,row,included)=>{
+                                          if(readOnly)return;
+                                          setDays(current=>current.map((day,index)=>index!==di?day:({...day,servicios:day.servicios.map((srv,index)=>index!==si || isOperationallyAssignedService(srv)?srv:updateSingleServicePricesForPassengerChange(setChildServiceBeneficiary(srv,row,included),totalPassengers))})));
+                                        }}
+                                        adultPassengers={buildAdultServiceRows(peopleDetails.adults || [])}
+                                        onToggleAdultBeneficiary={(di,si,row,included) => {
+                                          if (readOnly) return;
+                                          setDays(current => current.map((day,index) => index !== di ? day : ({...day,servicios:day.servicios.map((srv,index) => index !== si || isOperationallyAssignedService(srv) ? srv : updateSingleServicePricesForPassengerChange(setAdultServiceBeneficiary(srv,row,included),totalPassengers))})));
+                                        }}
                                         totalPassengers={totalPassengers}
                                         passengers={passengers}
                                         getAllPassengers={getAllPassengers}

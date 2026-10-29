@@ -1,3 +1,5 @@
+import PaymentReceiptEditor from "./PaymentReceiptEditor";
+import MovementCurrencyCorrection from "./MovementCurrencyCorrection";
 import React, { useState, useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
 import { paymentCurrency, requestPaymentCurrency, requestAssignedExchangeRate, paymentExchangeRatePrefill, convertPaymentAmount, paymentConversionContext, storedPaymentCurrency } from "../../utils/paymentCurrency";
@@ -1434,7 +1436,8 @@ const MovimientoForm = ({
         console.log(
           " Movimiento sin voucher - evidencias NO se guardan en vouchers_pagos",
         );
-        if (isMediaOnlyEdit) {
+
+  if (isMediaOnlyEdit) {
           toast.error(
             "No se pudo asociar la evidencia al movimiento porque no tiene un voucher de pago vinculado",
           );
@@ -1957,6 +1960,13 @@ const MovimientoForm = ({
   const canRemoveEvidence = (file) =>
     canRemoveMovementEvidence(file, currentUserRole);
 
+  if (isEditMode && initialData?.id) {
+    const context = typeof initialData.contexto_pago === "object" ? initialData.contexto_pago?.tipo : initialData.contexto_pago;
+    const servicePayment = String(context || "").includes("Servicio");
+    const receipt = initialData.tipo_movimiento === "ingreso" && (!context || String(context).toLowerCase() === "pagocotizacion");
+    if (servicePayment || receipt) return <PaymentReceiptEditor isOpen={isOpen} onClose={onClose} onSuccess={onSuccess}
+      movement={initialData} role={currentUserRole} actorId={dniuser} servicePayment={servicePayment} mediaOnly={mediaOnly} />;
+  }
   if (isMediaOnlyEdit) {
     const mediaOnlyActions = [
       {
@@ -1987,6 +1997,7 @@ const MovimientoForm = ({
         className="movimiento-modal movimiento-media-only"
       >
         <form id="movimiento-media-form" onSubmit={handleMediaOnlySubmit}>
+
           <div className="movement-media-policy">
             <MdInfo />
             <div>
@@ -2043,6 +2054,7 @@ const MovimientoForm = ({
         noValidate
         onSubmit={handleSubmit}
       >
+        {isEditMode && <MovementCurrencyCorrection movement={initialData} role={currentUserRole} onSuccess={onSuccess} />}
         {/* ========== CONTENEDOR 3: CONTEXTO DE PAGO (Movido al inicio por importancia) ========== */}
         <FormSection variant="tertiary">
           {/* Banner simple para contexto cuando viene de initialData */}

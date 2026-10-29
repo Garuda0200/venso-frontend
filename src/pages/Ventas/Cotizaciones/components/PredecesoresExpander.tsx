@@ -1,3 +1,4 @@
+import {groupQuotationHistory,versionPresentation,versionComparisonPair} from "../utils/quotationHistoryPresentation";
 import { sharedPriceFlag, normalizePricingType } from "../../../../utils/servicePricingType";
 import React, {
   useCallback,
@@ -2168,7 +2169,7 @@ const SnapshotPreviewModal = ({ version, formatDate, formatCurrency, onClose }) 
       <div className="snapshot-modal" onMouseDown={(event) => event.stopPropagation()}>
         <header className="snapshot-modal-header">
           <div>
-            <span>{getVersionLabel(version)} · {PHASE_LABELS[version.phase] || version.phase || "Histórico"}</span>
+            <span>{getVersionLabel(version)} · {presentation.title}</span>
             <h3>{snapshot.title}</h3>
           </div>
           <button type="button" onClick={onClose} aria-label="Cerrar vista previa"><MdClose /></button>
@@ -2250,35 +2251,10 @@ const PredecesoresExpander = ({
 
   const isSold = Boolean(cotizacion?.tiene_voucher ?? cotizacion?.tieneVoucher);
 
-  const versionGroups = useMemo(() => {
-    const relational = loadedPredecessors
-      .filter((version) => version.history_source !== "archived")
-      .sort(
-        (left, right) =>
-          toNumber(right.version_number) - toNumber(left.version_number),
-      );
-    const archived = loadedPredecessors
-      .filter((version) => version.history_source === "archived")
-      .filter((version) => !isSold || version.is_closed_sale === true)
-      .sort(
-        (left, right) =>
-          toNumber(right.version_number) - toNumber(left.version_number),
-      );
-
-    if (!isSold) return { relational, archived };
-    const baseline = relational.find((version) => version.phase === "SALE_BASE");
-    const visibleRelational = baseline
-      ? relational.filter(
-          (version) =>
-            toNumber(version.version_number) >=
-            toNumber(baseline.version_number),
-        )
-      : relational.filter((version) => version.phase !== "DRAFT");
-    return { relational: visibleRelational, archived };
-  }, [isSold, loadedPredecessors]);
+  const versionGroups = useMemo(()=>groupQuotationHistory(loadedPredecessors,isSold),[loadedPredecessors,isSold]);
 
   const visibleVersions = useMemo(
-    () => [...versionGroups.relational, ...versionGroups.archived],
+    () => [...versionGroups.relational, ...versionGroups.preSale, ...versionGroups.archived],
     [versionGroups],
   );
   const selectedVersion = visibleVersions.find(
@@ -2286,7 +2262,7 @@ const PredecesoresExpander = ({
   ) || null;
   const selectedGroup = selectedVersion?.history_source === "archived"
     ? versionGroups.archived
-    : versionGroups.relational;
+    : versionGroups.preSale.includes(selectedVersion) ? versionGroups.preSale : versionGroups.relational;
   const selectedIndex = selectedGroup.findIndex(
     (version) => getVersionSelectionKey(version) === selectedVersionKey,
   );
@@ -2441,9 +2417,10 @@ const PredecesoresExpander = ({
         if (comparisonMode === "current" && currentSnapshot) {
           before = selectedDetail;
           after = currentSnapshot;
-        } else if (previousVersion) {
-          before = await loadVersionDetail(previousVersion);
-          after = selectedDetail;
+        } else if (previousVersion || selectedVersion.edit_context) {
+          const pair = versionComparisonPair(selectedVersion,selectedGroup);
+          before = await loadVersionDetail(pair.before || selectedVersion);
+          after = await loadVersionDetail(pair.after || selectedVersion);
         } else {
           before = selectedDetail;
           after = selectedDetail;
@@ -2530,6 +2507,7 @@ const PredecesoresExpander = ({
     versions.map((version, index) => {
       const selectionKey = getVersionSelectionKey(version);
       const active = selectionKey === selectedVersionKey;
+      const presentation = versionPresentation(version);
       return (
         <button
           type="button"
@@ -2549,6 +2527,7 @@ const PredecesoresExpander = ({
             <strong>
               {PHASE_LABELS[version.phase] || version.phase || "Histórico"}
             </strong>
+            <small>{presentation.action}{presentation.status ? ` · ${presentation.status}` : ""}</small>
             <small>{formatDate(version.archived_at)}{version.archived_by ? ` · ${version.archived_by}` : ""}</small>
           </span>
           <span className="version-rail-row__total">
@@ -2635,6 +2614,10 @@ const PredecesoresExpander = ({
                       </div>
                     </section>
                   )}
+                  {versionGroups.preSale.length > 0 && <section className="version-rail-section">
+                    <div className="version-rail-heading"><span>Antes del cierre · solo lectura</span><strong>{versionGroups.preSale.length}</strong></div>
+                    <div className="version-rail-list">{renderVersionRailRows(versionGroups.preSale)}</div>
+                  </section>}
                   {versionGroups.archived.length > 0 && (
                     <section className="version-rail-section version-rail-section--archived">
                       <div className="version-rail-heading">

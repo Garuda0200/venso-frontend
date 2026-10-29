@@ -1,3 +1,6 @@
+import BibliaServiceLinkMode from "./components/BibliaServiceLinkMode";
+import { bibliaModeDraftField, getBibliaServiceLinkMode, isBibliaHotelField, type BibliaServiceLinkMode as LinkMode } from "./utils/bibliaServiceLinkModes";
+import type { BibliaDraftField } from "./utils/bibliaRowDrafts";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   DndContext,
@@ -157,6 +160,7 @@ const EditableValue = ({
   onDraftChange,
   onCancelField,
   draftValue,
+  draftLinkMode,
   savedVersion,
   busy,
   saveError,
@@ -165,9 +169,10 @@ const EditableValue = ({
   activity: BibliaActivity;
   field: keyof BibliaActivity;
   onCommit: (activity: BibliaActivity) => Promise<boolean>;
-  onDraftChange: (activity: BibliaActivity, field: keyof BibliaActivity, value: string) => void;
-  onCancelField: (id: string, field: keyof BibliaActivity) => void;
+  onDraftChange: (activity: BibliaActivity, field: BibliaDraftField, value: string) => void;
+  onCancelField: (id: string, field: BibliaDraftField) => void;
   draftValue?: string;
+  draftLinkMode?: LinkMode;
   savedVersion: number;
   busy: boolean;
   saveError?: string;
@@ -230,6 +235,7 @@ const EditableValue = ({
       if (await onCommit(activity)) setEditing(false);
     } else {
       onCancelField(activity.id, field);
+      if (isBibliaHotelField(field)) onCancelField(activity.id, bibliaModeDraftField(field));
       setEditing(false);
     }
   };
@@ -287,6 +293,10 @@ const EditableValue = ({
           }}
         />
         )}
+        {isBibliaHotelField(field) && <BibliaServiceLinkMode
+          value={draftLinkMode ?? getBibliaServiceLinkMode(activity, field)}
+          label={BIBLIA_SHEET_COLUMNS.find(([key]) => key === field)?.[1] || field} disabled={busy}
+          onChange={mode => onDraftChange(activity, bibliaModeDraftField(field), mode)} />}
         {field === "transport" && <small className="biblia-inline-editor__help">Elige solo el proveedor para resolver la movilidad por excursión, o indica proveedor · ruta · vehículo.</small>}
         {optionsError && <small className="biblia-inline-editor__error" role="status">No se pudo cargar el catálogo. Puedes escribir el servicio o reabrir el campo para reintentar.</small>}
         {actions}
@@ -1178,6 +1188,7 @@ const Calendario = () => {
                             field={field}
                             onCommit={commitField}
                             onDraftChange={draftStore.stage}
+                            draftLinkMode={isBibliaHotelField(field) ? rowDrafts[activity.id]?.values[bibliaModeDraftField(field)] as LinkMode | undefined : undefined}
                             onCancelField={draftStore.discardField}
                             draftValue={rowDrafts[activity.id]?.values[field]}
                             savedVersion={rowDrafts[activity.id]?.savedVersion || 0}

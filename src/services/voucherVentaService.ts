@@ -16,6 +16,17 @@ import { getIdempotencyHeaders } from "../utils/idempotency";
 const VOUCHER_ENDPOINT = "/turismo/vouchers-venta";
 
 export const voucherVentaService = {
+  async getDatosPdfVersions(id) { return (await axios.get(`${VOUCHER_ENDPOINT}/${id}/datos-pdf/versions`,{_skipDedup:true})).data; },
+  async getDatosPdfVersion(id, versionId) { return (await axios.get(`${VOUCHER_ENDPOINT}/${id}/datos-pdf/versions/${versionId}`)).data; },
+  async restoreDatosPdfVersion(id, versionId) {
+    const response = await axios.put(`${VOUCHER_ENDPOINT}/${id}/datos-pdf/versions/${versionId}`);
+    const voucher = response.data?.data?.voucher;
+    if (voucher) patchVoucherVentaCache(id,voucher);
+    invalidateCotizacionGraphCache();
+    return response.data;
+  },
+  async deleteDatosPdfVersion(id, versionId) { return (await axios.delete(`${VOUCHER_ENDPOINT}/${id}/datos-pdf/versions/${versionId}`)).data; },
+
   /**
    * Obtiene todos los vouchers de venta
    */

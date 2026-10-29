@@ -1,3 +1,4 @@
+import {formatPaymentMoney,formatPaymentTotals,sumPaymentCurrencies} from "../../../../../../../utils/paymentCurrency";
 ﻿import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   FaHotel,
@@ -21,6 +22,7 @@ import "./ReviewSelection.scss";
 const ReviewSelection = ({
   // Props para multiselección
   selectedRooms = [],
+  getSelectedRoomTotal,
   onRemoveRoom,
   onUpdateRoomPrice,
   totalPassengers = 2,
@@ -66,21 +68,6 @@ const ReviewSelection = ({
     return Number(tariff?.precio ?? tariff?.[`precio_${mode}`] ?? 0);
   };
 
-  // Calcular total general (considerando cantidad)
-  const totalPrice = useMemo(() => {
-    if (isMultiMode) {
-      return selectedRooms.reduce((sum, item) => {
-        const price = getRoomPrice(item);
-        const qty = item.quantity || 1;
-        return sum + price * qty * selectedDays.length;
-      }, 0);
-    }
-    const singlePrice =
-      customPriceLegacy !== null ? customPriceLegacy : defaultPrice;
-    return singlePrice * selectedDays.length;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMultiMode, selectedRooms, selectedDays, packageType]);
-
   // Manejar cambio de precio individual
   const handlePriceChange = (roomId, value) => {
     if (onUpdateRoomPrice) {
@@ -103,6 +90,11 @@ const ReviewSelection = ({
 
   // Estado para precio legacy
   const [customPriceLegacy, setCustomPriceLegacy] = useState(null);
+  const itemTotal = item => getSelectedRoomTotal ? getSelectedRoomTotal(item) : getRoomPrice(item) * (item.quantity || 1) * selectedDays.length;
+  const totalPrice = isMultiMode
+    ? formatPaymentTotals(sumPaymentCurrencies(selectedRooms,itemTotal,item=>item.tariff?.moneda || "soles"))
+    : formatPaymentMoney((customPriceLegacy ?? defaultPrice)*selectedDays.length,selectedTariff?.moneda || "soles");
+
 
   // Inicializar precio legacy
   useEffect(() => {
@@ -280,7 +272,7 @@ const ReviewSelection = ({
                       Subtotal:{" "}
                       <strong>
                         {formatPrice(
-                          currentPrice * qty * selectedDays.length,
+                          itemTotal(item),
                           moneda,
                         )}
                       </strong>
@@ -425,12 +417,7 @@ const ReviewSelection = ({
             <FaMoneyBillWave /> Total General:
           </span>
           <span className="total-value">
-            {formatPrice(
-              totalPrice,
-              isMultiMode && selectedRooms[0]?.tariff?.moneda
-                ? selectedRooms[0].tariff.moneda
-                : selectedTariff?.moneda || "soles",
-            )}
+            {totalPrice}
           </span>
         </div>
         {isMultiMode && (

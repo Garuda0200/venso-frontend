@@ -1237,13 +1237,15 @@ const ReservaServiceEditor = ({
   };
 
   // -- Service time --
-  const handleServiceTimeChange = (dayIndex, serviceIndex, newTime) => {
+  const handleServiceTimeChange = (dayIndex, serviceIndex, newTime, field = "hora") => {
+    if (!["hora","hora_posterior"].includes(field)) return;
     const updatedItinerary = cloneReservationItinerary(latestItinerary.current);
     const service = updatedItinerary[dayIndex].servicios[serviceIndex];
     if (service.isCustomService) {
-      service.hora = newTime;
+      service[field] = newTime;
     } else if (service.assignedService) {
-      service.assignedService = { ...service.assignedService, hora: newTime };
+      service.assignedService = { ...service.assignedService, [field]: newTime };
+      service[field] = newTime;
     }
     updatedItinerary[dayIndex].servicios[serviceIndex] = service;
     latestItinerary.current = updatedItinerary;

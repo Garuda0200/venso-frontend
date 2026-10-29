@@ -1,8 +1,10 @@
+import { type BibliaModeDraftField, hotelFieldFromModeDraft, getBibliaServiceLinkMode, setBibliaServiceLinkMode } from "./bibliaServiceLinkModes";
 import type { BibliaActivity } from "./bibliaActivityMapper";
 import { BIBLIA_EMPTY_VALUE } from "./bibliaActivityMapper";
 import { getBibliaSaveError } from "./bibliaSyncFeedback";
 
-export type BibliaCellDrafts = Partial<Record<keyof BibliaActivity, string>>;
+export type BibliaDraftField = keyof BibliaActivity | BibliaModeDraftField;
+export type BibliaCellDrafts = Partial<Record<BibliaDraftField, string>>;
 export interface BibliaRowDraft {
   values: BibliaCellDrafts;
   savedVersion: number;
@@ -23,7 +25,11 @@ const comparable = (value: unknown) => {
 export function buildBibliaRowChanges(activity: BibliaActivity, values: BibliaCellDrafts): Partial<BibliaActivity> {
   const changes: Record<string, unknown> = {};
   for (const [field, text] of Object.entries(values)) {
-    if (field === "pax") {
+    const hotelField = hotelFieldFromModeDraft(field);
+    if (hotelField) {
+      if (text !== "service" && text !== "reference") throw new Error("Selecciona Servicio o Sólo referencia.");
+      changes.serviceLinkModes = setBibliaServiceLinkMode((changes.serviceLinkModes ?? activity.serviceLinkModes) as any, hotelField, text);
+    } else if (field === "pax") {
       const pax = Number(text || 0);
       if (!Number.isInteger(pax) || pax < 0) throw new Error("PAX debe ser un número entero mayor o igual a cero.");
       changes[field] = pax;
@@ -58,15 +64,17 @@ export function createBibliaRowDraftStore() {
       listeners.add(listener);
       return () => { listeners.delete(listener); };
     },
-    stage(activity: BibliaActivity, field: keyof BibliaActivity, value: string) {
+    stage(activity: BibliaActivity, field: BibliaDraftField, value: string) {
       const current = row(activity.id);
       const values = { ...current.values };
-      if (comparable(value) === comparable(activity[field])) delete values[field];
+      const hotelField = hotelFieldFromModeDraft(String(field));
+      const original = hotelField ? getBibliaServiceLinkMode(activity, hotelField) : activity[field as keyof BibliaActivity];
+      if (comparable(value) === comparable(original)) delete values[field];
       else values[field] = value;
       update({ ...snapshot, rows: { ...snapshot.rows,
         [activity.id]: { ...current, values, error: "", saved: false } } });
     },
-    discardField(id: string, field: keyof BibliaActivity) {
+    discardField(id: string, field: BibliaDraftField) {
       const current = row(id);
       const values = { ...current.values };
       delete values[field];
