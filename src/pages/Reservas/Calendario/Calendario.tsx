@@ -1,3 +1,4 @@
+import BibliaQuotationLink from "./components/BibliaQuotationLink";
 import BibliaServiceLinkMode from "./components/BibliaServiceLinkMode";
 import { bibliaModeDraftField, getBibliaServiceLinkMode, isBibliaHotelField, type BibliaServiceLinkMode as LinkMode } from "./utils/bibliaServiceLinkModes";
 import type { BibliaDraftField } from "./utils/bibliaRowDrafts";
@@ -1223,6 +1224,7 @@ const Calendario = () => {
                             ) : field === "file" && activity.sourceQuotationId ? (
                               <div className="biblia-file-cell">
                                 {editor}
+                                <BibliaQuotationLink quotationId={activity.sourceQuotationId} role={userRole} />
                                 <BibliaQuotationSyncPrompt activity={activity} busy={saving || refreshing}
                                   hasUnsavedChanges={Object.keys(rowDrafts[activity.id]?.values || {}).length > 0}
                                   onConfirm={() => void syncLinkedActivity(activity)} />

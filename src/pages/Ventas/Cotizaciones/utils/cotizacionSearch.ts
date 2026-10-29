@@ -4,7 +4,7 @@ const normalizeSearchValue = (value) =>
     : String(value).trim().toLocaleLowerCase();
 
 /**
- * Búsqueda textual de cotizaciones por título o ID.
+ * Búsqueda textual por título, ID y códigos de file/voucher.
  * `cotizacion.codigo` dejó de ser parte del modelo persistente.
  */
 export const matchesCotizacionSearch = (
@@ -15,7 +15,9 @@ export const matchesCotizacionSearch = (
   const normalizedTerm = normalizeSearchValue(searchTerm);
   if (!normalizedTerm) return true;
 
-  return [cotizacion.titulo, cotizacion.id].some((value) =>
+  return [cotizacion.titulo, cotizacion.id, cotizacion.voucher_code, cotizacion.voucherCode,
+    ...(Array.isArray(cotizacion.voucher_codes) ? cotizacion.voucher_codes : []),
+  ].some((value) =>
     normalizeSearchValue(value).includes(normalizedTerm),
   );
 };

@@ -150,3 +150,12 @@ test("ocultar el total de la fila mantiene el resumen compacto", () => {
   assert.equal(badges(html), 1);
   assert.doesNotMatch(html, /class="sr-ticket__total"/);
 });
+
+test("una entrada con padrón adulto nacional y extranjero se puede renderizar al vincular desde Biblia", () => {
+  const adults = [{ id: adultIds[0], isNational: true }, { id: adultIds[1], isNational: false }];
+  for (const procedencia of ["nacional", "extranjero"]) {
+    const html = row(ticket([adultIds[0]], "adult", procedencia), { adultPassengers: adults, onToggleAdultBeneficiary: () => {} });
+    assert.match(html, /Gestionar adultos/);
+    assert.doesNotMatch(html, /disabled="" aria-label="Adultos beneficiarios/);
+  }
+});

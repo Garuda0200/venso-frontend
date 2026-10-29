@@ -2846,3 +2846,11 @@
 .biblia-sheet-table tr:has(.biblia-inline-editor--hotel) .biblia-row-save > button {
   display: none;
 }
+
+.biblia-quotation-link {
+  display: inline-flex; align-items: center; gap: 4px; align-self: flex-start;
+  padding: 4px 7px; min-height: 28px; border: 1px solid #d3e2da; border-radius: 6px;
+  background: #fff; color: #006b4f; font-size: 10px; font-weight: 700; text-decoration: none;
+  &:hover { background: #eaf6f1; color: #034b3a; }
+  &:focus-visible { outline: 2px solid #ff007e; outline-offset: 2px; }
+}

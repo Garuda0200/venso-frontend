@@ -1,0 +1,12 @@
+.quotation-focus-banner {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 12px 16px; margin: 12px 0; border: 1px solid #efb2d0;
+  border-left: 3px solid #ff007e; border-radius: 10px; background: #fff7fb;
+  color: #37232e;
+  > div { display: grid; gap: 3px; flex: 1; min-width: 0; }
+  strong { font-size: 13px; }
+  span { font-size: 12px; overflow-wrap: anywhere; }
+  button { min-height: 36px; padding: 6px 12px; border: 1px solid #e4bbcf;
+    border-radius: 7px; background: #fff; color: #a70052; cursor: pointer; font: inherit; font-size: 12px; }
+  button:focus-visible { outline: 2px solid #ff007e; outline-offset: 2px; }
+}

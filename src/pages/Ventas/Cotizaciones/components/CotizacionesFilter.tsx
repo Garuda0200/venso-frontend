@@ -63,15 +63,16 @@ const CotizacionesFilter = ({
         <form onSubmit={onSearch} className="filter-form">
           <div className="filter-row">
             <div className="filter-group filter-group--wide">
-              <label>Título</label>
+              <label htmlFor="quotation-search">Título o código de file</label>
               <div className="input-wrapper">
                 <MdSearch className="input-icon" />
                 <input
                   type="text"
+                  id="quotation-search"
                   name="titulo"
                   value={filters.titulo}
                   onChange={onInputChange}
-                  placeholder="Buscar por nombre de cotización..."
+                  placeholder="Buscar por título, file o voucher..."
                   disabled={isLoading}
                 />
               </div>

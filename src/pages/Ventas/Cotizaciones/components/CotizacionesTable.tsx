@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import CotizacionTableRow from "./CotizacionTableRow";
 import PredecesoresExpander from "./PredecesoresExpander";
 import { useAgencyDirectory } from "../../../../hooks/useAgencyDirectory";
@@ -46,8 +46,10 @@ const CotizacionesTable = ({
   loadSummaryPricingData,
   quotationStatus = "open",
   historyTargetId = null,
+  focusTargetId = "",
   onHistoryTargetConsumed,
 }) => {
+  const tableRef = useRef<HTMLDivElement>(null);
   const [historyCotizacion, setHistoryCotizacion] = useState(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
@@ -94,9 +96,16 @@ const CotizacionesTable = ({
     onHistoryTargetConsumed,
   ]);
 
+  useEffect(() => {
+    if (!focusTargetId) return;
+    const row = Array.from(tableRef.current?.querySelectorAll<HTMLElement>("[data-cotizacion-id]") || [])
+      .find(element => element.dataset.cotizacionId === focusTargetId);
+    if (row) { row.focus({ preventScroll: true }); row.scrollIntoView?.({ block: "nearest" }); }
+  }, [focusTargetId, pagedGroups]);
+
   return (
     <>
-      <div className="cotizaciones-table-container">
+      <div className="cotizaciones-table-container" ref={tableRef}>
         <table className="cotizaciones-table">
         <thead>
           <tr>
@@ -120,6 +129,7 @@ const CotizacionesTable = ({
               key={cotizacion.id || cotizacion.fecha}
               cotizacion={cotizacion}
               isSelected={selectedCotizacion?.id === cotizacion.id}
+              isFocused={String(cotizacion.id) === focusTargetId}
               isInactive={!cotizacion.is_active}
               expandedActionsId={expandedActionsId}
               expandedPdfId={expandedPdfId}

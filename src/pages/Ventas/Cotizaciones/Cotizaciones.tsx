@@ -1,3 +1,6 @@
+import useQuotationFocus from "./hooks/useQuotationFocus";
+import QuotationFocusBanner from "./components/QuotationFocusBanner";
+import { QUOTATION_FOCUS_PARAM, quotationFocusList } from "./utils/quotationFocus";
 import { sharedPriceFlag, normalizePricingType } from "../../../utils/servicePricingType";
 import React, {
   useState,
@@ -614,6 +617,17 @@ const Cotizaciones = () => {
   } = useCotizacionFilters(cotizaciones, {
     allowIdSearch: allowInternalIdSearch,
   });
+
+  const focusedQuotationId = String(searchParams.get(QUOTATION_FOCUS_PARAM) || "").trim();
+  const quotationFocus = useQuotationFocus(focusedQuotationId, user);
+  const displayedQuotationStatus = focusedQuotationId && quotationFocus.quotation
+    ? quotationFocus.quotation.tiene_voucher === true ? "sold" : "open" : quotationStatus;
+  const clearQuotationFocus = useCallback(() => {
+    const next = new URLSearchParams(searchParams);
+    next.delete(QUOTATION_FOCUS_PARAM);
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
+  const clearQuotationFilters = () => { clearFilters(); clearQuotationFocus(); };
 
   // Obtener funciones para botones de acción - Now including state setters
   const {
@@ -2614,6 +2628,7 @@ const Cotizaciones = () => {
   ]);
 
   const scopedCotizaciones = useMemo(() => {
+    if (focusedQuotationId) return quotationFocusList(focusedQuotationId, quotationFocus.quotation, []);
     if (!showSellerScopeTabs) {
       return filteredCotizaciones;
     }
@@ -2626,6 +2641,8 @@ const Cotizaciones = () => {
     });
   }, [
     filteredCotizaciones,
+    focusedQuotationId,
+    quotationFocus.quotation,
     currentSellerDni,
     sellerScope,
     showSellerScopeTabs,
@@ -2640,6 +2657,7 @@ const Cotizaciones = () => {
   );
 
   const handleScopedInputChange = (event) => {
+    if (focusedQuotationId) clearQuotationFocus();
     if (event?.target?.name === "vendedor" && showSellerScopeTabs) {
       const selectedSeller = event.target.value;
       if (selectedSeller && selectedSeller !== currentSellerDni) {
@@ -2733,12 +2751,12 @@ const Cotizaciones = () => {
           filters={filters}
           onInputChange={handleScopedInputChange}
           onSearch={handleSearch}
-          onClear={clearFilters}
+          onClear={clearQuotationFilters}
           isLoading={loading}
           sellers={sellerOptions}
         />
 
-        {showSellerScopeTabs && (
+        {showSellerScopeTabs && !focusedQuotationId && (
           <div className="seller-scope-tabs" role="tablist" aria-label="Alcance de cotizaciones">
             <button
               type="button"
@@ -2767,23 +2785,27 @@ const Cotizaciones = () => {
           <button
             type="button"
             role="tab"
-            aria-selected={quotationStatus === "open"}
-            className={quotationStatus === "open" ? "active" : ""}
-            onClick={() => setQuotationStatus("open")}
+            aria-selected={displayedQuotationStatus === "open"}
+            className={displayedQuotationStatus === "open" ? "active" : ""}
+            onClick={() => { clearQuotationFocus(); setQuotationStatus("open"); }}
           >
             Cotizaciones abiertas <strong>{quotationStatusCounts.open}</strong>
           </button>
           <button
             type="button"
             role="tab"
-            aria-selected={quotationStatus === "sold"}
-            className={quotationStatus === "sold" ? "active" : ""}
-            onClick={() => setQuotationStatus("sold")}
+            aria-selected={displayedQuotationStatus === "sold"}
+            className={displayedQuotationStatus === "sold" ? "active" : ""}
+            onClick={() => { clearQuotationFocus(); setQuotationStatus("sold"); }}
           >
             Cerradas / vendidas <strong>{quotationStatusCounts.sold}</strong>
           </button>
         </div>
       </div>
+
+      {focusedQuotationId && <QuotationFocusBanner quotation={quotationFocus.quotation}
+        loading={quotationFocus.loading} error={quotationFocus.error}
+        onClear={clearQuotationFilters} onRetry={() => void quotationFocus.retry()} />}
 
       {/* Sección de borradores no guardados */}
       <CotizacionesDrafts
@@ -2804,11 +2826,13 @@ const Cotizaciones = () => {
       {/* Refactored Table Component */}
       {scopedCotizaciones.length > 0 || notificationHistoryTargetId ? (
         <CotizacionesTable
+          key={focusedQuotationId || "list"}
+          focusTargetId={focusedQuotationId}
           cotizaciones={scopedCotizaciones}
           allCotizacionesWithInactive={cotizaciones}
           expandedActionsId={expandedActionsId}
           expandedPdfId={expandedPdfId}
-          selectedCotizacion={selectedCotizacion}
+          selectedCotizacion={focusedQuotationId ? quotationFocus.quotation : selectedCotizacion}
           userRole={userRole}
           currentSellerDni={currentSellerDni}
           showAuditColumn={showAuditColumn}
@@ -2840,12 +2864,12 @@ const Cotizaciones = () => {
           onCancelDelete={cancelDelete}
           onPredecessorClick={handlePredecessorClick}
           onRefresh={fetchCotizaciones}
-          quotationStatus={quotationStatus}
+          quotationStatus={displayedQuotationStatus}
           historyTargetId={notificationHistoryTargetId}
           onHistoryTargetConsumed={consumeNotificationHistoryTarget}
         />
       ) : (
-        <CotizacionesEmpty
+        !focusedQuotationId && <CotizacionesEmpty
           hasFilters={
             Object.values(filters).some((f) => f !== "") ||
             showSellerScopeTabs

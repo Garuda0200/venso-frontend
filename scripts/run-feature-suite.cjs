@@ -48,6 +48,7 @@ const testSuites = [
       "src/pages/Ventas/Cotizaciones/utils/__tests__/cotizacionIgv.test.js",
       "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/quotationSavePricing.test.js",
       "src/pages/Ventas/Cotizaciones/utils/__tests__/cotizacionListState.test.js",
+      "src/pages/Ventas/Cotizaciones/utils/__tests__/quotationFocus.test.js",
       "src/pages/Ventas/Cotizaciones/utils/__tests__/postSaleEditState.test.js",
       "src/pages/Ventas/Cotizaciones/utils/__tests__/preliquidacionDocumentExport.test.js",
       "src/pages/Ventas/Cotizaciones/utils/__tests__/reservationVoucherPreliquidacion.test.js",

@@ -362,6 +362,9 @@ const SortableService = React.memo(({
   const childIds = beneficiarySnapshot.childIds;
   const convertedCount = convertedEntries.length;
   const convertedChildIds = convertedEntries.map((entry) => entry.childId).filter(Boolean);
+  const ticketProcedencia = serviceType === "tickets"
+    ? normalizeTicketProcedencia(getTicketProcedencia(service))
+    : "";
   const ticketProcedenciaFilter =
     serviceType === "tickets"
       ? service.ticketProcedenciaFilter ||
@@ -493,9 +496,7 @@ const SortableService = React.memo(({
 
 
   const ticketEntrada = serviceType === "tickets" ? getTicketEntrada(service) : "";
-  const ticketProcedencia = serviceType === "tickets"
-    ? normalizeTicketProcedencia(getTicketProcedencia(service))
-    : "";
+
   const ticketTipoUsuario = rawTicketTipoUsuario;
   const ticketChildPriceEntries = isTicketStudentRow
     ? []

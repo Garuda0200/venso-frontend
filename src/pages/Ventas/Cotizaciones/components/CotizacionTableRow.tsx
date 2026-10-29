@@ -55,6 +55,7 @@ const hashPricingPayload = (value) => {
 const CotizacionTableRow = ({
   cotizacion,
   isSelected,
+  isFocused = false,
   isInactive,
   userRole,
   currentSellerDni = "",
@@ -380,6 +381,9 @@ const CotizacionTableRow = ({
   return (
     <>
       <tr
+        data-cotizacion-id={cotizacion.id}
+        tabIndex={isFocused ? -1 : undefined}
+        aria-label={isFocused ? `Cotización ${cotizacion.voucher_code || cotizacion.id}` : undefined}
         className={`cotizacion-row styled-row ${isSelected ? "selected" : ""} ${isInactive ? "inactive-record" : ""} ${cotizacion.tiene_voucher ? "has-voucher" : ""}`}
         onClick={onRowClick}
         title={
