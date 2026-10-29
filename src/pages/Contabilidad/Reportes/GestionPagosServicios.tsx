@@ -103,7 +103,31 @@ export function GestionPagosServicios() {
             getPrimaryAgency(),
           ]);
         if (!active) return;
-        setQuotes(Array.isArray(quoteRows) ? quoteRows : []);
+        // El listado de cotizaciones no trae el itinerario (solo resúmenes); el reporte lo
+        // necesita para armar los servicios, así que se completa solo para los files con voucher.
+        const listedQuotes = Array.isArray(quoteRows) ? quoteRows : [];
+        const hasVoucher = (quote: any) =>
+          Boolean(quote?.tiene_voucher || quote?.has_voucher_reserva || quote?.voucher_codes?.length > 0);
+        const detailedQuotes = await Promise.all(
+          listedQuotes.map(async (quote: any) => {
+            if (!hasVoucher(quote)) return quote;
+            try {
+              const detail = await cotizacionService.getCotizacionById(quote.id, { skipCache: true });
+              return {
+                ...quote,
+                itinerario: detail?.itinerario ?? quote.itinerario,
+                itinerario_externo: detail?.itinerario_externo ?? quote.itinerario_externo,
+                hotel_detalle: detail?.hotel_detalle ?? quote.hotel_detalle,
+                peopleCount: detail?.peopleCount ?? quote.peopleCount,
+              };
+            } catch (error) {
+              console.error(`No se pudo cargar el itinerario de la cotización ${quote?.id}:`, error);
+              return quote;
+            }
+          }),
+        );
+        if (!active) return;
+        setQuotes(detailedQuotes);
         setRequests(requestsResponse?.data?.data || []);
         setMovements(extractArrayResponse(movementsResponse));
         setAgencies(Array.isArray(agencyRows) ? agencyRows : []);

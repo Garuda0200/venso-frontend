@@ -28,6 +28,7 @@ import {
   MdVisibility,
   MdWarningAmber,
 } from "react-icons/md";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { useNotificationContext } from "../../../context/NotificationContext";
 import { useNotifications } from "../../../hooks/useNotifications";
@@ -1097,7 +1098,7 @@ const NotificationBell = () => {
       </div>
 
       {/* Modal para detalles de notificación (igual que Leptos) */}
-      {showModal && selectedNotification && (
+      {showModal && selectedNotification && createPortal(
         <div
           className="notification-modal-overlay"
           onClick={() => {
@@ -1208,11 +1209,13 @@ const NotificationBell = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       {/* Modal de rechazo de permiso */}
-      {showRejectModal && (
+      {showRejectModal &&
+        createPortal(
         <div className="modal-overlay" onClick={handleCancelRejection}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
@@ -1268,8 +1271,9 @@ const NotificationBell = () => {
               </button>
             </div>
           </div>
-        </div>
-      )}
+        </div>,
+          document.body,
+        )}
 
       {historyOpening && (
         <div
@@ -1318,53 +1322,60 @@ const NotificationBell = () => {
         </Suspense>
       )}
 
-      {/* Modal de pagos pendientes */}
-      <PendingPaymentsModal
-        isOpen={showPendingPaymentsModal}
-        onClose={() => setShowPendingPaymentsModal(false)}
-        onPaymentSelect={handlePaymentSelect}
-      />
+      {/* Los modales de pago se montan en <body>: dentro del encabezado (que crea su propio
+          contexto de posición) quedaban centrados en la barra y con la parte superior cortada. */}
+      {createPortal(
+        <>
+          {/* Modal de pagos pendientes */}
+          <PendingPaymentsModal
+            isOpen={showPendingPaymentsModal}
+            onClose={() => setShowPendingPaymentsModal(false)}
+            onPaymentSelect={handlePaymentSelect}
+          />
 
-      {/* Modal de voucher de pago (para pagos completados) */}
-      {showPaymentVoucherModal && selectedPaymentService && (
-        <PaymentVoucherModal
-          key={`payment-voucher-${paymentVoucherData.voucherReservaId}-${paymentVoucherData.dayIndex}-${paymentVoucherData.serviceIndex}`}
-          show={showPaymentVoucherModal}
-          onClose={() => {
-            setShowPaymentVoucherModal(false);
-            setSelectedPaymentService(null);
-          }}
-          service={selectedPaymentService}
-          voucherReservaId={paymentVoucherData.voucherReservaId}
-          voucherReservaCode={paymentVoucherData.voucherReservaCode}
-          dayIndex={paymentVoucherData.dayIndex}
-          serviceIndex={paymentVoucherData.serviceIndex}
-        />
+          {/* Modal de voucher de pago (para pagos completados) */}
+          {showPaymentVoucherModal && selectedPaymentService && (
+            <PaymentVoucherModal
+              key={`payment-voucher-${paymentVoucherData.voucherReservaId}-${paymentVoucherData.dayIndex}-${paymentVoucherData.serviceIndex}`}
+              show={showPaymentVoucherModal}
+              onClose={() => {
+                setShowPaymentVoucherModal(false);
+                setSelectedPaymentService(null);
+              }}
+              service={selectedPaymentService}
+              voucherReservaId={paymentVoucherData.voucherReservaId}
+              voucherReservaCode={paymentVoucherData.voucherReservaCode}
+              dayIndex={paymentVoucherData.dayIndex}
+              serviceIndex={paymentVoucherData.serviceIndex}
+            />
+          )}
+
+          {/* Modal de MovimientoForm (para crear egresos de pago) */}
+          <MovimientoForm
+            tipo="egreso"
+            onSuccess={() => {
+              setShowMovimientoModal(false);
+              setMovimientoInitialData(null);
+
+              // Recargar notificaciones para actualizar el estado
+              fetchNotifications();
+
+              // Emitir evento personalizado para que Egresos.jsx se actualice
+              const event = new CustomEvent("movimientoCreated", {
+                detail: { tipo: "egreso", source: "notification" },
+              });
+              window.dispatchEvent(event);
+            }}
+            isOpen={showMovimientoModal}
+            onClose={() => {
+              setShowMovimientoModal(false);
+              setMovimientoInitialData(null);
+            }}
+            initialData={movimientoInitialData}
+          />
+        </>,
+        document.body,
       )}
-
-      {/* Modal de MovimientoForm (para crear egresos de pago) */}
-      <MovimientoForm
-        tipo="egreso"
-        onSuccess={() => {
-          setShowMovimientoModal(false);
-          setMovimientoInitialData(null);
-
-          // Recargar notificaciones para actualizar el estado
-          fetchNotifications();
-
-          // Emitir evento personalizado para que Egresos.jsx se actualice
-          const event = new CustomEvent("movimientoCreated", {
-            detail: { tipo: "egreso", source: "notification" },
-          });
-          window.dispatchEvent(event);
-        }}
-        isOpen={showMovimientoModal}
-        onClose={() => {
-          setShowMovimientoModal(false);
-          setMovimientoInitialData(null);
-        }}
-        initialData={movimientoInitialData}
-      />
     </div>
   );
 };

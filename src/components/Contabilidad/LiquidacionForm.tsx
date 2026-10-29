@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import Modal from "../UI/Modal/Modal";
 import DatePicker from "react-datepicker";
 import { registerLocale } from "react-datepicker";
@@ -39,6 +39,10 @@ const PagoLoteForm = ({
   const [validated, setValidated] = useState(false);
   const [saldos, setSaldos] = useState([]);
   const [evidencias, setEvidencias] = useState([]);
+  const evidenceRef = useRef<HTMLDivElement>(null);
+  // El pago por lote a proveedores siempre exige comprobante (ver handleSubmit).
+  const evidenceRequired = true;
+  const evidenceError = validated && evidencias.length === 0 ? "Adjunte al menos una evidencia para procesar el lote" : "";
   const [montoSecundario, setMontoSecundario] = useState("");
   const { uploadFile, deleteFile, isUploading, uploadProgress, uploadError } =
     useFileUpload();
