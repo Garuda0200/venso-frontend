@@ -6,15 +6,14 @@ export default function BibliaServiceLinkMode({ value, label, disabled = false, 
   value: LinkMode; label: string; disabled?: boolean; onChange: (mode: LinkMode) => void;
 }) {
   const group = useId();
-  return <fieldset className="biblia-service-link-mode" disabled={disabled}>
-    <legend>{label}: uso del hotel</legend>
+  return <fieldset className="biblia-service-link-mode" aria-label={`${label}: uso del hotel`} disabled={disabled}>
     <div className="biblia-service-link-mode__options">
-      {([['service', 'Servicio'], ['reference', 'Sólo referencia']] as const).map(([mode, text]) =>
-        <label key={mode} className={value === mode ? "is-selected" : ""}>
+      {([['service', 'Servicio'], ['reference', 'Solo texto']] as const).map(([mode, text]) =>
+        <label key={mode} className={value === mode ? "is-selected" : ""}
+          title={mode === "service" ? "Vincular a la cotización" : "Mostrar solo en la Biblia"}>
           <input type="radio" name={group} value={mode} checked={value === mode} onChange={() => onChange(mode)} />
           <span>{text}</span>
         </label>)}
     </div>
-    <small>{value === "reference" ? "Se conserva en la Biblia sin generar un servicio." : "Se incorpora al día de la cotización al vincular o actualizar."}</small>
   </fieldset>;
 }

@@ -275,7 +275,7 @@ const EditableValue = ({
 
   if (isBibliaCatalogField(field)) {
     return (
-      <div className="biblia-inline-editor biblia-inline-editor--catalog" onClick={(event) => event.stopPropagation()} aria-busy={busy}>
+      <div className={`biblia-inline-editor biblia-inline-editor--catalog${isBibliaHotelField(field) ? " biblia-inline-editor--hotel" : ""}`} onClick={(event) => event.stopPropagation()} aria-busy={busy}>
         {busy ? <input className="biblia-edit-input" value={value} disabled aria-label="Valor que se está guardando" /> : (
         <SmartComboBox
           value={value === BIBLIA_EMPTY_VALUE ? "" : value}

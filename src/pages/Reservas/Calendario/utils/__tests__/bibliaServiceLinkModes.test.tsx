@@ -153,5 +153,8 @@ test("el control muestra ambas opciones accesibles con un grupo único por hotel
   assert.equal(inputs[0].getAttribute("name"), inputs[1].getAttribute("name"));
   assert.notEqual(inputs[0].getAttribute("name"), inputs[2].getAttribute("name"));
   assert.equal(groups[1].hasAttribute("disabled"), true);
-  assert.match(groups[0].textContent, /Sólo referencia/); assert.match(groups[0].textContent, /sin generar un servicio/);
+  assert.match(groups[0].textContent, /Solo texto/);
+  assert.equal(groups[0].getAttribute("aria-label"), "Hotel Cusco: uso del hotel");
+  assert.equal(groups[0].querySelector("small"), null);
+  assert.equal(groups[0].querySelector("legend"), null);
 });

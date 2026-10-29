@@ -2841,3 +2841,8 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+// El editor del hotel conserva el único guardado visible del registro.
+.biblia-sheet-table tr:has(.biblia-inline-editor--hotel) .biblia-row-save > button {
+  display: none;
+}
