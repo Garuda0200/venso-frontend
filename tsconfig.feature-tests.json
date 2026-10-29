@@ -17,6 +17,7 @@
     ]
   },
   "include": [
+    "src/tests/userBibliaControls.test.ts",
     "src/tests/magicAdvanceExtras.test.ts",
     "src/pages/Ventas/VouchersVenta/components/Steps/PassengerDocuments/__tests__/*.test.ts",
     "src/pages/Ventas/VouchersVenta/components/Steps/PassengerDocuments/__tests__/*.test.tsx",

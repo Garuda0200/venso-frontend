@@ -114,6 +114,7 @@ const testSuites = [
       "src/tests/magicParityVenso.test.js",
       "src/tests/magicAdvanceExtras.test.js",
       "src/tests/magicOperations.test.js",
+      "src/tests/userBibliaControls.test.js",
       "src/utils/__tests__/reservationHotelModalRuntime.test.js",
       "src/components/Contabilidad/__tests__/movementCurrencyCorrection.test.js",
       "src/pages/Reservas/VouchersReserva/utils/__tests__/reservationSummaryServiceMatching.test.js",

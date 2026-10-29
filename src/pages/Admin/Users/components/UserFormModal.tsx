@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   MdClose,
   MdSave,
@@ -50,6 +50,9 @@ const UserFormModal = ({
 }) => {
   const [form, setForm] = useState({});
   const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const saveInFlight = useRef(false);
+  const isSaving = actionLoading || submitting;
   const [showPw, setShowPw] = useState(false);
   const [showPwConfirm, setShowPwConfirm] = useState(false);
 
@@ -62,7 +65,7 @@ const UserFormModal = ({
       setForm({
         ...user,
         role:
-          typeof user.role === "number" ? user.role : parseInt(user.role, 10),
+          user.role === "" || user.role === null || user.role === undefined ? "" : Number(user.role),
         password: "",
         confirmPassword: "",
         permissions: user.permissions || {
@@ -238,14 +241,24 @@ const UserFormModal = ({
     }
     if (!form.nombre?.trim()) e.nombre = "Requerido";
     if (!form.apellidopaterno?.trim()) e.apellidopaterno = "Requerido";
-    if (form.role === undefined || form.role === "") e.role = "Requerido";
+    if (!ROLE_OPTIONS.some(option => option.value === form.role)) e.role = "Selecciona un rol válido";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validate()) onSave(form);
+    if (actionLoading || saveInFlight.current || !validate()) return;
+    saveInFlight.current = true;
+    setSubmitting(true);
+    try {
+      await onSave(form);
+    } catch (error) {
+      setErrors(previous => ({ ...previous, submit: error?.message || "No se pudo guardar el usuario. Puedes reintentar." }));
+    } finally {
+      saveInFlight.current = false;
+      setSubmitting(false);
+    }
   };
 
   const extraAccessCount = [
@@ -277,7 +290,7 @@ const UserFormModal = ({
             type="button"
             className="ufm__close"
             onClick={onHide}
-            disabled={actionLoading}
+            disabled={isSaving}
             aria-label="Cerrar"
           >
             <MdClose />
@@ -285,7 +298,7 @@ const UserFormModal = ({
         </div>
 
         <div className="ufm__body">
-          {actionLoading && (
+          {isSaving && (
             <div className="ufm__loading" aria-live="polite">
               <div className="ufm__spinner" />
             </div>
@@ -636,21 +649,22 @@ const UserFormModal = ({
               </div>
             </details>
 
+            {errors.submit && <p className="ufm__error" role="alert">{errors.submit}</p>}
             <div className="ufm__actions">
               <button
                 type="button"
                 className="ufm__btn--ghost"
                 onClick={onHide}
-                disabled={actionLoading}
+                disabled={isSaving}
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 className="ufm__btn--primary"
-                disabled={actionLoading}
+                disabled={isSaving}
               >
-                {actionLoading ? (
+                {isSaving ? (
                   <>
                     <div className="ufm__spinner--sm" /> Guardando...
                   </>
