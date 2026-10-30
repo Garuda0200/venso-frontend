@@ -40,6 +40,7 @@ import {
 import {
   convertTarifaToDollars,
   convertToDollars,
+  tariffConversionPending,
 } from "../../../../utils/tariffCurrency";
 import "./ChildServicePanel.scss";
 
@@ -865,12 +866,10 @@ const ChildServicePanel = ({
    * Retorna objeto con precio formateado e indicador de conversión
    */
   const formatPrice = (price, currency = "dolares", tasaCambio = null) => {
-    if (!price) {
-      return "$0.00";
-    }
+    if (price == null || price === "") return "—";
     // Convertir a dólares si está en soles
     const priceInDollars = convertToDollars(price, currency, tasaCambio);
-    return formatCurrency(priceInDollars, "dolares");
+    return priceInDollars == null ? "TC pendiente" : formatCurrency(priceInDollars, "dolares");
   };
 
   /**
@@ -1294,6 +1293,7 @@ const ChildServicePanel = ({
         : allTarifas[0];
       if (!tarifa) return null;
       const converted = convertTarifaToDollars(tarifa);
+      if (converted?.conversionPending) return { price: null, tarifa, converted, pending: true };
       const option = tariffPriceOptions(converted, packageType, category?.id)[0];
       if (!option) return null;
       const price = option.amount;
@@ -1321,6 +1321,11 @@ const ChildServicePanel = ({
             ) || null
           : allTarifas[0];
       };
+
+      if ((group.items || []).some(item => tariffConversionPending(pickTariff(item)))) {
+        alert("Completa la tasa de cambio de las tarifas pendientes antes de agregar esta entrada.");
+        return;
+      }
 
       const buildRateInfo = (item) => {
         if (!item) return null;
@@ -1550,7 +1555,7 @@ const ChildServicePanel = ({
               const hasDualPrices = packageType === "mixto" && selectableModes.length > 1;
               const priceItems = (group.items || [])
                 .map((item) => ({ item, priceInfo: getTicketDisplayPrice(item) }))
-                .filter(({ priceInfo }) => priceInfo && Number(priceInfo.price) > 0);
+                .filter(({ priceInfo }) => priceInfo && !priceInfo.pending && priceInfo.price != null && Number.isFinite(Number(priceInfo.price)) && Number(priceInfo.price) >= 0);
               const minPrice = priceItems.length
                 ? Math.min(...priceItems.map(({ priceInfo }) => Number(priceInfo.price)))
                 : 0;
@@ -1599,14 +1604,14 @@ const ChildServicePanel = ({
                         >
                           <strong>{procedencia || "por definir"}</strong>
                           <small>{tipoUsuario}</small>
-                          <b>{priceInfo ? tariffPriceOptions(priceInfo.converted, packageType, category?.id).map(option => `${option.label}: ${formatPrice(option.amount, "dolares")}`).join(" · ") : "—"}</b>
+                          <b>{priceInfo?.pending ? "TC pendiente" : priceInfo ? tariffPriceOptions(priceInfo.converted, packageType, category?.id).map(option => `${option.label}: ${formatPrice(option.amount, "dolares")}`).join(" · ") : "—"}</b>
                         </span>
                       );
                     })}
                   </div>
                   <div className="ticket-entry-card__action">
                     <span className="ticket-entry-card__price-range">
-                      {minPrice && maxPrice
+                      {priceItems.length > 0
                         ? minPrice === maxPrice
                           ? formatPrice(minPrice, "dolares")
                           : `${formatPrice(minPrice, "dolares")} - ${formatPrice(maxPrice, "dolares")}`
@@ -1749,9 +1754,11 @@ const ChildServicePanel = ({
               );
 
               // Manejar clic en toda la tarjeta - seleccionar automáticamente el primer precio
+              const conversionPending = hasTariffs && tariffConversionPending(tarifas[0]);
               const priceChoices = hasTariffs ? tariffPriceOptions(tarifas[0], packageType, category?.id) : [];
               if (hasTariffs && priceChoices.length === 0) return null;
               const handleCardClick = async (requestedMode = null) => {
+                if (conversionPending) { alert("Completa una tasa de cambio válida en la tarifa antes de cotizar este servicio."); return; }
                 const selectedPrice = priceChoices.find((option) => option.tipoPrecio === requestedMode) || priceChoices[0];
                 const selectedMode = selectedPrice?.tipoPrecio || (packageType === "compartido" ? "compartido" : "privado");
                 let actualParent = parentService;
@@ -1792,13 +1799,15 @@ const ChildServicePanel = ({
 
                 const tarifa = tarifas[0];
                 const tarifaEnDolares = convertTarifaToDollars(tarifa);
-                const precio = tariffPriceOptions(tarifaEnDolares, selectedMode, category?.id)[0]?.amount ?? 0;
+                const selectedOption = tariffPriceOptions(tarifaEnDolares, selectedMode, category?.id)[0];
+                if (!selectedOption) return;
+                const precio = selectedOption.amount;
                 const tarifaInternaEnDolares =
                   tarifa_interna.length > 0
                     ? convertTarifaToDollars(tarifa_interna[0])
                     : null;
                 const precio_interno = tarifaInternaEnDolares
-                  ? tariffPriceOptions(tarifaInternaEnDolares, selectedMode, category?.id)[0]?.amount ?? 0
+                  ? tariffPriceOptions(tarifaInternaEnDolares, selectedMode, category?.id)[0]?.amount ?? null
                   : null;
 
                 onSelectService(
@@ -2107,7 +2116,7 @@ const ChildServicePanel = ({
                         {hasTariffs ? (
                           <div className="tariff-price-options">
                             {priceChoices.map((option) => (
-                              <button type="button" className="tariff-price-option" key={option.tipoPrecio}
+                              <button type="button" className="tariff-price-option" key={option.tipoPrecio} disabled={conversionPending}
                                 onClick={(event) => { event.stopPropagation(); handleCardClick(option.tipoPrecio); }}>
                                 <span className="price-label">{option.label}</span>
                                 <span className="price-amount">{formatPrice(option.amount, tarifas[0].moneda, tarifas[0].tasa_cambio)}</span>
@@ -2120,8 +2129,10 @@ const ChildServicePanel = ({
                             <span className="price-amount">—</span>
                           </div>
                         )}
+                        {conversionPending && <small role="status">TC pendiente en la tarifa</small>}
                         <button
                           className="add-btn"
+                          disabled={conversionPending}
                           onClick={(e) => {
                             e.stopPropagation();
                             handleCardClick();

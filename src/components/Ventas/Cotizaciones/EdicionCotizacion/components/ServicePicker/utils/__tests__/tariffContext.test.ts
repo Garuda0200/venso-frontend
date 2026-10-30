@@ -108,3 +108,14 @@ test("ServicePicker does not send tipo_tarifa to catalog endpoints", () => {
   assert.deepEqual(params, { agency_id: 7, anio: currentYear });
   assert.equal(Object.prototype.hasOwnProperty.call(params, "tipo_tarifa"), false);
 });
+
+
+test("ServicePicker presenta por separado los modos de una agencia sin mezclar sus monedas", () => {
+  const shared={ id_tarifa:700, tipo_tarifa:"interna", anio:currentYear, agency_ids:[7], precio_compartido:130, precio_privado:null, moneda:"soles", tasa_cambio:3.25 };
+  const privatePrice={ id_tarifa:701, tipo_tarifa:"interna", anio:currentYear, agency_ids:[7], precio_compartido:null, precio_privado:65, moneda:"dolares", tasa_cambio:1 };
+  const rows=prepareServicePickerCatalogRows([{id_ruta:8,tarifas:[shared,privatePrice]}],7,"interna",currentYear);
+  assert.equal(rows.length,2);
+  assert.deepEqual(rows.map(row=>row.tarifas[0]),[shared,privatePrice]);
+  assert.notEqual(rows[0]._tariff_variant_key,rows[1]._tariff_variant_key);
+  assert.deepEqual(rows.map(row=>row._tariff_agency_ids),[[7],[7]]);
+});

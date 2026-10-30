@@ -1,37 +1,11 @@
-import { EXCHANGE_RATE } from "../../../../../utils/constants";
+import { catalogCurrency, catalogAmountInDollars, tariffConversionPending } from "../../../../../utils/catalogCurrency";
 
-const normalizeCurrency = (currency) =>
-  String(currency || "")
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+export const isDollarCurrency = (currency) => catalogCurrency(currency) === "USD";
+export const getCurrencySymbol = (currency) => catalogCurrency(currency) === "PEN" ? "S/" : "$";
 
-export const isDollarCurrency = (currency) => {
-  const normalized = normalizeCurrency(currency);
-  return (
-    !normalized ||
-    normalized === "usd" ||
-    normalized === "$" ||
-    normalized.includes("dolar")
-  );
-};
-
-export const getCurrencySymbol = (currency) =>
-  isDollarCurrency(currency) ? "$" : "S/";
-
-export const convertToDollars = (price, currency, exchangeRate) => {
-  const numericPrice = Number.parseFloat(price);
-  if (!Number.isFinite(numericPrice) || numericPrice <= 0) return 0;
-  if (isDollarCurrency(currency)) return numericPrice;
-
-  const parsedRate = Number.parseFloat(exchangeRate);
-  const rate = Number.isFinite(parsedRate) && parsedRate > 0
-    ? parsedRate
-    : EXCHANGE_RATE;
-
-  return numericPrice / rate;
-};
+/** Missing or invalid conversion input stays pending; no fallback rate or zero. */
+export const convertToDollars = catalogAmountInDollars;
+export { tariffConversionPending };
 
 const convertOptionalPrice = (price, currency, exchangeRate) => {
   if (price === null || price === undefined || price === "") return price;
@@ -43,7 +17,20 @@ const convertOptionalPrice = (price, currency, exchangeRate) => {
  * en una sola moneda. Los valores originales se conservan como referencia.
  */
 export const convertTarifaToDollars = (tariff) => {
-  if (!tariff || isDollarCurrency(tariff.moneda)) return tariff;
+  if (!tariff) return tariff;
+  if (tariffConversionPending(tariff)) return {
+    ...tariff,
+    moneda_original: tariff.moneda_original ?? tariff.moneda,
+    tasa_cambio_original: tariff.tasa_cambio_original ?? tariff.tasa_cambio,
+    precio_compartido_original: tariff.precio_compartido_original ?? tariff.precio_compartido,
+    precio_privado_original: tariff.precio_privado_original ?? tariff.precio_privado,
+    precio_original_moneda: tariff.precio_original_moneda ?? tariff.precio,
+    precio_compartido: null, precio_privado: null,
+    ...(tariff.precio !== undefined ? { precio: null } : {}),
+    conversionPending: true,
+    conversionPendingReason: "Completa una tasa de cambio válida en la tarifa para cotizar en USD.",
+  };
+  if (isDollarCurrency(tariff.moneda)) return { ...tariff, conversionPending: false };
 
   const originalCurrency = tariff.moneda;
   const originalExchangeRate = tariff.tasa_cambio;
@@ -80,6 +67,7 @@ export const convertTarifaToDollars = (tariff) => {
         }
       : {}),
     moneda: "dolares",
+    conversionPending: false,
   };
 };
 

@@ -194,3 +194,31 @@ test("aplica TC pendiente solo sobre servicios desbloqueados", () => {
   assert.equal(result.days[0].servicios[1], locked);
   assert.equal(result.days[0].servicios[2], aligned);
 });
+
+
+test("catálogo PEN sin TC identificada permanece pendiente, no gratuito ni USD", () => {
+  for (const rate of [undefined, null, "", 0, -1, "incorrecta", 1_000_000]) {
+    assert.equal(convertToDollars(130, "soles", rate), null);
+    const native = { moneda: "soles", tasa_cambio: rate, precio_compartido: 130, precio_privado: null };
+    const result = convertTarifaToDollars(native);
+    assert.equal(result.conversionPending, true);
+    assert.equal(result.moneda, "soles");
+    assert.equal(result.precio_compartido, null);
+    assert.equal(result.precio_compartido_original, 130);
+    assert.equal(native.precio_compartido, 130);
+  }
+});
+
+test("convertir una tarifa comercial dos veces no convierte nuevamente el importe", () => {
+  const native = { moneda: "PEN", tasa_cambio: 3.25, precio_compartido: 130, precio_privado: null };
+  const first = convertTarifaToDollars(native);
+  const reopened = convertTarifaToDollars(first);
+  assert.equal(first.precio_compartido, 40);
+  assert.equal(reopened.precio_compartido, 40);
+  assert.equal(reopened.precio_compartido_original, 130);
+  assert.equal(reopened.precio_privado, null);
+  assert.equal(reopened.conversionPending, false);
+  assert.equal(convertToDollars(0, "USD", null), 0);
+  assert.equal(convertToDollars(null, "USD", 1), null);
+  assert.equal(convertToDollars(100, "EUR", 3), null);
+});

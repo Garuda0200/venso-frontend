@@ -16,7 +16,7 @@ import {
   getTarifaTypeLabel,
   normalizeEditableTariffType,
 } from "../../utils/constants";
-import { EXCHANGE_RATE } from "../../../../../utils/constants";
+import { catalogCurrency, identifiedCatalogRate } from "../../../../../utils/catalogCurrency";
 import useAuditInfo from "../../hooks/useAuditInfo";
 import TariffAgencyCombobox from "../../../../../components/common/TariffAgencyCombobox/TariffAgencyCombobox";
 import { fetchTarifasByServicio } from "../../services/api";
@@ -51,7 +51,7 @@ const TarifaForm = ({
   const visibleModes = isTicket ? ["privado"] as const : TARIFF_MODES;
 
   const initialType = normalizeEditableTariffType(tarifa?.tipo_tarifa);
-  const initialCurrency = tarifa?.moneda || "dolares";
+  const initialCurrency = catalogCurrency(tarifa?.moneda) === "PEN" ? "soles" : "dolares";
   const resolvedAgencyIds = Array.isArray(tarifa?.agency_ids)
     ? tarifa.agency_ids.map(Number).filter((id) => id > 0)
     : [Number(agencyId || 0)].filter((id) => id > 0);
@@ -68,8 +68,9 @@ const TarifaForm = ({
     precio_privado: tarifa?.precio_privado?.toString() || "",
     moneda: initialCurrency,
     tasa_cambio:
-      tarifa?.tasa_cambio?.toString() ||
-      (initialCurrency === "soles" ? EXCHANGE_RATE.toString() : "1.0"),
+      initialCurrency === "soles"
+        ? identifiedCatalogRate(tarifa?.tasa_cambio)?.toString() || ""
+        : "1.0",
     created_by: userId,
   });
 
@@ -145,12 +146,14 @@ const TarifaForm = ({
 
     scopedExisting.forEach((item) => {
       if (item.tipo_tarifa !== formData.tipo_tarifa) return;
+      const modes = initialTariffModes(item);
+      if (!TARIFF_MODES.some(mode => enabledModes[mode] && modes[mode])) return;
       if (item.tiene_temporada && item.temporada) seasonal.add(item.temporada);
       else standard.add(STANDARD_KEY);
     });
 
     return { standard, seasonal };
-  }, [scopedExisting, formData.tipo_tarifa]);
+  }, [scopedExisting, formData.tipo_tarifa, enabledModes]);
 
   const selectedSeasonKey = formData.tiene_temporada
     ? formData.temporada || customSeason
@@ -207,27 +210,13 @@ const TarifaForm = ({
   };
 
   const switchCurrency = (currency) => {
-    setFormData((current) => {
-      if (current.moneda === currency) return current;
-      const rate = Number.parseFloat(current.tasa_cambio) || EXCHANGE_RATE;
-      const convert = (value) => {
-        const amount = Number.parseFloat(value);
-        if (!Number.isFinite(amount)) return "";
-        return currency === "soles"
-          ? (amount * rate).toFixed(2)
-          : (amount / rate).toFixed(2);
-      };
-
-      const shared = convert(current.precio_compartido);
-      return {
-        ...current,
-        moneda: currency,
-        tasa_cambio:
-          currency === "soles" ? rate.toString() : current.tasa_cambio,
-        precio_compartido: shared,
-        precio_privado: convert(current.precio_privado),
-      };
-    });
+    // Currency selection chooses a native catalog price, not a conversion.
+    // Clear the amounts so an old number cannot silently acquire a new unit.
+    setFormData(current => current.moneda === currency ? current : ({
+      ...current, moneda: currency, precio_compartido: "", precio_privado: "",
+      tasa_cambio: currency === "dolares" ? "1" : "",
+    }));
+    setErrors({});
   };
 
   const togglePriceMode = (mode: "compartido" | "privado") => {
@@ -262,13 +251,12 @@ const TarifaForm = ({
       nextErrors.temporada = "Selecciona o escribe una temporada.";
     }
     if (isCombinationUsed(selectedSeasonKey)) {
-      nextErrors.combinacion = `Ya existe una tarifa ${getTarifaTypeLabel(formData.tipo_tarifa).toLowerCase()} para ${selectedSeasonKey === STANDARD_KEY ? "vigencia estándar" : `temporada ${selectedSeasonKey}`}.`;
+      nextErrors.combinacion = `Ya existe una tarifa ${getTarifaTypeLabel(formData.tipo_tarifa).toLowerCase()} con alguna modalidad seleccionada para ${selectedSeasonKey === STANDARD_KEY ? "vigencia estándar" : `temporada ${selectedSeasonKey}`}.`;
     }
     Object.assign(nextErrors, validateTariffModePrices(formData, enabledModes));
     if (
       formData.moneda === "soles" &&
-      (!Number.isFinite(Number.parseFloat(formData.tasa_cambio)) ||
-        Number.parseFloat(formData.tasa_cambio) <= 0)
+      identifiedCatalogRate(formData.tasa_cambio) == null
     ) {
       nextErrors.tasa_cambio = "Ingresa una tasa de cambio válida.";
     }
@@ -294,7 +282,7 @@ const TarifaForm = ({
       ...buildTariffModePrices(formData, enabledModes),
       tasa_cambio:
         formData.moneda === "soles"
-          ? Number.parseFloat(formData.tasa_cambio) || EXCHANGE_RATE
+          ? Number.parseFloat(formData.tasa_cambio)
           : 1,
     });
   };
@@ -569,6 +557,7 @@ const TarifaForm = ({
         <p className="tf__error tf__error--standalone">{errors.combinacion}</p>
       )}
 
+      <small className="tf__native-currency-note">Ingresa los importes en {currencySymbol}. Cada tarifa conserva su moneda.</small>
       <div className="tf__summary">
         <span>{formData.anio} · {getTarifaTypeLabel(formData.tipo_tarifa)} · {seasonLabel} · {formData.agency_ids.length} agencia{formData.agency_ids.length === 1 ? "" : "s"}</span>
         <strong>

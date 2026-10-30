@@ -24,6 +24,7 @@ import DeleteConfirmation from "../DeleteConfirmation";
 import TarifaClonePopover from "./TarifaClonePopover";
 import TarifaFormPopover from "./TarifaFormPopover";
 import TarifaPriceSummary from "./TarifaPriceSummary";
+import { catalogCurrency, identifiedCatalogRate } from "../../../../../utils/catalogCurrency";
 import "./TarifasCellRenderer.scss";
 
 /**
@@ -179,8 +180,8 @@ const TarifasCellRenderer = ({
     const isProtected = Boolean(tarifa.is_protected_by_voucher);
     const tempLabel = tarifa.tiene_temporada ? tarifa.temporada : "std";
     const exchangeRate =
-      tarifa.moneda === "soles" && tarifa.tasa_cambio
-        ? Number.parseFloat(tarifa.tasa_cambio).toFixed(2)
+      catalogCurrency(tarifa.moneda) === "PEN" && identifiedCatalogRate(tarifa.tasa_cambio) != null
+        ? Number(tarifa.tasa_cambio).toFixed(2)
         : null;
     const legacy = tarifa.tipo_tarifa === "cotizacion";
 
@@ -212,7 +213,7 @@ const TarifasCellRenderer = ({
             <span>{tarifa.tiene_temporada ? tarifa.temporada : "Estándar"}</span>
           </span>
 
-          <span className={`cell-badge moneda ${tarifa.moneda}`}>{tarifa.moneda === "soles" ? "PEN" : "USD"}</span>
+          <span className={`cell-badge moneda ${tarifa.moneda}`}>{catalogCurrency(tarifa.moneda) || "Moneda pendiente"}</span>
           {isProtected && <span className="cell-badge protected-label" title="Vinculada a un voucher; no puede eliminarse">Protegida</span>}
 
           {exchangeRate && (

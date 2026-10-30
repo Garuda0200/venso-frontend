@@ -141,3 +141,16 @@ test("beneficiary edits do not divide private transport or guide prices", () => 
     }
   }
 });
+
+
+test("modalidades disjuntas mantienen moneda y cero sin inventar conversión ausente", () => {
+  const service = { typeService:"guias", tarifas:[
+    {id_tarifa:1,tipo_tarifa:"interna",precio_compartido:130,precio_privado:null,moneda:"PEN",tasa_cambio:3.25},
+    {id_tarifa:2,tipo_tarifa:"interna",precio_compartido:null,precio_privado:0,moneda:"USD",tasa_cambio:1},
+    {id_tarifa:3,tipo_tarifa:"interna",precio_compartido:90,precio_privado:null,moneda:"PEN",tasa_cambio:null},
+  ] };
+  const options=cataloguePricingOptions(service,"mixto","interna");
+  assert.deepEqual(options.map(p=>[p.tipoPrecio,p.amount,p.tariffId]),[["compartido",40,1],["privado",0,2]]);
+  assert.deepEqual(cataloguePricingOptions(service,"privado","interna").map(p=>p.tariffId),[2]);
+  assert.equal(service.tarifas[0].precio_compartido,130);
+});

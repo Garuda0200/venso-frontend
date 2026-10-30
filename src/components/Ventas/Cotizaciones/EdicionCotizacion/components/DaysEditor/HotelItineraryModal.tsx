@@ -437,6 +437,9 @@ const HotelItineraryModal = ({
         convertRoomTariffsToDollars(room, tariffType),
       );
       setRooms(processedRooms);
+      if (processedRooms.some(room => room.tarifas?.some(tariff => tariff.conversionPending))) {
+        setError("Hay habitaciones con TC pendiente. Completa su tarifa para cotizarlas en USD.");
+      }
     } catch (err) {
       setError("Error al cargar habitaciones");
       setRooms([]);
@@ -565,6 +568,10 @@ const HotelItineraryModal = ({
   // "Cama adicional" is a +1 pax supplement and can only exist attached to a
   // physical room of the same hotel (maximum one extra bed per room).
   const toggleRoomSelection = (room, hotel, tariff, delta = 1) => {
+    if (delta > 0 && tariff?.conversionPending) {
+      setError("Completa una tasa de cambio válida en la tarifa de esta habitación.");
+      return;
+    }
     const roomId = room.id_habitacion || room.id;
     const hotelId = hotel.id_hotel || hotel.id;
     const tariffId = tariff?.id_tarifa || tariff?.id;
@@ -754,6 +761,10 @@ const HotelItineraryModal = ({
       return;
     }
 
+    if (selectedRooms.some(item => item.tariff?.conversionPending) || selectedTariff?.conversionPending) {
+      setError("Completa las tarifas con TC pendiente antes de agregar habitaciones.");
+      return;
+    }
     if (selectedDays.length === 0) {
       alert("Por favor selecciona al menos un día");
       return;

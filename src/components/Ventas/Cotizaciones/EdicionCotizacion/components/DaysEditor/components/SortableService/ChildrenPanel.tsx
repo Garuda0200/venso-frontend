@@ -13,6 +13,7 @@ const ChildrenPanel = ({
   convertedEntries = [],
   childPriceMap = {},
   adultPrice = 0,
+  currency = "dolares",
   className = "",
   onApplyUniform,
   onConvertChild,
@@ -157,7 +158,7 @@ const ChildrenPanel = ({
                 <span className="sr__ch-price">
                   {isConverted ? (
                     <span className="sr__ch-val sr__ch-val--adult">
-                      {formatCurrency(adultPrice)}
+                      {formatCurrency(adultPrice, currency)}
                       <span className="sr__ch-context">adulto</span>
                     </span>
                   ) : isEditingThis ? (
@@ -229,7 +230,7 @@ const ChildrenPanel = ({
                       }
                       title="Clic para editar monto"
                     >
-                      {formatCurrency(childPrice)}
+                      {formatCurrency(childPrice, currency)}
                       {childPrice === 0 && <span className="sr__ch-free">gratis</span>}
                     </span>
                   )}

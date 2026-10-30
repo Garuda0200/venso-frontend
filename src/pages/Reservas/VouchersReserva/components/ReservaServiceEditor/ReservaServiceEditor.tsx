@@ -1,3 +1,5 @@
+import { formatPaymentTotals } from "../../../../../utils/paymentCurrency";
+import { findReservationEditorQuotedMatch } from "./utils/quotedServiceMatch";
 import { sharedPriceFlag, normalizePricingType } from "../../../../../utils/servicePricingType";
 import { useState, useCallback, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
@@ -25,7 +27,9 @@ import {
   calculateDayDate,
   formatDate,
   getTariffBreakdown,
-  calculateDayTotal,
+  calculateDayTotals,
+  changeReservationServiceCurrency,
+  hasCommittedReservationPayment,
   getAssignedPassengerSelectionForService,
   hasChildrenInPeopleDetails,
   syncTariffWithReservationPricing,
@@ -73,6 +77,10 @@ const clearAssignedReservationState = (service = {}) => ({
   assigned_beneficiarios_ninos: [],
   assignedMoneda: null,
   assigned_moneda: null,
+  assignedTasaCambio: null,
+  assigned_tasa_cambio: null,
+  assignedCurrencyRate: null,
+  assignedCurrencyConversion: null,
   assignedIgv: null,
   assigned_igv: null,
   assignedHora: null,
@@ -153,12 +161,13 @@ const ReservaServiceEditor = ({
   );
 
   const groupReservationTicketRows = useCallback(
-    (services = [], cotizacionServices = []) => {
+    (services = [], day = {}) => {
       const result = [];
       const groups = new Map();
 
       (Array.isArray(services) ? services : []).forEach((service, index) => {
-        const cotService = cotizacionServices?.[index];
+        const match = findReservationEditorQuotedMatch({ service, day, quotedItinerary: cotizacionItinerary });
+        const cotService = match.service;
         const serviceType = getReservationServiceType(
           service,
           service?.assignedService,
@@ -172,7 +181,7 @@ const ReservaServiceEditor = ({
               cotService?.childService?.ticket,
           );
 
-        const item = { service, serviceIndex: index, cotService };
+        const item = { service, serviceIndex: index, cotService, quotedMatchReason: match.reason };
 
         if (!isTicket) {
           result.push({ type: "service", ...item });
@@ -197,7 +206,7 @@ const ReservaServiceEditor = ({
 
       return result;
     },
-    [getReservationServiceType],
+    [getReservationServiceType, cotizacionItinerary],
   );
 
   // -- State --
@@ -226,14 +235,9 @@ const ReservaServiceEditor = ({
         return;
       }
 
-      if (service.paymentRequest?.id) {
-        const status = service.paymentRequest.status;
-        if (status === "pending" || status === "paid") {
-          alert(
-            `No se puede revalidar este servicio porque tiene una solicitud de pago ${status === "paid" ? "pagada" : "pendiente"}.`,
-          );
-          return;
-        }
+      if (hasCommittedReservationPayment(service)) {
+        alert("El servicio tiene una solicitud pendiente o un pago; no se puede volver a validar su precio.");
+        return;
       }
 
       validationInFlight.current = true;
@@ -262,12 +266,12 @@ const ReservaServiceEditor = ({
           service.assignedService ||
           null;
 
-        const nextItinerary = latestItinerary.current.map((day, currentDayIndex) => {
-          if (currentDayIndex !== dayIndex) return day;
+        const nextItinerary = latestItinerary.current.map((day) => {
+          if (!(day.servicios || []).some(current => String(current.servicioId ?? current.id) === String(service.servicioId ?? service.id))) return day;
           return {
             ...day,
-            servicios: (day.servicios || []).map((current, currentServiceIndex) => {
-              if (currentServiceIndex !== serviceIndex) return current;
+            servicios: (day.servicios || []).map((current) => {
+              if (String(current.servicioId ?? current.id) !== String(service.servicioId ?? service.id)) return current;
               return applyQuotedServiceValidation(
                 current,
                 { ...enriched, assignedService },
@@ -304,6 +308,10 @@ const ReservaServiceEditor = ({
     const updatedItinerary = cloneReservationItinerary(latestItinerary.current);
     const service = updatedItinerary[dayIndex].servicios[serviceIndex];
 
+    if (hasCommittedReservationPayment(service)) {
+      alert("El servicio tiene una solicitud pendiente o un pago; no se puede retirar su validación.");
+      return;
+    }
     // Guard: no permitir retirar una validación con una solicitud de pago activa
     if (service.paymentRequest && service.paymentRequest.id) {
       const prStatus = service.paymentRequest.status;
@@ -324,8 +332,9 @@ const ReservaServiceEditor = ({
     if (service.isCustomService) {
       updatedItinerary[dayIndex].servicios.splice(serviceIndex, 1);
     } else {
-      const cotizacionService =
-        cotizacionItinerary[dayIndex]?.servicios?.[serviceIndex];
+      const cotizacionService = findReservationEditorQuotedMatch({
+        service, day: updatedItinerary[dayIndex], quotedItinerary: cotizacionItinerary,
+      }).service;
       const typeServiceFallback =
         cotizacionService?.parentService?.typeService ||
         service.parentService?.typeService ||
@@ -369,7 +378,7 @@ const ReservaServiceEditor = ({
     const assignedService = service?.assignedService
       ? { ...service.assignedService }
       : null;
-    if (!service || !assignedService) return;
+    if (!service || !assignedService || hasCommittedReservationPayment(service)) return;
 
     const currentSelection = getAssignedPassengerSelectionForService(service);
     const nextSelectionInput = selectAssignedBeneficiaries(
@@ -452,6 +461,17 @@ const ReservaServiceEditor = ({
     void onChange(updatedItinerary);
   };
 
+  const handleAssignedCurrencyChange = async (dayIndex, serviceIndex, currency, options) => {
+    const current = latestItinerary.current?.[dayIndex]?.servicios?.[serviceIndex];
+    if (!current) throw new Error("El servicio ya no está disponible; actualiza la reserva.");
+    if (validationInFlight.current) throw new Error("Espera a que termine la validación del servicio.");
+    const updated = cloneReservationItinerary(latestItinerary.current);
+    updated[dayIndex].servicios[serviceIndex] = changeReservationServiceCurrency(current, currency, options);
+    latestItinerary.current = updated;
+    const saved = await onChange(updated);
+    if (saved === false) throw new Error("La moneda quedó pendiente de guardado; revisa el aviso y reintenta.");
+  };
+
   // -- Price adjustment (direct edit only) --
   const togglePriceAdjustment = (
     dayIndex,
@@ -505,6 +525,7 @@ const ReservaServiceEditor = ({
 
     const updatedItinerary = cloneReservationItinerary(latestItinerary.current);
     const service = updatedItinerary[dayIndex].servicios[serviceIndex];
+    if (hasCommittedReservationPayment(service)) return;
 
     if (service.isCustomService) {
       const passengerSelection =
@@ -609,6 +630,7 @@ const ReservaServiceEditor = ({
   ) => {
     const updatedItinerary = cloneReservationItinerary(latestItinerary.current);
     const service = updatedItinerary[dayIndex].servicios[serviceIndex];
+    if (hasCommittedReservationPayment(service)) return;
     const assignedService = service.assignedService
       ? { ...service.assignedService }
       : null;
@@ -891,7 +913,7 @@ const ReservaServiceEditor = ({
     const assignedService = service?.assignedService
       ? { ...service.assignedService }
       : null;
-    if (!service || !assignedService) return;
+    if (!service || !assignedService || hasCommittedReservationPayment(service)) return;
 
     const paxSel = {
       ...getAssignedPassengerSelectionForService(service),
@@ -1028,7 +1050,7 @@ const ReservaServiceEditor = ({
     const assignedService = service?.assignedService
       ? { ...service.assignedService }
       : null;
-    if (!service || !assignedService) return;
+    if (!service || !assignedService || hasCommittedReservationPayment(service)) return;
 
     const convertedMap = {
       ...(service.convertedChildToAdultMap ||
@@ -1326,15 +1348,17 @@ const ReservaServiceEditor = ({
                   {day.servicios && day.servicios.length > 0 ? (
                     groupReservationTicketRows(
                       day.servicios,
-                      cotizacionItinerary[dayIndex]?.servicios || [],
+                      day,
                     ).map((row) => {
-                      const renderRow = ({ service, serviceIndex, cotService }) => (
+                      const renderRow = ({ service, serviceIndex, cotService, quotedMatchReason }) => (
                         <UnifiedServiceRow
                           key={`row-${serviceIndex}`}
                           service={service}
                           serviceIndex={serviceIndex}
                           dayIndex={dayIndex}
                           cotService={cotService}
+                          quotedMatchReason={quotedMatchReason}
+                          onCurrencyChange={handleAssignedCurrencyChange}
                           editingPrice={editingPrice}
                           onTogglePriceAdjustment={togglePriceAdjustment}
                           onAdjustmentValueChange={handleAdjustmentValueChange}
@@ -1390,7 +1414,7 @@ const ReservaServiceEditor = ({
                 <div className="day-total">
                   <span className="total-label">Total validado:</span>
                   <span className="total-value">
-                    {formatCurrency(calculateDayTotal(day.servicios))}
+                    {formatPaymentTotals(calculateDayTotals(day.servicios))}
                   </span>
                 </div>
               </div>

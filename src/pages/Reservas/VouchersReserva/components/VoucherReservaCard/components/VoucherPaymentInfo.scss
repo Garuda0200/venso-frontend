@@ -9,6 +9,7 @@
   border-top: 1px solid var(--color-border-light);
 
   .payment-progress {
+    & + .payment-progress { margin-top: var(--spacing-md); padding-top: var(--spacing-sm); border-top: 1px solid var(--color-border-light); }
     .progress-header {
       display: flex;
       justify-content: space-between;

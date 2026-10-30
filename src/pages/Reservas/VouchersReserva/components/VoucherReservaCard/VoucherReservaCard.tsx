@@ -8,11 +8,7 @@ import VoucherBasicInfo from "./components/VoucherBasicInfo";
 import VoucherPaymentInfo from "./components/VoucherPaymentInfo";
 import VoucherServiceInfo from "./components/VoucherServiceInfo";
 import VoucherActions from "./components/VoucherActions";
-import {
-  getAssignedTariff,
-  hasAssignedService,
-  mergeItineraryDaysByNumber,
-} from "../../utils/serviceAssignment";
+import { buildReservationVoucherPaymentSummary } from "../../utils/reservationVoucherRender";
 
 const VoucherReservaCard = ({
   voucher,
@@ -75,16 +71,6 @@ const VoucherReservaCard = ({
     }
   };
 
-  const formatCurrency = (amount) => {
-    if (amount === undefined || amount === null) return "$0.00";
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
-
   // ============================================
   // COMPUTED VALUES
   // ============================================
@@ -94,57 +80,8 @@ const VoucherReservaCard = ({
       voucher.reservationVoucher?.hasAssignedServices,
   );
 
-  // Calcular el costo total de los servicios del itinerario asignado
-  const calculateTotalServicesCost = () => {
-    if (!servicesAssigned || !voucher.reservationVoucher?.assignedItinerary) {
-      return null;
-    }
-
-    try {
-      let totalCost = 0;
-
-      const itinerary = mergeItineraryDaysByNumber(
-        voucher.reservationVoucher.assignedItinerary,
-      );
-
-      itinerary.forEach((day) => {
-        if (day.servicios && Array.isArray(day.servicios)) {
-          day.servicios.forEach((service) => {
-            if (!service.isAssigned) return;
-            if (!hasAssignedService(service)) return;
-            // Usar tarifa asignada (assignedTariff) con fallback a tariff de cotización
-            const tariff = getAssignedTariff(service);
-            const price = parseFloat(
-              tariff?.precio_original_with_child_extras ||
-                tariff?.precio_original ||
-                0,
-            );
-            const quantity = parseInt(service.cantidad || 1);
-            const serviceCost = price * quantity;
-
-            if (serviceCost > 0) {
-              totalCost += serviceCost;
-            }
-          });
-        }
-      });
-
-      return totalCost > 0 ? totalCost : null;
-    } catch (error) {
-      console.error("Error calculando el costo total de los servicios:", error);
-      return null;
-    }
-  };
-
-  const totalServicesCost = calculateTotalServicesCost();
-  const totalPaid = calculateTotalPaid();
-  const pendingPaymentsCount = countPendingPayments();
-  const paymentPercentage =
-    totalServicesCost > 0
-      ? Math.min(100, (totalPaid / totalServicesCost) * 100)
-      : 0;
-  const paymentCompleted =
-    totalPaid >= totalServicesCost && totalServicesCost > 0;
+  const paymentSummary = buildReservationVoucherPaymentSummary(voucher.reservationVoucher?.assignedItinerary || []);
+  const { pendingPaymentsCount, paymentCompleted } = paymentSummary;
 
   // ============================================
   // RENDER
@@ -171,13 +108,8 @@ const VoucherReservaCard = ({
       </section>
 
       <section className="voucher-list-section voucher-list-section--payment">
-        {servicesAssigned && totalServicesCost > 0 ? (
-          <VoucherPaymentInfo
-            totalServicesCost={totalServicesCost}
-            totalPaid={totalPaid}
-            paymentPercentage={paymentPercentage}
-            formatCurrency={formatCurrency}
-          />
+        {servicesAssigned ? (
+          <VoucherPaymentInfo rows={paymentSummary.rows} unknownCosts={paymentSummary.unknownCosts} />
         ) : (
           <div className="voucher-list-empty-payment">
             <span>Pagos</span>
@@ -207,71 +139,6 @@ const VoucherReservaCard = ({
     </article>
   );
 
-  // ============================================
-  // HELPER FUNCTIONS (extracted for reusability)
-  // ============================================
-
-  function calculateTotalPaid() {
-    if (!servicesAssigned || !voucher.reservationVoucher?.assignedItinerary) {
-      return 0;
-    }
-
-    let totalPaid = 0;
-    const itinerary = mergeItineraryDaysByNumber(
-      voucher.reservationVoucher.assignedItinerary,
-    );
-
-    itinerary.forEach((day) => {
-      if (day.servicios && Array.isArray(day.servicios)) {
-        day.servicios.forEach((service) => {
-          const status = String(service.paymentRequest?.status || "").toLowerCase();
-          const isPaid =
-            ["paid", "approved", "completed", "pagado", "aprobado"].includes(
-              status,
-            ) || Boolean(service.paymentRequest?.paid_at);
-
-          if (isPaid) {
-            totalPaid += parseFloat(service.paymentRequest.amount) || 0;
-          }
-        });
-      }
-    });
-
-    return totalPaid;
-  }
-
-  function countPendingPayments() {
-    if (!servicesAssigned || !voucher.reservationVoucher?.assignedItinerary) {
-      return 0;
-    }
-
-    let pendingCount = 0;
-    const itinerary = mergeItineraryDaysByNumber(
-      voucher.reservationVoucher.assignedItinerary,
-    );
-
-    itinerary.forEach((day) => {
-      if (day.servicios && Array.isArray(day.servicios)) {
-        day.servicios.forEach((service) => {
-          const hasAssignment = hasAssignedService(service);
-          if (hasAssignment) {
-            const status = String(
-              service.paymentRequest?.status || "",
-            ).toLowerCase();
-            const isPaid =
-              ["paid", "approved", "completed", "pagado", "aprobado"].includes(
-                status,
-              ) || Boolean(service.paymentRequest?.paid_at);
-            if (!isPaid) {
-              pendingCount++;
-            }
-          }
-        });
-      }
-    });
-
-    return pendingCount;
-  }
 };
 
 export default React.memo(VoucherReservaCard);

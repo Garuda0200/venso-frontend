@@ -1,3 +1,4 @@
+import { catalogAmountInDollars } from "./catalogCurrency";
 /** Shared = group amount; private = per-person amount. Null stays unassigned. */
 export type ServicePricingType = "compartido" | "privado";
 export type DayServiceMode = ServicePricingType | "mixto";
@@ -66,9 +67,8 @@ export function cataloguePricingOptions(service: any, mode: unknown, tariffType?
   };
   collect(service, 0);
   return tariffs.filter(tariff => !tariffType || !tariff.tipo_tarifa || tariff.tipo_tarifa === tariffType)
-    .flatMap(tariff => tariffPriceOptions(tariff, mode, service?.typeService || service?.parentService?.typeService).map(option => ({
-      ...option,
-      amount: ["pen", "soles", "sol"].includes(String(tariff.moneda || "").toLowerCase())
-        ? option.amount / Math.max(Number(tariff.tasa_cambio) || 1, 0.01) : option.amount,
-    })));
+    .flatMap(tariff => tariffPriceOptions(tariff, mode, service?.typeService || service?.parentService?.typeService).flatMap(option => {
+      const amount = catalogAmountInDollars(option.amount, tariff.moneda, tariff.tasa_cambio);
+      return amount == null ? [] : [{ ...option, amount, tariffId: tariff.id_tarifa }];
+    }));
 }

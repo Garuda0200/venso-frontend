@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { tariffPriceOptions } from "../../../../../utils/servicePricingType";
 import { FaCheck, FaUsers, FaUser } from "react-icons/fa";
 import InlineTariffPrice from "./InlineTariffPrice";
+import { catalogCurrency } from "../../../../../utils/catalogCurrency";
 
 interface TarifaPriceSummaryProps {
   onPriceSave?: (patch: Record<string, number>) => Promise<void>;
@@ -14,7 +15,7 @@ interface TarifaPriceSummaryProps {
 }
 
 const TarifaPriceSummary = ({ tarifa, onPriceSave, disabled }: TarifaPriceSummaryProps) => {
-  const currency = tarifa.moneda === "soles" ? "S/" : "$";
+  const currency = catalogCurrency(tarifa.moneda) === "PEN" ? "S/" : "$";
   const prices = tariffPriceOptions(tarifa);
   const [selectedMode, setSelectedMode] = useState<string | null>(null);
   const activeMode = prices.some(price => price.tipoPrecio === selectedMode) ? selectedMode : prices[0]?.tipoPrecio;

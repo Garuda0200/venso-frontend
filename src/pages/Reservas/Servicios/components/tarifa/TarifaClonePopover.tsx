@@ -20,6 +20,7 @@ import {
 } from "../../utils/constants";
 import { formatCurrency } from "../../utils/formatters";
 import { tariffPriceOptions } from "../../../../../utils/servicePricingType";
+import { catalogCurrency, tariffConversionPending } from "../../../../../utils/catalogCurrency";
 import "./TarifaClonePopover.scss";
 
 const STANDARD_KEY = "estandar";
@@ -125,10 +126,11 @@ const TarifaClonePopover = ({
       );
     });
   }, [existingTarifas, sourceTarifa?.agency_ids, sourceTarifa?.anio]);
-  const used = useMemo(
-    () => getUsedCombinations(scopedExistingTarifas),
-    [scopedExistingTarifas],
-  );
+  const used = useMemo(() => {
+    const sourceModes = new Set(tariffPriceOptions(sourceTarifa).map(option => option.tipoPrecio));
+    return getUsedCombinations(scopedExistingTarifas.filter(tariff =>
+      tariffPriceOptions(tariff).some(option => sourceModes.has(option.tipoPrecio))));
+  }, [scopedExistingTarifas, sourceTarifa]);
   const otherTipo =
     sourceTarifa?.tipo_tarifa === TIPOS_TARIFA.INTERNA
       ? TIPOS_TARIFA.EXTERNA
@@ -279,6 +281,10 @@ const TarifaClonePopover = ({
 
   const handleClone = async () => {
     if (validationError || isSubmitting) return;
+    if (tariffConversionPending(sourceTarifa)) {
+      setValidationError("Completa la tasa de cambio de la tarifa original antes de duplicarla.");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -291,7 +297,7 @@ const TarifaClonePopover = ({
     }
   };
 
-  const currencySymbol = sourceTarifa.moneda === "soles" ? "S/" : "$";
+  const currencySymbol = catalogCurrency(sourceTarifa.moneda) === "PEN" ? "S/" : "$";
   const sourceTemp = getTemporadaLabel(sourceTarifa.tiene_temporada, sourceTarifa.temporada);
   const SourceTempIcon = sourceTemp.icon;
   const destStatus = getTipoStatus(tipoTarifa, used);

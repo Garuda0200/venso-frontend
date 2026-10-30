@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // RESERVA SERVICE EDITOR - Unified Row Layout + Design Tokens
 // ============================================================
 
@@ -1293,6 +1293,42 @@
       margin-left: auto;
       color: #64748b;
       font-weight: 700;
+    }
+  }
+}
+
+.reservation-pricing-review {
+  display: grid;
+  gap: .2rem;
+  margin-top: .5rem;
+  padding: .5rem .65rem;
+  color: #865400;
+  background: #fff8e9;
+  border: 1px solid #f4deb0;
+  border-radius: .5rem;
+  font-size: .74rem;
+}
+
+@media (max-width: 600px) {
+  .reserva-service-editor .day-container .day-header {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: .65rem;
+    .day-info {
+      flex: 1 1 100%;
+      min-width: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem .6rem;
+      .day-title {
+        flex: 1 1 65%;
+        min-width: 0;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+        overflow-wrap: anywhere;
+      }
+      .day-date { flex: 0 0 auto; }
     }
   }
 }

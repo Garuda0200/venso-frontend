@@ -17,6 +17,10 @@
     ]
   },
   "include": [
+    "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/packageImportPreparation.test.ts",
+    "src/pages/Reservas/VouchersReserva/components/ReservaServiceEditor/utils/__tests__/nativeReservationCurrency.test.ts",
+    "src/pages/Reservas/VouchersReserva/components/ReservaServiceEditor/utils/__tests__/quotedServiceMatch.test.ts",
+
     "src/pages/Reservas/Calendario/utils/__tests__/bibliaExcursionSelection.test.ts",
     "src/components/Ventas/Cotizaciones/EdicionCotizacion/components/AdditionalCosts/__tests__/additionalCostsRender.test.tsx",
     "src/pages/Ventas/Cotizaciones/utils/__tests__/quotationFocus.test.ts",

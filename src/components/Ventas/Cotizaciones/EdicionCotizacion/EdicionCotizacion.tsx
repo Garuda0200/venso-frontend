@@ -1,4 +1,5 @@
 import { repriceServicesPreservingOperationalAssignments } from "./utils/passengerAwareServiceRepricing";
+import { prepareImportedPackageItinerary } from "./utils/packageImportPreparation";
 "use client";
 
 import React, {
@@ -2876,33 +2877,8 @@ export function EdicionCotizacion({
       }
 
       try {
-        const hydratedItinerary = hydrateItinerarioFromDB(
-          selectedPkg.itinerario,
-        );
-        const totalPax =
-          (peopleCount.adults || 0) + (peopleCount.children || 0);
-
-        const adjustedItinerary = hydratedItinerary.map((day) => {
-          const servicios = (day.servicios || []).filter(
-            (s) => !isHotelService(s),
-          );
-
-          const normalizedServicios = servicios.map((s) => ({
-            ...s,
-            assignedPassengerIds: [],
-            assignedPassengerCount: 0,
-            beneficiariosAdultos: undefined,
-            beneficiariosNinos: undefined,
-            passengerSelection: {
-              ...(s.passengerSelection || {}),
-              selectedIds: [],
-              assignedPassengerCount: 0,
-            },
-            tariff: { ...(s.tariff || {}) },
-          }));
-
-          return { ...day, servicios: normalizedServicios };
-        });
+        const totalPax = (peopleCount.adults || 0) + (peopleCount.children || 0);
+        const adjustedItinerary = prepareImportedPackageItinerary(selectedPkg.itinerario);
 
         // Al importar se ajustan automáticamente las movilidades cuya
         // capacidad sea inferior a la cantidad de pasajeros. El reajuste

@@ -1,3 +1,4 @@
+import { convertTarifaToDollars } from "../../utils/tariffCurrency";
 import { useState, useEffect, useMemo, useRef } from "react";
 import {
   FaSearch,
@@ -1660,6 +1661,13 @@ const ServicePicker = ({
         cleanChildService,
         actualTariff,
       });
+    }
+
+    // Every entry point must preserve missing conversion input as pending.
+    actualTariff = convertTarifaToDollars(actualTariff);
+    if (actualTariff?.conversionPending) {
+      alert(actualTariff.conversionPendingReason || "Completa la tasa de cambio de la tarifa.");
+      return;
     }
 
     // CORREGIR: Extraer el precio correcto basado en packageType

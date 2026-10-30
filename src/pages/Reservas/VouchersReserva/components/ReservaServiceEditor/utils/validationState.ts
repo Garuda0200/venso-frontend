@@ -33,6 +33,9 @@ export const applyQuotedServiceValidation = (
       assignedService?.tariff ||
       null,
     validationSource: validation.source || "quoted_fallback",
+    validationChildPricingSource: validation.child_pricing_source || null,
+    validationReviewRequired: validation.review_required === true,
+    validationWarnings: Array.isArray(validation.warnings) ? validation.warnings.filter(message => typeof message === "string") : [],
     validationTariffId: validation.tariff_id ?? null,
     validationTariffYear: validation.tariff_year ?? null,
     needsUnassign: false,

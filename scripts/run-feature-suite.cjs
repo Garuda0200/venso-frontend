@@ -6,6 +6,11 @@ const root = path.resolve(__dirname, "..");
 const tmpDir = path.join(root, ".tmp-feature-tests");
 
 const testSuites = [
+  { name: "preparación de paquetes", tests: ["src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/packageImportPreparation.test.js"] },
+  { name: "reservas nativas e identidad", tests: [
+    "src/pages/Reservas/VouchersReserva/components/ReservaServiceEditor/utils/__tests__/nativeReservationCurrency.test.js",
+    "src/pages/Reservas/VouchersReserva/components/ReservaServiceEditor/utils/__tests__/quotedServiceMatch.test.js",
+  ] },
   {
     name: "documentos e identidad",
     tests: [
@@ -106,7 +111,7 @@ const testSuites = [
     ],
   },
   {
-    name: "contabilidad e integración",
+    name: "contabilidad e integraciÃ³n",
     tests: [
       "src/services/__tests__/pendingPaymentService.test.js",
       "src/services/__tests__/paymentDetailRead.test.js",
@@ -140,7 +145,7 @@ const run = (command, args, label) => {
   });
   if (result.error) throw result.error;
   if (result.status !== 0) {
-    throw new Error(`${label || command} terminó con código ${result.status}`);
+    throw new Error(`${label || command} terminÃ³ con cÃ³digo ${result.status}`);
   }
 };
 
@@ -153,8 +158,8 @@ try {
   );
 
   // Node 22 interpreta un CommonJS emitido que conserva `import.meta` como ESM.
-  // Solo ajustamos el artefacto temporal de tests: el código fuente/Vite conserva
-  // import.meta.env y su comportamiento de producción sin cambios.
+  // Solo ajustamos el artefacto temporal de tests: el cÃ³digo fuente/Vite conserva
+  // import.meta.env y su comportamiento de producciÃ³n sin cambios.
   const constantsPath = path.join(tmpDir, "src", "utils", "constants.js");
   if (fs.existsSync(constantsPath)) {
     const envLiteral = process.env.VITE_EXCHANGE_RATE

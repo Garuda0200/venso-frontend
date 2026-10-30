@@ -62,11 +62,11 @@ export const filterTariffsForContext = (
     });
 
     if (tarifas.length === 0) return [];
-    if (normalizedAgencyId || tarifas.length === 1) {
+    if (tarifas.length === 1) {
       return [{ ...item, tarifas }];
     }
 
-    // Sin filtro de agencia cada tarifa permanece como opción independiente;
+    // Cada tarifa mantiene su modalidad y moneda aunque comparta agencia;
     // no se pierde su agency_ids ni se fusionan precios de agencias distintas.
     return tarifas.map((tarifa, index) => ({
       ...item,
@@ -161,11 +161,11 @@ export const prepareServicePickerCatalogRows = (
     // El servicio siempre permanece en el catálogo aunque no tenga la tarifa
     // exacta. La ausencia de precio se resuelve visualmente en ChildServicePanel.
     if (selectedTariffs.length === 0) return [decorate([])];
-    if (normalizedAgencyId || selectedTariffs.length === 1) {
+    if (selectedTariffs.length === 1) {
       return [decorate(selectedTariffs)];
     }
 
-    // En catálogo abierto, cada tarifa exacta conserva su contexto de agencia
+    // Cada tarifa exacta conserva su contexto, moneda y modalidad por separado
     // como una opción independiente para no fusionar precios distintos.
     return selectedTariffs.map((tariff, index) => decorate([tariff], index));
   });

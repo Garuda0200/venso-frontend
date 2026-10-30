@@ -1,3 +1,8 @@
+import { sharedPriceFlag, normalizePricingType } from "../../../../../../utils/servicePricingType";
+import {
+  assignedPaymentCurrency, convertPaymentPricing,
+  storedPaymentCurrency, paymentCurrency, positiveAssignedRate, roundPaymentMoney,
+} from "../../../../../../utils/paymentCurrency";
 /**
  * Utility functions for ReservaServiceEditor
  * Pure functions with no React dependencies
@@ -234,13 +239,14 @@ export const getTariffBreakdown = (tariff = {}, passengerSelection = {}) => {
       ? childrenSubtotal / childrenCount
       : null;
 
-  const baseTotal = parseFloat(
-    tariff.precio_original_with_child_extras ??
-      tariff.precio_original ??
-      tariff.precio ??
-      0,
-  );
-  const total = baseTotal || adultsSubtotal + childrenSubtotal;
+  const persistedTotal = tariff.precio_original_with_child_extras;
+  const hasPersistedTotal = persistedTotal !== undefined && persistedTotal !== null && persistedTotal !== "";
+  const adultTotal = tariff.precio_original !== undefined && tariff.precio_original !== null && tariff.precio_original !== ""
+    ? Number(tariff.precio_original) : adultsSubtotal;
+  // A stored zero is intentional; a missing total is derived from this row's beneficiaries.
+  const total = hasPersistedTotal && Number.isFinite(Number(persistedTotal))
+    ? Number(persistedTotal)
+    : (adultsCount > 0 && Number.isFinite(adultTotal) ? adultTotal : 0) + childrenSubtotal;
 
   return {
     hasAdults: adultsCount > 0 && adultUnitPrice != null,
@@ -698,15 +704,13 @@ export const buildAssignedFlatPricingState = ({
     ),
   );
   const adultUnitPrice = round2(parseFloat(tariff?.precio || 0));
-  const assignedPrecioTotal = round2(
-    parseFloat(
-      tariff?.precio_original_with_child_extras ?? tariff?.precio_original,
-    ) ||
-      (sharedPriceFlag(sharedPrice) === true
-        ? assignedPrecioServicio + childExtrasTotal
-        : adultUnitPrice * Math.max(1, assignedBeneficiariosAdultos.length || 1) +
-          childExtrasTotal),
-  );
+  const storedTotal = tariff?.precio_original_with_child_extras;
+  const hasStoredTotal = storedTotal !== undefined && storedTotal !== null && storedTotal !== "" && Number.isFinite(Number(storedTotal));
+  const assignedPrecioTotal = round2(hasStoredTotal ? Number(storedTotal) : (
+    sharedPriceFlag(sharedPrice) === true
+      ? (assignedBeneficiariosAdultos.length ? assignedPrecioServicio : 0) + childExtrasTotal
+      : adultUnitPrice * assignedBeneficiariosAdultos.length + childExtrasTotal
+  ));
 
   return {
     assignedPrecioServicio,
@@ -720,27 +724,87 @@ export const buildAssignedFlatPricingState = ({
   };
 };
 
-/**
- * Calcular totales del día
- */
-export const calculateDayTotal = (services) => {
-  if (!Array.isArray(services)) return 0;
-  return services.reduce((total, service) => {
-    if (service.isAssigned && service.assignedService) {
-      const breakdown = getTariffBreakdown(
-        service.assignedService.tariff || service.assignedTariff,
-        getAssignedPassengerSelectionForService(service),
-      );
-      return total + breakdown.total;
-    } else if (service.isCustomService && service.tariff) {
-      const breakdown = getTariffBreakdown(
-        service.tariff,
-        getAssignedPassengerSelectionForService(service),
-      );
-      return total + breakdown.total;
-    }
-    return total;
-  }, 0);
+/** True for any committed obligation, even if a legacy wrapper omits its ID. */
+export const hasCommittedReservationPayment = (service: any = {}) => {
+  const committed = (request: any = {}) => ["pending", "paid"].includes(String(request?.status || "").trim().toLowerCase()) || Boolean(request?.movimiento_id || request?.movimientoId);
+  if ([service.isPaid, service.is_paid, service.assignedService?.isPaid,
+    service.assignedService?.is_paid, service.assigned_service?.is_paid].some(value => value === true)) return true;
+  return [service.paymentRequest, service.payment_request,
+    service.assignedService?.paymentRequest, service.assignedService?.payment_request,
+    service.assigned_service?.payment_request,
+    {status: service.paymentStatus}, {status: service.payment_status},
+    {movimiento_id: service.movimiento_id, movimientoId: service.movimientoId}].some(request => committed(request));
+};
+
+/** Change native operating amounts together; the quoted service stays untouched. */
+export const changeReservationServiceCurrency = (service: any, currency: string, { rate }: {rate?: unknown} = {}) => {
+  if (hasCommittedReservationPayment(service)) throw new Error("El servicio tiene una solicitud pendiente o un pago; no se puede cambiar su moneda o TC.");
+  const target = paymentCurrency(currency), source = assignedPaymentCurrency(service);
+  const exchangeRate = positiveAssignedRate(rate);
+  if (!exchangeRate) throw new Error("Confirma un TC positivo de PEN por USD antes de guardar.");
+  const selection = getAssignedPassengerSelectionForService(service);
+  const tariff = service.assignedTariff || service.assignedService?.tariff || (service.isCustomService ? service.tariff : {}) || {};
+  const mode = normalizePricingType(service.assignedTipoPrecio ?? service.assigned_tipo_precio ?? service.assignedService?.assignedTipoPrecio ?? service.assignedService?.tipoPrecio ?? service.tipoPrecio) || "privado";
+  const flat = buildAssignedFlatPricingState({ tariff, passengerSelection: selection, tipoPrecio: mode });
+  const pricing = convertPaymentPricing({
+    currency: source,
+    adultUnitPrice: flat.assignedPrecioServicio,
+    childRows: flat.assignedBeneficiariosNinos,
+    currencyConversion: service.assignedCurrencyConversion,
+  }, target, exchangeRate);
+  const childPrices = Object.fromEntries(pricing.childRows.map(row => [row.id, row.precio]));
+  const nextSelection = { ...selection, assignedChildExplicitPriceMap: childPrices, preciosNinos: childPrices,
+    assignedChildExplicitPriceSum: round2(pricing.childRows.reduce((sum, row) => sum + Number(row.precio), 0)),
+    assignedChildExplicitCount: pricing.childRows.length,
+    pricingMode: pricing.childRows.length ? "fixed" : selection.pricingMode,
+  };
+  const adultCount = flat.assignedBeneficiariosAdultos.length;
+  const adultTotal = adultCount ? round2(mode === "compartido" ? pricing.adultUnitPrice : pricing.adultUnitPrice * adultCount) : 0;
+  const childTotal = nextSelection.assignedChildExplicitPriceSum;
+  const moneda = storedPaymentCurrency(target), assignedRate = target === "USD" ? 1 : exchangeRate;
+  const nextTariff = { ...tariff, moneda, tasa_cambio: assignedRate, tasaCambio: assignedRate,
+    precio: mode === "compartido" ? round2(adultCount ? adultTotal / adultCount : pricing.adultUnitPrice) : pricing.adultUnitPrice,
+    precio_original: mode === "compartido" && !adultCount ? pricing.adultUnitPrice : adultTotal,
+    childExtrasTotal: childTotal, precio_original_with_child_extras: round2(adultTotal + childTotal),
+    passengerSelection: nextSelection, assignedPassengerSelection: nextSelection,
+  };
+  const nextFlat = buildAssignedFlatPricingState({ tariff: nextTariff, passengerSelection: nextSelection, tipoPrecio: mode });
+  const next: any = { ...service, ...nextFlat,
+    assignedMoneda: moneda, assigned_moneda: moneda,
+    assignedTasaCambio: assignedRate, assigned_tasa_cambio: assignedRate,
+    assignedTipoPrecio: mode, assigned_tipo_precio: mode,
+    assignedTariff: nextTariff, assignedPassengerSelection: nextSelection,
+    assignedCurrencyRate: exchangeRate, assignedCurrencyConversion: pricing.currencyConversion,
+    assignedService: { ...service.assignedService, ...nextFlat, moneda,
+      assignedMoneda: moneda, assigned_moneda: moneda, assignedTasaCambio: assignedRate, assigned_tasa_cambio: assignedRate,
+      assignedTipoPrecio: mode, assigned_tipo_precio: mode, tipoPrecio: mode,
+      tariff: nextTariff, assignedTariff: nextTariff, passengerSelection: nextSelection, assignedPassengerSelection: nextSelection,
+    },
+  };
+  if (service.isCustomService) next.tariff = nextTariff;
+  return next;
+};
+
+/** Native totals are grouped; a mixed day has no scalar grand total. */
+export const calculateDayTotals = (services: any[] = []) => {
+  const totals: Record<string, number> = {};
+  for (const service of Array.isArray(services) ? services : []) {
+    if (!(service.isAssigned || service.is_assigned || service.isCustomService)) continue;
+    const tariff = service.assignedTariff || service.assignedService?.tariff || (service.isCustomService ? service.tariff : null);
+    const stored = service.assignedPrecioTotal ?? service.assigned_precio_total ?? service.assignedService?.assignedPrecioTotal ?? service.assignedService?.assigned_precio_total;
+    const amount = stored ?? (tariff ? getTariffBreakdown(tariff, getAssignedPassengerSelectionForService(service)).total : null);
+    if (amount == null) continue;
+    const currency = assignedPaymentCurrency(service);
+    totals[currency] = roundPaymentMoney((totals[currency] || 0) + roundPaymentMoney(amount));
+  }
+  return totals;
+};
+
+/** Compatibility for single-currency callers. Mixing currencies must be explicit. */
+export const calculateDayTotal = (services: any[]) => {
+  const totals = Object.values(calculateDayTotals(services));
+  if (totals.length > 1) throw new Error("El día contiene PEN y USD; usa los totales por moneda.");
+  return totals[0] ?? 0;
 };
 
 /**
@@ -820,4 +884,3 @@ export const getPaymentStatusColor = (service) => {
   }
   return "pending";
 };
-import { sharedPriceFlag } from "../../../../../../utils/servicePricingType";

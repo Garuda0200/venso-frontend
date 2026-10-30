@@ -1,3 +1,6 @@
+import ReservationCurrencyControl from "./ReservationCurrencyControl";
+import { assignedPaymentCurrency, storedPaymentCurrency, formatPaymentMoney } from "../../../../../../utils/paymentCurrency";
+import { hasCommittedReservationPayment } from "../utils/editorHelpers";
 import ServiceTimeControls from "./ServiceTimeControls";
 import FlightCodeField from "../../../../../../components/common/FlightCode";
 /**
@@ -54,6 +57,8 @@ const UnifiedServiceRow = ({
   serviceIndex,
   dayIndex,
   cotService,
+  quotedMatchReason,
+  onCurrencyChange,
   // Price editing
   editingPrice,
   onTogglePriceAdjustment,
@@ -82,6 +87,8 @@ const UnifiedServiceRow = ({
   onOpenReservationRequest = null,
 }) => {
   const [showChildPanel, setShowChildPanel] = useState(false);
+  const assignedCurrency = assignedPaymentCurrency(service);
+  const assignedStoredCurrency = storedPaymentCurrency(assignedCurrency);
   const [showBeneficiaries, setShowBeneficiaries] = useState(false);
 
   const cotTariff =
@@ -286,11 +293,7 @@ const UnifiedServiceRow = ({
   );
   const ticketTipoUsuario = getTicketTipoUsuario(ticketReference);
 
-  const hasActivePayment = !!(
-    service.paymentRequest?.id &&
-    (service.paymentRequest.status === "pending" ||
-      service.paymentRequest.status === "paid")
-  );
+  const hasActivePayment = hasCommittedReservationPayment(service);
   const getChildDisplayName = (id, fallbackIndex = -1) => {
     const childIndex = childIds.indexOf(id);
     const index = childIndex >= 0 ? childIndex : fallbackIndex;
@@ -368,7 +371,7 @@ const UnifiedServiceRow = ({
         ) : service.isCustomService ? (
           <div className="row-cot-name">Servicio adicional</div>
         ) : (
-          <div className="row-cot-name">Sin cotización origen</div>
+          <div className="row-cot-name" role="status">{quotedMatchReason === "ambiguous" ? "Varios servicios de origen; revisa el vínculo" : "Sin cotización de origen identificada"}</div>
         )}
       </div>
 
@@ -556,13 +559,13 @@ const UnifiedServiceRow = ({
                       }
                       title="Click para editar precio"
                     >
-                      {formatCurrency(adultUnitPrice)}
+                      {formatPaymentMoney(adultUnitPrice, assignedCurrency)}
                       <small className="assigned-price-unit">/adulto</small>
                       <MdModeEdit className="price-edit-icon-mini" />
                     </span>
                   ) : (
                     <span className="assigned-price">
-                      {formatCurrency(adultUnitPrice)}
+                      {formatPaymentMoney(adultUnitPrice, assignedCurrency)}
                       <small className="assigned-price-unit">/adulto</small>
                     </span>
                   )}
@@ -582,13 +585,13 @@ const UnifiedServiceRow = ({
                       <>
                         {childPricePerChild > 0 && (
                           <span className="assigned-price-child">
-                            {formatCurrency(childPricePerChild)}
+                            {formatPaymentMoney(childPricePerChild, assignedCurrency)}
                             <small>/niño</small>
                           </span>
                         )}
                         {convertedCount > 0 && adultUnitPrice > 0 && (
                           <span className="assigned-price-child assigned-price-child--adult">
-                            {formatCurrency(adultUnitPrice)}
+                            {formatPaymentMoney(adultUnitPrice, assignedCurrency)}
                             <small>/niño c/a</small>
                           </span>
                         )}
@@ -596,7 +599,7 @@ const UnifiedServiceRow = ({
                     );
                   })()}
                   <span className="assigned-total-label">
-                    Total: {formatCurrency(totalPrice)}
+                    Total: {formatPaymentMoney(totalPrice, assignedCurrency)}
                   </span>
                   {childManagementCount > 0 && (
                     <span
@@ -612,6 +615,12 @@ const UnifiedServiceRow = ({
               )}
             </div>
 
+            <ReservationCurrencyControl service={service} disabled={hasActivePayment || validationBusy}
+              onChange={onCurrencyChange ? (currency, options) => onCurrencyChange(dayIndex, serviceIndex, currency, options) : undefined} />
+            {service.validationReviewRequired && <div role="status" className="reservation-pricing-review">
+              {(service.validationWarnings?.length ? service.validationWarnings : ["Revisa los precios infantiles antes de solicitar el pago."]).map((message, index) => <small key={index}>{message}</small>)}
+            </div>}
+
             {/* Children price sub-panel - using AssignedChildrenPanel component */}
             {showChildPanel &&
               !hasActivePayment &&
@@ -619,6 +628,7 @@ const UnifiedServiceRow = ({
                 <ChildrenPanel
                   className="assigned-child-panel"
                   childIds={childIds}
+                  currency={assignedStoredCurrency}
                   convertedEntries={convertedEntries}
                   childPriceMap={childPriceMap}
                   adultPrice={adultUnitPrice}

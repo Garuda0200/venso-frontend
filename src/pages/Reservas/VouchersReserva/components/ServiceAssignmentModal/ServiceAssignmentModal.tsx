@@ -1,3 +1,4 @@
+import { assignedPaymentCurrency, assignedPaymentExchangeRate, storedPaymentCurrency } from "../../../../../utils/paymentCurrency";
 import { flushFlightCodeDrafts } from "../../../../../utils/flightCodeDrafts";
 import { flightServiceId } from "../../../../../utils/flightOperationalCode";
 import HotelAssignmentModal from "../HotelAssignmentModal/HotelAssignmentModal";
@@ -399,6 +400,10 @@ const clearPersistedTicketAssignment = (service = {}) => ({
   assigned_beneficiarios_ninos: [],
   assignedMoneda: null,
   assigned_moneda: null,
+  assignedTasaCambio: null,
+  assigned_tasa_cambio: null,
+  assignedCurrencyRate: null,
+  assignedCurrencyConversion: null,
   assignedPrecioServicio: null,
   assigned_precio_servicio: null,
   assignedPrecioTotal: null,
@@ -571,9 +576,9 @@ const normalizeReservationPassengerSelection = (
 
 /**
  * Builds flat assigned pricing fields for the backend DTO.
- * Uses the new schema: no precio in adult beneficiaries, division booleans instead.
+ * Uses tipo_precio and assigned_* snapshots; adult beneficiaries have no embedded price.
  */
-const buildFlatAssignedPayload = (service) => {
+export const buildFlatAssignedPayload = (service) => {
   const baseTariff =
     service?.assignedService?.tariff || service?.assignedTariff || {};
   const passengerSelection = getAssignedPassengerSelectionFromService(service);
@@ -664,13 +669,8 @@ const buildFlatAssignedPayload = (service) => {
   );
 
   return {
-    assigned_moneda:
-      baseTariff.moneda ||
-      service?.assignedMoneda ||
-      service?.assigned_moneda ||
-      service?.assignedService?.assignedMoneda ||
-      service?.assignedService?.assigned_moneda ||
-      "dolares",
+    assigned_moneda: storedPaymentCurrency(assignedPaymentCurrency(service)),
+    assigned_tasa_cambio: assignedPaymentExchangeRate(service),
     assigned_precio_servicio: precioServicio,
     assigned_precio_total: precioTotal,
     assigned_igv: Boolean(
