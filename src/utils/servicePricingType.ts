@@ -39,7 +39,9 @@ export function normalizeServicePricingContract(service: any) {
   };
 }
 
-export function tariffPriceOptions(tariff: any, mode: unknown = "mixto") {
+export function tariffPriceOptions(tariff: any, mode: unknown = "mixto", serviceType?: string) {
+  const privateTicket = (serviceType || tariff?.tipo_servicio) === "tickets";
+  if (privateTicket) mode = "privado";
   return (["compartido", "privado"] as ServicePricingType[])
     .filter(type => normalizeDayServiceMode(mode) === "mixto" || type === mode)
     .filter(type => tariff?.[`precio_${type}`] != null && tariff?.[`precio_${type}`] !== "")
@@ -64,7 +66,7 @@ export function cataloguePricingOptions(service: any, mode: unknown, tariffType?
   };
   collect(service, 0);
   return tariffs.filter(tariff => !tariffType || !tariff.tipo_tarifa || tariff.tipo_tarifa === tariffType)
-    .flatMap(tariff => tariffPriceOptions(tariff, mode).map(option => ({
+    .flatMap(tariff => tariffPriceOptions(tariff, mode, service?.typeService || service?.parentService?.typeService).map(option => ({
       ...option,
       amount: ["pen", "soles", "sol"].includes(String(tariff.moneda || "").toLowerCase())
         ? option.amount / Math.max(Number(tariff.tasa_cambio) || 1, 0.01) : option.amount,

@@ -1871,6 +1871,19 @@ const AdditionalCosts = ({
     }),
     days, externalDays, peopleDetails, additionalCosts,
     calculateAdditional: calculateAdditionalCostForAudience, allowNoRoomFallback: effectiveHotelPerRoomPricing.length === 0,
+  }).map((part) => {
+    // The financial ledger returns data-only cohorts and service charges.
+    // Restore their UI metadata here, keeping prices and allocations intact.
+    const isChild = part.audience === "child";
+    const isCharge = part.isServiceCharge || part.audience === "charge";
+    const hasHotel = Number(part.hotel) > 0 && part.roomKey !== "sin-hotel";
+    return {
+      ...part,
+      icon: part.icon || (isCharge ? MdRoomService : isChild ? MdChildCare : hasHotel ? MdHotel : MdPerson),
+      className: part.className || (isChild
+        ? "ac__summary-total-pill--child"
+        : hasHotel ? "ac__summary-total-pill--room" : "ac__summary-total-pill--adult"),
+    };
   });
   const visibleSummaryPayload = useMemo(
     () => buildVisibleSummaryPayload(summaryVisibleParts),

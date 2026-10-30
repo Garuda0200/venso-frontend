@@ -1277,7 +1277,7 @@ const ChildServicePanel = ({
     return groupTicketsByEntrada((searchFilteredServices || []).filter(item => {
       const tarifas = item.tarifas || item.ticket?.tarifas || [];
       return tarifas.some(tariff => (!filterTariffType || tariff.tipo_tarifa === filterTariffType)
-        && tariffPriceOptions(tariff, packageType).length > 0);
+        && tariffPriceOptions(tariff, packageType, category?.id).length > 0);
     }));
   }, [category?.id, searchFilteredServices, filterTariffType, packageType]);
 
@@ -1294,7 +1294,7 @@ const ChildServicePanel = ({
         : allTarifas[0];
       if (!tarifa) return null;
       const converted = convertTarifaToDollars(tarifa);
-      const option = tariffPriceOptions(converted, packageType)[0];
+      const option = tariffPriceOptions(converted, packageType, category?.id)[0];
       if (!option) return null;
       const price = option.amount;
       return {
@@ -1327,7 +1327,7 @@ const ChildServicePanel = ({
         const tarifa = pickTariff(item);
         if (!tarifa) return null;
         const tarifaEnDolares = convertTarifaToDollars(tarifa);
-        const selectedPrice = tariffPriceOptions(tarifaEnDolares, selectedMode)[0];
+        const selectedPrice = tariffPriceOptions(tarifaEnDolares, selectedMode, category?.id)[0];
         if (!selectedPrice) return null;
         const precio = selectedPrice.amount;
         const tarifaInterna = pickTariff(item, "interna");
@@ -1545,7 +1545,7 @@ const ChildServicePanel = ({
               const counters = summarizeTicketGroup(group);
               const selectableModes = Array.from(new Set((group.items || []).flatMap(item => {
                 const info = getTicketDisplayPrice(item);
-                return info ? tariffPriceOptions(info.converted, packageType).map(option => option.tipoPrecio) : [];
+                return info ? tariffPriceOptions(info.converted, packageType, category?.id).map(option => option.tipoPrecio) : [];
               })));
               const hasDualPrices = packageType === "mixto" && selectableModes.length > 1;
               const priceItems = (group.items || [])
@@ -1599,7 +1599,7 @@ const ChildServicePanel = ({
                         >
                           <strong>{procedencia || "por definir"}</strong>
                           <small>{tipoUsuario}</small>
-                          <b>{priceInfo ? tariffPriceOptions(priceInfo.converted, packageType).map(option => `${option.label}: ${formatPrice(option.amount, "dolares")}`).join(" · ") : "—"}</b>
+                          <b>{priceInfo ? tariffPriceOptions(priceInfo.converted, packageType, category?.id).map(option => `${option.label}: ${formatPrice(option.amount, "dolares")}`).join(" · ") : "—"}</b>
                         </span>
                       );
                     })}
@@ -1749,7 +1749,7 @@ const ChildServicePanel = ({
               );
 
               // Manejar clic en toda la tarjeta - seleccionar automáticamente el primer precio
-              const priceChoices = hasTariffs ? tariffPriceOptions(tarifas[0], packageType) : [];
+              const priceChoices = hasTariffs ? tariffPriceOptions(tarifas[0], packageType, category?.id) : [];
               if (hasTariffs && priceChoices.length === 0) return null;
               const handleCardClick = async (requestedMode = null) => {
                 const selectedPrice = priceChoices.find((option) => option.tipoPrecio === requestedMode) || priceChoices[0];
@@ -1792,13 +1792,13 @@ const ChildServicePanel = ({
 
                 const tarifa = tarifas[0];
                 const tarifaEnDolares = convertTarifaToDollars(tarifa);
-                const precio = tariffPriceOptions(tarifaEnDolares, selectedMode)[0]?.amount ?? 0;
+                const precio = tariffPriceOptions(tarifaEnDolares, selectedMode, category?.id)[0]?.amount ?? 0;
                 const tarifaInternaEnDolares =
                   tarifa_interna.length > 0
                     ? convertTarifaToDollars(tarifa_interna[0])
                     : null;
                 const precio_interno = tarifaInternaEnDolares
-                  ? tariffPriceOptions(tarifaInternaEnDolares, selectedMode)[0]?.amount ?? 0
+                  ? tariffPriceOptions(tarifaInternaEnDolares, selectedMode, category?.id)[0]?.amount ?? 0
                   : null;
 
                 onSelectService(

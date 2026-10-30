@@ -41,6 +41,13 @@ export const bibliaActivityService = {
   },
 
 
+  async recommendTours(actividad: Record<string, any>, quotationId?: string | null, signal?: AbortSignal) {
+    const response = await getApi().post(`${BASE_URL}/biblia-actividades/excursiones`, {
+      actividad, cotizacion_id: quotationId || null,
+    }, { signal });
+    return response?.data?.data || [];
+  },
+
   async createBibliaFile(payload: {
     title?: string;
     startDate: string;

@@ -2854,3 +2854,11 @@
   &:hover { background: #eaf6f1; color: #034b3a; }
   &:focus-visible { outline: 2px solid #ff007e; outline-offset: 2px; }
 }
+
+.biblia-inline-editor--excursion { min-width: 260px; max-width: 440px; }
+.biblia-tour-suggestions { display: grid; gap: 8px; white-space: normal;
+  label { display: grid; gap: 4px; font-size: 11px; }
+  select { width: 100%; min-width: 0; padding: 7px; border: 1px solid #d8dfe2; border-radius: 7px; background: #fff; }
+  small { font-size: 10px; color: #65736f; }
+  [role="alert"] { color: #ac124b; }
+}

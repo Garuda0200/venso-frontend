@@ -1,7 +1,8 @@
+import BibliaTourSuggestions from "./components/BibliaTourSuggestions";
 import BibliaQuotationLink from "./components/BibliaQuotationLink";
 import BibliaServiceLinkMode from "./components/BibliaServiceLinkMode";
 import { bibliaModeDraftField, getBibliaServiceLinkMode, isBibliaHotelField, type BibliaServiceLinkMode as LinkMode } from "./utils/bibliaServiceLinkModes";
-import type { BibliaDraftField } from "./utils/bibliaRowDrafts";
+import { bibliaTourDraftContext, type BibliaDraftField } from "./utils/bibliaRowDrafts";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   DndContext,
@@ -162,6 +163,8 @@ const EditableValue = ({
   onCancelField,
   draftValue,
   draftLinkMode,
+  tourSelectionsDraft,
+  recommendationActivity,
   savedVersion,
   busy,
   saveError,
@@ -174,6 +177,8 @@ const EditableValue = ({
   onCancelField: (id: string, field: BibliaDraftField) => void;
   draftValue?: string;
   draftLinkMode?: LinkMode;
+  tourSelectionsDraft?: string;
+  recommendationActivity?: BibliaActivity;
   savedVersion: number;
   busy: boolean;
   saveError?: string;
@@ -236,6 +241,7 @@ const EditableValue = ({
       if (await onCommit(activity)) setEditing(false);
     } else {
       onCancelField(activity.id, field);
+      if (field === "excursion") onCancelField(activity.id, "tourSelections");
       if (isBibliaHotelField(field)) onCancelField(activity.id, bibliaModeDraftField(field));
       setEditing(false);
     }
@@ -272,6 +278,15 @@ const EditableValue = ({
           : visibleValue}
       </button>
     );
+  }
+
+  if (field === "excursion") {
+    return <div className="biblia-inline-editor biblia-inline-editor--excursion" onClick={event=>event.stopPropagation()}>
+      <input className="biblia-edit-input" aria-label="Excursión del día" value={value} onChange={event=>setValue(event.target.value)} disabled={busy} autoFocus />
+      <BibliaTourSuggestions activity={recommendationActivity || activity} excursion={value} selections={tourSelectionsDraft}
+        onChange={value=>onDraftChange(activity,"tourSelections",value)} />
+      {saveError&&<small role="alert">{saveError}</small>}{actions}
+    </div>;
   }
 
   if (isBibliaCatalogField(field)) {
@@ -1189,7 +1204,9 @@ const Calendario = () => {
                             field={field}
                             onCommit={commitField}
                             onDraftChange={draftStore.stage}
-                            draftLinkMode={isBibliaHotelField(field) ? rowDrafts[activity.id]?.values[bibliaModeDraftField(field)] as LinkMode | undefined : undefined}
+                            tourSelectionsDraft={rowDrafts[activity.id]?.values.tourSelections}
+                            recommendationActivity={bibliaTourDraftContext(activity, rowDrafts[activity.id]?.values)}
+                                draftLinkMode={isBibliaHotelField(field) ? rowDrafts[activity.id]?.values[bibliaModeDraftField(field)] as LinkMode | undefined : undefined}
                             onCancelField={draftStore.discardField}
                             draftValue={rowDrafts[activity.id]?.values[field]}
                             savedVersion={rowDrafts[activity.id]?.savedVersion || 0}

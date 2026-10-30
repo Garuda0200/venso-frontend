@@ -17,9 +17,21 @@ interface BibliaDraftSnapshot {
 }
 
 const comparable = (value: unknown) => {
-  const text = String(value ?? "").trim();
+  const text = (Array.isArray(value) ? JSON.stringify(value) : String(value ?? "")).trim();
   return ["", BIBLIA_EMPTY_VALUE, "Sin hora"].includes(text) ? "" : text;
 };
+
+/** Recommendations use the pending row context without saving or changing exports. */
+export function bibliaTourDraftContext(activity: BibliaActivity, values: BibliaCellDrafts = {}): BibliaActivity {
+  const next = { ...activity };
+  for (const field of ["agency", "endorse", "language", "dateKey", "serviceMode"] as const) {
+    if (values[field] !== undefined) next[field] = values[field]!.trim();
+  }
+  if (values.agency !== undefined && next.agency !== activity.agency) next.agencyId = null;
+  const pax = values.pax === undefined ? activity.pax : Number(values.pax);
+  if (Number.isInteger(pax) && pax >= 0) next.pax = pax;
+  return next;
+}
 
 /** Normaliza solo al guardar: un borrador numérico incompleto no se pierde. */
 export function buildBibliaRowChanges(activity: BibliaActivity, values: BibliaCellDrafts): Partial<BibliaActivity> {
@@ -29,6 +41,10 @@ export function buildBibliaRowChanges(activity: BibliaActivity, values: BibliaCe
     if (hotelField) {
       if (text !== "service" && text !== "reference") throw new Error("Selecciona Servicio o Sólo referencia.");
       changes.serviceLinkModes = setBibliaServiceLinkMode((changes.serviceLinkModes ?? activity.serviceLinkModes) as any, hotelField, text);
+    } else if (field === "tourSelections") {
+      const rows = JSON.parse(text || "[]");
+      if (!Array.isArray(rows) || rows.length > 100 || rows.some(row => !row || typeof row.excursionKey !== "string" || !Number.isInteger(row.tourId) || row.tourId <= 0 || !Number.isInteger(row.agencyId) || row.agencyId <= 0)) throw new Error("Selecciona tours válidos para la excursión.");
+      changes.tourSelections = rows;
     } else if (field === "pax") {
       const pax = Number(text || 0);
       if (!Number.isInteger(pax) || pax < 0) throw new Error("PAX debe ser un número entero mayor o igual a cero.");

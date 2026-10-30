@@ -17,6 +17,8 @@
     ]
   },
   "include": [
+    "src/pages/Reservas/Calendario/utils/__tests__/bibliaExcursionSelection.test.ts",
+    "src/components/Ventas/Cotizaciones/EdicionCotizacion/components/AdditionalCosts/__tests__/additionalCostsRender.test.tsx",
     "src/pages/Ventas/Cotizaciones/utils/__tests__/quotationFocus.test.ts",
     "src/tests/userBibliaControls.test.ts",
     "src/tests/magicAdvanceExtras.test.ts",

@@ -1665,7 +1665,7 @@ const ServicePicker = ({
     // CORREGIR: Extraer el precio correcto basado en packageType
     if (actualTariff && actualTariff.precio == null) {
       const currentPackageType =
-        service.packageType || tariff?.selectedPackageType || packageType;
+        activeCategory === "tickets" ? "privado" : service.packageType || tariff?.selectedPackageType || packageType;
       const priceField =
         currentPackageType === "privado"
           ? "precio_privado"

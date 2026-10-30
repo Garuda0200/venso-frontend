@@ -47,6 +47,8 @@ const TarifaForm = ({
   const precioInputRef = useRef<HTMLInputElement | null>(null);
   const { userId } = useAuditInfo();
   const isEditMode = Boolean(tarifa);
+  const isTicket = tipoServicio === "tickets";
+  const visibleModes = isTicket ? ["privado"] as const : TARIFF_MODES;
 
   const initialType = normalizeEditableTariffType(tarifa?.tipo_tarifa);
   const initialCurrency = tarifa?.moneda || "dolares";
@@ -71,9 +73,9 @@ const TarifaForm = ({
     created_by: userId,
   });
 
-  const [enabledModes, setEnabledModes] = useState(() => initialTariffModes(tarifa));
+  const [enabledModes, setEnabledModes] = useState(() => isTicket ? { compartido: false, privado: true } : initialTariffModes(tarifa));
   const [editingMode, setEditingMode] = useState<"compartido" | "privado">(
-    tarifa?.precio_compartido != null ? "compartido" : "privado",
+    !isTicket && tarifa?.precio_compartido != null ? "compartido" : "privado",
   );
 
   const [existingTarifas, setExistingTarifas] = useState<any[]>([]);
@@ -229,6 +231,7 @@ const TarifaForm = ({
   };
 
   const togglePriceMode = (mode: "compartido" | "privado") => {
+    if (isTicket) return;
     const active = !enabledModes[mode];
     setEnabledModes(current => ({ ...current, [mode]: active }));
     if (active) {
@@ -469,7 +472,7 @@ const TarifaForm = ({
         </div>
 
         <div className="tf__mode-chips" role="group" aria-label="Modalidades disponibles">
-          {TARIFF_MODES.map(mode => (
+          {visibleModes.map(mode => (
             <button key={mode} type="button" className={`tf__mode-chip ${enabledModes[mode] ? "active" : ""}`}
               aria-pressed={enabledModes[mode]} onClick={() => togglePriceMode(mode)} disabled={isSubmitting}>
               <span className="tf__mode-chip-check">{enabledModes[mode] ? <FaCheck /> : "+"}</span>
@@ -569,7 +572,7 @@ const TarifaForm = ({
       <div className="tf__summary">
         <span>{formData.anio} · {getTarifaTypeLabel(formData.tipo_tarifa)} · {seasonLabel} · {formData.agency_ids.length} agencia{formData.agency_ids.length === 1 ? "" : "s"}</span>
         <strong>
-          {TARIFF_MODES.filter(mode => enabledModes[mode]).map(mode =>
+          {visibleModes.filter(mode => enabledModes[mode]).map(mode =>
             `${mode === "compartido" ? "Compartido" : "Privado"}: ${currencySymbol} ${toMoneyString(formData[`precio_${mode}`]) || "—"}`,
           ).join(" · ") || "Sin modalidad"}
         </strong>
