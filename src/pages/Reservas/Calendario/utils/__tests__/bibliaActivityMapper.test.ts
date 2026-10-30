@@ -433,3 +433,36 @@ test("Biblia JPG renders directly to a JPEG blob without DOM table capture", asy
 });
 
 console.log("bibliaActivityMapper.test.ts: PASS");
+
+
+test("renumera por fecha los registros vinculados aunque todos traigan dayNumber=1", () => {
+  const dates = ["2026-09-30","2026-09-28","2026-09-27","2026-09-29"];
+  const outer = dates.map((dateKey,index) => ({id:`reverse-${index}`,cotizacion_id:"Q-ORDER",actividad:{
+    id:`stable-${index}`,file:"FILE-ORDER",dateKey,dayNumber:1,order:index+5,pax:2,
+    excursion:`Operación ${dateKey}`,sourceDayId:`stable-day-${index}`,
+  }}));
+  const original = JSON.stringify(outer);
+  for (const start of ["2026-09-28","2026-09-27"]) {
+    const activities = buildBibliaActivitiesFromSnapshots([{id:"Q-ORDER",fechainicio:start}],outer);
+    assert.deepEqual(activities.map(row => row.dateKey), [...dates].sort());
+    const startTime=Date.parse(`${start}T00:00:00Z`);
+    activities.forEach(row => {
+      const expected=(Date.parse(`${row.dateKey}T00:00:00Z`)-startTime)/86400000+1;
+      assert.equal(row.dayNumber,expected);
+      assert.equal(row.overrideRecord.dayNumber,expected);
+      assert.match(row.sourceDayId,/stable-day-/);
+      assert.equal(materializeBibliaOverride(row).dayNumber,expected);
+    });
+  }
+  assert.equal(JSON.stringify(outer),original,"No se muta el snapshot recibido");
+});
+
+test("dos actividades de la misma fecha comparten ordinal y se conserva un día intermedio libre", () => {
+  const rows = ["2026-09-27","2026-09-29","2026-09-29","2026-09-30"].map((dateKey,index) => ({
+    id:`same-${index}`,cotizacion_id:"Q-ORDER",actividad:{dateKey,dayNumber:1,pax:2,id:`same-${index}`},
+  }));
+  const activities=buildBibliaActivitiesFromSnapshots([{id:"Q-ORDER",fechainicio:"2026-09-27"}],rows);
+  assert.deepEqual(activities.map(row => row.dayNumber),[1,3,3,4]);
+  const independent=buildBibliaActivitiesFromSnapshots([], [{id:"free",cotizacion_id:null,actividad:{dateKey:"2026-09-30",dayNumber:1}}]);
+  assert.equal(independent[0].dayNumber,1,"Una fila libre aún no tiene el inicio de un file");
+});

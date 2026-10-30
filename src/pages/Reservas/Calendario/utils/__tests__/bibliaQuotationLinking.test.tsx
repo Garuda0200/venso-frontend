@@ -8,7 +8,7 @@ import { act as legacyAct } from "react-dom/test-utils";
 import { createRoot } from "react-dom/client";
 import { parseHTML } from "linkedom";
 import { buildBibliaEditRecord, getBibliaLinkRecommendations, getBibliaLinkUnavailableReason,
-  getBibliaPendingChangeLabels, quotationSyncCommandRecords } from "../bibliaQuotationLinking";
+  getBibliaPendingChangeLabels, getBibliaLinkDateNotice, getBibliaLinkDateWindow, quotationSyncCommandRecords } from "../bibliaQuotationLinking";
 import { buildBibliaActivitiesFromSnapshots, materializeBibliaOverride } from "../bibliaActivityMapper";
 import { buildBibliaDayExportMatrix } from "../bibliaDayJpegExport";
 import BibliaLinkRecommendations from "../../components/BibliaLinkRecommendations";
@@ -53,9 +53,9 @@ test("bloquea vínculos incompatibles con ventas cerradas y fechas fuera de 120 
   assert.match(getBibliaLinkUnavailableReason(row(), quotation("Q1", { tiene_voucher: true })), /Venta cerrada/);
   assert.match(getBibliaLinkUnavailableReason(row(), quotation("Q1", { source_sales_voucher_id: 1 })), /Venta cerrada/);
   assert.match(getBibliaLinkUnavailableReason(row(), quotation("Q1", { fechainicio: null })), /fecha de inicio/);
-  assert.match(getBibliaLinkUnavailableReason(row("free", "", { dateKey: "2026-08-31" }), quotation()), /fuera/);
+  assert.equal(getBibliaLinkUnavailableReason(row("free", "", { dateKey: "2026-08-31" }), quotation()), "");
   assert.equal(getBibliaLinkUnavailableReason(row("free", "", { dateKey: "2026-12-29" }), quotation()), "");
-  assert.match(getBibliaLinkUnavailableReason(row("free", "", { dateKey: "2026-12-30" }), quotation()), /fuera/);
+  assert.match(getBibliaLinkUnavailableReason(row("free", "", { dateKey: "2026-12-30" }), quotation()), /120 días/);
 });
 
 test("editar servicios guarda Biblia y marca un pendiente sin disparar sincronización", () => {
@@ -206,4 +206,58 @@ test("corregir y resincronizar quita avisos previos sin alterar la señal de vin
   const html = renderToStaticMarkup(<BibliaQuotationSyncPrompt activity={activity} busy={false} onConfirm={() => {}} />);
   assert.match(html, /Vinculado/);
   assert.doesNotMatch(html, /Revisar vínculo/);
+});
+
+
+test("DK0802 permite vincular el 28/09 a la cotización iniciada el 29/09 sin mover otros días", () => {
+  const quote = quotation("COT261002-228", { voucher_code: "DK0802", fechainicio: "2026-09-29", fechafin: "2026-09-30",
+    itinerario: [{ numero: 1 }, { numero: 2 }] });
+  const before = row("28", "", { file: "DK0802", dateKey: "2026-09-28", dayNumber: 1 });
+  assert.equal(getBibliaLinkUnavailableReason(before, quote), "");
+  assert.match(getBibliaLinkDateNotice(before, quote), /28\/09\/2026.*conservarán sus fechas/);
+  assert.equal(getBibliaLinkDateWindow(before, quote).days, 3);
+  const original = JSON.stringify(quote);
+  const recommendations = getBibliaLinkRecommendations(before, [row("29", quote.id, { file: "DK0802" })], [quote]);
+  const html = renderToStaticMarkup(<BibliaLinkRecommendations activity={before} recommendations={recommendations} busy={false} onLink={() => {}} />);
+  assert.doesNotMatch(html, /disabled/);
+  assert.match(html, /El inicio se ampliará/);
+  assert.equal(JSON.stringify(quote), original);
+});
+
+test("el límite considera todo el viaje, también extras, y rechaza fechas inexistentes", () => {
+  const before = row("free", "", { dateKey: "2026-08-31" });
+  assert.equal(getBibliaLinkUnavailableReason(before, quotation("Q1", { fechafin: "2026-12-28" })), "");
+  assert.match(getBibliaLinkUnavailableReason(before, quotation("Q1", { fechafin: "2026-12-29" })), /120 días/);
+  assert.match(getBibliaLinkUnavailableReason(before, quotation("Q1", { itinerario_externo: [{ numero: 120 }] })), /120 días/);
+  assert.match(getBibliaLinkUnavailableReason(row("bad", "", { dateKey: "2026-02-30" }), quotation()), /inválida/);
+  assert.equal(getBibliaLinkDateNotice(row(), quotation()), "");
+});
+
+
+test("el botón recomendado para un día anterior sólo vincula al pulsarlo y respeta el guardado en curso", async () => {
+  const { window, document } = parseHTML('<html><body><div id="root"></div></body></html>');
+  const keys = ["window", "document", "HTMLElement", "IS_REACT_ACT_ENVIRONMENT"];
+  const previous = Object.fromEntries(keys.map(key => [key, globalThis[key]]));
+  Object.assign(globalThis, { window, document, HTMLElement: window.HTMLElement, IS_REACT_ACT_ENVIRONMENT: true });
+  const act = React.act || legacyAct;
+  const root = createRoot(document.getElementById("root"));
+  const activity = row("28", "", { dateKey: "2026-09-28" });
+  const quote = quotation("Q1", { fechainicio: "2026-09-29", fechafin: "2026-09-30" });
+  const recommendations = [{ quotation: quote, records: 2, dates: ["2026-09-29", "2026-09-30"] }];
+  const linked: string[] = [];
+  try {
+    await act(async () => root.render(<BibliaLinkRecommendations activity={activity} recommendations={recommendations} busy={false} onLink={id => linked.push(id)} />));
+    assert.deepEqual(linked, []);
+    const button = document.querySelector("button") as HTMLButtonElement;
+    assert.equal(button.disabled, false);
+    await act(async () => button.click());
+    assert.deepEqual(linked, ["Q1"]);
+    await act(async () => root.render(<BibliaLinkRecommendations activity={activity} recommendations={recommendations} busy onLink={id => linked.push(id)} />));
+    assert.equal((document.querySelector("button") as HTMLButtonElement).disabled, true);
+  } finally {
+    await act(async () => root.unmount());
+    for (const key of keys) {
+      if (previous[key] === undefined) delete globalThis[key]; else globalThis[key] = previous[key];
+    }
+  }
 });

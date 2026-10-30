@@ -1,5 +1,5 @@
 import { getBibliaQuotationLinkLabel } from "../utils/bibliaActivityMapper";
-import { getBibliaLinkRecommendations, getBibliaLinkUnavailableReason } from "../utils/bibliaQuotationLinking";
+import { getBibliaLinkRecommendations, getBibliaLinkUnavailableReason, getBibliaLinkDateNotice } from "../utils/bibliaQuotationLinking";
 import type { BibliaActivity } from "../utils/bibliaActivityMapper";
 
 export default function BibliaLinkRecommendations({ activity, recommendations, busy, onLink }: {
@@ -12,9 +12,11 @@ export default function BibliaLinkRecommendations({ activity, recommendations, b
     <p>Otros registros de {activity.file} ya están vinculados. Puedes usar su cotización.</p>
     {recommendations.map(({ quotation, records, dates }) => {
       const reason = getBibliaLinkUnavailableReason(activity, quotation);
+      const notice = !reason && getBibliaLinkDateNotice(activity, quotation);
       return <div className="biblia-link-recommendations__item" key={String(quotation.id)}>
         <span><b>{getBibliaQuotationLinkLabel(quotation)}</b>
           <small>{quotation.agency_name || ""}{quotation.agency_name ? " · " : ""}{records} registro{records === 1 ? "" : "s"} · {dates.length} día{dates.length === 1 ? "" : "s"}</small>
+          {notice && <small>{notice}</small>}
           {reason && <small className="biblia-link-recommendations__reason">{reason}</small>}
         </span>
         <button type="button" disabled={busy || Boolean(reason)} title={reason || "Vincular este registro a la misma cotización"}

@@ -690,6 +690,14 @@ const recordToActivity = (
 ): BibliaActivity | null => {
   const date = parseBibliaDate(record.dateKey || record.date || record.fecha);
   if (!date) return null;
+  // El ordinal depende del inicio actual del file, nunca del 1 importado.
+  // UTC sobre fechas locales evita cambios de ordinal por horario de verano.
+  const start = parseBibliaDate(quotation.fechainicio ?? quotation.fechaInicio);
+  if (start) {
+    const ordinal = Math.round((Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
+      - Date.UTC(start.getFullYear(), start.getMonth(), start.getDate())) / 86400000) + 1;
+    record = { ...record, dayNumber: ordinal };
+  }
   const sourceType: BibliaSourceType = standaloneRecordId ? "standalone" : "day";
   const excursion = firstText(record.excursion, record.activity, record.actividad, `Día ${record.dayNumber || ""}`) || "Actividad";
   const voucherTarget = resolveBibliaVoucherTarget(quotation);

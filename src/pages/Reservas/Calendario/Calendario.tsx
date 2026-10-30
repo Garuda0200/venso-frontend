@@ -62,7 +62,7 @@ import ParticipantPlanEditor from "./components/ParticipantPlanEditor";
 import { participantNationalityLabel } from "./utils/bibliaNationality";
 import { bibliaParticipantPlanError } from "./utils/bibliaParticipantEditor";
 import { useBibliaRowDrafts } from "./hooks/useBibliaRowDrafts";
-import { buildBibliaEditRecord, getBibliaLinkRecommendations, getBibliaLinkUnavailableReason, quotationSyncCommandRecords } from "./utils/bibliaQuotationLinking";
+import { buildBibliaEditRecord, getBibliaLinkRecommendations, getBibliaLinkUnavailableReason, getBibliaLinkDateNotice, quotationSyncCommandRecords } from "./utils/bibliaQuotationLinking";
 import { bibliaCatalogService, isBibliaCatalogField } from "./services/bibliaCatalogService";
 import {
   BIBLIA_EMPTY_VALUE,
@@ -1072,6 +1072,7 @@ const Calendario = () => {
                     <span>{getBibliaQuotationLinkLabel(quotation)}</span>
                     {voucherCode && <small>Voucher {voucherCode}</small>}
                     {unavailableReason && <small>{unavailableReason}</small>}
+                    {!unavailableReason && <small>{getBibliaLinkDateNotice(activity, quotation)}</small>}
                   </button>
                 );
               })}
