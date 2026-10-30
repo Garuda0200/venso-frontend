@@ -20,7 +20,7 @@ import {
 } from "../../utils/constants";
 import { formatCurrency } from "../../utils/formatters";
 import { tariffPriceOptions } from "../../../../../utils/servicePricingType";
-import { catalogCurrency, tariffConversionPending } from "../../../../../utils/catalogCurrency";
+import { catalogCurrency, identifiedCatalogRate, tariffConversionPending } from "../../../../../utils/catalogCurrency";
 import "./TarifaClonePopover.scss";
 
 const STANDARD_KEY = "estandar";
@@ -85,12 +85,7 @@ const buildCloneData = (
   precio_compartido: sourceTarifa.precio_compartido == null ? null : Number(sourceTarifa.precio_compartido),
   precio_privado: sourceTarifa.precio_privado == null ? null : Number(sourceTarifa.precio_privado),
   moneda: sourceTarifa.moneda || "dolares",
-  tasa_cambio:
-    sourceTarifa.tasa_cambio != null
-      ? parseFloat(sourceTarifa.tasa_cambio)
-      : sourceTarifa.moneda === "soles"
-        ? null
-        : 1.0,
+  tasa_cambio: identifiedCatalogRate(sourceTarifa.tasa_cambio),
 });
 
 const TarifaClonePopover = ({
@@ -281,7 +276,7 @@ const TarifaClonePopover = ({
 
   const handleClone = async () => {
     if (validationError || isSubmitting) return;
-    if (tariffConversionPending(sourceTarifa)) {
+    if (tariffConversionPending(sourceTarifa) || identifiedCatalogRate(sourceTarifa.tasa_cambio) == null) {
       setValidationError("Completa la tasa de cambio de la tarifa original antes de duplicarla.");
       return;
     }

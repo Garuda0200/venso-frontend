@@ -1,3 +1,5 @@
+import CatalogWorkspace from "../common/CatalogWorkspace";
+import { useProviderCatalogue } from "../../context/ServiciosProviderContext";
 ﻿import React, { useState, useEffect } from "react";
 import {
   FaSearch,
@@ -29,6 +31,7 @@ const GuiaList = () => {
   const [guias, setGuias] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { provider: activeGuia, openProvider, closeProvider } = useProviderCatalogue("guias", guias, loading, error);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({
     key: "calificacion",
@@ -43,7 +46,6 @@ const GuiaList = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showRutasGuia, setShowRutasGuia] = useState(false);
   const [selectedGuia, setSelectedGuia] = useState(null);
   const [dependentEntities, setDependentEntities] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -338,17 +340,16 @@ const GuiaList = () => {
   };
 
   const handleShowRutas = (guia) => {
-    // IMPORTANTE: Asegurarse de que tenemos el objeto completo
-    setSelectedGuia(guia);
-    setShowRutasGuia(true);
+    openProvider(guia);
   };
 
   // Si estamos viendo las rutas de un guía
-  if (showRutasGuia && selectedGuia) {
+  if (activeGuia) {
     return (
       <RutasGuiaList
-        guia={selectedGuia}
-        onBack={() => setShowRutasGuia(false)}
+        key={activeGuia.id_guia || activeGuia.guia?.id_guia}
+        guia={activeGuia}
+        onBack={closeProvider}
         onRefreshParent={loadGuias}
       />
     );
@@ -364,7 +365,7 @@ const GuiaList = () => {
   }
 
   return (
-    <div className="entity-view-container premium-design">
+    <CatalogWorkspace className="entity-view-container premium-design">
       {/* Header Premium */}
       <div className="header-dashboard no-back">
         <div className="header-main-info">
@@ -623,7 +624,7 @@ const GuiaList = () => {
           onSave={handleSaveValoracion}
         />
       )}
-    </div>
+</CatalogWorkspace>
   );
 };
 

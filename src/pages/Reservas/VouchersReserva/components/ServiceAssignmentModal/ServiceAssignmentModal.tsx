@@ -1036,6 +1036,8 @@ const ServiceAssignmentModal = ({
         setFechaFin(formatDateForInput(resolvedTravelDates.end));
         setTravelDateSource(resolvedTravelDates.source);
         setCotizacionMeta({
+          agencyId: Number(cotizacionData?.agency_id || cotizacionData?.agencyId || cotizacionData?.agency?.id) || null,
+          tariffYear: Number(String(getFirstValue(cotizacionData?.fechainicio) || getFirstValue(cotizacionData?.fechafin) || cotizacionData?.createdat || new Date().toISOString()).slice(0, 4)),
           id:
             cotizacionData?.id ||
             fullVoucherData.cotizacion_id ||
@@ -1928,6 +1930,7 @@ const ServiceAssignmentModal = ({
 <button type="button" className="btn-manage-hotels" disabled={isSaving} onClick={()=>setShowHotelAssignments(true)}>Gestionar habitaciones</button>}
 
 <HotelAssignmentModal isOpen={showHotelAssignments} onClose={()=>setShowHotelAssignments(false)} days={voucherItinerary}
+ agencyId={cotizacionMeta?.agencyId} tariffYear={cotizacionMeta?.tariffYear}
  peopleDetails={peopleDetails || {}} totalPassengers={(peopleDetails?.adults?.length || 0)+(peopleDetails?.children?.length || 0)}
  voucherReservaId={voucher?.id} onAddHotelToDays={async (selectedDays,rooms)=>{
   const next=assignHotelSlots(voucherItinerary,selectedDays,rooms,(quoted,room)=>{
@@ -2102,6 +2105,7 @@ const ServiceAssignmentModal = ({
 <button type="button" className="btn-manage-hotels" disabled={isSaving} onClick={()=>setShowHotelAssignments(true)}>Gestionar habitaciones</button>}
 
 <HotelAssignmentModal isOpen={showHotelAssignments} onClose={()=>setShowHotelAssignments(false)} days={voucherItinerary}
+ agencyId={cotizacionMeta?.agencyId} tariffYear={cotizacionMeta?.tariffYear}
  peopleDetails={peopleDetails || {}} totalPassengers={(peopleDetails?.adults?.length || 0)+(peopleDetails?.children?.length || 0)}
  voucherReservaId={voucher?.id} onAddHotelToDays={async (selectedDays,rooms)=>{
   const next=assignHotelSlots(voucherItinerary,selectedDays,rooms,(quoted,room)=>{

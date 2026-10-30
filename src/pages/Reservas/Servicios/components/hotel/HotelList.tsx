@@ -1,3 +1,5 @@
+import CatalogWorkspace from "../common/CatalogWorkspace";
+import { useProviderCatalogue } from "../../context/ServiciosProviderContext";
 ﻿import React, { useState, useEffect } from "react";
 import {
   FaSearch,
@@ -46,6 +48,7 @@ const HotelList = () => {
   const [hoteles, setHoteles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { provider: activeHotel, openProvider, closeProvider } = useProviderCatalogue("hoteles", hoteles, loading, error);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({
     key: "calificacion",
@@ -59,9 +62,6 @@ const HotelList = () => {
   const [selectedHotel, setSelectedHotel] = useState(null);
   const [dependentEntities, setDependentEntities] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Estado para ver las habitaciones de un hotel
-  const [showHabitacionesHotel, setShowHabitacionesHotel] = useState(false);
 
   // Estado para modal de valoración
   const [showValoracionModal, setShowValoracionModal] = useState(false);
@@ -418,16 +418,16 @@ const HotelList = () => {
 
   // Nueva función para manejar la acción de ver habitaciones
   const handleViewHabitaciones = (hotel) => {
-    setSelectedHotel(hotel);
-    setShowHabitacionesHotel(true);
+    openProvider(hotel);
   };
 
   // Si estamos viendo las habitaciones de un hotel
-  if (showHabitacionesHotel && selectedHotel) {
+  if (activeHotel) {
     return (
       <HabitacionesHotelList
-        hotel={selectedHotel}
-        onBack={() => setShowHabitacionesHotel(false)}
+        key={activeHotel.id_hotel}
+        hotel={activeHotel}
+        onBack={closeProvider}
       />
     );
   }
@@ -527,7 +527,7 @@ const HotelList = () => {
   }
 
   return (
-    <div className="entity-view-container premium-design">
+    <CatalogWorkspace className="entity-view-container premium-design">
       {/* Header Premium */}
       <div className="header-dashboard no-back">
         <div className="header-main-info">
@@ -806,7 +806,7 @@ const HotelList = () => {
           onSave={handleSaveValoracion}
         />
       )}
-    </div>
+</CatalogWorkspace>
   );
 };
 

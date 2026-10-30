@@ -1,3 +1,4 @@
+import CatalogWorkspace from "../common/CatalogWorkspace";
 import React, { useState, useEffect, useMemo } from "react";
 import {
   FaPlus,
@@ -374,7 +375,7 @@ const TicketsManager = () => {
   }
 
   return (
-    <div className="entity-view-container premium-design">
+    <CatalogWorkspace className="entity-view-container premium-design">
       {/* Header Premium */}
       <div className="header-dashboard no-back">
         <div className="header-main-info">
@@ -709,7 +710,7 @@ const TicketsManager = () => {
       </Modal>
 
 
-    </div>
+</CatalogWorkspace>
   );
 };
 

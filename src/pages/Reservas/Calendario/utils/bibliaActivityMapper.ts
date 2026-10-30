@@ -815,7 +815,7 @@ export const materializeBibliaOverride = (
   record.serviceLinkModes = normalizeBibliaServiceLinkModes(merged.serviceLinkModes);
   record.tourSelections = merged.tourSelections || [];
   if ("agency" in changes) record.agencyId = null;
-  if (merged.participantPlan) record.participantPlan = merged.participantPlan;
+  if ("participantPlan" in changes || merged.participantPlan) record.participantPlan = merged.participantPlan ?? null;
   if (merged.sourceExcel) record.sourceExcel = merged.sourceExcel;
   return record;
 };

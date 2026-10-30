@@ -1,3 +1,5 @@
+import CatalogWorkspace from "../common/CatalogWorkspace";
+import { useProviderCatalogue } from "../../context/ServiciosProviderContext";
 import React, { useState, useEffect } from "react";
 import {
   FaSearch,
@@ -31,6 +33,7 @@ const TransporteList = () => {
   const [transportes, setTransportes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { provider: activeTransporte, openProvider, closeProvider } = useProviderCatalogue("transportes", transportes, loading, error);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({
     key: "calificacion",
@@ -48,10 +51,6 @@ const TransporteList = () => {
   const [selectedTransporte, setSelectedTransporte] = useState(null);
   const [dependentEntities, setDependentEntities] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Estado para ver las movilidades de un transporte
-  const [showMovilidadesTransporte, setShowMovilidadesTransporte] =
-    useState(false);
 
   // Obtener información de auditoría
   const { userId } = useAuditInfo();
@@ -295,16 +294,16 @@ const TransporteList = () => {
 
   // Función para manejar la acción de ver movilidades
   const handleViewMovilidades = (transporte) => {
-    setSelectedTransporte(transporte);
-    setShowMovilidadesTransporte(true);
+    openProvider(transporte);
   };
 
   // Si estamos viendo las movilidades de un transporte
-  if (showMovilidadesTransporte && selectedTransporte) {
+  if (activeTransporte) {
     return (
       <MovilidadesTransporteList
-        transporte={selectedTransporte}
-        onBack={() => setShowMovilidadesTransporte(false)}
+        key={activeTransporte.id_transporte}
+        transporte={activeTransporte}
+        onBack={closeProvider}
       />
     );
   }
@@ -319,7 +318,7 @@ const TransporteList = () => {
   }
 
   return (
-    <div className="entity-view-container premium-design transport-list-view">
+    <CatalogWorkspace className="entity-view-container premium-design transport-list-view">
       <div className="header-with-actions transport-hero">
         <div className="header-title">
           <FaTaxi className="title-icon" />
@@ -502,7 +501,7 @@ const TransporteList = () => {
           isDeleting={isSubmitting}
         />
       </Modal>
-    </div>
+</CatalogWorkspace>
   );
 };
 

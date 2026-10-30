@@ -25,9 +25,8 @@ export const tariffMatchesAgency = (tariff, agencyId) => {
 /**
  * Filtra las tarifas que puede presentar ServicePicker.
  *
- * `agencyId = null` es deliberado en Venso: el catálogo de cotización puede
- * consumir tarifas vinculadas a cualquier agencia. El año y el tipo de tarifa
- * sí forman parte del contexto comercial visible.
+ * El administrador puede consultar todas las agencias. Los selectores de una
+ * cotización siempre proporcionan su agencia y conservan únicamente sus precios.
  */
 export const filterTariffsForContext = (
   data,

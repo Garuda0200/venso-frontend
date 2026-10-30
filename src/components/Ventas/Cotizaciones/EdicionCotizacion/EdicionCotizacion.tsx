@@ -6569,6 +6569,7 @@ export function EdicionCotizacion({
             preselectedCategory={selectedServiceCategory}
             platform={effectivePlatform}
             agencyId={effectiveAgencyId}
+            agencyName={effectiveAgencyName}
           />,
           document.body,
         )}
@@ -6662,6 +6663,7 @@ export function EdicionCotizacion({
             preselectedCategory="transportes"
             platform={effectivePlatform}
             agencyId={effectiveAgencyId}
+            agencyName={effectiveAgencyName}
           />
       )},
           document.body,

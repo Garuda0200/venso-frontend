@@ -1,3 +1,4 @@
+import CatalogWorkspace from "../common/CatalogWorkspace";
 ﻿import React, { useState, useEffect, useMemo } from "react";
 import {
   FaPlus,
@@ -692,7 +693,7 @@ const HabitacionesHotelList = ({ hotel, onBack }) => {
   };
 
   return (
-    <div className="entity-view-container premium-design">
+    <CatalogWorkspace className="entity-view-container premium-design">
       <div className="back-navigation">
         <button onClick={onBack} className="back-link-btn">
           <FaArrowLeft /> <span>Volver a Hoteles</span>
@@ -966,7 +967,7 @@ const HabitacionesHotelList = ({ hotel, onBack }) => {
         />
       )}
 
-    </div>
+</CatalogWorkspace>
   );
 };
 

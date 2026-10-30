@@ -2862,3 +2862,23 @@
   small { font-size: 10px; color: #65736f; }
   [role="alert"] { color: #ac124b; }
 }
+
+.biblia-file-suggestions {
+  display: grid; gap: .45rem; padding: .65rem; border: 1px solid #f3b7d1; border-radius: 10px;
+  background: #fff7fb; color: #231922; min-width: 0;
+  > small { line-height: 1.4; }
+  > div { display: grid; gap: .4rem; max-height: 220px; overflow: auto; }
+  button { display: grid; gap: .2rem; width: 100%; text-align: left; padding: .55rem;
+    background: #fff; color: inherit; border: 1px solid #eadce4; border-radius: 7px; cursor: pointer;
+    white-space: normal; overflow-wrap: anywhere;
+    &:hover, &:focus-visible { border-color: #ff007f; background: #fff0f7; }
+    > span:last-child { color: #bf005c; font-weight: 700; }
+  }
+}
+.biblia-ticket-picker { min-width: 0; display: grid; gap: .4rem; }
+.biblia-ticket-picker__selected { display: flex; flex-wrap: wrap; gap: .3rem;
+  button { border: 1px solid #f0b4cf; border-radius: 7px; padding: .3rem .45rem; background: #fff2f8;
+    color: #9d0050; cursor: pointer; font: inherit; font-size: .8rem; white-space: normal;
+    &:focus-visible { outline: 2px solid #ff007f; outline-offset: 2px; }
+  }
+}

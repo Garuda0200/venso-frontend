@@ -1,3 +1,6 @@
+import BibliaFileSuggestions from "./components/BibliaFileSuggestions";
+import BibliaTicketPicker from "./components/BibliaTicketPicker";
+import { compactBibliaTickets } from "./utils/bibliaTicketSelection";
 import BibliaTourSuggestions from "./components/BibliaTourSuggestions";
 import BibliaQuotationLink from "./components/BibliaQuotationLink";
 import BibliaServiceLinkMode from "./components/BibliaServiceLinkMode";
@@ -169,6 +172,9 @@ const EditableValue = ({
   busy,
   saveError,
   extraOptions = [],
+  fileActivities = [],
+  fileQuotations = [],
+  rowValues = {},
 }: {
   activity: BibliaActivity;
   field: keyof BibliaActivity;
@@ -183,6 +189,9 @@ const EditableValue = ({
   busy: boolean;
   saveError?: string;
   extraOptions?: string[];
+  fileActivities?: BibliaActivity[];
+  fileQuotations?: Record<string, any>[];
+  rowValues?: Partial<Record<BibliaDraftField, string>>;
 }) => {
   const rawValue = activity[field];
   const [editing, setEditing] = useState(false);
@@ -190,8 +199,21 @@ const EditableValue = ({
   const [options, setOptions] = useState<string[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(false);
   const [optionsError, setOptionsError] = useState(false);
-  useEffect(() => { if (draftValue === undefined) setEditing(false); }, [savedVersion]);
-  const setValue = (next: string) => onDraftChange(activity, field, next);
+  const copiedPrevious = useRef<{ previous: Record<string, string | undefined>; applied: Record<string, string> } | null>(null);
+  const restoreCopiedValues = () => {
+    if (!copiedPrevious.current) return;
+    Object.entries(copiedPrevious.current.previous).forEach(([key, previous]) => {
+      if (rowValues[key as BibliaDraftField] !== copiedPrevious.current?.applied[key]) return;
+      if (previous === undefined) onCancelField(activity.id, key as BibliaDraftField);
+      else onDraftChange(activity, key as BibliaDraftField, previous);
+    });
+    copiedPrevious.current = null;
+  };
+  useEffect(() => { if (draftValue === undefined) { setEditing(false); copiedPrevious.current = null; } }, [savedVersion]);
+  const setValue = (next: string) => {
+    if (field === "file" && next !== value) restoreCopiedValues();
+    onDraftChange(activity, field, next);
+  };
 
   useEffect(() => {
     let active = true;
@@ -211,6 +233,7 @@ const EditableValue = ({
     ? participantNationalityLabel(activity.participantPlan, rawValue)
     : isEmptyBibliaValue(rawValue)
     ? "—"
+    : field === "tickets" ? compactBibliaTickets(rawValue)
     : isTrainField
       ? compactBibliaTrainText(rawValue)
       : String(rawValue ?? "—");
@@ -240,6 +263,7 @@ const EditableValue = ({
       // Se cierra únicamente después de que el servidor acepte el registro.
       if (await onCommit(activity)) setEditing(false);
     } else {
+      if (field === "file") restoreCopiedValues();
       onCancelField(activity.id, field);
       if (field === "excursion") onCancelField(activity.id, "tourSelections");
       if (isBibliaHotelField(field)) onCancelField(activity.id, bibliaModeDraftField(field));
@@ -262,7 +286,7 @@ const EditableValue = ({
         onClick={(event) => { event.stopPropagation(); setEditing(true); }}
         title={isBibliaCatalogField(field) ? "Haz clic para escribir o elegir una opción" : "Haz clic para editar"}
       >
-        {richText && !isTrainField
+        {richText && !isTrainField && field !== "tickets"
           ? richText.map((run, index) => (
             <span
               key={`${index}-${run.text}`}
@@ -288,6 +312,12 @@ const EditableValue = ({
       {saveError&&<small role="alert">{saveError}</small>}{actions}
     </div>;
   }
+
+  if (field === "tickets") return <div className="biblia-inline-editor" onClick={event => event.stopPropagation()}>
+    <BibliaTicketPicker value={value} onChange={setValue} options={mergedOptions} loading={loadingOptions} disabled={busy} />
+    {optionsError && <small role="status">No se pudo cargar el catálogo. Puedes escribir las entradas.</small>}
+    {actions}{saveError && <small role="alert">{saveError}</small>}
+  </div>;
 
   if (isBibliaCatalogField(field)) {
     return (
@@ -338,6 +368,12 @@ const EditableValue = ({
         autoFocus
         title="Pulsa Guardar o Enter para guardar; Escape para cancelar"
       />
+      {field === "file" && <BibliaFileSuggestions activity={activity} code={value} activities={fileActivities}
+        quotations={fileQuotations} disabled={busy} onApply={changes => {
+          if (!copiedPrevious.current) copiedPrevious.current = { previous: Object.fromEntries(Object.keys(changes).map(key => [key, rowValues[key as BibliaDraftField]])), applied: changes };
+          else copiedPrevious.current.applied = changes;
+          Object.entries(changes).forEach(([key, next]) => onDraftChange(activity, key as BibliaDraftField, next));
+        }} />}
       {actions}
       {saveError && <small className="biblia-inline-editor__error" role="alert">{saveError}</small>}
       {loadingOptions && <span className="biblia-inline-editor__loading" aria-label="Cargando opciones">…</span>}
@@ -1202,6 +1238,9 @@ const Calendario = () => {
                           <EditableValue
                             activity={activity}
                             field={field}
+                            fileActivities={field === "file" ? activities : undefined}
+                            fileQuotations={field === "file" ? quotations : undefined}
+                            rowValues={rowDrafts[activity.id]?.values}
                             onCommit={commitField}
                             onDraftChange={draftStore.stage}
                             tourSelectionsDraft={rowDrafts[activity.id]?.values.tourSelections}

@@ -147,7 +147,7 @@ const addBibliaDayExcelWorksheet = ({
       const cellColor = getBibliaExcelCellColor(activity, field);
       // Un texto enriquecido importado no debe reemplazar la selección actual
       // ni publicar las cantidades privadas de nacionalidad.
-      const richText = field === "nationality" ? null : getBibliaExcelRichText(activity, field);
+      const richText = (field === "nationality" || field === "tickets") ? null : getBibliaExcelRichText(activity, field);
       cell.font = { name: "Arial", size: 10, color: { argb: getReadableTextArgb(cellColor) } };
       cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: toArgb(cellColor) } };
       cell.alignment = { horizontal: "left", vertical: "top", wrapText: true };

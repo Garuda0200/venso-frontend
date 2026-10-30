@@ -16,6 +16,7 @@ import {
   getServiciosAgencyScope,
   updateTarifa,
   updateTarifaPrice,
+  updateTarifaForAgency,
 } from "../../services/api";
 import useAuditInfo from "../../hooks/useAuditInfo";
 import { getProtectedDeleteTitle } from "../../utils/serviceProtection";
@@ -26,6 +27,7 @@ import TarifaFormPopover from "./TarifaFormPopover";
 import TarifaPriceSummary from "./TarifaPriceSummary";
 import { catalogCurrency, identifiedCatalogRate } from "../../../../../utils/catalogCurrency";
 import "./TarifasCellRenderer.scss";
+import { useServiciosAgency } from "../../context/ServiciosAgencyContext";
 
 /**
  * Gestor compacto de tarifas embebido en la columna de cada servicio.
@@ -42,6 +44,7 @@ const TarifasCellRenderer = ({
   onTarifasUpdated,
 }) => {
   const { userId } = useAuditInfo();
+  const { agencies } = useServiciosAgency();
   const [deletingTarifa, setDeletingTarifa] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<any>(null);
@@ -106,8 +109,12 @@ const TarifasCellRenderer = ({
     setIsSubmitting(true);
     setFeedback(null);
     try {
-      await updateTarifa(tarifa.id_tarifa, {
-        ...formData,
+      const { editScope, ...changes } = formData;
+      const save = editScope === "agency" && activeAgencyId
+        ? (id, patch) => updateTarifaForAgency(id, activeAgencyId, patch)
+        : updateTarifa;
+      await save(tarifa.id_tarifa, {
+        ...changes,
         updated_by: userId,
       });
       await refreshParent("Tarifa actualizada.");
@@ -146,7 +153,7 @@ const TarifasCellRenderer = ({
     setIsSubmitting(true);
     setFeedback(null);
     try {
-      await updateTarifaPrice(tarifa.id_tarifa, patch);
+      await updateTarifaPrice(tarifa.id_tarifa, patch, activeAgencyId);
       // Keep the confirmed price even if refreshing the catalogue fails.
       try { await onTarifasUpdated(); }
       catch { setFeedback({ type: "error", message: "Precio guardado. Actualiza el catálogo para ver todos los cambios." }); return; }
@@ -180,8 +187,8 @@ const TarifasCellRenderer = ({
     const isProtected = Boolean(tarifa.is_protected_by_voucher);
     const tempLabel = tarifa.tiene_temporada ? tarifa.temporada : "std";
     const exchangeRate =
-      catalogCurrency(tarifa.moneda) === "PEN" && identifiedCatalogRate(tarifa.tasa_cambio) != null
-        ? Number(tarifa.tasa_cambio).toFixed(2)
+      identifiedCatalogRate(tarifa.tasa_cambio) != null
+        ? Number(tarifa.tasa_cambio).toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 6 })
         : null;
     const legacy = tarifa.tipo_tarifa === "cotizacion";
 
@@ -194,8 +201,11 @@ const TarifasCellRenderer = ({
           <span className="cell-badge year" title="Año de tarifa">
             {tarifa.anio || new Date().getFullYear()}
           </span>
-          <span className="cell-badge agencies" title="Agencias vinculadas">
-            {Array.isArray(tarifa.agency_ids) ? tarifa.agency_ids.length : 0} ag.
+          <span className="cell-badge agencies" title={activeAgencyId
+            ? "La edición directa de precios se aplica solo a esta agencia. Usa Editar tarifa para modificar la tarifa compartida."
+            : "Los cambios se aplican a las agencias vinculadas"}>
+            {(tarifa.agency_ids || []).map(Number).map(id => agencies.find(agency => agency.id === id)?.name || `Agencia ${id}`).join(" · ")}
+            {(tarifa.agency_ids || []).length > 1 ? " · Compartida" : " · Propia"}
           </span>
           <span
             className={`cell-badge temp ${tempLabel}`}
@@ -251,7 +261,7 @@ const TarifasCellRenderer = ({
             tarifa={tarifa}
             serviceId={serviceId}
             serviceType={serviceType}
-            agencyId={Number(tarifa.agency_ids?.[0] || activeAgencyId || 0) || null}
+            agencyId={activeAgencyId}
             existingTarifas={existingTarifas.filter(
               (item) => item.id_tarifa !== tarifa.id_tarifa,
             )}

@@ -92,7 +92,8 @@ test("rendered hotel modal preserves native currencies and maps reversed rooms t
     const props=select[Object.keys(select).find(key=>key.startsWith("__reactProps"))];props.onChange({target:{value}});
   });
   try{
-    await React.act(async()=>root.render(React.createElement(HotelModal,{isOpen:true,onClose:()=>{},days,totalPassengers:5,peopleDetails:people,onAddHotelToDays:(indices,assigned)=>{result=assignHotelSlots(days,indices,assigned,(source,service)=>({...source,assigned:service}));}})));
+    rooms.forEach(room=>room.tarifas.forEach(tariff=>Object.assign(tariff,{agency_ids:[1],anio:2026})));
+    await React.act(async()=>root.render(React.createElement(HotelModal,{isOpen:true,agencyId:1,tariffYear:2026,onClose:()=>{},days,totalPassengers:5,peopleDetails:people,onAddHotelToDays:(indices,assigned)=>{result=assignHotelSlots(days,indices,assigned,(source,service)=>({...source,assigned:service}));}})));
     await click("Seleccionar disponibles");await click("Asignar hotel a");
     await click("Elegir categoría sintética");await click("Elegir hotel sintético");
     await click("Triple");await click("Doble");
@@ -133,8 +134,14 @@ async function withHotelFixture(options,run) {
   const hotels=options.hotels || [{id_hotel:5,nombre:"Hotel de prueba",categoria:"3 estrellas",ciudad:"Cusco"}];
   const rooms=options.rooms || [{id_habitacion:10,id_hotel:5,tipo_habitacion:"Doble",capacidad:2,tarifas:[{tipo_tarifa:"interna",moneda:"soles",tasa_cambio:3,precio_compartido:150}]},
     {id_habitacion:11,id_hotel:5,tipo_habitacion:"Triple",capacidad:3,tarifas:[{tipo_tarifa:"interna",moneda:"dolares",precio_compartido:70}]}];
+  rooms.forEach(room=>room.tarifas.forEach(tariff=>Object.assign(tariff,{agency_ids:tariff.agency_ids || [1],anio:2026})));
+  const fetchRooms=options.fetchRooms && (async path=>{
+    const rows=await options.fetchRooms(path);
+    rows.forEach(room=>room.tarifas.forEach(tariff=>Object.assign(tariff,{agency_ids:tariff.agency_ids || [1],anio:2026})));
+    return rows;
+  });
   Object.assign(globalThis,{window,document,HTMLElement:window.HTMLElement,CustomEvent:window.CustomEvent,IS_REACT_ACT_ENVIRONMENT:true,
-    __rooms:{hotels,rooms,passengers:options.passengers,fetchRooms:options.fetchRooms},alert:message=>{throw Error(message);}});
+    __rooms:{hotels,rooms,passengers:options.passengers,fetchRooms},alert:message=>{throw Error(message);}});
   window.confirm=()=>true;
   const root=createRoot(document.getElementById("root"));let saved;
   const click=async text=>React.act(async()=>{
@@ -142,7 +149,7 @@ async function withHotelFixture(options,run) {
     assert.ok(button,text);button.click();
   });
   try {
-    await React.act(async()=>root.render(React.createElement(HotelModal,{isOpen:true,onClose:()=>{},days:options.days,peopleDetails:people,
+    await React.act(async()=>root.render(React.createElement(HotelModal,{isOpen:true,agencyId:options.agencyId ?? 1,tariffYear:2026,onClose:()=>{},days:options.days,peopleDetails:people,
       totalPassengers:people.adults.length+people.children.length,voucherReservaId:options.passengers?"fixture":null,
       ...(options.omitContext ? {days:undefined,peopleDetails:undefined,totalPassengers:undefined} : {}),
       onAddHotelToDays:(indices,rooms)=>{saved={indices,rooms};return options.save?.(indices,rooms);}})));
@@ -276,6 +283,29 @@ test("hotel privado: la revisión cobra por ocupante y conserva soles",async()=>
   assert.match(document.querySelector('.total-value').textContent,/120/);
   assert.match(document.querySelector('.total-value').textContent,/S\//);
   await click("Guardar asignación");assert.equal(getSaved().rooms[0].precioTotal,120);assert.equal(getSaved().rooms[0].assignedMoneda,"soles");
+ });
+});
+
+test("hoteles: la asignación usa el precio de la agencia elegida y conserva su moneda",async()=>{
+ const room={id_habitacion:10,id_hotel:5,tipo_habitacion:"Doble",capacidad:2,tarifas:[
+  {id_tarifa:501,agency_ids:[1],tipo_tarifa:"interna",tipoPrecio:"privado",moneda:"dolares",precio_privado:999},
+  {id_tarifa:502,agency_ids:[2],tipo_tarifa:"interna",tipoPrecio:"privado",moneda:"soles",tasa_cambio:3.75,precio_privado:80},
+  {id_tarifa:503,agency_ids:[2],tipo_tarifa:"externa",tipoPrecio:"privado",moneda:"dolares",precio_privado:888},
+ ]};
+ await withHotelFixture({rooms:[room],agencyId:2,people:{adults:[{id:1},{id:2}],children:[]},days:[{servicios:[fixtureRoom(101,"Doble",["adult:1","adult:2"])]}]},async({document,click,getSaved})=>{
+  await startHotelSelection(click);await click("Doble");await click("Revisar selección");
+  assert.match(document.querySelector('.total-value').textContent,/160/);
+  assert.match(document.querySelector('.total-value').textContent,/S\//);
+  await click("Guardar asignación");assert.equal(getSaved().rooms[0].tariff.id_tarifa,502);
+  assert.equal(getSaved().rooms[0].assignedMoneda,"soles");
+ });
+});
+
+for(const agencyId of [0,99])test(`hoteles: agencia ${agencyId} sin tarifa no recibe precios de otra agencia`,async()=>{
+ await withHotelFixture({agencyId,days:[{servicios:[fixtureRoom(101,"Doble",["adult:1","adult:2"])]}]},async({document,click,getSaved})=>{
+  await click("Seleccionar disponibles");await click("Asignar hotel a");await click("Elegir categoría sintética");
+  assert.equal([...document.querySelectorAll('button')].filter(button=>button.textContent.includes("Elegir hotel sintético")).length,0);
+  assert.equal(getSaved(),undefined);
  });
 });
 

@@ -3,6 +3,7 @@ import { createCotizacion } from "../../pages/Ventas/Cotizaciones/hooks/cotizaci
 import { hydrateItinerarioFromDB, cleanItinerarioForDB } from "../../components/Ventas/Cotizaciones/EdicionCotizacion/utils/itinerarioCleanupUtils";
 import { buildQuotationPricingSnapshotFromCotizacion } from "../../components/Ventas/Cotizaciones/EdicionCotizacion/utils/quotationPricingSnapshot";
 import { resolveQuotationSavePricing } from "../../components/Ventas/Cotizaciones/EdicionCotizacion/utils/quotationSavePricing";
+import { executeTicketPriceEditor } from "./ticketPriceEditorHarness";
 
 interface Catalog {
   agency: number;
@@ -56,7 +57,7 @@ export async function quotationFrontendContractCases(catalog: Catalog) {
   if (![catalog.agency, catalog.transport?.provider, catalog.transport?.service, catalog.ticket,
     ...(catalog.tours || []).flatMap(tour=>[tour.provider,tour.service])]
     .every(value => Number.isSafeInteger(value) && value > 0) || catalog.tours?.length !== 2) throw new Error("Catálogo sintético inválido");
-  const inputs: {name: string; input: any}[] = [];
+  const inputs: {name: string; input: any; beforeEdit?: any}[] = [];
   for (const mode of ["compartido", "privado"] as const) {
     for (const fee of ["0", "0.1", "25"]) for (const freeAdult of [false, true]) {
       for (const smaller of [false, true]) inputs.push({
@@ -104,8 +105,36 @@ export async function quotationFrontendContractCases(catalog: Catalog) {
   imported.additionalCosts=buildImportedPackageFeeState({},"0.1");
   inputs.push({name:"package-import-current-roster-and-fee",input:imported});
 
-  const cases: any[]=[];
-  for (const {name,input} of inputs) {
+  // Exercise the real editor, retaining stale catalogue metadata and the old
+  // flat fields in the input. Do not pre-synchronize the fixture's prices.
+  for (const scope of ["main", "external"]) for (const price of [15, 25.33, 70, 0]) for (const count of [5, 3]) {
+    const editedQuote: any = quoteFor(catalog, "privado", "25", false, false);
+    editedQuote.peopleDetails = { adults: Array.from({ length: 5 }, (_, index) => ({ id: 101 + index, pais: "Perú", nacionalidad: "Perú" })), children: [] };
+    editedQuote.peopleCount = { adults: 5, children: 0 };
+    editedQuote.cantidadpersonas = 5;
+    const ids = editedQuote.peopleDetails.adults.slice(0, count).map((person, index) => `adult:${index}:${person.id}`);
+    const service: any = {
+      id: "edited-contract-ticket", typeService: "tickets", tipoPrecio: "privado",
+      parentService: { typeService: "tickets" },
+      childService: { id_ticket: catalog.ticket, entrada: "FLOW Entrada", procedencia: "nacional", tipo_usuario: "adulto", ticketAdultUnitPrice: 56 },
+      ticketAdultUnitPrice: 56, ticketProcedenciaFilter: "nacional", ticketPassengerTargetGroup: "adult", ticketChildPricingMode: "none",
+      precioServicio: 56, precio_servicio: 56, precioTotal: 56 * count, precio_total: 56 * count,
+      beneficiariosAdultos: ids.map(id => ({ id })), beneficiariosNinos: [], assignedPassengerIds: ids, assignedPassengerCount: ids.length,
+      passengerSelection: { selectedIds: ids, ticketProcedenciaFilter: "nacional", ticketPassengerTargetGroup: "adult" },
+      tariff: { precio: 56, precio_original: 56 * count, moneda: "dolares", tipo_precio: "privado" },
+    };
+    const baseDay = { numero: 1, titulo: "Día base", tipoServicio: "privado", servicios: [] };
+    const beforeDay = { numero: 1, titulo: "Entrada editada", tipoServicio: "privado", servicios: [copy(service)] };
+    const beforeEdit = { ...copy(editedQuote), itinerario: scope === "main" ? [beforeDay] : [copy(baseDay)],
+      itinerario_externo: scope === "external" ? [beforeDay] : [] };
+    const edited = executeTicketPriceEditor(service, price, scope, editedQuote.peopleDetails);
+    const day = { numero: 1, titulo: "Entrada editada", tipoServicio: "privado", servicios: [edited] };
+    editedQuote.itinerario = scope === "main" ? [day] : [baseDay];
+    editedQuote.itinerario_externo = scope === "external" ? [day] : [];
+    inputs.push({ name: `ticket-edited-${scope}-${price}-beneficiaries-${count}`, input: editedQuote, beforeEdit });
+  }
+
+  const buildCase = async (input: any) => {
     const snapshot=buildQuotationPricingSnapshotFromCotizacion(input);
     const average=(audience:string,field:string)=>{
       const count=audience==="adult"?input.peopleCount.adults:input.peopleCount.children;
@@ -123,9 +152,14 @@ export async function quotationFrontendContractCases(catalog: Catalog) {
     const reopened={...prepared,itinerario:hydrateItinerarioFromDB(payload.itinerario),
       itinerario_externo:hydrateItinerarioFromDB(payload.itinerario_externo)};
     delete (reopened as any).pricing_snapshot;
-    cases.push({name,payload,expected:{total:payload.total_final,subtotal:payload.subtotal_final},
+    return {payload,expected:{total:payload.total_final,subtotal:payload.subtotal_final},
       reopenedPricing:resolveQuotationSavePricing(reopened),people:input.peopleDetails,
-      scope:"Production package preparation/repricing, hydration, cleanup, summary snapshot and cotizacionService; mocked HTTP boundary. Browser flows are deferred."});
+      scope:"Production package preparation/repricing, hydration, cleanup, summary snapshot and cotizacionService; mocked HTTP boundary. Browser flows are deferred."};
+  };
+  const cases: any[]=[];
+  for (const {name,input,beforeEdit} of inputs) {
+    cases.push({ name, ...await buildCase(input),
+      ...(beforeEdit ? { initialPayload: (await buildCase(beforeEdit)).payload } : {}) });
   }
   return cases;
 }

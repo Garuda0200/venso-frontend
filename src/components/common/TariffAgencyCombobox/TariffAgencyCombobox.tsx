@@ -12,6 +12,7 @@ type Props = {
   compact?: boolean;
   disabled?: boolean;
   className?: string;
+  agencies?: Agency[];
 };
 
 const normalizeIds = (value: number | number[]) =>
@@ -28,6 +29,7 @@ const TariffAgencyCombobox = ({
   compact = false,
   disabled = false,
   className = "",
+  agencies: providedAgencies,
 }: Props) => {
   const [agencies, setAgencies] = useState<Agency[]>([]);
   const [open, setOpen] = useState(false);
@@ -36,6 +38,10 @@ const TariffAgencyCombobox = ({
   const allSelected = !multiple && Number(value) === 0;
 
   useEffect(() => {
+    if (providedAgencies) {
+      setAgencies(providedAgencies.filter((agency) => agency.active));
+      return;
+    }
     let mounted = true;
     getAgencies(false)
       .then((rows) => {
@@ -46,7 +52,7 @@ const TariffAgencyCombobox = ({
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [providedAgencies]);
 
   useEffect(() => {
     if (!open) return undefined;

@@ -1,3 +1,5 @@
+import CatalogWorkspace from "../common/CatalogWorkspace";
+import { useProviderCatalogue } from "../../context/ServiciosProviderContext";
 import React, { useState, useEffect } from "react";
 import {
   FaSearch,
@@ -29,6 +31,7 @@ const EndosesList = () => {
   const [endoses, setEndoses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { provider: activeEndose, openProvider, closeProvider } = useProviderCatalogue("endoses", endoses, loading, error);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({
     key: "calificacion",
@@ -46,7 +49,6 @@ const EndosesList = () => {
   const [selectedEndose, setSelectedEndose] = useState(null);
   const [dependentEntities, setDependentEntities] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showToursEndose, setShowToursEndose] = useState(false);
 
   // Obtener información de auditoría
   const { userId } = useAuditInfo();
@@ -275,16 +277,16 @@ const EndosesList = () => {
 
   // Nueva función para manejar la acción de ver tours
   const handleViewTours = (endose) => {
-    setSelectedEndose(endose);
-    setShowToursEndose(true);
+    openProvider(endose);
   };
 
   // Si estamos viendo los tours de un endose
-  if (showToursEndose && selectedEndose) {
+  if (activeEndose) {
     return (
       <ToursEndoseList
-        endose={selectedEndose}
-        onBack={() => setShowToursEndose(false)}
+        key={activeEndose.id_endose}
+        endose={activeEndose}
+        onBack={closeProvider}
       />
     );
   }
@@ -299,7 +301,7 @@ const EndosesList = () => {
   }
 
   return (
-    <div>
+    <CatalogWorkspace>
       <div className="header-with-actions">
         <h2>Lista de Endoses</h2>
         <button
@@ -455,7 +457,7 @@ const EndosesList = () => {
           onSave={handleSaveValoracion}
         />
       )}
-    </div>
+</CatalogWorkspace>
   );
 };
 

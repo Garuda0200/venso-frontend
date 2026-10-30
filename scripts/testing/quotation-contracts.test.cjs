@@ -3,8 +3,8 @@ const {generate}=require("./export-quotation-contracts.cjs");
 const catalog={agency:1,transport:{provider:2,service:3},ticket:4,tours:[{provider:5,service:6},{provider:5,service:7}]};
 test("the production frontend pipeline emits a complete synthetic contract matrix",async()=>{
  const cases=await generate(catalog);
- assert.equal(cases.length,29);
- assert.equal(new Set(cases.map(item=>item.name)).size,29);
+ assert.equal(cases.length,45);
+ assert.equal(new Set(cases.map(item=>item.name)).size,45);
  for(const item of cases){
   const p=item.payload;
   assert.equal(p.agency_id,catalog.agency);

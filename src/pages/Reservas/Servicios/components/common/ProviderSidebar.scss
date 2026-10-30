@@ -1,0 +1,45 @@
+.servicios-container.venso-services .services-provider-sidebar {
+  display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden;
+  border: 1px solid #e9e2e8; border-radius: 12px; background: #fff;
+  &__heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 13px 12px 8px;
+    h2 { margin: 0; color: #352430; font-size: 13px; line-height: 1.3; }
+    > span { padding: 3px 7px; border-radius: 7px; background: #fff0f7; color: #b00056; font-size: 10px; font-weight: 700; }
+  }
+  &__select { display: none; }
+  &__manage { display: flex; align-items: center; gap: 7px; min-height: 34px; margin: 0 8px 8px; padding: 7px;
+    border: 1px solid #eee5eb; border-radius: 8px; background: #faf8fa; color: #796773; font: inherit; font-size: 11px; text-align: left; cursor: pointer;
+    &[aria-current="page"] { color: #a70052; background: #fff0f7; border-color: #f4b7d4; }
+  }
+  &__search { position: relative; margin: 0 8px 8px;
+    > svg { position: absolute; top: 50%; left: 9px; width: 11px; color: #a58c9c; transform: translateY(-50%); pointer-events: none; }
+    > input { width: 100%; min-width: 0; height: 34px; min-height: 34px; padding: 7px 8px 7px 27px; border: 1px solid #e9dfe6; border-radius: 8px; background: #fff; font: inherit; font-size: 11px; }
+  }
+  &__list { flex: 1; min-height: 0; overflow-y: auto; padding: 0 7px 8px; scrollbar-width: thin; scrollbar-color: #c5aebb transparent;
+    > p { margin: 10px 5px; color: #8a7783; font-size: 11px; line-height: 1.5; }
+  }
+  &__item { display: flex; align-items: center; justify-content: space-between; gap: 7px; width: 100%; min-height: 48px;
+    padding: 9px 8px; margin-bottom: 3px; border: 1px solid transparent; border-radius: 9px; background: transparent; color: #57424f;
+    font: inherit; text-align: left; cursor: pointer;
+    > span { display: grid; gap: 4px; min-width: 0; }
+    strong { font-size: 12px; line-height: 1.35; overflow-wrap: anywhere; }
+    small { font-size: 10px; line-height: 1.4; color: #96808d; overflow-wrap: anywhere; }
+    > svg { flex-shrink: 0; width: 8px; color: #b29ca9; }
+    &:hover { background: #fff8fb; border-color: #f5d8e6; }
+    &[aria-current="page"] { color: #a70052; background: #fff0f7; border-color: #f3b5d4; box-shadow: inset 3px 0 #ff007e; }
+  }
+  &__loading { display: grid; gap: 6px; padding: 3px;
+    > span { display: block; height: 48px; border-radius: 9px; background: linear-gradient(90deg, #faf6f8, #eee6eb, #faf6f8); background-size: 200% 100%; animation: venso-provider-loading 1.4s ease infinite; }
+  }
+}
+@keyframes venso-provider-loading { to { background-position: -200% 0; } }
+@media (max-width: 760px) {
+  .servicios-container.venso-services .services-provider-sidebar {
+    display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; padding: 8px 10px;
+    &__heading { padding: 0; gap: 6px; h2 { font-size: 11px; } }
+    &__select { display: block; width: 100%; min-width: 0; min-height: 36px; padding: 7px; border: 1px solid #e9dfe6; border-radius: 8px; background: #fff; color: #593c4c; font: inherit; font-size: 12px; }
+    &__manage, &__search, &__list { display: none; }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .servicios-container.venso-services .services-provider-sidebar__loading > span { animation: none; }
+}

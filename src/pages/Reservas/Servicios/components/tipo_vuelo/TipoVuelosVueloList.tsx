@@ -1,3 +1,4 @@
+import CatalogWorkspace from "../common/CatalogWorkspace";
 import React, { useState, useEffect, useMemo } from "react";
 import {
   FaPlus,
@@ -213,7 +214,7 @@ const TipoVuelosVueloList = ({ vuelo, onBack }) => {
   }
 
   return (
-    <div className="entity-view-container premium-design">
+    <CatalogWorkspace className="entity-view-container premium-design">
       {/* Botón Volver */}
       <div className="back-navigation">
         <button onClick={onBack} className="back-link-btn">
@@ -230,7 +231,7 @@ const TipoVuelosVueloList = ({ vuelo, onBack }) => {
             </div>
             <div className="title-text-group">
               <h2 className="main-title">Configuración de Vuelo</h2>
-              <p className="sub-title">Aerolínea: {vuelo.nombre_vuelo}</p>
+              <p className="sub-title">{vuelo.nombre || vuelo.nombre_vuelo}</p>
             </div>
           </div>
         </div>
@@ -441,7 +442,7 @@ const TipoVuelosVueloList = ({ vuelo, onBack }) => {
       </Modal>
 
 
-    </div>
+</CatalogWorkspace>
   );
 };
 

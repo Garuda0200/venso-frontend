@@ -1,3 +1,4 @@
+import CatalogWorkspace from "../common/CatalogWorkspace";
 ﻿import React, { useState, useEffect, useMemo } from "react";
 import {
   FaPlus,
@@ -263,7 +264,7 @@ const ToursEndoseList = ({ endose, onBack }) => {
   }
 
   return (
-    <div className="entity-view-container premium-design">
+    <CatalogWorkspace className="entity-view-container premium-design">
       {/* Botón Volver */}
       <div className="back-navigation">
         <button onClick={onBack} className="back-link-btn">
@@ -280,7 +281,7 @@ const ToursEndoseList = ({ endose, onBack }) => {
             </div>
             <div className="title-text-group">
               <h2 className="main-title">Tours / Paquetes</h2>
-              <p className="sub-title">Endose: {endose.nombre}</p>
+              <p className="sub-title">{endose.nombre_agencia || endose.nombre}</p>
             </div>
           </div>
         </div>
@@ -530,7 +531,7 @@ const ToursEndoseList = ({ endose, onBack }) => {
       </Modal>
 
 
-    </div>
+</CatalogWorkspace>
   );
 };
 

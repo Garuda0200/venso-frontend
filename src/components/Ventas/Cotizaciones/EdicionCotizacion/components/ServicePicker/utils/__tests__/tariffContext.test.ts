@@ -3,6 +3,26 @@ import assert from "node:assert/strict";
 
 import { buildServicePickerTariffRequestParams, filterTariffsForContext, prepareServicePickerCatalogRows } from "../tariffContext";
 
+for (const kind of ["habitacion", "movilidad", "ruta", "tour", "vagones", "tipo_vuelo", "tickets", "restaurante", "servicio_extra"]) {
+  test(`${kind}: a quotation sees its own and explicitly shared prices only`, () => {
+    const year = new Date().getFullYear();
+    const own = { id_tarifa: 1, tipo_tarifa: "externa", anio: year, agency_ids: [7], precio_privado: 0 };
+    const other = { ...own, id_tarifa: 2, agency_ids: [8], precio_privado: 999 };
+    const shared = { ...own, id_tarifa: 3, agency_ids: [7, 8], tiene_temporada: true, temporada: "alta", precio_privado: 50 };
+    const internal = { ...own, id_tarifa: 4, tipo_tarifa: "interna", precio_privado: 10 };
+    const old = { ...own, id_tarifa: 5, anio: year - 1, precio_privado: 888 };
+    const rows = [{ typeService: kind, tarifas: [own, other, shared, internal, old] }];
+    assert.deepEqual(prepareServicePickerCatalogRows(rows, 7, "externa", year).flatMap(row => row.tarifas.map(tariff => tariff.id_tarifa)), [1, 3]);
+    assert.deepEqual(prepareServicePickerCatalogRows(rows, 8, "externa", year).flatMap(row => row.tarifas.map(tariff => tariff.id_tarifa)), [2, 3]);
+    const missing = prepareServicePickerCatalogRows(rows, 9, "externa", year);
+    assert.equal(missing.length, 1);
+    assert.deepEqual(missing[0].tarifas, []);
+    assert.equal(missing[0]._servicepicker_tariff_missing, true);
+    assert.equal(missing[0]._servicepicker_has_alternate_tariff, false);
+    assert.equal(rows[0].tarifas.length, 5);
+  });
+}
+
 const currentYear = new Date().getFullYear();
 
 test("ServicePicker keeps current-year tariffs from every agency when agency scope is open", () => {

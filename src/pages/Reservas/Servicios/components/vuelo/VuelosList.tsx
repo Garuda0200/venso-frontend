@@ -1,3 +1,5 @@
+import CatalogWorkspace from "../common/CatalogWorkspace";
+import { useProviderCatalogue } from "../../context/ServiciosProviderContext";
 import React, { useState, useEffect } from "react";
 import {
   FaSearch,
@@ -28,6 +30,7 @@ const VuelosList = () => {
   const [vuelos, setVuelos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { provider: activeVuelo, openProvider, closeProvider } = useProviderCatalogue("vuelos", vuelos, loading, error);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({
     key: "calificacion",
@@ -45,9 +48,6 @@ const VuelosList = () => {
   const [selectedVuelo, setSelectedVuelo] = useState(null);
   const [dependentEntities, setDependentEntities] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Nuevo estado para ver tipos de vuelo
-  const [showTiposVuelo, setShowTiposVuelo] = useState(false);
 
   // Obtener información de auditoría
   const { userId } = useAuditInfo();
@@ -270,16 +270,16 @@ const VuelosList = () => {
 
   // Nueva función para manejar la acción de ver tipos de vuelo
   const handleViewTiposVuelo = (vuelo) => {
-    setSelectedVuelo(vuelo);
-    setShowTiposVuelo(true);
+    openProvider(vuelo);
   };
 
   // Si estamos viendo los tipos de vuelo
-  if (showTiposVuelo && selectedVuelo) {
+  if (activeVuelo) {
     return (
       <TipoVuelosVueloList
-        vuelo={selectedVuelo}
-        onBack={() => setShowTiposVuelo(false)}
+        key={activeVuelo.id_vuelo}
+        vuelo={activeVuelo}
+        onBack={closeProvider}
       />
     );
   }
@@ -294,7 +294,7 @@ const VuelosList = () => {
   }
 
   return (
-    <div>
+    <CatalogWorkspace>
       <div className="header-with-actions">
         <h2>Lista de Vuelos</h2>
         <button
@@ -453,7 +453,7 @@ const VuelosList = () => {
           onSave={handleSaveValoracion}
         />
       )}
-    </div>
+</CatalogWorkspace>
   );
 };
 

@@ -1,3 +1,4 @@
+import CatalogWorkspace from "../common/CatalogWorkspace";
 ﻿import React, { useState, useEffect, useMemo } from "react";
 import {
   FaPlus,
@@ -536,7 +537,7 @@ const MovilidadesTransporteList = ({ transporte, onBack }) => {
   }
 
   return (
-    <div className="entity-view-container premium-design">
+    <CatalogWorkspace className="entity-view-container premium-design">
       {/* Botón Volver con estilo mejorado */}
       <div className="back-navigation">
         <button onClick={onBack} className="back-link-btn">
@@ -864,7 +865,7 @@ const MovilidadesTransporteList = ({ transporte, onBack }) => {
         />
       )}
 
-    </div>
+    </CatalogWorkspace>
   );
 };
 

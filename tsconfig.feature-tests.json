@@ -17,10 +17,12 @@
     ]
   },
   "include": [
+    "src/pages/Reservas/Servicios/utils/__tests__/providerNavigation.test.tsx",
+    "src/pages/Reservas/Servicios/utils/__tests__/tariffCurrencyForm.test.tsx",
+    "src/pages/Reservas/Servicios/utils/__tests__/agencyTariffWorkspace.test.tsx",
     "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/packageImportPreparation.test.ts",
     "src/pages/Reservas/VouchersReserva/components/ReservaServiceEditor/utils/__tests__/nativeReservationCurrency.test.ts",
     "src/pages/Reservas/VouchersReserva/components/ReservaServiceEditor/utils/__tests__/quotedServiceMatch.test.ts",
-
     "src/pages/Reservas/Calendario/utils/__tests__/bibliaExcursionSelection.test.ts",
     "src/components/Ventas/Cotizaciones/EdicionCotizacion/components/AdditionalCosts/__tests__/additionalCostsRender.test.tsx",
     "src/pages/Ventas/Cotizaciones/utils/__tests__/quotationFocus.test.ts",
@@ -30,6 +32,7 @@
     "src/pages/Ventas/VouchersVenta/components/Steps/PassengerDocuments/__tests__/*.test.tsx",
     "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/zeroAdultChildPricing.test.ts",
     "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/editedTicketPrice.test.ts",
+    "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/ticketPriceEditorSaveFlow.test.ts",
     "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/ticketPackageRoundtrip.test.ts",
     "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/quotationSavePricing.test.ts",
     "src/utils/__tests__/paymentCurrency.test.ts",
@@ -116,6 +119,7 @@
     "src/pages/Reservas/VouchersReserva/utils/__tests__/reservationSummaryServiceMatching.test.ts",
     "src/pages/Reservas/VouchersReserva/utils/__tests__/reservationSummaryDate.test.ts",
     "src/utils/__tests__/reservationHotelModalRuntime.test.ts",
-    "src/components/Contabilidad/__tests__/movementCurrencyCorrection.test.ts"
+    "src/components/Contabilidad/__tests__/movementCurrencyCorrection.test.ts",
+    "src/pages/Reservas/Calendario/utils/__tests__/bibliaFileAndTicketSelection.test.tsx"
   ]
 }

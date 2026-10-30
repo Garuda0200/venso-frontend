@@ -12,6 +12,9 @@ import ServicioExtraList from "./components/servicio_extra/ServicioExtraList";
 import AgencyManager from "./components/agency/AgencyManager";
 import { Agency, getAgencies, getPrimaryAgency } from "../../../services/agencyService";
 import { setServiciosAgencyScope } from "./services/api";
+import { ServiciosAgencyContext } from "./context/ServiciosAgencyContext";
+import ServiciosCategoryTabs from "./components/common/ServiciosCategoryTabs";
+import ServiciosWorkspace from "./components/common/ServiciosWorkspace";
 import "./Servicios.scss";
 import "./components/common/PremiumEntityShared.scss";
 import "./components/common/ServiciosPrimitives.scss";
@@ -22,6 +25,7 @@ import "./components/common/ServiciosFilters.scss";
 import "./components/common/ServiciosPremiumLayout.scss";
 import "./components/common/ServiciosDomainCards.scss";
 import "./components/common/ServiciosWorkspace.scss";
+import "./components/common/CatalogWorkspace.scss";
 
 import {
   FaBuilding,
@@ -32,7 +36,6 @@ import {
   FaPuzzlePiece,
   FaStar,
   FaTicketAlt,
-  FaTimes,
   FaTrain,
   FaUserTie,
   FaUtensils,
@@ -71,8 +74,8 @@ const Servicios = () => {
       const initialAgency = storedAgency || primary || rows[0] || null;
 
       setAgencies(rows);
-      setSelectedAgencyId(initialAgency?.id || null);
-      if (initialAgency?.id) localStorage.setItem(STORAGE_KEY, String(initialAgency.id));
+      setSelectedAgencyId(localStorage.getItem(STORAGE_KEY) === "0" ? 0 : initialAgency?.id || null);
+      if (initialAgency?.id && localStorage.getItem(STORAGE_KEY) !== "0") localStorage.setItem(STORAGE_KEY, String(initialAgency.id));
     } catch (error) {
       console.error("No se pudieron cargar las agencias de servicios", error);
       setAgencyError("No fue posible cargar las agencias. Verifica la conexión con el backend.");
@@ -95,7 +98,7 @@ const Servicios = () => {
   const handleAgenciesChanged = (rows: Agency[]) => {
     const activeRows = rows.filter((agency) => agency.active);
     setAgencies(activeRows);
-    if (!activeRows.some((agency) => agency.id === selectedAgencyId)) {
+    if (selectedAgencyId !== 0 && !activeRows.some((agency) => agency.id === selectedAgencyId)) {
       const fallback = activeRows.find((agency) => agency.is_primary) || activeRows[0] || null;
       setSelectedAgencyId(fallback?.id || null);
       if (fallback?.id) localStorage.setItem(STORAGE_KEY, String(fallback.id));
@@ -212,6 +215,7 @@ const Servicios = () => {
   };
 
   return (
+    <ServiciosAgencyContext.Provider value={{ agencyId: selectedAgencyId, agencies }}>
     <div className={`servicios-container premium-design venso-services ${activeView ? "venso-services--focused" : ""}`}>
       <header className={`services-agency-hero ${activeView ? "services-agency-hero--compact" : ""}`}>
         <div className="services-agency-hero__copy">
@@ -232,13 +236,19 @@ const Servicios = () => {
             <FaBuilding />
             <select
               id="services-agency-select"
-              value={selectedAgencyId || ""}
+              value={selectedAgencyId ?? ""}
               onChange={(event) => {
+                if (event.target.value === "0") {
+                  setSelectedAgencyId(0);
+                  localStorage.setItem(STORAGE_KEY, "0");
+                  return;
+                }
                 const agency = agencies.find((item) => item.id === Number(event.target.value));
                 if (agency) selectAgency(agency);
               }}
               disabled={agencyLoading || agencies.length === 0}
             >
+              <option value={0}>Todas las agencias</option>
               {agencies.map((agency) => (
                 <option key={agency.id} value={agency.id}>
                   {agency.name}
@@ -253,43 +263,15 @@ const Servicios = () => {
             </div>
           )}
         </div>
+        {activeView && <ServiciosCategoryTabs categories={entidades} activeView={activeView} onSelect={setActiveView} />}
       </header>
 
       {agencyError && <div className="services-agency-error">{agencyError}</div>}
 
-      <div className={`services-workspace ${activeView ? "services-workspace--focused" : ""}`}>
-        {activeView && (
-          <nav className="tabs-header-premium tabs-header-premium--focused" aria-label="Catálogos de servicios">
-            <span className="services-navigation-label">CATÁLOGOS</span>
-            <div className="tabs-wrapper">
-              {entidades.map((entity) => (
-                <button
-                  type="button"
-                  key={entity.id}
-                  className={`tab-item-premium ${activeView === entity.id ? "active" : ""}`}
-                  onClick={() => setActiveView(entity.id)}
-                  aria-current={activeView === entity.id ? "page" : undefined}
-                >
-                  <span className="tab-icon">{entity.icon}</span>
-                  <span className="tab-text">{entity.name}</span>
-                </button>
-              ))}
-            </div>
-            <button
-              type="button"
-              className="exit-btn"
-              onClick={() => setActiveView(null)}
-              title="Volver al catálogo"
-            >
-              <FaTimes /> <span>Ver todos</span>
-            </button>
-          </nav>
-        )}
-
-        <div className="main-content-servicios">
+      <ServiciosWorkspace key={activeView || "home"} category={activeView}>
           {agencyLoading ? (
             <div className="services-agency-loading">Preparando catálogos por agencia…</div>
-          ) : !selectedAgencyId ? (
+          ) : selectedAgencyId === null ? (
             <AgencyManager
               selectedAgencyId={selectedAgencyId}
               onSelectAgency={selectAgency}
@@ -300,9 +282,9 @@ const Servicios = () => {
           ) : (
             <div className="entity-view-wrapper">{renderActiveView()}</div>
           )}
-        </div>
-      </div>
+      </ServiciosWorkspace>
     </div>
+    </ServiciosAgencyContext.Provider>
   );
 };
 

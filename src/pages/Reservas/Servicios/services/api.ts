@@ -1,5 +1,6 @@
 import { createApiInstance, handleApiError } from "../../../../utils/apiUtils";
 import SecureStorage from "../../../../utils/secureStorage";
+import { buildTariffCurrencyInput } from "../utils/tariffCurrencyInput";
 import { queryClient } from "../../../../config/queryClient";
 import {
   invalidateCache,
@@ -377,8 +378,7 @@ const buildTariffPayload = (tarifaData) => ({
   temporada: tarifaData.tiene_temporada ? tarifaData.temporada : null,
   precio_compartido: tarifaData.precio_compartido == null ? null : Number(tarifaData.precio_compartido),
   precio_privado: tarifaData.precio_privado == null ? null : Number(tarifaData.precio_privado),
-  moneda: tarifaData.moneda || "dolares",
-  tasa_cambio: Number(tarifaData.tasa_cambio || 1),
+  ...buildTariffCurrencyInput(tarifaData),
   agency_ids: normalizeTariffAgencyIds(tarifaData),
   ...(tarifaData.created_by ? { created_by: tarifaData.created_by } : {}),
   ...(tarifaData.updated_by ? { updated_by: tarifaData.updated_by } : {}),
@@ -413,12 +413,24 @@ export const updateTarifa = async (id, tarifaData) => {
 
 // A price edit is deliberately partial. The backend supplies the authenticated
 // audit user and preserves omitted prices and commercial agency scope.
-export const updateTarifaPrice = async (id, patch: Record<string, number>) => {
+export const updateTarifaForAgency = async (id, agencyId, patch) => {
+  const agency = normalizeAgencyId(agencyId);
+  if (!agency) throw new Error("Selecciona una agencia para guardar su tarifa.");
+  try {
+    const response = await api.put(`turismo/tarifas/${id}/agency/${agency}`, withUpdateAuditFields(patch));
+    try { await invalidateServiciosCaches(TURISMO_ENTITY_TYPES.TARIFA); }
+    catch (error) { console.warn("Tarifa guardada; actualiza el catálogo.", error); }
+    return response.data;
+  } catch (error) { throw handleApiError(error); }
+};
+
+export const updateTarifaPrice = async (id, patch: Record<string, number>, agencyId = null) => {
   const keys = Object.keys(patch);
   if (keys.length !== 1 || !["precio_compartido", "precio_privado"].includes(keys[0]) ||
       !Number.isFinite(patch[keys[0]]) || patch[keys[0]] < 0) {
     throw new Error("El cambio debe contener solo un precio válido.");
   }
+  if (normalizeAgencyId(agencyId)) return updateTarifaForAgency(id, agencyId, patch);
   try {
     const response = await api.put(`turismo/tarifas/${id}`, withUpdateAuditFields(patch));
     // A successful write must not be reported as failed if cache refresh fails.
@@ -963,8 +975,7 @@ export const fetchRutaById = (id) => {
 
 export const fetchRutaByIdWithTarifas = (id) => {
   try {
-    return api
-      .get(`turismo/rutas/${id}/con-tarifas`)
+    return getFresh(`turismo/rutas/${id}/con-tarifas`, {}, true)
       .then((response) => response.data.data || null)
       .catch((error) => handleApiError(error));
   } catch (error) {
@@ -1003,7 +1014,7 @@ export const fetchRutasByGuia = async (guiaId) => {
 // Función para obtener rutas por guía con tarifas
 export const fetchRutasByGuiaWithTarifas = async (guiaId) => {
   try {
-    const response = await getFresh(`/turismo/rutas/guia/${guiaId}/con-tarifas`);
+    const response = await getFresh(`/turismo/rutas/guia/${guiaId}/con-tarifas`, {}, true);
     const data = response.data;
 
     // Si la API devuelve un objeto con propiedad 'data', extraer solo los datos

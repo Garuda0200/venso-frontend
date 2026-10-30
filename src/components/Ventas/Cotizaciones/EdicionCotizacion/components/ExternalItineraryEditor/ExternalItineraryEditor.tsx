@@ -32,6 +32,7 @@ import {
   getPassengerSlotKey,
   getServiceBeneficiarySnapshot, syncQuotedBeneficiariesFromRuntime } from "../../utils/passengerPricingState";
 import { calculateExternalItineraryBreakdown } from "../../utils/cotizacionFinancialSummary";
+import { getServicePricingSnapshot } from "../../utils/servicePricingRuntime";
 import {
   isOperationallyAssignedService,
   preserveOperationallyAssignedServices,
@@ -457,6 +458,11 @@ const ExternalItineraryEditor = ({
 
   const normalizeServiceForDisplay = useCallback(
     (service) => {
+      // Editing a fare must retain this row's selected beneficiaries. Running
+      // the country-cohort builder here can add every eligible passenger.
+      if (detectServiceType(service) === "tickets") {
+        return syncServicePassengerState(service);
+      }
       const [normalized] = normalizeServicesForPeople([service], {
         preserveExistingSelection: true,
       });
@@ -977,17 +983,35 @@ const ExternalItineraryEditor = ({
       newPrecioOriginal = numValue * paxForDivision;
     }
 
-    updateServiceByIndex(dayIndex, serviceIndex, (currentService) => ({
-      ...currentService,
-      tariff: {
-        ...(currentService.tariff || {}),
-        precio: numValue,
-        precio_original: newPrecioOriginal,
-        precio_original_with_child_extras:
-          newPrecioOriginal +
-          parseMoney(currentService.tariff?.childExtrasTotal),
-      },
-    }));
+    updateServiceByIndex(dayIndex, serviceIndex, (currentService) => {
+      const updated = {
+        ...currentService,
+        tariff: {
+          ...(currentService.tariff || {}),
+          precio: numValue,
+          precio_original: newPrecioOriginal,
+          precio_original_with_child_extras:
+            newPrecioOriginal +
+            parseMoney(currentService.tariff?.childExtrasTotal),
+        },
+      };
+      if (serviceType === "tickets") {
+        const shared = (updated.tipoPrecio ?? updated.tariff.tipoPrecio ??
+          updated.tariff.selectedPackageType) === "compartido";
+        updated.precioServicio = shared ? newPrecioOriginal : numValue;
+        updated.precio_servicio = updated.precioServicio;
+        // Display caches must follow the edit too, including explicit zero.
+        updated.precio_adult = numValue;
+        updated.amount_per_adult = newPrecioOriginal;
+        if (updated.tariff.precio_adult !== undefined) {
+          updated.tariff.precio_adult = numValue;
+        }
+        const editedTotal = getServicePricingSnapshot(updated).total;
+        updated.precioTotal = editedTotal;
+        updated.precio_total = editedTotal;
+      }
+      return updated;
+    });
 
     setEditingPrice(INITIAL_EDITING_PRICE);
   }, [

@@ -48,7 +48,7 @@ test("la reorganización conserva agencias, claves por catálogo y operaciones p
   const page = source("Servicios.tsx");
   assert.match(page, /setServiciosAgencyScope\(selectedAgencyId\)/);
   assert.match(page, /key=\{scopedKey\}/);
-  assert.match(page, /aria-current=/);
+  assert.match(source("components/common/ServiciosCategoryTabs.tsx"), /aria-current=/);
   const renderer = source("components/tarifa/TarifasCellRenderer.tsx");
   assert.match(renderer, /<TarifaPriceSummary tarifa=\{tarifa\}/);
   assert.match(renderer, /createTarifa|updateTarifa|deleteTarifa/);
@@ -92,7 +92,7 @@ test("cada importe permite edición directa sin abrir el popover del formulario"
   assert.doesNotMatch(html, /<form/);
   const renderer = source("components/tarifa/TarifasCellRenderer.tsx");
   assert.match(renderer, /onPriceSave=\{canManage/);
-  assert.match(renderer, /updateTarifaPrice\(tarifa.id_tarifa, patch\)/);
+  assert.match(renderer, /updateTarifaPrice\(tarifa.id_tarifa, patch, activeAgencyId\)/);
   const editor = source("components/tarifa/InlineTariffPrice.tsx");
   assert.match(editor, /autoFocus inputMode="decimal"/);
   assert.match(editor, /event.key === "Escape"/);

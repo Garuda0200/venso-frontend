@@ -22,6 +22,8 @@ import TariffAgencyCombobox from "../../../../../components/common/TariffAgencyC
 import { fetchTarifasByServicio } from "../../services/api";
 import { TARIFF_MODES, initialTariffModes, validateTariffModePrices, buildTariffModePrices } from "../../utils/tariffPriceModes";
 import "./TarifaForm.scss";
+import { useServiciosAgency } from "../../context/ServiciosAgencyContext";
+import { buildTariffCurrencyInput } from "../../utils/tariffCurrencyInput";
 
 const STANDARD_KEY = "estandar";
 const CURRENT_TARIFF_YEAR = new Date().getFullYear();
@@ -45,8 +47,15 @@ const TarifaForm = ({
   agencyId = null,
 }) => {
   const precioInputRef = useRef<HTMLInputElement | null>(null);
+  const rateInputRef = useRef<HTMLInputElement | null>(null);
+  const initialFocusRef = useRef(true);
   const { userId } = useAuditInfo();
   const isEditMode = Boolean(tarifa);
+  const { agencies } = useServiciosAgency();
+  const sharedAgencyIds = Array.isArray(tarifa?.agency_ids) ? [...new Set(tarifa.agency_ids.map(Number))] : [];
+  const canSeparateAgency = sharedAgencyIds.length > 1 && sharedAgencyIds.includes(Number(agencyId));
+  const [editScope, setEditScope] = useState(canSeparateAgency ? "agency" : "shared");
+  const agencyName = agencies.find(item => item.id === Number(agencyId))?.name || "Esta agencia";
   const isTicket = tipoServicio === "tickets";
   const visibleModes = isTicket ? ["privado"] as const : TARIFF_MODES;
 
@@ -57,7 +66,7 @@ const TarifaForm = ({
     : [Number(agencyId || 0)].filter((id) => id > 0);
 
   const [formData, setFormData] = useState({
-    agency_ids: resolvedAgencyIds,
+    agency_ids: canSeparateAgency ? [Number(agencyId)] : resolvedAgencyIds,
     id_servicio: idServicio,
     tipo_servicio: tipoServicio,
     tipo_tarifa: initialType,
@@ -67,10 +76,7 @@ const TarifaForm = ({
     precio_compartido: tarifa?.precio_compartido?.toString() || "",
     precio_privado: tarifa?.precio_privado?.toString() || "",
     moneda: initialCurrency,
-    tasa_cambio:
-      initialCurrency === "soles"
-        ? identifiedCatalogRate(tarifa?.tasa_cambio)?.toString() || ""
-        : "1.0",
+    tasa_cambio: identifiedCatalogRate(tarifa?.tasa_cambio)?.toString() || "",
     created_by: userId,
   });
 
@@ -90,9 +96,10 @@ const TarifaForm = ({
   );
 
   useEffect(() => {
-    const timer = window.setTimeout(() => precioInputRef.current?.focus(), 120);
-    return () => window.clearTimeout(timer);
-  }, []);
+    const needsRate = initialFocusRef.current && identifiedCatalogRate(tarifa?.tasa_cambio) == null;
+    initialFocusRef.current = false;
+    (needsRate ? rateInputRef.current : precioInputRef.current)?.focus({ preventScroll: true });
+  }, [editingMode]);
 
 
   useEffect(() => {
@@ -181,7 +188,7 @@ const TarifaForm = ({
       delete next.combinacion;
       return next;
     });
-    window.setTimeout(() => precioInputRef.current?.focus(), 80);
+    precioInputRef.current?.focus({ preventScroll: true });
   };
 
   const selectSeason = (seasonKey) => {
@@ -214,7 +221,6 @@ const TarifaForm = ({
     // Clear the amounts so an old number cannot silently acquire a new unit.
     setFormData(current => current.moneda === currency ? current : ({
       ...current, moneda: currency, precio_compartido: "", precio_privado: "",
-      tasa_cambio: currency === "dolares" ? "1" : "",
     }));
     setErrors({});
   };
@@ -225,7 +231,6 @@ const TarifaForm = ({
     setEnabledModes(current => ({ ...current, [mode]: active }));
     if (active) {
       setEditingMode(mode);
-      window.setTimeout(() => precioInputRef.current?.focus(), 0);
     } else {
       setEditingMode(mode === "compartido" ? "privado" : "compartido");
     }
@@ -254,11 +259,8 @@ const TarifaForm = ({
       nextErrors.combinacion = `Ya existe una tarifa ${getTarifaTypeLabel(formData.tipo_tarifa).toLowerCase()} con alguna modalidad seleccionada para ${selectedSeasonKey === STANDARD_KEY ? "vigencia estándar" : `temporada ${selectedSeasonKey}`}.`;
     }
     Object.assign(nextErrors, validateTariffModePrices(formData, enabledModes));
-    if (
-      formData.moneda === "soles" &&
-      identifiedCatalogRate(formData.tasa_cambio) == null
-    ) {
-      nextErrors.tasa_cambio = "Ingresa una tasa de cambio válida.";
+    if (identifiedCatalogRate(formData.tasa_cambio) == null) {
+      nextErrors.tasa_cambio = "Ingresa el tipo de cambio: soles por dólar.";
     }
 
     setErrors(nextErrors);
@@ -275,15 +277,13 @@ const TarifaForm = ({
 
     onSubmit({
       ...formData,
+      editScope,
       agency_ids: formData.agency_ids.map(Number),
       anio: Number(formData.anio),
       tipo_tarifa: normalizeEditableTariffType(formData.tipo_tarifa),
       temporada: formData.tiene_temporada ? formData.temporada : null,
       ...buildTariffModePrices(formData, enabledModes),
-      tasa_cambio:
-        formData.moneda === "soles"
-          ? Number.parseFloat(formData.tasa_cambio)
-          : 1,
+      ...buildTariffCurrencyInput(formData),
     });
   };
 
@@ -294,8 +294,21 @@ const TarifaForm = ({
 
   return (
     <form className="tarifa-form-compact" onSubmit={submit}>
+      {canSeparateAgency && (
+        <div className="tf__edit-scope" role="group" aria-label="Aplicar cambios de tarifa">
+          <button type="button" aria-pressed={editScope === "agency"} disabled={isSubmitting}
+            onClick={() => { setEditScope("agency"); updateField("agency_ids", [Number(agencyId)]); }}>
+            Solo {agencyName}
+          </button>
+          <button type="button" aria-pressed={editScope === "shared"} disabled={isSubmitting}
+            onClick={() => { setEditScope("shared"); updateField("agency_ids", sharedAgencyIds); }}>
+            Tarifa compartida
+          </button>
+        </div>
+      )}
       <div className="tf__group tf__agency-scope">
         <TariffAgencyCombobox
+          agencies={agencies.length ? agencies : undefined}
           multiple
           value={formData.agency_ids}
           onChange={(value) => {
@@ -311,10 +324,40 @@ const TarifaForm = ({
               return next;
             });
           }}
-          disabled={isSubmitting}
+          disabled={isSubmitting || (canSeparateAgency && editScope === "agency")}
           label="Agencias que pueden usar esta tarifa"
         />
         {errors.agency_ids && <p className="tf__error">{errors.agency_ids}</p>}
+      </div>
+
+      <div className="tf__currency-scope">
+        <div className="tf__currency-control">
+          <span className="tf__group-label">Moneda del precio</span>
+          <div className="tf__segmented" role="group" aria-label="Moneda de la tarifa">
+            <button type="button" className={formData.moneda === "soles" ? "active" : ""}
+              onClick={() => switchCurrency("soles")} disabled={isSubmitting} aria-pressed={formData.moneda === "soles"}>
+              S/ <span>Soles <small>PEN</small></span>
+            </button>
+            <button type="button" className={formData.moneda === "dolares" ? "active" : ""}
+              onClick={() => switchCurrency("dolares")} disabled={isSubmitting} aria-pressed={formData.moneda === "dolares"}>
+              $ <span>Dólares <small>USD</small></span>
+            </button>
+          </div>
+        </div>
+        <label className="tf__field tf__exchange-rate">
+          <span><FaExchangeAlt /> Tipo de cambio</span>
+          <div>
+            <b>S/</b>
+            <input ref={rateInputRef} type="number" inputMode="decimal" min="0.0001" max="999999.9999" step="0.0001" required
+              aria-label="Tipo de cambio: soles por dólar" aria-invalid={Boolean(errors.tasa_cambio)}
+              placeholder="Ej. 3.75" value={formData.tasa_cambio} disabled={isSubmitting}
+              onChange={(event) => updateField("tasa_cambio", event.target.value)}
+              onWheel={(event) => event.currentTarget.blur()}
+              onKeyDown={(event) => { if (event.key === "ArrowUp" || event.key === "ArrowDown") event.preventDefault(); }} />
+            <small>por USD</small>
+          </div>
+          {errors.tasa_cambio && <em role="alert">{errors.tasa_cambio}</em>}
+        </label>
       </div>
 
       <div className="tf__group tf__year-scope">
@@ -435,30 +478,6 @@ const TarifaForm = ({
       </div>
 
       <div className="tf__price-panel">
-        <div className="tf__price-toolbar">
-          <div className="tf__segmented" role="group" aria-label="Moneda">
-            <button
-              type="button"
-              className={formData.moneda === "dolares" ? "active" : ""}
-              onClick={() => switchCurrency("dolares")}
-              disabled={isSubmitting}
-              aria-pressed={formData.moneda === "dolares"}
-            >
-              $ USD
-            </button>
-            <button
-              type="button"
-              className={formData.moneda === "soles" ? "active" : ""}
-              onClick={() => switchCurrency("soles")}
-              disabled={isSubmitting}
-              aria-pressed={formData.moneda === "soles"}
-            >
-              S/ PEN
-            </button>
-          </div>
-
-        </div>
-
         <div className="tf__mode-chips" role="group" aria-label="Modalidades disponibles">
           {visibleModes.map(mode => (
             <button key={mode} type="button" className={`tf__mode-chip ${enabledModes[mode] ? "active" : ""}`}
@@ -528,36 +547,13 @@ const TarifaForm = ({
           )}
         </div>
 
-        {formData.moneda === "soles" && (
-          <label className="tf__field tf__exchange-rate">
-            <span><FaExchangeAlt /> Tasa de cambio</span>
-            <div>
-              <b>S/</b>
-              <input
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={formData.tasa_cambio}
-                onChange={(event) => updateField("tasa_cambio", event.target.value)}
-                onWheel={(event) => event.currentTarget.blur()}
-                onKeyDown={(event) => {
-                  if (event.key === "ArrowUp" || event.key === "ArrowDown") {
-                    event.preventDefault();
-                  }
-                }}
-              />
-              <small>por USD</small>
-            </div>
-            {errors.tasa_cambio && <em>{errors.tasa_cambio}</em>}
-          </label>
-        )}
       </div>
 
       {!seasonExpanded && errors.combinacion && (
         <p className="tf__error tf__error--standalone">{errors.combinacion}</p>
       )}
 
-      <small className="tf__native-currency-note">Ingresa los importes en {currencySymbol}. Cada tarifa conserva su moneda.</small>
+      <small className="tf__native-currency-note">Importes en {formData.moneda === "soles" ? "soles (PEN)" : "dólares (USD)"} · 1 USD = S/ {formData.tasa_cambio || "—"}.</small>
       <div className="tf__summary">
         <span>{formData.anio} · {getTarifaTypeLabel(formData.tipo_tarifa)} · {seasonLabel} · {formData.agency_ids.length} agencia{formData.agency_ids.length === 1 ? "" : "s"}</span>
         <strong>

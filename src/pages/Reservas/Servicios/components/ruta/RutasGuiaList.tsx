@@ -1,3 +1,4 @@
+import CatalogWorkspace from "../common/CatalogWorkspace";
 ﻿import React, { useState, useEffect, useMemo } from "react";
 import {
   FaSearch,
@@ -247,7 +248,7 @@ const RutasGuiaList = ({ guia, onBack }) => {
   const guiaName = `${nombres} ${apellidos}`.trim() || "Guía";
 
   return (
-    <div className="entity-view-container premium-design">
+    <CatalogWorkspace className="entity-view-container premium-design">
       {/* Botón Volver */}
       <div className="back-navigation">
         <button onClick={onBack} className="back-link-btn">
@@ -500,7 +501,7 @@ const RutasGuiaList = ({ guia, onBack }) => {
         />
       )}
 
-    </div>
+</CatalogWorkspace>
   );
 };
 

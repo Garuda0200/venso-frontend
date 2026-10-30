@@ -43,6 +43,7 @@ import {
 } from "../../utils/passengerPricingState";
 import { ensureDaysHaveCiudades } from "../../utils/itinerarioCleanupUtils";
 import { resolveTicketChildUnitPrice } from "../../utils/ticketBeneficiaries";
+import { getServicePricingSnapshot } from "../../utils/servicePricingRuntime";
 import {
   applyQuotationExchangeRateToDayServices,
   applyQuotationExchangeRateToService,
@@ -2931,6 +2932,15 @@ const DaysEditor = forwardRef(
 
         if (!svc.tariff) svc.tariff = {};
 
+        // Keep the persisted ticket base aligned with the edited fare. The
+        // pricing ledger also reads these fields when preparing the save.
+        if (serviceType === "tickets") {
+          const shared = (svc.tipoPrecio ?? svc.tariff.tipoPrecio ??
+            svc.tariff.selectedPackageType) === "compartido";
+          svc.precioServicio = shared ? newPrecioOriginal : newPrecioMostrado;
+          svc.precio_servicio = svc.precioServicio;
+        }
+
         svc.tariff.precio_original = newPrecioOriginal;
         svc.tariff.precio = newPrecioMostrado;
         svc.tariff.precio_original_with_child_extras =
@@ -2962,6 +2972,11 @@ const DaysEditor = forwardRef(
           svc,
           totalPassengers,
         );
+        if (serviceType === "tickets") {
+          const editedTotal = getServicePricingSnapshot(recalculated).total;
+          recalculated.precioTotal = editedTotal;
+          recalculated.precio_total = editedTotal;
+        }
         newDays[dayIndex].servicios[serviceIndex] = recalculated;
 
         if (recalculated?.id) {

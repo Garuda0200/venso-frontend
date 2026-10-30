@@ -54,6 +54,7 @@ $tasa-color: #d97706;
 @media (prefers-reduced-motion: reduce) { .cell-price-summary .is-spinning { animation: none; } }
 
 .cell-tarifas-manager {
+  .cell-badge.agencies { white-space: normal; overflow-wrap: anywhere; max-width: 100%; }
   display: grid;
   gap: 7px;
   min-width: 310px;

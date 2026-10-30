@@ -152,7 +152,8 @@ const ServicePicker = ({
   preselectedCities = [], // Agregar ciudades preseleccionadas del itinerario
   passengerSelection = null,
   platform = "venso", // Platform para controlar visibilidad de elementos (se pasa a ServiceCategoryButtons)
-  agencyId = 1, // Agencia de la cotización; no restringe el catálogo del picker.
+  agencyId = null,
+  agencyName = "",
 }) => {
   const packageType = dayServiceMode;
   // Core state management
@@ -179,6 +180,10 @@ const ServicePicker = ({
     setPassengerCapacity(quotationPax);
   }, [activeCategory, quotationPax]);
   const [tariffYear, setTariffYear] = useState(CURRENT_TARIFF_YEAR);
+  const tariffContext = `${Number(agencyId) || "none"}:${filterTariffType || "all"}:${tariffYear}:${platform}`;
+  const tariffContextRef = useRef(tariffContext);
+  tariffContextRef.current = tariffContext;
+  const loadedContexts = useRef<Record<string, string>>({});
 
   // Hook de cache para servicios
   const { fetchWithCache, clearCache } = useServicePickerCache();
@@ -364,7 +369,9 @@ const ServicePicker = ({
     setServices({});
     setChildServices({});
     setChildSearchTerm("");
-  }, [normalizedPlatform, tariffYear]);
+    setProviderIds([]);
+    setCatalogueFacetFilters({});
+  }, [normalizedPlatform, tariffYear, agencyId, filterTariffType]);
 
   // Función para manejar el cambio de categoría - ahora directo sin modal
   const handleCategoryChange = (newCategoryId) => {
@@ -385,7 +392,7 @@ const ServicePicker = ({
         fetchAllServicesWithTariffs(category);
       }
     }
-  }, [activeCategory, serviceCategories, platform, tariffYear, filterTariffType]);
+  }, [activeCategory, serviceCategories, platform, tariffYear, filterTariffType, agencyId]);
 
   // Initialize with preselected category
   useEffect(() => {
@@ -406,12 +413,18 @@ const ServicePicker = ({
    * OPTIMIZADO: No reprocesa si ya tenemos los datos mapeados en state
    */
   const fetchAllServicesWithTariffs = async (category, forceRefresh = false) => {
+    const requestContext = tariffContext;
+    const isCurrent = () => tariffContextRef.current === requestContext;
+    if (!Number.isInteger(Number(agencyId)) || Number(agencyId) <= 0) {
+      setError((prev) => ({ ...prev, [category.id]: "Selecciona la agencia de la cotización para consultar sus tarifas." }));
+      return;
+    }
     // NUEVA OPTIMIZACIÓN: Si ya tenemos datos procesados para esta categoría, no reprocesar
     const hasExistingParents = services[category.id]?.length > 0;
     const hasExistingChildren = childServices[`${category.id}_all`]?.length > 0;
 
     // Si ya tenemos ambos datos procesados, no hacer nada
-    if (!forceRefresh && hasExistingParents && hasExistingChildren) {
+    if (!forceRefresh && loadedContexts.current[category.id] === requestContext && hasExistingParents && hasExistingChildren) {
       return;
     }
 
@@ -428,6 +441,7 @@ const ServicePicker = ({
           parentEndpoint,
           forceRefresh,
         );
+        if (!isCurrent()) return;
         let parentServices = parentServices_raw || [];
 
         // INNER JOIN: Para guías, combinar datos de guia con persona
@@ -578,9 +592,11 @@ const ServicePicker = ({
           // Usar cache para servicios hijo con tarifas
           const allChildServices =
             (await fetchWithCache(allChildEndpoint, forceRefresh, {
+              agencyId,
               tariffType: filterTariffType,
               tariffYear,
             })) || [];
+          if (!isCurrent()) return;
 
           // Guardar todos los servicios hijo para filtrado directo
           // Si es transportes, aseguramos que cada movilidad tenga id_transporte plano
@@ -731,6 +747,7 @@ const ServicePicker = ({
 
           setServices((prev) => ({ ...prev, [category.id]: filteredParents }));
         } catch (childError) {
+          if (!isCurrent()) return;
           console.warn(
             ` [DEBUG] No se pudieron cargar todos los servicios hijo para ${category.id}:`,
             childError,
@@ -747,11 +764,13 @@ const ServicePicker = ({
         const standaloneEndpoint = `${category.endpoint}/${category.childEndpoint}`;
         const servicesWithTarifas = filterVisibleForServicePicker(
           (await fetchWithCache(standaloneEndpoint, forceRefresh, {
+            agencyId,
             tariffType: filterTariffType,
             tariffYear,
           })) || [],
           platform,
         );
+        if (!isCurrent()) return;
 
         // Guardar en childServices directamente para ChildServicePanel
         setChildServices((prev) => ({
@@ -766,12 +785,15 @@ const ServicePicker = ({
           (await fetchWithCache(category.endpoint, forceRefresh)) || [],
           platform,
         );
+        if (!isCurrent()) return;
         setServices((prev) => ({
           ...prev,
           [category.id]: simpleServices,
         }));
       }
+      loadedContexts.current[category.id] = requestContext;
     } catch (err) {
+      if (!isCurrent()) return;
       console.error(` Error fetching ${category.id}:`, err);
       console.error(` [DEBUG] Error completo para ${category.id}:`, {
         message: err.message,
@@ -786,7 +808,7 @@ const ServicePicker = ({
         [category.id]: `Error cargando ${category.label}: ${err.response?.data?.message || err.message}`,
       }));
     } finally {
-      setLoading((prev) => ({ ...prev, [category.id]: false }));
+      if (isCurrent()) setLoading((prev) => ({ ...prev, [category.id]: false }));
     }
   };
 
@@ -819,6 +841,7 @@ const ServicePicker = ({
 
   const fetchChildServicesWithTariffs = async (category, parentId, parent) => {
     if (!parentId) return;
+    const requestContext = tariffContext;
 
     const childKey = `${category.id}_children_${parentId}`;
 
@@ -838,9 +861,11 @@ const ServicePicker = ({
       }
 
       const cachedChildren = await fetchWithCache(endpoint, false, {
+        agencyId,
         tariffType: filterTariffType,
         tariffYear,
       });
+      if (tariffContextRef.current !== requestContext) return;
       const children = filterVensoServicePickerVisibility(
         cachedChildren || [],
         [parent],
@@ -1833,7 +1858,7 @@ const ServicePicker = ({
                   </option>
                 ))}
               </select>
-              <small>Todas las agencias</small>
+              <small>{agencyName || (Number(agencyId) > 0 ? "Agencia de la cotización" : "Selecciona una agencia")}</small>
             </div>
 
             {/* Buscador de servicios hijos en el header */}

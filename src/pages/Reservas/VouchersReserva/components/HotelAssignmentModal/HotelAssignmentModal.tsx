@@ -32,6 +32,7 @@ import { getParentId } from "../../../../../components/Ventas/Cotizaciones/Edici
 import { assignedPaymentExchangeRate, DEFAULT_ASSIGNED_PEN_RATE, storedPaymentCurrency, formatPaymentMoney, formatPaymentTotals, sumPaymentCurrencies } from "../../../../../utils/paymentCurrency";
 import { hotelOccupantId, hotelPassengerIds, roomCapacity } from "../../../../../utils/roomCapacity";
 import { roomTariffPrice } from "../../../../../utils/roomTariff";
+import { buildServicePickerTariffRequestParams, filterTariffsForContext } from "../../../../../components/Ventas/Cotizaciones/EdicionCotizacion/components/ServicePicker/utils/tariffContext";
 import { normalizeReservationPassengerRows } from "../../utils/passengerClassification";
 import {
   compatibleHotelDestinations, emptyHotelRoomDistribution, hasHotelAssignment,
@@ -754,8 +755,14 @@ const HotelAssignmentModal = ({
   packageType = "compartido",
   peopleDetails: propPeopleDetails = EMPTY_PEOPLE_DETAILS,
   voucherReservaId = null,
+  agencyId = null,
+  tariffYear = new Date().getFullYear(),
 }) => {
   const tariffType = "interna";
+  const scopedRooms = (rows) => Number(agencyId) > 0
+    ? filterTariffsForContext(rows, agencyId, tariffType, tariffYear)
+    : [];
+  const roomRequest = { params: { ...buildServicePickerTariffRequestParams(agencyId, tariffYear), tipo_tarifa: tariffType } };
 
   const [passengers, setPassengers] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -783,6 +790,14 @@ const HotelAssignmentModal = ({
   const roomReadVersion = useRef(0);
   const hotelReadVersion = useRef(0);
   const categoryReadVersion = useRef(0);
+  useEffect(() => {
+    roomReadVersion.current += 1;
+    hotelReadVersion.current += 1;
+    setSelectedRooms([]);
+    setSelectedRoom(null);
+    setSelectedTariff(null);
+    setRooms([]);
+  }, [agencyId, tariffYear]);
 
   // Cargar pasajeros del voucher de reserva
   useEffect(() => {
@@ -886,7 +901,7 @@ const HotelAssignmentModal = ({
       setHotels([]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, selectedCategory, categories]);
+  }, [isOpen, selectedCategory, categories, agencyId, tariffYear]);
 
   // Cargar habitaciones cuando cambia el hotel seleccionado
   useEffect(() => {
@@ -897,7 +912,7 @@ const HotelAssignmentModal = ({
     }
     return () => { roomReadVersion.current += 1; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, selectedHotel]);
+  }, [isOpen, selectedHotel, agencyId, tariffYear]);
 
   const fetchHotelCategories = async () => {
     const readVersion = ++categoryReadVersion.current;
@@ -992,6 +1007,7 @@ const HotelAssignmentModal = ({
     try {
       const response = await axiosInstance.get(
         `/turismo/habitaciones/hotel/${hotelId}/con-tarifas`,
+        roomRequest,
       );
       let roomsData =
         response.data?.success && Array.isArray(response.data.data)
@@ -1006,7 +1022,7 @@ const HotelAssignmentModal = ({
         return room.tarifas.some((t) => t.tipo_tarifa === tariffType);
       });
 
-      const processedRooms = roomsWithMatchingTariffs.map(normalizeHotelRoomWithTariffs);
+      const processedRooms = scopedRooms(roomsWithMatchingTariffs).map(normalizeHotelRoomWithTariffs);
       if (readVersion === roomReadVersion.current) setRooms(processedRooms);
     } catch (err) {
       if (readVersion === roomReadVersion.current) {
@@ -1025,8 +1041,9 @@ const HotelAssignmentModal = ({
         const hotelId = hotel.id_hotel || hotel.id;
         const response = await readWithRetry(()=>axiosInstance.get(
           `/turismo/habitaciones/hotel/${hotelId}/con-tarifas`,
+          roomRequest,
         ));
-        return response.data?.data || response.data || [];
+        return scopedRooms(response.data?.data || response.data || []);
       }),
     );
     results.forEach((r) => {

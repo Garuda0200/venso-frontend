@@ -17,7 +17,7 @@ interface BibliaDraftSnapshot {
 }
 
 const comparable = (value: unknown) => {
-  const text = (Array.isArray(value) ? JSON.stringify(value) : String(value ?? "")).trim();
+  const text = (value !== null && typeof value === "object" ? JSON.stringify(value) : String(value ?? "")).trim();
   return ["", BIBLIA_EMPTY_VALUE, "Sin hora"].includes(text) ? "" : text;
 };
 
@@ -45,6 +45,10 @@ export function buildBibliaRowChanges(activity: BibliaActivity, values: BibliaCe
       const rows = JSON.parse(text || "[]");
       if (!Array.isArray(rows) || rows.length > 100 || rows.some(row => !row || typeof row.excursionKey !== "string" || !Number.isInteger(row.tourId) || row.tourId <= 0 || !Number.isInteger(row.agencyId) || row.agencyId <= 0)) throw new Error("Selecciona tours válidos para la excursión.");
       changes.tourSelections = rows;
+    } else if (field === "participantPlan") {
+      const plan = JSON.parse(text || "null");
+      if (plan !== null && (!plan || typeof plan !== "object" || !plan.adults || !plan.children)) throw new Error("Revisa la distribución de participantes.");
+      changes.participantPlan = plan;
     } else if (field === "pax") {
       const pax = Number(text || 0);
       if (!Number.isInteger(pax) || pax < 0) throw new Error("PAX debe ser un número entero mayor o igual a cero.");

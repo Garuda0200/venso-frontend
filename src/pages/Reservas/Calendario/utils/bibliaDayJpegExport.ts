@@ -1,3 +1,4 @@
+import { compactBibliaTickets } from "./bibliaTicketSelection";
 import type { BibliaActivity } from "./bibliaActivityMapper";
 import { BIBLIA_EMPTY_VALUE, getBibliaExcelCellColor, normalizeBibliaColor } from "./bibliaActivityMapper";
 import { compactBibliaTrainText } from "./bibliaTrainCatalog";
@@ -41,6 +42,7 @@ const COLUMN_WIDTHS: Partial<Record<keyof BibliaActivity, number>> = {
 };
 
 const valueForExport = (value: unknown, field?: keyof BibliaActivity, activity?: BibliaActivity) => {
+  if (field === "tickets") return compactBibliaTickets(value);
   if (field === "nationality") return participantNationalityLabel(activity?.participantPlan, value);
   const normalized = String(value ?? "").trim();
   if (!normalized || normalized === BIBLIA_EMPTY_VALUE) return "—";

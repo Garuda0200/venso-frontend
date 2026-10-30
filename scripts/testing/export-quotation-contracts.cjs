@@ -6,7 +6,7 @@ async function generate(catalog) {
   const esbuild = require(path.join(root, "node_modules/esbuild"));
   const result = await esbuild.build({
     entryPoints: [path.join(root, "src/tests/contracts/quotationFrontendContracts.ts")],
-    bundle: true, write: false, platform: "node", format: "cjs", logLevel: "silent",
+    bundle: true, write: false, platform: "node", format: "cjs", logLevel: "silent", external: ["esbuild"],
     define: { "import.meta.env": "{}" }, plugins: [{ name: "contract-http-boundary", setup(build) {
       build.onLoad({ filter: /[\\/]utils[\\/]apiUtils\.ts$/ }, () => ({ loader: "ts", contents: `
         const capture = async (_path, payload) => ({ data: { success: true, data: JSON.parse(JSON.stringify(payload)) } });

@@ -121,8 +121,7 @@ const AgencyManager = ({
           <span className="agency-manager__eyebrow">Catálogos por agencia</span>
           <h2>Agencias</h2>
           <p>
-            El nombre identifica el catálogo. Proveedores, servicios, modalidades y
-            tarifas se configuran dentro de cada agencia.
+            Cada agencia puede tener precios propios o compartir una tarifa con otras agencias.
           </p>
         </div>
         <div className="agency-manager__header-actions">
@@ -157,7 +156,7 @@ const AgencyManager = ({
               </div>
               <h3>{agency.name}</h3>
               <p className="agency-card__description">
-                Catálogo independiente de proveedores, servicios y tarifas.
+                Servicios comunes, tarifas propias o compartidas.
               </p>
               <footer>
                 <button type="button" onClick={() => onSelectAgency(agency)} disabled={!agency.active}>

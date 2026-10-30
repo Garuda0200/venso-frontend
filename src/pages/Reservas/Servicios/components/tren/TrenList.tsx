@@ -1,3 +1,5 @@
+import CatalogWorkspace from "../common/CatalogWorkspace";
+import { useProviderCatalogue } from "../../context/ServiciosProviderContext";
 import React, { useState, useEffect } from "react";
 import {
   FaSearch,
@@ -27,6 +29,7 @@ const TrenList = () => {
   const [trenes, setTrenes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { provider: activeTren, openProvider, closeProvider } = useProviderCatalogue("trenes", trenes, loading, error);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({
     key: "calificacion",
@@ -44,9 +47,6 @@ const TrenList = () => {
   const [selectedTren, setSelectedTren] = useState(null);
   const [dependentEntities, setDependentEntities] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Estado para ver vagones de un tren
-  const [showVagonesTren, setShowVagonesTren] = useState(false);
 
   // Obtener información de auditoría
   const { userId } = useAuditInfo();
@@ -281,16 +281,16 @@ const TrenList = () => {
   };
 
   const handleViewVagones = (tren) => {
-    setSelectedTren(tren);
-    setShowVagonesTren(true);
+    openProvider(tren);
   };
 
   // Si estamos viendo los vagones de un tren
-  if (showVagonesTren && selectedTren) {
+  if (activeTren) {
     return (
       <VagonesTrenList
-        tren={selectedTren}
-        onBack={() => setShowVagonesTren(false)}
+        key={activeTren.id_tren}
+        tren={activeTren}
+        onBack={closeProvider}
       />
     );
   }
@@ -305,7 +305,7 @@ const TrenList = () => {
   }
 
   return (
-    <div>
+    <CatalogWorkspace>
       <div className="header-with-actions">
         <h2>Lista de Trenes</h2>
         <button
@@ -465,7 +465,7 @@ const TrenList = () => {
           onSave={handleSaveValoracion}
         />
       )}
-    </div>
+</CatalogWorkspace>
   );
 };
 
