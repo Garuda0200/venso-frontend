@@ -17,6 +17,9 @@
     ]
   },
   "include": [
+    "src/pages/Reservas/Servicios/utils/__tests__/tariffAgencyCloneFlow.test.tsx",
+    "src/components/Contabilidad/__tests__/agencyPaymentReportFlow.test.tsx",
+    "src/pages/Reservas/Calendario/utils/__tests__/bibliaTransferReadOnly.test.tsx",
     "src/components/Ventas/Cotizaciones/EdicionCotizacion/components/DaysEditor/utils/__tests__/endoseCapacityPricingFlow.test.ts",
     "src/pages/Reservas/Servicios/utils/__tests__/providerNavigation.test.tsx",
     "src/pages/Reservas/Servicios/utils/__tests__/tariffCurrencyForm.test.tsx",

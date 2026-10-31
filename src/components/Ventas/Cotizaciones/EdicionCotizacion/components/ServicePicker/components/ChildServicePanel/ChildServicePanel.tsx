@@ -1,5 +1,5 @@
 import React from "react";
-import { tariffPriceOptions } from "../../../../../../../../utils/servicePricingType";
+import { tariffPriceOptions, tariffPriceOptionLabel } from "../../../../../../../../utils/servicePricingType";
 import { catalogueParentId, catalogueProviderName, filterCatalogueCapacity } from "../../utils/catalogueFilters";
 import TrainPickerDetails from "../TrainPickerDetails";
 import {
@@ -1621,7 +1621,7 @@ const ChildServicePanel = ({
                       <button className="tariff-price-option" key={mode} type="button" onClick={event => {
                         event.stopPropagation();
                         handleTicketEntryGroupClick(group, mode);
-                      }}>{mode === "compartido" ? "Compartido · total" : "Privado · por persona"} <FaPlus /></button>
+                      }}>{tariffPriceOptionLabel(mode)} <FaPlus /></button>
                     )) : <button className="add-btn" type="button" title="Agregar entrada completa"><FaPlus /></button>}
                   </div>
                 </div>

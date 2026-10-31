@@ -7,6 +7,15 @@ import { build } from "esbuild";
 import { createRequire } from "node:module";
 import { resolve } from "node:path";
 import { buildTariffCurrencyInput } from "../tariffCurrencyInput";
+import { tariffAgencyIds, tariffSharesAgencyContext } from "../tariffAgencyContext";
+
+test("tariff contexts compare agency overlap instead of requiring a new season for other agencies", () => {
+  const row = { anio: 2026, agency_ids: [1, 2] };
+  assert.deepEqual(tariffAgencyIds('["2",1,2,0,-1]'), [2, 1]);
+  assert.equal(tariffSharesAgencyContext(row, [3], 2026), false);
+  assert.equal(tariffSharesAgencyContext(row, [2, 3], 2026), true);
+  assert.equal(tariffSharesAgencyContext(row, [1], 2027), false);
+});
 
 test("native PEN and USD amounts require their explicit rate without defaulting to one", () => {
   for (const [moneda, expected] of [["soles", "soles"], ["PEN", "soles"], ["USD", "dolares"], ["dólares", "dolares"]]) {
@@ -35,7 +44,7 @@ test("native PEN and USD amounts require their explicit rate without defaulting 
   new Function("require", "module", "exports", bundled.outputFiles[0].text)(createRequire(resolve("package.json")), module, module.exports);
   const TarifaForm = module.exports.default;
 
-  async function withForm(kind, tarifa, run, disabled = false) {
+  async function withForm(kind, tarifa, run, disabled = false, existingTarifasData = []) {
     const { window, document } = parseHTML('<html><body><div id="root"></div></body></html>');
     const keys = ["window", "document", "HTMLElement", "IS_REACT_ACT_ENVIRONMENT"];
     const previous = Object.fromEntries(keys.map(key => [key, globalThis[key]]));
@@ -54,13 +63,28 @@ test("native PEN and USD amounts require their explicit rate without defaulting 
     const submit = async () => React.act(async () => props(document.querySelector("form")).onSubmit({ preventDefault() {} }));
     try {
       await React.act(async () => root.render(<TarifaForm tarifa={tarifa} idServicio={10} tipoServicio={kind}
-        agencyId={1} isSubmitting={disabled} existingTarifasData={[]} onSubmit={value => saved.push(value)} />));
+        agencyId={1} isSubmitting={disabled} existingTarifasData={existingTarifasData} onSubmit={value => saved.push(value)} />));
       await run({ document, saved, change, currency, submit });
     } finally {
       await React.act(async () => root.unmount());
       for (const [key, value] of Object.entries(previous)) value === undefined ? delete globalThis[key] : globalThis[key] = value;
     }
   }
+
+  test("an agency creates its own standard internal tariff without a season while other agencies retain theirs", async () => {
+    const otherAgency = { id_tarifa: 41, agency_ids: [2, 3], anio: new Date().getFullYear(), tipo_tarifa: "interna", precio_privado: 90, tiene_temporada: false };
+    await withForm("movilidad", null, async ({ document, saved, change, submit }) => {
+      await React.act(async () => [...document.querySelectorAll("button")].find(button => button.textContent.trim() === "Interna").click());
+      await change('[aria-label="Tipo de cambio: soles por dólar"]', "3.75");
+      await change('.tf__price-field input', "25");
+      await submit();
+      assert.equal(saved.length, 1);
+      assert.deepEqual(saved[0].agency_ids, [1]);
+      assert.equal(saved[0].tipo_tarifa, "interna");
+      assert.equal(saved[0].tiene_temporada, false);
+      assert.equal(saved[0].temporada, null);
+    }, false, [otherAgency]);
+  });
 
   for (const kind of ["habitacion", "movilidad", "ruta", "tour", "vagones", "tipo_vuelo", "tickets", "restaurante", "servicio_extra"]) {
     for (const [label, expected] of [["Soles", "soles"], ["Dólares", "dolares"]]) {
@@ -69,6 +93,8 @@ test("native PEN and USD amounts require their explicit rate without defaulting 
           await currency(label);
           await change('[aria-label="Tipo de cambio: soles por dólar"]', "3.7512");
           await change('.tf__price-field input', "25.50");
+          assert.equal(document.querySelector('.tf__mode-chip[aria-pressed="true"] b').textContent, "Compartido");
+          assert.equal(document.querySelector('.tf__price-field > span').textContent, "Compartido · por persona");
           await submit();
           assert.equal(saved.length, 1, document.body.textContent);
           assert.equal(saved[0].moneda, expected); assert.equal(saved[0].tasa_cambio, 3.7512);
@@ -79,6 +105,22 @@ test("native PEN and USD amounts require their explicit rate without defaulting 
       });
     }
   }
+
+  test("both price labels edit their original fields and preserve agency and currency", async () => {
+    await withForm("tour", {id_tarifa:1,agency_ids:[1],tipo_tarifa:"externa",precio_compartido:80,precio_privado:40,moneda:"dolares",tasa_cambio:3.75}, async ({document,saved,change,submit}) => {
+      assert.deepEqual([...document.querySelectorAll('.tf__mode-chip b')].map(element=>element.textContent), ["Privado","Compartido"]);
+      assert.deepEqual([...document.querySelectorAll('.tf__price-field > span')].map(element=>element.textContent), ["Privado · total","Compartido · por persona"]);
+      await change('.tf__price-field:nth-child(1) input', "90");
+      await change('.tf__price-field:nth-child(2) input', "45");
+      await submit();
+      assert.equal(saved.length, 1);
+      assert.equal(saved[0].precio_compartido, 90);
+      assert.equal(saved[0].precio_privado, 45);
+      assert.deepEqual(saved[0].agency_ids, [1]);
+      assert.equal(saved[0].moneda, "dolares");
+      assert.equal(saved[0].tasa_cambio, 3.75);
+    });
+  });
 
   for (const label of ["Soles", "Dólares"]) test(`${label}: missing or invalid exchange rate blocks saving`, async () => {
     await withForm("restaurante", null, async ({ document, saved, change, currency, submit }) => {

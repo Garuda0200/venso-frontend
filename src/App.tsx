@@ -129,7 +129,7 @@ export default function App() {
             path="/reservas/*"
             element={
               <RoleBasedRoute
-                allowedRoles={[0, 3]}
+                allowedRoles={[0, 3, 6]}
                 defaultPath={redirectBasedOnPath(window.location.pathname)}
               >
                 <ReservasRoutes />

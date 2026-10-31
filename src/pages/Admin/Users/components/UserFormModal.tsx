@@ -30,6 +30,7 @@ const ROLE_TO_MODULE = {
   3: "reservas",
   4: "contabilidad",
   5: "almacen",
+  6: "reservas",
 };
 
 const MODULES = [
@@ -92,6 +93,11 @@ const UserFormModal = ({
   const handleRoleChange = (e) => {
     const role = Number(e.target.value);
     const updates = { role };
+    if (role === 6) {
+      updates.permissions = {allowed_modules:["reservas"],allowed_routes:["/reservas/calendario"],extra_menus:[],actions:["view_calendar"]};
+      updates.platform = "venso";
+      updates.business_type = "B2C";
+    }
     if (role === 0) {
       updates.platform = "all";
       updates.business_type = "all";

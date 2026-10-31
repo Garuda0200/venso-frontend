@@ -277,8 +277,8 @@ export const TIPOS_TARIFA_EDITABLES = [
 ];
 
 export const TARIFA_TYPE_LABELS = {
-  [TIPOS_TARIFA.INTERNA]: "Confidencial",
-  [TIPOS_TARIFA.EXTERNA]: "Pública",
+  [TIPOS_TARIFA.INTERNA]: "Interna",
+  [TIPOS_TARIFA.EXTERNA]: "Externa",
   [TIPOS_TARIFA.COTIZACION]: "Heredada",
 };
 

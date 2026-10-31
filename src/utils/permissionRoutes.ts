@@ -5,6 +5,7 @@ export const ROLE_DEFAULT_MODULES = {
   3: ["reservas"],
   4: ["contabilidad"],
   5: ["almacen"],
+  6: ["reservas"],
 };
 
 export const MODULE_DEFAULT_PATHS = {
@@ -74,6 +75,7 @@ export const uniqueStrings = (values = []) => {
 
 export const resolveAllowedModules = (auth = {}) => {
   const role = Number(auth?.role);
+  if (role === 6) return ["reservas"];
   const permissions = normalizePermissions(auth?.permissions);
   const configuredModules = permissions.allowed_modules;
 
@@ -114,6 +116,7 @@ export const moduleRootFromPath = (path = "") => {
 
 export const getFirstAllowedPath = (auth = {}) => {
   const role = Number(auth?.role);
+  if (role === 6) return "/reservas/calendario";
   const permissions = normalizePermissions(auth?.permissions);
   const firstConcreteRoute = permissions.allowed_routes.find((routePattern) => {
     const route = cleanPath(routePattern);
@@ -142,6 +145,7 @@ export const getFirstAllowedPath = (auth = {}) => {
 
 export const hasRoutePermission = (auth = {}, path = "") => {
   const role = Number(auth?.role);
+  if (role === 6) return cleanPath(String(path).split(/[?#]/)[0]) === "/reservas/calendario";
   if (role === 0) return true;
 
   const currentPath = cleanPath(path);

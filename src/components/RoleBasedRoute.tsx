@@ -32,8 +32,9 @@ const RoleBasedRoute = ({ allowedRoles, defaultPath, children }) => {
   }
 
   // Check if user role is in the allowed roles or if the path is explicitly allowed in permissions
-  const hasPermission = React.useMemo(() => {
+  const hasPermission = (() => {
     const role = Number(auth.role);
+    if (role === 6) return hasRoutePermission(auth, currentPath);
     const permissions = normalizePermissions(auth.permissions);
     const hasExplicitPermissionMap =
       permissions.allowed_routes.length > 0 ||
@@ -61,7 +62,7 @@ const RoleBasedRoute = ({ allowedRoles, defaultPath, children }) => {
     }
 
     return allowedRoles.includes(role) || allowedRoles.includes(auth.role);
-  }, [auth.role, auth.permissions, currentPath, allowedRoles]);
+  })();
 
   // User is authorized, render the protected route
   if (hasPermission) {

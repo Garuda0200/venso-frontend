@@ -17,6 +17,7 @@ import {
   normalizeEditableTariffType,
 } from "../../utils/constants";
 import { catalogCurrency, identifiedCatalogRate } from "../../../../../utils/catalogCurrency";
+import { tariffPriceModeLabel, tariffPriceOptionLabel } from "../../../../../utils/servicePricingType";
 import useAuditInfo from "../../hooks/useAuditInfo";
 import TariffAgencyCombobox from "../../../../../components/common/TariffAgencyCombobox/TariffAgencyCombobox";
 import { fetchTarifasByServicio } from "../../services/api";
@@ -24,6 +25,7 @@ import { TARIFF_MODES, initialTariffModes, validateTariffModePrices, buildTariff
 import "./TarifaForm.scss";
 import { useServiciosAgency } from "../../context/ServiciosAgencyContext";
 import { buildTariffCurrencyInput } from "../../utils/tariffCurrencyInput";
+import { tariffSharesAgencyContext } from "../../utils/tariffAgencyContext";
 
 const STANDARD_KEY = "estandar";
 const CURRENT_TARIFF_YEAR = new Date().getFullYear();
@@ -127,17 +129,9 @@ const TarifaForm = ({
   }, [existingTarifasData, idServicio, tipoServicio]);
 
   const scopedExisting = useMemo(() => {
-    const selected = new Set((formData.agency_ids || []).map(Number));
     return existingTarifas.filter((item) => {
       if (isEditMode && Number(item.id_tarifa) === Number(tarifa?.id_tarifa)) return false;
-      const itemAgencies = Array.isArray(item?.agency_ids)
-        ? item.agency_ids.map(Number).filter((id) => id > 0)
-        : [];
-      const itemYear = Number(item?.anio || CURRENT_TARIFF_YEAR);
-      return (
-        itemYear === Number(formData.anio) &&
-        itemAgencies.some((id) => selected.has(id))
-      );
+      return tariffSharesAgencyContext(item, formData.agency_ids, formData.anio);
     });
   }, [
     existingTarifas,
@@ -483,7 +477,7 @@ const TarifaForm = ({
             <button key={mode} type="button" className={`tf__mode-chip ${enabledModes[mode] ? "active" : ""}`}
               aria-pressed={enabledModes[mode]} onClick={() => togglePriceMode(mode)} disabled={isSubmitting}>
               <span className="tf__mode-chip-check">{enabledModes[mode] ? <FaCheck /> : "+"}</span>
-              <span><b>{mode === "compartido" ? "Compartido" : "Privado"}</b>
+              <span><b>{tariffPriceModeLabel(mode)}</b>
                 <small>{mode === "compartido" ? "Importe total" : "Por persona"}</small></span>
               <strong>{currencySymbol} {toMoneyString(formData[`precio_${mode}`]) || "—"}</strong>
             </button>
@@ -494,7 +488,7 @@ const TarifaForm = ({
         <div className={`tf__prices ${enabledModes.compartido && enabledModes.privado ? "double" : "single"}`}>
           {enabledModes.compartido && (
           <label className="tf__field tf__price-field">
-            <span>Compartido · total</span>
+            <span>{tariffPriceOptionLabel("compartido")}</span>
             <div>
               <b>{currencySymbol}</b>
               <input
@@ -521,7 +515,7 @@ const TarifaForm = ({
 
           {enabledModes.privado && (
             <label className="tf__field tf__price-field">
-              <span>Privado · por persona</span>
+              <span>{tariffPriceOptionLabel("privado")}</span>
               <div>
                 <b>{currencySymbol}</b>
                 <input
@@ -558,7 +552,7 @@ const TarifaForm = ({
         <span>{formData.anio} · {getTarifaTypeLabel(formData.tipo_tarifa)} · {seasonLabel} · {formData.agency_ids.length} agencia{formData.agency_ids.length === 1 ? "" : "s"}</span>
         <strong>
           {visibleModes.filter(mode => enabledModes[mode]).map(mode =>
-            `${mode === "compartido" ? "Compartido" : "Privado"}: ${currencySymbol} ${toMoneyString(formData[`precio_${mode}`]) || "—"}`,
+            `${tariffPriceModeLabel(mode)}: ${currencySymbol} ${toMoneyString(formData[`precio_${mode}`]) || "—"}`,
           ).join(" · ") || "Sin modalidad"}
         </strong>
       </div>

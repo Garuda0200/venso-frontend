@@ -17,6 +17,7 @@ import { MdNightsStay } from "react-icons/md";
 import ServiceDetailedInfo from "../components/ServiceDetailedInfo";
 import { getCategoryDisplay, formatPrice, getRoomCapacity } from "./utils";
 import { getCurrencySymbol } from "../../../utils/tariffCurrency";
+import { tariffPriceModeLabel } from "../../../../../../../utils/servicePricingType";
 import "./ReviewSelection.scss";
 
 const ReviewSelection = ({
@@ -382,7 +383,7 @@ const ReviewSelection = ({
                       </span>
                     )}
                     <small className="price-type">
-                      ({packageType === "privado" ? "Priv." : "Comp."})
+                      ({tariffPriceModeLabel(packageType).slice(0, 4)}.)
                     </small>
                   </div>
                 </div>

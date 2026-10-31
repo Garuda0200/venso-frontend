@@ -15,6 +15,7 @@ import {
   isExtraBedRoom,
 } from "./utils";
 import "./RoomSelection.scss";
+import { tariffPriceModeLabel } from "../../../../../../../utils/servicePricingType";
 
 const RoomSelection = ({
   rooms,
@@ -372,8 +373,8 @@ const RoomSelection = ({
                                       );
                                       return (
                                         <div className="quantity-selector compartido">
-                                          <span className="price-label">
-                                            Comp.
+                                          <span className="price-label" title={tariffPriceModeLabel("compartido")}>
+                                            {tariffPriceModeLabel("compartido").slice(0, 4)}.
                                           </span>
                                           <span className="price-value">
                                             {formatPrice(
@@ -435,8 +436,8 @@ const RoomSelection = ({
                                       );
                                       return (
                                         <div className="quantity-selector privado">
-                                          <span className="price-label">
-                                            Priv.
+                                          <span className="price-label" title={tariffPriceModeLabel("privado")}>
+                                            {tariffPriceModeLabel("privado").slice(0, 4)}.
                                           </span>
                                           <span className="price-value">
                                             {formatPrice(

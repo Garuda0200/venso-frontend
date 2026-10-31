@@ -74,6 +74,12 @@ export const resolveServiceName = (service: any): string => {
   if (isReportTicket(service)) return reportTicketName(service);
   const child = getOperationalChild(service);
   const parent = getOperationalParent(service);
+  const type = firstText(service?.typeService, service?.type_service, service?.tipo_servicio, service?.parentService?.typeService).toLowerCase();
+  if (type === "endoses" || type === "tour") {
+    return firstText(child.tipo_guiado, child.tour?.tipo_guiado, child.tour_nombre,
+      child.nombre_tour, service?.childService?.tipo_guiado, service?.childService?.tour?.tipo_guiado,
+      child.nombre_servicio, child.nombre, "Tour");
+  }
   return firstText(
     child.nombre,
     child.nombre_servicio,

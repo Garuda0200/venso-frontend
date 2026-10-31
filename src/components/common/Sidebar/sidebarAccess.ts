@@ -58,6 +58,10 @@ export const buildSidebarGroups = (auth = {}) => {
     ? null
     : Number(rawRole);
   const normalizedRole = Number.isInteger(role) ? role : null;
+  if (normalizedRole === 6) {
+    return [{id:"reservas",...moduleMeta.reservas,isPrimary:true,
+      items:menuConfig.reservas.filter(item=>item.key === "calendario")}];
+  }
   const permissions = normalizePermissions(auth?.permissions);
   const allowedModules = resolveAllowedModules(auth);
   const allowedRoutes = permissions.allowed_routes;

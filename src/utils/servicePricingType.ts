@@ -1,7 +1,16 @@
 import { catalogAmountInDollars } from "./catalogCurrency";
-/** Shared = group amount; private = per-person amount. Null stays unassigned. */
+/** Persisted codes retain their historical calculation; UI tariff names are separate. */
 export type ServicePricingType = "compartido" | "privado";
 export type DayServiceMode = ServicePricingType | "mixto";
+
+/** Pricing labels only: package/day names and SIC/PRIV keep their own meaning. */
+export function tariffPriceModeLabel(mode: ServicePricingType): string {
+  return mode === "compartido" ? "Privado" : "Compartido";
+}
+
+export function tariffPriceOptionLabel(mode: ServicePricingType): string {
+  return `${tariffPriceModeLabel(mode)} · ${mode === "compartido" ? "total" : "por persona"}`;
+}
 export function sharedPriceFlag(value: unknown): boolean | undefined {
   if (value == null || value === "") return undefined;
   if (value === "compartido" || value === true) return true;
@@ -50,7 +59,7 @@ export function tariffPriceOptions(tariff: any, mode: unknown = "mixto", service
     .map(type => ({
       tipoPrecio: type,
       amount: Number(tariff[`precio_${type}`]),
-      label: type === "compartido" ? "Compartido · total" : "Privado · por persona",
+      label: tariffPriceOptionLabel(type),
     }));
 }
 

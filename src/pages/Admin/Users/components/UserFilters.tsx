@@ -14,6 +14,7 @@ const UserFilters = ({ filters, onFilterChange, onClear }) => {
     { label: "Reservas", value: 3 },
     { label: "Contabilidad", value: 4 },
     { label: "Gestión Media", value: 5 },
+    { label: "Transfer", value: 6 },
   ];
 
   const platformOptions = [

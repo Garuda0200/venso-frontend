@@ -5,6 +5,7 @@ export const USER_ROLES = [
   { value: 3, label: "Reservas" },
   { value: 4, label: "Contabilidad" },
   { value: 5, label: "Gestión Media" },
+  { value: 6, label: "Transfer" },
 ];
 
 export const USER_ROLE_MAP = Object.fromEntries(

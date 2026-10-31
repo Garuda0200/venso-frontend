@@ -5,6 +5,31 @@ import { createUnifiedService, updateServicesForPackageTypeChange, updateSingleS
 import { cleanDayForDB, hydrateServiceFromDB } from "../../components/Ventas/Cotizaciones/EdicionCotizacion/utils/itinerarioCleanupUtils";
 import { buildAssignedFlatPricingState, syncTariffWithReservationPricing } from "../../pages/Reservas/VouchersReserva/components/ReservaServiceEditor/utils/editorHelpers";
 import { getServiceTariff } from "../../pages/Reservas/VouchersReserva/utils/serviceAssignment";
+import { getServicePricingSnapshot } from "../../components/Ventas/Cotizaciones/EdicionCotizacion/utils/servicePricingRuntime";
+
+test("tariff labels invert without changing persisted codes, selected amounts or group/per-person calculation", () => {
+  const tariff = {precio_compartido:120,precio_privado:40,moneda:"dolares"};
+  const before = JSON.stringify(tariff);
+  const options = tariffPriceOptions(tariff, "mixto");
+  assert.deepEqual(options, [
+    {tipoPrecio:"compartido",amount:120,label:"Privado · total"},
+    {tipoPrecio:"privado",amount:40,label:"Compartido · por persona"},
+  ]);
+  const people = {adults:Array.from({length:4}, (_,id)=>({id:`A${id}`})),children:[]};
+  for (const option of options) {
+    const service = createUnifiedService({typeService:"endoses"}, {capacidad:10},
+      {...tariff,precio:option.amount,tipoPrecio:option.tipoPrecio},people,"privado");
+    const snapshot = getServicePricingSnapshot(service);
+    assert.equal(snapshot.precioAdult, option.tipoPrecio === "compartido" ? 30 : 40);
+    assert.equal(snapshot.total, option.tipoPrecio === "compartido" ? 120 : 160);
+    const saved = cleanDayForDB({numero:1,tipoServicio:"compartido",servicios:[service]});
+    assert.equal(saved.tipoServicio, "compartido", "Day mode is not relabeled or rewritten in the payload");
+    assert.equal(saved.servicios[0].tipoPrecio, option.tipoPrecio);
+    assert.equal(saved.servicios[0].precioServicio, option.amount);
+  }
+  assert.deepEqual(tariffPriceOptions(tariff,"mixto","tickets"), [options[1]]);
+  assert.equal(JSON.stringify(tariff), before);
+});
 
 test("private is false for calculations, null remains unassigned, old booleans import without ambiguity", () => {
   assert.equal(sharedPriceFlag("privado"), false);

@@ -1,8 +1,20 @@
 import assert from "node:assert/strict";
 import { buildSidebarGroups } from "../sidebarAccess";
+import { getFirstAllowedPath, hasRoutePermission, resolveAllowedModules } from "../../../../utils/permissionRoutes";
 
 const findMediaGroup = (auth: any) =>
   buildSidebarGroups(auth).find((group: any) => group.id === "almacen");
+
+for (const permissions of [null, { allowed_modules: ["admin", "ventas", "contabilidad"], allowed_routes: ["*"], actions: ["*"], extra_menus: ["users"] }]) {
+  const transfer = { role: 6, permissions };
+  assert.deepEqual(resolveAllowedModules(transfer), ["reservas"]);
+  assert.equal(getFirstAllowedPath(transfer), "/reservas/calendario");
+  assert.equal(hasRoutePermission(transfer, "/reservas/calendario?view=day"), true);
+  for (const path of ["/admin/usuarios", "/ventas/cotizaciones", "/reservas/vouchers", "/reservas/servicios", "/contabilidad/movimientos", "/profile/me"]) {
+    assert.equal(hasRoutePermission(transfer, path), false, path);
+  }
+  assert.deepEqual(buildSidebarGroups(transfer).flatMap(group => group.items.map(item => item.path)), ["/reservas/calendario"]);
+}
 
 {
   const group = findMediaGroup({ role: 0, permissions: null });

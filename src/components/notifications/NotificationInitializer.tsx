@@ -32,12 +32,13 @@ const NotificationInitializer = ({ children }) => {
       auth.isAuthenticated &&
       auth.dniuser &&
       auth.role !== undefined
+      && Number(auth.role) !== 6
     ) {
       // Solo configurar info del usuario si no está ya conectado
       if (!isConnected) {
         setUserAndConnect(auth.dniuser, auth.role);
       }
-    } else if (!auth.isAuthenticated && isConnected) {
+    } else if ((!auth.isAuthenticated || Number(auth.role) === 6) && isConnected) {
       disconnectFromSse();
     }
   }, [

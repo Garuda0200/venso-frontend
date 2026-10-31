@@ -11,6 +11,17 @@ import {
   summarizeServiceRequests,
 } from "../paymentReportUtils";
 
+test("endose payment information identifies the tour instead of the provider", () => {
+  for (const child of [{ tipo_guiado: "Valle Sagrado" }, { tour: { tipo_guiado: "Valle Sagrado" } }, { tour_nombre: "Valle Sagrado" }]) {
+    const rows = flattenQuoteServices({ id: "C-ENDOSE", cantidadpersonas: 2, itinerario: [{ numero: 1, servicios: [{
+      id: 99, typeService: "endoses", parentId: 44, parentService: { nombre: "Proveedor de prueba" }, childService: child,
+      precioUnitario: 25, precioTotal: 50, tipoPrecio: "privado",
+    }] }] });
+    assert.equal(rows[0].serviceName, "Valle Sagrado");
+    assert.notEqual(rows[0].serviceName, "Proveedor de prueba");
+  }
+});
+
 test("provider identity uses the operational provider with quotation fallback", () => {
   assert.equal(resolveProviderId({ parentId: 7, assignedParentId: 91 }), 91);
   assert.equal(resolveProviderId({ parentId: 7 }), 7);

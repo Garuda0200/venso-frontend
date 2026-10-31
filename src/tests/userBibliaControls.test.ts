@@ -45,7 +45,7 @@ import path from "node:path";
   }
 
   test("usuarios: no se envía un rol vacío ni fuera del catálogo", async () => {
-    for (const role of ["", 6, -1]) {
+    for (const role of ["", 7, -1]) {
       const saved = [];
       await mounted(UserForm, { visible: true, user: seedUser({ role }), editMode: false, onHide: () => {}, onSave: row => saved.push(row) }, async ({ document, submit, change }) => {
         await fillPasswords(change);
@@ -56,8 +56,8 @@ import path from "node:path";
     }
   });
 
-  test("usuarios: los seis roles se envían como números con permisos adicionales intactos", async () => {
-    for (const role of [0, 1, 2, 3, 4, 5]) {
+  test("usuarios: los siete roles se envían como números con permisos adicionales intactos", async () => {
+    for (const role of [0, 1, 2, 3, 4, 5, 6]) {
       const saved = [];
       const permissions = { allowed_routes: ["/reservas/calendario"], actions: ["cotizaciones.view_all"] };
       await mounted(UserForm, { visible: true, user: seedUser({ role, permissions }), editMode: false, onHide: () => {}, onSave: row => saved.push(row) }, async ({ submit, change }) => {

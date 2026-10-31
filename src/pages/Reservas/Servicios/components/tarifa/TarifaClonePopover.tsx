@@ -19,9 +19,11 @@ import {
   getTarifaTypeLabel,
 } from "../../utils/constants";
 import { formatCurrency } from "../../utils/formatters";
-import { tariffPriceOptions } from "../../../../../utils/servicePricingType";
+import { tariffPriceOptions, tariffPriceModeLabel } from "../../../../../utils/servicePricingType";
 import { catalogCurrency, identifiedCatalogRate, tariffConversionPending } from "../../../../../utils/catalogCurrency";
 import "./TarifaClonePopover.scss";
+import TariffAgencyCombobox from "../../../../../components/common/TariffAgencyCombobox/TariffAgencyCombobox";
+import { tariffAgencyIds, tariffSharesAgencyContext } from "../../utils/tariffAgencyContext";
 
 const STANDARD_KEY = "estandar";
 const CURRENT_TARIFF_YEAR = new Date().getFullYear();
@@ -100,27 +102,14 @@ const TarifaClonePopover = ({
   const [position, setPosition] = useState(null);
   const [placement, setPlacement] = useState("bottom");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [destinationAgencies, setDestinationAgencies] = useState(()=>tariffAgencyIds(sourceTarifa?.agency_ids));
   const triggerRef = useRef(null);
   const popoverRef = useRef(null);
 
   const scopedExistingTarifas = useMemo(() => {
-    const sourceAgencies = new Set(
-      (Array.isArray(sourceTarifa?.agency_ids)
-        ? sourceTarifa.agency_ids
-        : []
-      ).map(Number).filter((id) => id > 0),
-    );
     const sourceYear = Number(sourceTarifa?.anio || CURRENT_TARIFF_YEAR);
-    return (existingTarifas || []).filter((tarifa) => {
-      const tarifaAgencies = Array.isArray(tarifa?.agency_ids)
-        ? tarifa.agency_ids
-        : [];
-      return (
-        Number(tarifa?.anio || CURRENT_TARIFF_YEAR) === sourceYear &&
-        tarifaAgencies.map(Number).some((id) => sourceAgencies.has(id))
-      );
-    });
-  }, [existingTarifas, sourceTarifa?.agency_ids, sourceTarifa?.anio]);
+    return (existingTarifas || []).filter(tarifa=>tariffSharesAgencyContext(tarifa,destinationAgencies,sourceYear));
+  }, [existingTarifas, destinationAgencies, sourceTarifa?.anio]);
   const used = useMemo(() => {
     const sourceModes = new Set(tariffPriceOptions(sourceTarifa).map(option => option.tipoPrecio));
     return getUsedCombinations(scopedExistingTarifas.filter(tariff =>
@@ -276,6 +265,7 @@ const TarifaClonePopover = ({
 
   const handleClone = async () => {
     if (validationError || isSubmitting) return;
+    if (!destinationAgencies.length) { setValidationError("Selecciona al menos una agencia de destino."); return; }
     if (tariffConversionPending(sourceTarifa) || identifiedCatalogRate(sourceTarifa.tasa_cambio) == null) {
       setValidationError("Completa la tasa de cambio de la tarifa original antes de duplicarla.");
       return;
@@ -283,7 +273,7 @@ const TarifaClonePopover = ({
 
     setIsSubmitting(true);
     try {
-      await onClone(buildCloneData(sourceTarifa, tipoTarifa, tieneTemporada, temporada));
+      await onClone({...buildCloneData(sourceTarifa, tipoTarifa, tieneTemporada, temporada),agency_ids:destinationAgencies});
       setIsOpen(false);
     } catch (error) {
       setValidationError(error.message || "Error al generar tarifa");
@@ -348,12 +338,14 @@ const TarifaClonePopover = ({
               </span>
               {tariffPriceOptions(sourceTarifa).map(choice => (
                 <span className="source-mini price" key={choice.tipoPrecio}>
-                  {choice.tipoPrecio === "compartido" ? "Compartido" : "Privado"} · {formatCurrency(choice.amount, currencySymbol)}
+                  {tariffPriceModeLabel(choice.tipoPrecio)} · {formatCurrency(choice.amount, currencySymbol)}
                 </span>
               ))}
             </div>
 
             <div className="clone-popover-body">
+              <TariffAgencyCombobox value={destinationAgencies} multiple disabled={isSubmitting}
+                label="Agencias de destino" onChange={value=>{setDestinationAgencies(tariffAgencyIds(value));setTieneTemporada(false);setTemporada(null);setValidationError(null);}} />
               <div className="clone-popover-group">
                 <label>Tipo destino</label>
                 <div className="clone-popover-options">

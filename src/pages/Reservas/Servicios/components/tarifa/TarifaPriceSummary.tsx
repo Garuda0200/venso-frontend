@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { tariffPriceOptions } from "../../../../../utils/servicePricingType";
+import { tariffPriceOptions, tariffPriceModeLabel } from "../../../../../utils/servicePricingType";
 import { FaCheck, FaUsers, FaUser } from "react-icons/fa";
 import InlineTariffPrice from "./InlineTariffPrice";
 import { catalogCurrency } from "../../../../../utils/catalogCurrency";
@@ -26,7 +26,7 @@ const TarifaPriceSummary = ({ tarifa, onPriceSave, disabled }: TarifaPriceSummar
       <button type="button" className="cell-price-summary__mode" aria-pressed={activeMode === price.tipoPrecio}
         onClick={event => { event.stopPropagation(); setSelectedMode(price.tipoPrecio); }} title={price.label}>
         {price.tipoPrecio === "compartido" ? <FaUsers aria-hidden="true" /> : <FaUser aria-hidden="true" />}
-        <span>{price.tipoPrecio === "compartido" ? "Compartido" : "Privado"}<small>{price.tipoPrecio === "compartido" ? "Total" : "Por persona"}</small></span>
+        <span>{tariffPriceModeLabel(price.tipoPrecio)}<small>{price.tipoPrecio === "compartido" ? "Total" : "Por persona"}</small></span>
         {activeMode === price.tipoPrecio && <FaCheck aria-hidden="true" />}
       </button>
       <InlineTariffPrice amount={price.amount} currency={currency} mode={price.tipoPrecio}

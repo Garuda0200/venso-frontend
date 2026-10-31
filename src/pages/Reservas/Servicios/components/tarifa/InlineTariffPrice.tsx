@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { FaCheck, FaPen, FaSpinner, FaTimes } from "react-icons/fa";
 import type { TariffMode } from "../../utils/tariffPriceModes";
 import { saveInlineTariffPrice } from "../../utils/tariffInlinePrice";
+import { tariffPriceModeLabel } from "../../../../../utils/servicePricingType";
 
 interface Props {
   amount: number;
@@ -19,7 +20,8 @@ export default function InlineTariffPrice({ amount, currency, mode, disabled, on
   const [confirmedAmount, setConfirmedAmount] = useState(amount);
   useEffect(() => { setConfirmedAmount(amount); }, [amount]);
   const inFlight = useRef(false);
-  const label = `precio ${mode}`;
+  const modeLabel = tariffPriceModeLabel(mode).toLowerCase();
+  const label = `precio ${modeLabel}`;
   const cancel = () => { if (!inFlight.current) { setEditing(false); setError(""); } };
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -45,7 +47,7 @@ export default function InlineTariffPrice({ amount, currency, mode, disabled, on
   return <form className="cell-price-summary__editor" onSubmit={submit} onClick={event => event.stopPropagation()}>
     <div className="cell-price-summary__controls">
       <span aria-hidden="true">{currency}</span>
-      <input autoFocus inputMode="decimal" aria-label={`Importe ${mode}`} aria-invalid={Boolean(error)}
+      <input autoFocus inputMode="decimal" aria-label={`Importe ${modeLabel}`} aria-invalid={Boolean(error)}
         value={draft} disabled={disabled || saving} onFocus={event => event.target.select()}
         onChange={event => setDraft(event.target.value)} onKeyDown={event => {
           if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); cancel(); }

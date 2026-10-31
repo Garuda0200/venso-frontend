@@ -175,6 +175,7 @@ const EditableValue = ({
   fileActivities = [],
   fileQuotations = [],
   rowValues = {},
+  readOnly = false,
 }: {
   activity: BibliaActivity;
   field: keyof BibliaActivity;
@@ -192,6 +193,7 @@ const EditableValue = ({
   fileActivities?: BibliaActivity[];
   fileQuotations?: Record<string, any>[];
   rowValues?: Partial<Record<BibliaDraftField, string>>;
+  readOnly?: boolean;
 }) => {
   const rawValue = activity[field];
   const [editing, setEditing] = useState(false);
@@ -276,6 +278,19 @@ const EditableValue = ({
     <button type="button" disabled={busy} onClick={() => void finishEditing(false)} title="Cancelar este campo"><MdClose />Cancelar</button>
   </div>;
 
+  const displayedContent = richText && !isTrainField && field !== "tickets"
+    ? richText.map((run, index) => (
+      <span key={`${index}-${run.text}`} style={{
+        ...(run.font?.name ? { fontFamily: run.font.name } : {}),
+        ...(run.font?.size ? { fontSize: `${Math.max(8, Math.min(18, run.font.size))}px` } : {}),
+        ...(run.font?.bold ? { fontWeight: 800 } : {}),
+        ...(run.font?.italic ? { fontStyle: "italic" } : {}),
+        ...(run.font?.color ? { color: run.font.color } : {}),
+      }}>{run.text}</span>
+    ))
+    : visibleValue;
+  if (readOnly) return <span className="biblia-readonly-value"
+    style={{ backgroundColor: cellColor, color: getReadableTextColor(cellColor) }}>{displayedContent}</span>;
   if (!editing) {
     return (
       <button
@@ -286,20 +301,7 @@ const EditableValue = ({
         onClick={(event) => { event.stopPropagation(); setEditing(true); }}
         title={isBibliaCatalogField(field) ? "Haz clic para escribir o elegir una opción" : "Haz clic para editar"}
       >
-        {richText && !isTrainField && field !== "tickets"
-          ? richText.map((run, index) => (
-            <span
-              key={`${index}-${run.text}`}
-              style={{
-                ...(run.font?.name ? { fontFamily: run.font.name } : {}),
-                ...(run.font?.size ? { fontSize: `${Math.max(8, Math.min(18, run.font.size))}px` } : {}),
-                ...(run.font?.bold ? { fontWeight: 800 } : {}),
-                ...(run.font?.italic ? { fontStyle: "italic" } : {}),
-                ...(run.font?.color ? { color: run.font.color } : {}),
-              }}
-            >{run.text}</span>
-          ))
-          : visibleValue}
+        {displayedContent}
       </button>
     );
   }
@@ -387,14 +389,16 @@ const SortableBibliaRow = ({
   style,
   onClick,
   children,
+  disabled = false,
 }: {
   activity: BibliaActivity;
   className: string;
   style: React.CSSProperties;
   onClick: () => void;
   children: (dragProps: { attributes: Record<string, any>; listeners: Record<string, any>; isDragging: boolean }) => React.ReactNode;
+  disabled?: boolean;
 }) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: activity.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: activity.id, disabled });
   return (
     <tr
       ref={setNodeRef}
@@ -411,6 +415,7 @@ const Calendario = () => {
   const { auth } = useAuth();
   const userRole = Number(auth?.role ?? 1);
   const isSuperAdmin = userRole === 0;
+  const readOnly = userRole === 6;
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } }),
@@ -511,7 +516,7 @@ const Calendario = () => {
 
       // No mostramos registros derivados hasta que su snapshot completo ya quedó
       // persistido en cotizacion.biblia_actividades.
-      if (batch.length) await bibliaActivityService.saveQuotationSnapshotsBatch(batch);
+      if (!readOnly && batch.length) await bibliaActivityService.saveQuotationSnapshotsBatch(batch);
       setQuotations(preparedQuotes);
       setStandaloneRecords(operationalData.standalone);
     } catch (requestError) {
@@ -521,7 +526,7 @@ const Calendario = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [readOnly]);
 
   useEffect(() => { loadActivities(); }, [loadActivities]);
 
@@ -573,6 +578,7 @@ const Calendario = () => {
   }, [standaloneRecords, loadActivities]);
 
   const commitActivityChanges = useCallback(async (activity: BibliaActivity, changes: Partial<BibliaActivity>) => {
+    if (readOnly) throw new Error("La Biblia está en modo de solo lectura.");
     if (mutationInFlight.current) throw new Error("Hay otro guardado en curso. Espera y vuelve a guardar este registro.");
     mutationInFlight.current = true;
     try {
@@ -586,7 +592,7 @@ const Calendario = () => {
         await persistQuotationRecords(activity.sourceQuotationId, nextRecords);
       }
     } finally { mutationInFlight.current = false; }
-  }, [persistQuotationRecords, persistStandaloneRecord, quotations]);
+  }, [readOnly, persistQuotationRecords, persistStandaloneRecord, quotations]);
 
   const syncLinkedActivity = useCallback(async (activity: BibliaActivity) => {
     if (!activity.sourceQuotationId || mutationInFlight.current) return;
@@ -1200,16 +1206,17 @@ const Calendario = () => {
   );
 
   const renderDaySheet = () => (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={readOnly ? undefined : handleDragEnd}>
       <SortableContext items={dayActivities.map((activity) => activity.id)} strategy={verticalListSortingStrategy}>
         <div className="biblia-sheet-wrap" role="region" aria-label="Tabla completa de la Biblia de actividades. Desliza horizontalmente para consultar todas las columnas.">
           <fieldset className="biblia-sheet-editor" disabled={saving || refreshing || savingDraftId !== null || creatingQuotationRequestId !== null}>
           <table className="biblia-sheet-table">
-            <thead><tr>{BIBLIA_SHEET_COLUMNS.map(([field, label]) => <th key={field}>{label}</th>)}<th>ACCIONES</th></tr></thead>
+            <thead><tr>{BIBLIA_SHEET_COLUMNS.map(([field, label]) => <th key={field}>{label}</th>)}{!readOnly && <th>ACCIONES</th>}</tr></thead>
             <tbody>
               {dayActivities.map((activity) => {
                 return (
                   <SortableBibliaRow
+                    disabled={readOnly}
                     key={activity.id}
                     activity={activity}
                     className={`${selectedActivityId === activity.id ? "is-selected" : ""}${activity.sourceType === "standalone" ? " is-standalone" : ""}`}
@@ -1222,7 +1229,7 @@ const Calendario = () => {
                   >
                     {({ attributes, listeners }) => <>
                       {BIBLIA_SHEET_COLUMNS.map(([field, label]) => {
-                        const editor = field === "nationality" ? (
+                        const editor = !readOnly && field === "nationality" ? (
                           <ParticipantPlanEditor
                             activity={activity}
                             quotation={quotations.find(quote => String(quote.id) === activity.sourceQuotationId)}
@@ -1237,6 +1244,7 @@ const Calendario = () => {
                           />
                         ) : (
                           <EditableValue
+                            readOnly={readOnly}
                             activity={activity}
                             field={field}
                             fileActivities={field === "file" ? activities : undefined}
@@ -1273,12 +1281,12 @@ const Calendario = () => {
                               color: getReadableTextColor(getBibliaExcelCellColor(activity, field)),
                             }}
                           >
-                            {field === "file" && activity.sourceType === "standalone" && !activity.sourceQuotationId ? (
+                            {!readOnly && field === "file" && activity.sourceType === "standalone" && !activity.sourceQuotationId ? (
                               <div className="biblia-file-cell">
                                 {editor}
                                 {renderQuotationLinkPopover(activity)}
                               </div>
-                            ) : field === "file" && activity.sourceQuotationId ? (
+                            ) : !readOnly && field === "file" && activity.sourceQuotationId ? (
                               <div className="biblia-file-cell">
                                 {editor}
                                 <BibliaQuotationLink quotationId={activity.sourceQuotationId} role={userRole} />
@@ -1290,7 +1298,7 @@ const Calendario = () => {
                           </td>
                         );
                       })}
-                      <td className="biblia-sheet-table__actions" data-label="Acciones">
+                      {!readOnly && <td className="biblia-sheet-table__actions" data-label="Acciones">
                         <BibliaRowSave draft={rowDrafts[activity.id]} busy={savingDraftId === activity.id}
                           disabled={saving || refreshing || savingDraftId !== null || creatingQuotationRequestId !== null}
                           file={activity.file} onSave={() => void commitField(activity)} />
@@ -1312,7 +1320,7 @@ const Calendario = () => {
                           </button>
                         )}
                         {renderVoucherButton(activity, true)}
-                      </td>
+                      </td>}
                     </>}
                   </SortableBibliaRow>
                 );
@@ -1378,7 +1386,7 @@ const Calendario = () => {
         <div className="biblia-toolbar">
           <div className="biblia-toolbar__side biblia-toolbar__side--left">
             <button type="button" className="biblia-toolbar__today" onClick={() => setCurrentDate(new Date())}><MdToday /> Hoy</button>
-            <button type="button" className="biblia-toolbar__add" onClick={() => void addQuickBibliaRecord()} disabled={saving}><MdAdd /> Agregar registro</button>
+            {!readOnly && <button type="button" className="biblia-toolbar__add" onClick={() => void addQuickBibliaRecord()} disabled={saving}><MdAdd /> Agregar registro</button>}
           </div>
           <div className="biblia-toolbar__navigation">
             <button type="button" onClick={() => changePeriod(-1)} aria-label="Periodo anterior"><MdChevronLeft /></button>

@@ -6,7 +6,7 @@ const root = path.resolve(__dirname, "..");
 const tmpDir = path.join(root, ".tmp-feature-tests");
 
 const testSuites = [
-  { name: "tarifas por agencia y espacio de servicios", tests: ["src/pages/Reservas/Servicios/utils/__tests__/agencyTariffWorkspace.test.js", "src/pages/Reservas/Servicios/utils/__tests__/tariffCurrencyForm.test.js", "src/pages/Reservas/Servicios/utils/__tests__/providerNavigation.test.js"] },
+  { name: "tarifas por agencia y espacio de servicios", tests: ["src/pages/Reservas/Servicios/utils/__tests__/agencyTariffWorkspace.test.js", "src/pages/Reservas/Servicios/utils/__tests__/tariffCurrencyForm.test.js", "src/pages/Reservas/Servicios/utils/__tests__/tariffAgencyCloneFlow.test.js", "src/pages/Reservas/Servicios/utils/__tests__/providerNavigation.test.js"] },
   { name: "preparación de paquetes", tests: ["src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/packageImportPreparation.test.js"] },
   { name: "reservas nativas e identidad", tests: [
     "src/pages/Reservas/VouchersReserva/components/ReservaServiceEditor/utils/__tests__/nativeReservationCurrency.test.js",
@@ -91,6 +91,7 @@ const testSuites = [
       "src/pages/Reservas/Servicios/utils/__tests__/cataloguePresentation.test.js",
       "src/pages/Reservas/Calendario/utils/__tests__/bibliaFileAndTicketSelection.test.js",
       "src/pages/Reservas/Calendario/utils/__tests__/bibliaActivityMapper.test.js",
+      "src/pages/Reservas/Calendario/utils/__tests__/bibliaTransferReadOnly.test.js",
       "src/pages/Reservas/Calendario/utils/__tests__/bibliaTransportCatalog.test.js",
       "src/pages/Reservas/Calendario/utils/__tests__/bibliaEditableValueSource.test.js",
       "src/pages/Reservas/Calendario/utils/__tests__/bibliaFileLinkPlacementSource.test.js",
@@ -122,6 +123,7 @@ const testSuites = [
       "src/pages/Contabilidad/Files/domain/__tests__/movementFiles.test.js",
       "src/pages/Contabilidad/Liquidaciones/domain/__tests__/pendingPaymentGroups.test.js",
       "src/pages/Contabilidad/Reportes/utils/__tests__/paymentReportUtils.test.js",
+      "src/components/Contabilidad/__tests__/agencyPaymentReportFlow.test.js",
       "src/pages/Contabilidad/Reportes/utils/__tests__/ticketPaymentPresentation.test.js",
       "src/tests/magicParityVenso.test.js",
       "src/tests/magicAdvanceExtras.test.js",

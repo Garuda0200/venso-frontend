@@ -4,6 +4,7 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { parseHTML } from "linkedom";
 import TarifaPriceSummary from "../../components/tarifa/TarifaPriceSummary";
 import EntidadIconView from "../../components/EntidadIconView";
 import { initialTariffModes, validateTariffModePrices, buildTariffModePrices } from "../tariffPriceModes";
@@ -12,12 +13,13 @@ import { buildInlineTariffPricePatch, saveInlineTariffPrice } from "../tariffInl
 const renderPrice = (tarifa: any) => renderToStaticMarkup(<TarifaPriceSummary tarifa={tarifa} />);
 const source = (path: string) => readFileSync(resolve(process.cwd(), "src/pages/Reservas/Servicios", path), "utf8");
 
-test("tarifa dual identifica compartido y privado sin reordenar sus precios", () => {
+test("tarifa dual muestra Privado total y Compartido por persona conservando el importe de cada campo", () => {
   const html = renderPrice({ precio_compartido: "80", precio_privado: "40", moneda: "dolares" });
-  assert.match(html, /Compartido/);
-  assert.match(html, /\$ 80.00/);
-  assert.match(html, /Privado/);
-  assert.match(html, /\$ 40.00/);
+  const { document } = parseHTML(`<html><body>${html}</body></html>`);
+  assert.deepEqual([...document.querySelectorAll(".cell-price-summary__entry")].map(entry=>[
+    entry.querySelector(".cell-price-summary__mode").getAttribute("title"),
+    entry.querySelector("strong").textContent,
+  ]), [["Privado · total", "$ 80.00"], ["Compartido · por persona", "$ 40.00"]]);
   assert.equal((html.match(/<button /g) || []).length, 2);
   assert.match(html, /aria-pressed="true"/);
   assert.match(html, /aria-pressed="false"/);
@@ -25,9 +27,9 @@ test("tarifa dual identifica compartido y privado sin reordenar sus precios", ()
 
 test("una modalidad desactivada no muestra chip ni cambia la moneda", () => {
   const html = renderPrice({ precio_compartido: null, precio_privado: "125.50", moneda: "soles" });
-  assert.match(html, /Privado/);
+  assert.match(html, /Compartido/);
   assert.match(html, /S\/ 125.50/);
-  assert.doesNotMatch(html, /Compartido/);
+  assert.doesNotMatch(html, /Privado/);
 });
 
 test("ausencia de precio no se transforma en cero, NaN ni un importe inventado", () => {
@@ -85,10 +87,10 @@ test("el formulario y la clonación mantienen modalidades sin el campo retirado"
 });
 
 test("cada importe permite edición directa sin abrir el popover del formulario", () => {
-  const html = renderToStaticMarkup(<TarifaPriceSummary tarifa={{precio_compartido:25,precio_privado:25}}
+  const html = renderToStaticMarkup(<TarifaPriceSummary tarifa={{precio_compartido:80,precio_privado:40}}
     onPriceSave={async () => {}} />);
-  assert.match(html, /aria-label="Editar precio compartido: \$ 25.00"/);
-  assert.match(html, /aria-label="Editar precio privado: \$ 25.00"/);
+  assert.match(html, /aria-label="Editar precio privado: \$ 80.00"/);
+  assert.match(html, /aria-label="Editar precio compartido: \$ 40.00"/);
   assert.doesNotMatch(html, /<form/);
   const renderer = source("components/tarifa/TarifasCellRenderer.tsx");
   assert.match(renderer, /onPriceSave=\{canManage/);

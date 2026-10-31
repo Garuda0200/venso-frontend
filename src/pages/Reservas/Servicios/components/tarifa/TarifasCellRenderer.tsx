@@ -343,9 +343,9 @@ const TarifasCellRenderer = ({
                 {tipo === "interna" ? <FaUserTie /> : <FaUsers />}
                 <span>
                   {tipo === "interna"
-                    ? "Confidencial"
+                    ? "Interna"
                     : tipo === "externa"
-                      ? "Pública"
+                      ? "Externa"
                       : "Heredada"}
                 </span>
               </div>
@@ -369,8 +369,8 @@ const TarifasCellRenderer = ({
               ? {
                   visibilidad:
                     deletingTarifa.tipo_tarifa === "interna"
-                      ? "Confidencial"
-                      : "Pública",
+                      ? "Interna"
+                      : "Externa",
                   temporada: deletingTarifa.tiene_temporada
                     ? deletingTarifa.temporada
                     : "Estándar",

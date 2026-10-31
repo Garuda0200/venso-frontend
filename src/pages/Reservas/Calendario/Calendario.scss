@@ -1331,6 +1331,17 @@
   }
 }
 
+.biblia-readonly-value {
+  display: block;
+  padding: 4px 5px;
+  font-size: .75rem;
+  font-weight: 650;
+  line-height: 1.25;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 .biblia-edit-value {
   width: 100%;
   min-height: 31px;

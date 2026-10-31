@@ -76,6 +76,12 @@ const getPrimaryColor = () => {
 
 const toExcelArgb = (hex: string) => `FF${hex.replace("#", "").toUpperCase()}`;
 
+const reportProviderLabel = (row: any) =>
+  ["endoses", "tour"].includes(row.serviceType) ? "" : row.providerName;
+const reportProviderHeading = (provider: any) => provider.rows?.every((row: any) => ["endoses", "tour"].includes(row.serviceType))
+  ? [...new Set(provider.rows.map((row: any) => row.serviceName))].join(" · ")
+  : provider.providerName;
+
 const styleExcelTitle = (cell: any, primaryArgb: string) => {
   cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: primaryArgb } };
   cell.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 14 };
@@ -173,6 +179,7 @@ const AgencyPaymentReportModal: React.FC<AgencyPaymentReportModalProps> = ({
   const [paymentRequests, setPaymentRequests] = useState<any[]>([]);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(() => new Set());
   const [error, setError] = useState("");
+  const [showAgencyTitle, setShowAgencyTitle] = useState(true);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -291,7 +298,7 @@ const AgencyPaymentReportModal: React.FC<AgencyPaymentReportModalProps> = ({
     styleExcelTitle(summary.getCell("A1"), primaryArgb);
     summary.getRow(1).height = 28;
     summary.addRow({ field: "FILE", value: reportCode });
-    summary.addRow({ field: "AGENCIA", value: agency?.name || "Agencia" });
+    if (showAgencyTitle) summary.addRow({ field: "AGENCIA", value: agency?.name || "Agencia" });
     summary.addRow({ field: "COTIZACIÓN", value: quote?.titulo || quote?.id });
     summary.addRow({ field: "PAX", value: quote?.cantidadpersonas || 1 });
     summary.addRow([]);
@@ -341,9 +348,9 @@ const AgencyPaymentReportModal: React.FC<AgencyPaymentReportModalProps> = ({
         day: `Día ${row.dayNumber}`,
         date: row.serviceDate || "",
         file: reportCode,
-        agency: agency?.name || "Agencia",
+        agency: showAgencyTitle ? agency?.name || "Agencia" : "",
         pax: row.pax,
-        provider: row.providerName,
+        provider: reportProviderLabel(row),
         service: [row.serviceName, ticketPaymentDetailText(row)].filter(Boolean).join("\n"),
         currency: row.currency === "soles" ? "PEN" : "USD",
         unitAgency: ticketPaymentTariffs(row).length > 1 ? "" : row.unitWithCommission,
@@ -354,6 +361,7 @@ const AgencyPaymentReportModal: React.FC<AgencyPaymentReportModalProps> = ({
       ledger.getColumn(column).numFmt = "#,##0";
     });
     ledger.views = [{ state: "frozen", ySplit: 3 }];
+    ledger.getColumn("agency").hidden = !showAgencyTitle;
 
     const detailName = sanitizeFileName(String(reportCode)).slice(0, 31) || "LIQUIDACION";
     const sheet = workbook.addWorksheet(detailName);
@@ -369,7 +377,7 @@ const AgencyPaymentReportModal: React.FC<AgencyPaymentReportModalProps> = ({
     styleExcelTitle(sheet.getCell("A1"), primaryArgb);
     sheet.getRow(1).height = 28;
     sheet.mergeCells("A2:E2");
-    sheet.getCell("A2").value = `FILE: ${reportCode} · AGENCIA: ${agency?.name || "Agencia"}`;
+    sheet.getCell("A2").value = `FILE: ${reportCode}${showAgencyTitle ? ` · AGENCIA: ${agency?.name || "Agencia"}` : ""}`;
     sheet.mergeCells("A3:E3");
     sheet.getCell("A3").value = `COTIZACIÓN: ${quote?.titulo || quote?.id} · PAX: ${quote?.cantidadpersonas || 1}`;
 
@@ -435,7 +443,7 @@ const AgencyPaymentReportModal: React.FC<AgencyPaymentReportModalProps> = ({
   ) => {
     const primaryArgb = toExcelArgb(getPrimaryColor());
     const paleArgb = "FFFFE6F2";
-    const rawName = sanitizeFileName(provider.providerName).slice(0, 24) || "Proveedor";
+    const rawName = sanitizeFileName(reportProviderHeading(provider)).slice(0, 24) || "Proveedor";
     let sheetName = rawName;
     let suffix = 2;
     while (workbook.getWorksheet(sheetName)) {
@@ -479,7 +487,7 @@ const AgencyPaymentReportModal: React.FC<AgencyPaymentReportModalProps> = ({
     });
 
     sheet.mergeCells("B8:F8");
-    sheet.getCell("B8").value = provider.providerName;
+    sheet.getCell("B8").value = reportProviderHeading(provider);
     sheet.getCell("B8").font = { bold: true, size: 14 };
     sheet.mergeCells("B9:F9");
     sheet.getCell("B9").value = `FILE ${reportCode}`;
@@ -623,7 +631,7 @@ const AgencyPaymentReportModal: React.FC<AgencyPaymentReportModalProps> = ({
         (dayGroup) => `<section class="day"><div class="day-head"><strong>DÍA ${dayGroup.dayNumber}</strong><span>${escapeHtml(dayGroup.dayTitle)} · ${escapeHtml(formatDisplayDate(dayGroup.serviceDate))}</span></div>
           <table><thead><tr><th>SERVICIO</th><th>PAX</th><th>MONEDA</th><th>PRECIO / PAX AGENCIA</th><th>TOTAL AGENCIA</th></tr></thead><tbody>${groupPaymentServiceSections(dayGroup.rows)
             .map((section) => `${section.isTicket ? `<tr><td colspan="5"><strong>${escapeHtml(section.title)}</strong></td></tr>` : ""}${section.rows.map(
-              (row) => `<tr><td>${reportServiceHtml(row, !section.isTicket)}<small>${escapeHtml(row.providerName)}</small></td><td>${row.pax}</td><td>${row.currency === "soles" ? "PEN" : "USD"}</td><td>${ticketPaymentTariffs(row).length > 1 ? "Tarifas por pasajero" : moneyLabel(row.unitWithCommission, row.currency)}</td><td><strong>${moneyLabel(row.totalWithCommission, row.currency)}</strong></td></tr>`,
+              (row) => `<tr><td>${reportServiceHtml(row, !section.isTicket)}${reportProviderLabel(row) ? `<small>${escapeHtml(reportProviderLabel(row))}</small>` : ""}</td><td>${row.pax}</td><td>${row.currency === "soles" ? "PEN" : "USD"}</td><td>${ticketPaymentTariffs(row).length > 1 ? "Tarifas por pasajero" : moneyLabel(row.unitWithCommission, row.currency)}</td><td><strong>${moneyLabel(row.totalWithCommission, row.currency)}</strong></td></tr>`,
             ).join("")}`)
             .join("")}</tbody></table></section>`,
       )
@@ -641,7 +649,7 @@ const AgencyPaymentReportModal: React.FC<AgencyPaymentReportModalProps> = ({
       @media print{body{padding:0}}
     </style></head><body>
       <h1 class="title">LIQUIDACIÓN DE SERVICIOS - PAGO DE AGENCIA</h1>
-      <div class="meta-block"><p class="meta"><strong>FILE:</strong> ${escapeHtml(reportCode)}</p><p class="meta"><strong>AGENCIA:</strong> ${escapeHtml(agency?.name || "Agencia")}</p><p class="meta"><strong>COTIZACIÓN:</strong> ${escapeHtml(quote?.titulo || quote?.id)} · <strong>PAX:</strong> ${quote?.cantidadpersonas || 1}</p></div>
+      <div class="meta-block"><p class="meta"><strong>FILE:</strong> ${escapeHtml(reportCode)}</p>${showAgencyTitle ? `<p class="meta"><strong>AGENCIA:</strong> ${escapeHtml(agency?.name || "Agencia")}</p>` : ""}<p class="meta"><strong>COTIZACIÓN:</strong> ${escapeHtml(quote?.titulo || quote?.id)} · <strong>PAX:</strong> ${quote?.cantidadpersonas || 1}</p></div>
       ${daysHtml}<div class="totals">${totalHtml}</div><script>window.onload=()=>window.print();</script></body></html>`);
     popup.document.close();
   };
@@ -662,7 +670,7 @@ const AgencyPaymentReportModal: React.FC<AgencyPaymentReportModalProps> = ({
             ).join("")}`,
           ).join(""))
           .join("");
-        return `<article class="kelly-doc"><header class="brand"><img src="${BRAND.assets.logoColor}" alt="${BRAND.name}"/><div class="contact"><strong>DOCUMENTO DE COBRANZA</strong><span>${VENSO_CONTACT.address}</span><span>Telf.: ${VENSO_CONTACT.phones}</span><span>Email: ${VENSO_CONTACT.email}</span><span>${VENSO_CONTACT.website}</span></div></header><div class="identity"><div><h2>${escapeHtml(provider.providerName)}</h2><small>FILE ${escapeHtml(reportCode)}</small></div><div class="date-box"><span>Día<b>${dateParts.day}</b></span><span>Mes<b>${dateParts.month}</b></span><span>Año<b>${dateParts.year}</b></span></div></div><table><thead><tr><th>FECHA</th><th>FILE</th><th>CANT</th><th>PAX</th><th>SERVICIO</th><th>SOLES</th><th>DÓLARES</th><th>ESTADO</th></tr></thead><tbody>${body}<tr class="total"><td colspan="5">TOTAL</td><td>${provider.totals.soles.commercial ? moneyLabel(provider.totals.soles.commercial, "soles") : ""}</td><td>${provider.totals.dolares.commercial ? moneyLabel(provider.totals.dolares.commercial, "dolares") : ""}</td><td>${requestStatusLabel(provider.status)}</td></tr></tbody></table><div class="status">${requestStatusLabel(provider.status)}</div></article>`;
+        return `<article class="kelly-doc"><header class="brand"><img src="${BRAND.assets.logoColor}" alt="${BRAND.name}"/><div class="contact"><strong>DOCUMENTO DE COBRANZA</strong><span>${VENSO_CONTACT.address}</span><span>Telf.: ${VENSO_CONTACT.phones}</span><span>Email: ${VENSO_CONTACT.email}</span><span>${VENSO_CONTACT.website}</span></div></header><div class="identity"><div><h2>${escapeHtml(reportProviderHeading(provider))}</h2><small>FILE ${escapeHtml(reportCode)}</small></div><div class="date-box"><span>Día<b>${dateParts.day}</b></span><span>Mes<b>${dateParts.month}</b></span><span>Año<b>${dateParts.year}</b></span></div></div><table><thead><tr><th>FECHA</th><th>FILE</th><th>CANT</th><th>PAX</th><th>SERVICIO</th><th>SOLES</th><th>DÓLARES</th><th>ESTADO</th></tr></thead><tbody>${body}<tr class="total"><td colspan="5">TOTAL</td><td>${provider.totals.soles.commercial ? moneyLabel(provider.totals.soles.commercial, "soles") : ""}</td><td>${provider.totals.dolares.commercial ? moneyLabel(provider.totals.dolares.commercial, "dolares") : ""}</td><td>${requestStatusLabel(provider.status)}</td></tr></tbody></table><div class="status">${requestStatusLabel(provider.status)}</div></article>`;
       })
       .join("");
     popup.document.write(`<!doctype html><html><head><title>Pagos Venso ${escapeHtml(reportCode)}</title><style>
@@ -704,6 +712,10 @@ const AgencyPaymentReportModal: React.FC<AgencyPaymentReportModalProps> = ({
       size="large"
       className="agency-payment-report-modal"
     >
+      <label className="agency-payment-report__title-switch">
+        <input type="checkbox" role="switch" checked={showAgencyTitle} onChange={event => setShowAgencyTitle(event.target.checked)} />
+        Mostrar título de agencia
+      </label>
       {loading ? (
         <div className="agency-payment-report__state">Cargando cotización completa…</div>
       ) : error ? (
@@ -730,7 +742,7 @@ const AgencyPaymentReportModal: React.FC<AgencyPaymentReportModalProps> = ({
                   </header>
                   <div className="venso-kelly-document__identity">
                     <div>
-                      <h3>{provider.providerName}</h3>
+                      <h3>{reportProviderHeading(provider)}</h3>
                       <span>FILE {reportCode}</span>
                     </div>
                     <div className="venso-kelly-document__date-box" aria-label="Fecha del documento">
@@ -796,7 +808,7 @@ const AgencyPaymentReportModal: React.FC<AgencyPaymentReportModalProps> = ({
           <header className="agency-payment-report__header">
             <div>
               <span>LIQUIDACIÓN DE SERVICIOS</span>
-              <h3>{agency?.name || "Agencia externa"}</h3>
+              {showAgencyTitle && <h3>{agency?.name || "Agencia externa"}</h3>}
               <p>{quote?.titulo || quote?.id}</p>
             </div>
             <div className="agency-payment-report__meta">
@@ -832,7 +844,7 @@ const AgencyPaymentReportModal: React.FC<AgencyPaymentReportModalProps> = ({
                             <tr>
                               <td>
                                 {!section.isTicket && <strong>{row.serviceName}</strong>}
-                                <small>{row.providerName}</small>
+                                {reportProviderLabel(row) && <small>{reportProviderLabel(row)}</small>}
                                 <TicketPaymentBreakdown row={row} />
                               </td>
                               <td>{row.pax}</td>

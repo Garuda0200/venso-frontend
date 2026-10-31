@@ -152,7 +152,7 @@ export function Header() {
   ]
     .filter(Boolean)
     .join(" ") || firstName;
-  const roleLabel = isSuperAdmin ? "Super Admin" : activeSystem?.label || "Venso";
+  const roleLabel = userRole === 6 ? "Transfer" : isSuperAdmin ? "Super Admin" : activeSystem?.label || "Venso";
 
   const handleSystemSelection = (system) => {
     setNavOpen(false);
@@ -322,7 +322,7 @@ export function Header() {
 
         <div className="venso-navbar-actions">
           <div className="header-notification-slot" aria-label="Notificaciones">
-            <NotificationBell />
+            {userRole !== 6 && <NotificationBell />}
           </div>
 
           <div className="header-profile">
@@ -362,7 +362,7 @@ export function Header() {
                   <small>{isProfileRoute ? "Mi perfil" : activeMenuItem?.name || "Panel de trabajo"}</small>
                 </div>
 
-                <div className="venso-profile-menu__actions">
+                {userRole !== 6 && <div className="venso-profile-menu__actions">
                   <button
                     type="button"
                     className={isProfileRoute ? "active" : ""}
@@ -384,7 +384,7 @@ export function Header() {
                       <small>Cambiar contraseña</small>
                     </span>
                   </button>
-                </div>
+                </div>}
 
                 {availableSystems.length > 1 && (
                   <div className="venso-profile-menu__areas">
