@@ -33,6 +33,13 @@ export function bibliaTourDraftContext(activity: BibliaActivity, values: BibliaC
   return next;
 }
 
+/** Excursion resolves the tour; Endose remains independent operational text. */
+export function bibliaTourRecommendationPayload(activity: BibliaActivity, excursion: string, selections?: string) {
+  return { excursion, pax: activity.pax, agency: activity.agency, agencyId: activity.agencyId,
+    language: activity.language, dateKey: activity.dateKey, serviceMode: activity.serviceMode,
+    tourSelections: selections ? JSON.parse(selections) : activity.tourSelections || [] };
+}
+
 /** Normaliza solo al guardar: un borrador numérico incompleto no se pierde. */
 export function buildBibliaRowChanges(activity: BibliaActivity, values: BibliaCellDrafts): Partial<BibliaActivity> {
   const changes: Record<string, unknown> = {};

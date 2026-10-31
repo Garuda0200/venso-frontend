@@ -23,7 +23,6 @@ import {
 import { getDivisionCountsForService } from "../DaysEditor/utils/priceCalculations";
 import {
   getPassengerIdsByType,
-  getTourCapacity,
   createUnifiedService,
   updateServicePricesForPassengerChange,
 } from "../../utils/unifiedServiceManager";
@@ -40,6 +39,7 @@ import {
 import { pruneEmptyMutableTicketCohorts } from "../../utils/passengerPricingReconciliation";
 import axiosInstance from "../../../../../../utils/axiosInstance";
 import { getHotelRoomCapacity } from "../../../../../../utils/hotelRoomTypes";
+import { sharedPriceFlag } from "../../../../../../utils/servicePricingType";
 import "./ExternalItineraryEditor.scss";
 
 const SERVICE_TYPE_LABELS = {
@@ -859,10 +859,6 @@ const ExternalItineraryEditor = ({
         return paxAssigned;
       }
 
-      if (serviceType === "endoses") {
-        return getTourCapacity(service) || 1;
-      }
-
       if (serviceType === "extras") {
         return (
           service.parentService?.capacidad ||
@@ -972,11 +968,6 @@ const ExternalItineraryEditor = ({
       newPrecioOriginal = numValue * capacity;
     } else if (serviceType === "transportes" || serviceType === "guias") {
       newPrecioOriginal = numValue * paxForDivision;
-    } else if (serviceType === "endoses") {
-      newPrecioOriginal =
-        getTourCapacity(service) != null
-          ? numValue * capacity
-          : numValue * paxForDivision;
     } else if (serviceType === "extras") {
       newPrecioOriginal = numValue * capacity;
     } else {
@@ -995,7 +986,7 @@ const ExternalItineraryEditor = ({
             parseMoney(currentService.tariff?.childExtrasTotal),
         },
       };
-      if (serviceType === "tickets") {
+      if (serviceType === "tickets" || serviceType === "endoses") {
         const shared = (updated.tipoPrecio ?? updated.tariff.tipoPrecio ??
           updated.tariff.selectedPackageType) === "compartido";
         updated.precioServicio = shared ? newPrecioOriginal : numValue;
@@ -1069,9 +1060,11 @@ const ExternalItineraryEditor = ({
             ).toLowerCase();
             const isHotelSvc = svcTypeStr === "hoteles";
             const isDividedSvc =
-              svcTypeStr === "transportes" ||
-              svcTypeStr === "guias" ||
-              (svcTypeStr === "endoses" && getTourCapacity(service) != null);
+              sharedPriceFlag(
+                service.tipoPrecio ??
+                  service.tariff?.tipoPrecio ??
+                  service.tariff?.selectedPackageType,
+              ) === true;
             const newAdultEquivCount = currentAssignedIds.length;
 
             let updatedTariff = {
@@ -1167,9 +1160,11 @@ const ExternalItineraryEditor = ({
           ""
         ).toLowerCase();
         const nonAdultIsDivided =
-          nonAdultServiceType === "transportes" ||
-          nonAdultServiceType === "guias" ||
-          (nonAdultServiceType === "endoses" && getTourCapacity(service) != null);
+          sharedPriceFlag(
+            service.tipoPrecio ??
+              service.tariff?.tipoPrecio ??
+              service.tariff?.selectedPackageType,
+          ) === true;
         const nonAdultIsHotel = nonAdultServiceType === "hoteles";
         const nonAdultRealAdultCount = materializedAssignedIds.filter(
           (id) => !id.startsWith("child:"),
@@ -1390,9 +1385,11 @@ const ExternalItineraryEditor = ({
 
         const serviceType = detectServiceType(updatedService);
         const isDividedPricing =
-          serviceType === "transportes" ||
-          serviceType === "guias" ||
-          (serviceType === "endoses" && getTourCapacity(updatedService) != null);
+          sharedPriceFlag(
+            updatedService.tipoPrecio ??
+              updatedService.tariff?.tipoPrecio ??
+              updatedService.tariff?.selectedPackageType,
+          ) === true;
 
         if (isDividedPricing) {
           const basePrice = parseMoney(updatedService.tariff?.precio_original);
@@ -1551,11 +1548,12 @@ const ExternalItineraryEditor = ({
         const childPriceMap = {
           ...(service.assignedChildExplicitPriceMap || {}),
         };
-        const revertServiceType = detectServiceType(service);
         const revertIsDivided =
-          revertServiceType === "transportes" ||
-          revertServiceType === "guias" ||
-          (revertServiceType === "endoses" && getTourCapacity(service) != null);
+          sharedPriceFlag(
+            service.tipoPrecio ??
+              service.tariff?.tipoPrecio ??
+              service.tariff?.selectedPackageType,
+          ) === true;
         const revertBasePrice = parseMoney(
           service.tariff?.precio_original || 0,
         );
@@ -1612,9 +1610,11 @@ const ExternalItineraryEditor = ({
 
         const serviceType = detectServiceType(updatedService);
         const isDividedPricing =
-          serviceType === "transportes" ||
-          serviceType === "guias" ||
-          (serviceType === "endoses" && getTourCapacity(updatedService) != null);
+          sharedPriceFlag(
+            updatedService.tipoPrecio ??
+              updatedService.tariff?.tipoPrecio ??
+              updatedService.tariff?.selectedPackageType,
+          ) === true;
 
         if (isDividedPricing) {
           const basePrice = parseMoney(updatedService.tariff?.precio_original);

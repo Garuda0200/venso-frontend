@@ -12,6 +12,7 @@ import {calculateDaySubtotalDetailed} from '../../components/DaysEditor/utils/pr
 import {updateServicePricesForPassengerChange} from '../unifiedServiceManager';
 import {isOperationallyAssignedService, preserveOperationallyAssignedServices} from '../assignmentProtection';
 import {pruneEmptyMutableTicketCohorts} from '../passengerPricingReconciliation';
+import {sharedPriceFlag} from '../../../../../../utils/servicePricingType';
 
 // Execute the actual editor callbacks rather than a second implementation of
 // conversion/reversion. Transpilation also removes the old commented callbacks.
@@ -36,12 +37,12 @@ const child='child:0:C1', otherChild='child:1:C2';
 const ids=[...adults,child,otherChild];
 const people={adults:adults.map(id=>({id,passenger_key:id})),children:[child,otherChild].map(id=>({id,passenger_key:id}))};
 const fixture=()=>({id:'reversion-demo',typeService:'transportes',parentService:{typeService:'transportes',id:1},childService:{id:1,nro_pasajeros:8,capacidad:8},assignedPassengerIds:[...ids],assignedPassengerCount:6,
- assignedChildExplicitPriceMap:{[child]:0,[otherChild]:0},convertedChildToAdultMap:{},pricingMode:'fixed',precioAdultoDividido:true,precioServicio:79.70,
+ assignedChildExplicitPriceMap:{[child]:0,[otherChild]:0},convertedChildToAdultMap:{},pricingMode:'fixed',tipoPrecio:'compartido',precioServicio:79.70,
  pricingMetadata:{policy:'nominal_v2'},passengerSelection:{selectedIds:[...ids],preciosNinos:{[child]:0,[otherChild]:0}},
- tariff:{precio:19.925,precio_original:79.70,precio_original_with_child_extras:79.70,precio_adulto_dividido:true,moneda:'dolares'}});
+ tariff:{precio:19.925,precio_original:79.70,precio_original_with_child_extras:79.70,tipo_precio:'compartido',moneda:'dolares'}});
 const runMain=(initial,actions)=>{
  let days=[{numero:1,servicios:[structuredClone(initial)]}];
- const context={...passengerState,setDays:updater=>{days=updater(days)},exchangeRate:3.25,baseTcRef:{current:3.25},resolveTicketChildUnitPrice,detectServiceType,isSharedServicePrice:s=>Boolean(s.precioAdultoDividido??s.tariff?.precio_adulto_dividido)};
+ const context={...passengerState,setDays:updater=>{days=updater(days)},exchangeRate:3.25,baseTcRef:{current:3.25},resolveTicketChildUnitPrice,detectServiceType,sharedPriceFlag};
  for(const [name,id] of actions){
   const handler=new Function(...Object.keys(context),helpers+'\n'+declaration(editor,name)+'\nreturn '+name+';')(...Object.values(context));
   handler(0,0,id);
@@ -53,7 +54,7 @@ const runExternal=(initial,actions)=>{
  let days=[{numero:1,servicios:[structuredClone(initial)]}];
  const context={...passengerState,useCallback:f=>f,setDays:updater=>{days=updater(days)},allPassengerIds:ids,
   normalizedPeopleDetails:people,updateServicePricesForPassengerChange,isOperationallyAssignedService,
-  preserveOperationallyAssignedServices,pruneEmptyMutableTicketCohorts,detectServiceType,
+  preserveOperationallyAssignedServices,pruneEmptyMutableTicketCohorts,detectServiceType,sharedPriceFlag,
   isSharedServicePrice:s=>Boolean(s.precioAdultoDividido??s.tariff?.precio_adulto_dividido)};
  const shared=['parseMoney','normalizeServicesForPeople','syncServicePassengerState','normalizeServiceForDisplay','updateServiceByIndex'].map(name=>declaration(external,name)).join('\n');
  for(const [name,id] of actions){

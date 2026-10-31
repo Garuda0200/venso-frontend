@@ -22,6 +22,7 @@ import {
 import { FaHotel, FaTrain } from "react-icons/fa";
 import { formatCurrency } from "../../utils/formatters";
 import axiosInstance from "../../../../../../utils/axiosInstance";
+import { sharedPriceFlag } from "../../../../../../utils/servicePricingType";
 import ServiceCategoryButtons from "../ServicePicker/components/ServiceCategoryButtons";
 import HotelItineraryModal from "./HotelItineraryModal";
 import CiudadesSelectorModal from "./components/CiudadesSelectorModal";
@@ -1290,9 +1291,11 @@ const DaysEditor = forwardRef(
           ).toLowerCase();
           const isHotelSvc = svcTypeStr === "hoteles";
           const isDividedSvc =
-            svcTypeStr === "transportes" ||
-            svcTypeStr === "guias" ||
-            (svcTypeStr === "endoses" && getTourCapacity(newService) != null);
+            sharedPriceFlag(
+              newService.tipoPrecio ??
+                newService.tariff?.tipoPrecio ??
+                newService.tariff?.selectedPackageType,
+            ) === true;
           const realAdultCount =
             materializedAssignedIds.filter((id) => !id.startsWith("child:"))
               .length || benefAdultCount;
@@ -1633,9 +1636,11 @@ const DaysEditor = forwardRef(
           service.serviceCategory ||
           "";
         const isDividedPricing =
-          serviceType === "transportes" ||
-          serviceType === "guias" ||
-          (serviceType === "endoses" && getTourCapacity(service) != null);
+          sharedPriceFlag(
+            service.tipoPrecio ??
+              service.tariff?.tipoPrecio ??
+              service.tariff?.selectedPackageType,
+          ) === true;
 
         const isHotel = serviceType === "hoteles";
 
@@ -1826,9 +1831,11 @@ const DaysEditor = forwardRef(
           service.serviceCategory ||
           "";
         const isDividedPricing =
-          serviceType === "transportes" ||
-          serviceType === "guias" ||
-          (serviceType === "endoses" && getTourCapacity(service) != null);
+          sharedPriceFlag(
+            service.tipoPrecio ??
+              service.tariff?.tipoPrecio ??
+              service.tariff?.selectedPackageType,
+          ) === true;
         const isHotel = serviceType === "hoteles";
 
         // For divisor services compute the correct post-revert adult unit price
@@ -2886,11 +2893,6 @@ const DaysEditor = forwardRef(
           return getRoomCapacityByType(tipoHabitacion);
         } else if (detected === "transportes" || detected === "guias") {
           return paxAssigned;
-        } else if (detected === "endoses") {
-          const tourCapacity = getTourCapacity(service);
-          if (tourCapacity != null) return tourCapacity;
-
-          return 1;
         } else if (detected === "extras") {
           return (
             service.parentService?.capacidad ||
@@ -2912,13 +2914,6 @@ const DaysEditor = forwardRef(
         newPrecioOriginal = numValue * capacity;
       } else if (serviceType === "transportes" || serviceType === "guias") {
         newPrecioOriginal = numValue * paxForDivision;
-      } else if (serviceType === "endoses") {
-        // Endose normal: precio por persona. Solo un endose con capacidad
-        // explícita representa un total grupal.
-        newPrecioOriginal =
-          getTourCapacity(service) != null
-            ? numValue * capacity
-            : numValue * paxForDivision;
       } else if (serviceType === "extras") {
         newPrecioOriginal = numValue * capacity;
       } else {
@@ -2932,9 +2927,9 @@ const DaysEditor = forwardRef(
 
         if (!svc.tariff) svc.tariff = {};
 
-        // Keep the persisted ticket base aligned with the edited fare. The
-        // pricing ledger also reads these fields when preparing the save.
-        if (serviceType === "tickets") {
+        // Keep the persisted fare aligned with the edited price. Endose
+        // capacity limits beneficiaries; it never multiplies the amount.
+        if (serviceType === "tickets" || serviceType === "endoses") {
           const shared = (svc.tipoPrecio ?? svc.tariff.tipoPrecio ??
             svc.tariff.selectedPackageType) === "compartido";
           svc.precioServicio = shared ? newPrecioOriginal : newPrecioMostrado;
@@ -2972,7 +2967,7 @@ const DaysEditor = forwardRef(
           svc,
           totalPassengers,
         );
-        if (serviceType === "tickets") {
+        if (serviceType === "tickets" || serviceType === "endoses") {
           const editedTotal = getServicePricingSnapshot(recalculated).total;
           recalculated.precioTotal = editedTotal;
           recalculated.precio_total = editedTotal;

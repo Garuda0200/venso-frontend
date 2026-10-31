@@ -10,6 +10,8 @@ import { getDivisionCountsForService } from "../../components/Ventas/Cotizacione
 import { detectServiceType } from "../../components/Ventas/Cotizaciones/EdicionCotizacion/components/DaysEditor/utils/serviceTypeMapper";
 import { isOperationallyAssignedService, preserveOperationallyAssignedServices } from "../../components/Ventas/Cotizaciones/EdicionCotizacion/utils/assignmentProtection";
 import { pruneEmptyMutableTicketCohorts } from "../../components/Ventas/Cotizaciones/EdicionCotizacion/utils/passengerPricingReconciliation";
+import { sharedPriceFlag } from "../../utils/servicePricingType";
+import { resolveTicketChildUnitPrice } from "../../components/Ventas/Cotizaciones/EdicionCotizacion/utils/ticketBeneficiaries";
 
 const relativeRoot = "src/components/Ventas/Cotizaciones/EdicionCotizacion";
 const root = existsSync(path.resolve(relativeRoot)) ? path.resolve(relativeRoot)
@@ -26,12 +28,12 @@ const declaration = (source: string, name: string) => {
   return source.slice(start.index, start.index + start[0].length + end.index + (end[0].endsWith("};") ? end[0].length : 0));
 };
 
-export function executeTicketPriceEditor(service: any, price: number, scope: string, people: any) {
+export function executeServicePriceEditor(service: any, price: number, scope: string, people: any) {
   let days = [{ numero: 1, servicios: [structuredClone(service)] }];
   const before = JSON.stringify(service);
   const { allPassengerIds } = serviceManager.getPassengerIdsByType(people);
   const context = { ...passengerState, ...pricingRuntime, ...serviceManager,
-    days, totalPassengers: allPassengerIds.length, getDivisionCountsForService, detectServiceType,
+    days, totalPassengers: allPassengerIds.length, getDivisionCountsForService, detectServiceType, sharedPriceFlag,
     editingPrice: { dayIndex: 0, serviceIndex: 0, value: String(price), isDirectEdit: true },
     exchangeRate: 3, baseTcRef: { current: 3 }, fxBaseRef: { current: new Map() }, buildBaseForService: (s: any) => s,
     setDays: (update: any) => { days = update(days); }, setEditingPrice: () => {}, useCallback: (fn: any) => fn,
@@ -44,5 +46,30 @@ export function executeTicketPriceEditor(service: any, price: number, scope: str
       .map(name => declaration(external, name)).join("\n");
   new Function(...Object.keys(context), code + "\napplyAdjustment();")(...Object.values(context));
   assert.equal(JSON.stringify(service), before, "React's previous state must remain unchanged");
+  return days[0].servicios[0];
+}
+
+export const executeTicketPriceEditor = executeServicePriceEditor;
+
+export function executeServiceChildPricingAction(service: any, action: string, scope: string, people: any, value: any) {
+  let days = [{ numero: 1, servicios: [structuredClone(service)] }];
+  const before = JSON.stringify(service);
+  const { allPassengerIds } = serviceManager.getPassengerIdsByType(people);
+  const context = { ...passengerState, ...pricingRuntime, ...serviceManager, days,
+    setDays: (update: any) => { days = update(days); }, useCallback: (fn: any) => fn,
+    normalizedPeopleDetails: people, allPassengerIds, exchangeRate: 3, baseTcRef: { current: 3 },
+    detectServiceType, sharedPriceFlag, resolveTicketChildUnitPrice, isOperationallyAssignedService,
+    preserveOperationallyAssignedServices, pruneEmptyMutableTicketCohorts,
+  };
+  delete context.default;
+  const helpers = scope === "main"
+    ? ["isChildPassengerId", "isAdultPassengerId", "dedupePassengerIdsBySlot", "findPassengerIdBySlot",
+      "removeChildSlotFromConvertedMap", "removeChildSlotFromPriceMap", "upsertChildPriceBySlot",
+      "materializeChildInAssignedIds", "cleanLegacyChildBeneficiaries"]
+    : ["parseMoney", "normalizeServicesForPeople", "syncServicePassengerState", "normalizeServiceForDisplay", "updateServiceByIndex"];
+  const source = scope === "main" ? main : external;
+  const code = [...helpers, action].map(name => declaration(source, name)).join("\n");
+  new Function(...Object.keys(context), "value", code + "\n" + action + "(0, 0, value);")(...Object.values(context), value);
+  assert.equal(JSON.stringify(service), before, "Child pricing must not mutate previous React state");
   return days[0].servicios[0];
 }

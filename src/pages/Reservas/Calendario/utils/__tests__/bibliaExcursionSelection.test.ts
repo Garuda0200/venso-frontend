@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildBibliaRowChanges, bibliaTourDraftContext } from "../bibliaRowDrafts";
+import { buildBibliaRowChanges, bibliaTourDraftContext, bibliaTourRecommendationPayload } from "../bibliaRowDrafts";
 import { materializeBibliaOverride } from "../bibliaActivityMapper";
 import { tariffPriceOptions } from "../../../../../utils/servicePricingType";
 const activity:any={id:"standalone:one",sourceType:"standalone",agency:"Venso Tours",agencyId:1,excursion:"Valle Sagrado",tourSelections:[],overrideRecord:{}};
@@ -32,4 +32,31 @@ test("recomendaciones usan agencia, idioma y pax pendientes sin alterar el snaps
  assert.equal(original.agencyId, 1);
  assert.equal(original.pax, 4);
  assert.equal(bibliaTourDraftContext(original, {pax: "-"}).pax, 4);
+});
+
+test("recomendaciones dependen de Excursión y conservan su agencia, sin filtrar por Endose", () => {
+ const original = {...activity, pax: 4, language: "ES", dateKey: "2026-09-01", serviceMode: "PRIV", endorse: "Otro operador"};
+ const payload = bibliaTourRecommendationPayload(original, "VALLE SAGRADO + CONEXION 16:36");
+ assert.equal(payload.excursion, "VALLE SAGRADO + CONEXION 16:36");
+ assert.equal(payload.agencyId, 1);
+ assert.equal(payload.pax, 4);
+ assert.equal("endorse" in payload, false);
+ for (const endorse of ["Venso", "Venso Tours", "vensotours", "No registrado", "—", ""]) {
+  assert.deepEqual(bibliaTourRecommendationPayload({...original, endorse}, payload.excursion), payload);
+ }
+ assert.equal(original.endorse, "Otro operador");
+});
+
+test("el selector envía los tours pendientes con la excursión y contexto de tarifa actuales", () => {
+ const original = {...activity, pax: 4, language: "ES", serviceMode: "PRIV"};
+ const preview = bibliaTourDraftContext(original, {agency: "Otra agencia", pax: "2", language: "EN", serviceMode: "SIC"});
+ const selected = [{excursionKey: "valle sagrado", tourId: 7, agencyId: 2}];
+ const payload = bibliaTourRecommendationPayload(preview, "Valle Sagrado", JSON.stringify(selected));
+ assert.equal(payload.agencyId, null);
+ assert.equal(payload.agency, "Otra agencia");
+ assert.equal(payload.pax, 2);
+ assert.equal(payload.language, "EN");
+ assert.equal(payload.serviceMode, "SIC");
+ assert.deepEqual(payload.tourSelections, selected);
+ assert.deepEqual(original.tourSelections, []);
 });

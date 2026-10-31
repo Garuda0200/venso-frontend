@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
 import { bibliaActivityService } from "../services/bibliaActivityService";
 import type { BibliaActivity } from "../utils/bibliaActivityMapper";
+import { bibliaTourRecommendationPayload } from "../utils/bibliaRowDrafts";
 export default function BibliaTourSuggestions({activity, excursion, selections, onChange}: {
   activity: BibliaActivity; excursion: string; selections?: string; onChange: (value: string) => void;
 }) {
   const [rows, setRows] = useState<any[]>([]), [loading, setLoading] = useState(false), [error,setError]=useState("");
   const [retry,setRetry]=useState(0);
-  const payload = JSON.stringify({excursion,pax:activity.pax,agency:activity.agency,agencyId:activity.agencyId,
-    endorse:activity.endorse,language:activity.language,dateKey:activity.dateKey,serviceMode:activity.serviceMode,
-    tourSelections: selections ? JSON.parse(selections) : activity.tourSelections || []});
+  const payload = JSON.stringify(bibliaTourRecommendationPayload(activity, excursion, selections));
   useEffect(() => {
     const controller=new AbortController();setRows([]);setError("");setLoading(true);
     const timer=window.setTimeout(() => {
@@ -26,7 +25,7 @@ export default function BibliaTourSuggestions({activity, excursion, selections, 
     onChange(JSON.stringify(next));
   };
   return <div className="biblia-tour-suggestions" aria-busy={loading}>
-    {loading&&<small role="status">Buscando tours de la agencia…</small>}
+    {loading&&<small role="status">Buscando tours para la excursión…</small>}
     {error&&<div role="alert">{error} <button type="button" onClick={()=>setRetry(value=>value+1)}>Reintentar</button></div>}
     {rows.map(row=><label key={row.key}><span>{row.excursion}</span>
       <select aria-label={`Tour para ${row.excursion}`} value={row.selectedTourId||""} onChange={event=>select(row,event.target.value)}>

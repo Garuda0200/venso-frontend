@@ -387,20 +387,20 @@ const parseNumber = (v) => {
   return isNaN(n) ? 0 : n;
 };
 
+const unwrapPassengerSelection = (selectionArg) => {
+  const selection = selectionArg ?? {};
+  if (
+    Array.isArray(selection.selectedIds) ||
+    Array.isArray(selection.selectedPassengers) ||
+    Array.isArray(selection.ids)
+  ) return selection;
+  return selection.passengerSelection || selection.selection || selection.data || selection.ids || selection;
+};
+
 const extractSelectionInfo = (selectionArg, peopleDetails) => {
   console.log("extractSelectionInfo >>>", { selectionArg, peopleDetails });
   // --- 1) normaliza el shape: directo o envuelto ---
-  const sel = (() => {
-    const s = selectionArg ?? {};
-    if (Array.isArray(s.selectedIds) || Array.isArray(s.selectedPassengers))
-      return s;
-    if (Array.isArray(s.ids)) return s;
-    if (s.passengerSelection) return s.passengerSelection; // <-- tu caso
-    if (s.selection) return s.selection;
-    if (s.data) return s.data;
-    if (s.ids) return s.ids;
-    return s;
-  })();
+  const sel = unwrapPassengerSelection(selectionArg);
   console.log("Normalized selection object:", sel);
 
   // --- helpers seguros ---
@@ -520,7 +520,7 @@ const extractSelectionInfo = (selectionArg, peopleDetails) => {
         if (priceOfChild(id) != null) return false;
         return true;
       });
-      return Math.max(1, filtered.length);
+      return Math.max(preventFallbackPassengerCount ? 0 : 1, filtered.length);
     }
     if (preventFallbackPassengerCount) return 0;
 
@@ -611,7 +611,7 @@ export const createUnifiedService = (
   const tourCapacity =
     typeService === "endoses" ? getTourCapacity(childService) : null;
   const capacityAwarePassengerSelection =
-    tourCapacity != null
+    typeService === "endoses"
       ? limitPassengerSelectionToCapacity(
           effectivePassengerSelection,
           tourCapacity,
@@ -705,12 +705,13 @@ export const createUnifiedService = (
   // Lógica por categoría usando paxForDivision (excluye niños con precio)
   if (sharedPricing && typeService !== "hoteles") {
     // precio total = tarifa del proveedor; precio unitario = total / divisor
-    adjustedOriginalPrice = originalPrice;
+    adjustedOriginalPrice =
+      typeService === "endoses" && sel.paxForDivision === 0 ? 0 : originalPrice;
     const effectiveDivisor =
       typeService === "transportes"
         ? getTransportDivisor(sel.paxForDivision, childService)
         : sel.paxForDivision;
-    finalPrice = originalPrice / effectiveDivisor;
+    finalPrice = adjustedOriginalPrice / Math.max(1, effectiveDivisor);
   } else if (sharedPricing && typeService === "hoteles") {
     // hoteles: dividir por capacidad de habitación
     const capacity = getHotelRoomCapacity(childService, 2);
@@ -1237,23 +1238,22 @@ const limitPassengerSelectionToCapacity = (
   capacidad,
   peopleDetails,
 ) => {
-  if (!capacidad || capacidad < 1) return selectionArg;
-
+  const selection = unwrapPassengerSelection(selectionArg);
   const base =
-    selectionArg && typeof selectionArg === "object" && !Array.isArray(selectionArg)
-      ? { ...selectionArg }
+    selection && typeof selection === "object" && !Array.isArray(selection)
+      ? { ...selection }
       : {};
 
   const inputIds = Array.isArray(base.selectedIds)
     ? base.selectedIds
     : Array.isArray(base.ids)
       ? base.ids
-      : buildPassengerIdsFromPeopleDetails(peopleDetails);
+      : Array.isArray(base.selectedPassengers)
+        ? base.selectedPassengers.map(person => person.rowId || person.id).filter(Boolean)
+        : buildPassengerIdsFromPeopleDetails(peopleDetails);
 
-  const limitedIds = [...new Set(inputIds.map(String).filter(Boolean))].slice(
-    0,
-    capacidad,
-  );
+  const uniqueIds = [...new Set(inputIds.map(String).filter(Boolean))];
+  const limitedIds = capacidad != null ? uniqueIds.slice(0, capacidad) : uniqueIds;
   const allowed = new Set(limitedIds);
   const filterPriceMap = (map = {}) =>
     Object.fromEntries(
@@ -1270,7 +1270,11 @@ const limitPassengerSelectionToCapacity = (
     ),
     childPercentageMap: filterPriceMap(base.childPercentageMap),
     assignedPassengerCount: limitedIds.length,
-    forcedPaxForDivision: limitedIds.length,
+    // Physical occupancy includes free children; the price divisor does not.
+    // Let extractSelectionInfo count the actual adult-priced beneficiaries.
+    forcedPaxForDivision: undefined,
+    forcePaxForDivision: undefined,
+    preventFallbackPassengerCount: true,
     endoseCapacityLimit: capacidad,
   };
 };
