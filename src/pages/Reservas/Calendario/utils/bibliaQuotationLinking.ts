@@ -1,6 +1,7 @@
 import { bibliaQuotationFieldValue, isBibliaHotelField } from "./bibliaServiceLinkModes";
 import { BIBLIA_EMPTY_VALUE, BibliaActivity, materializeBibliaOverride } from "./bibliaActivityMapper";
 import { bibliaParticipantPlanError } from "./bibliaParticipantEditor";
+import { isEmptyReservationFile } from "../../../Ventas/Cotizaciones/utils/reservationFileCreation";
 
 export const BIBLIA_QUOTATION_SYNC_LABELS = {
   dateKey: "Fecha", pax: "Pasajeros", participantPlan: "Participantes y nacionalidades",
@@ -31,6 +32,15 @@ export function getBibliaLinkRecommendations(activity: BibliaActivity, activitie
     group.records++;
     if (!group.dates.includes(other.dateKey)) group.dates.push(other.dateKey);
     groups.set(other.sourceQuotationId, group);
+  }
+  // Un file abierto desde Reservas todavía no tiene un primer día que recomendar.
+  const emptyMatches = [...authorized.values()].filter(quotation =>
+    fileKey(quotation.voucher_code) === code
+    && String(quotation.id) !== activity.sourceQuotationId
+    && (!activity.platform || !quotation.platform || activity.platform === quotation.platform));
+  if (!groups.size && emptyMatches.length === 1 && isEmptyReservationFile(emptyMatches[0])) {
+    const quotation = emptyMatches[0];
+    groups.set(String(quotation.id), { quotation, dates: [], records: 0 });
   }
   return [...groups.values()].map(group => ({ ...group, dates: group.dates.sort() }))
     .sort((a, b) => b.records - a.records || String(a.quotation.id).localeCompare(String(b.quotation.id), "es"));
@@ -70,8 +80,9 @@ export function getBibliaLinkUnavailableReason(activity: BibliaActivity, quotati
   if (quotation.tiene_voucher === true || quotation.source_sales_voucher_id || quotation.sourceSalesVoucherId)
     return "Venta cerrada: requiere revisión postventa";
   const window = getBibliaLinkDateWindow(activity, quotation);
-  if (!Number.isFinite(window.start)) return "Completa la fecha de inicio de la cotización";
   if (!Number.isFinite(window.incoming)) return "Fecha del registro inválida";
+  if (isEmptyReservationFile(quotation)) return Number(activity.pax) === 0 ? "" : bibliaParticipantPlanError(activity);
+  if (!Number.isFinite(window.start)) return "Completa la fecha de inicio de la cotización";
   if (window.days > 120) return "El vínculo superaría el máximo de 120 días del itinerario";
   return bibliaParticipantPlanError(activity, quotation);
 }

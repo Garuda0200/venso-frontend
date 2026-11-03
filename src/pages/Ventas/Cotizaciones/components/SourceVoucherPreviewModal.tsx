@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { MdClose, MdDescription, MdOpenInNew } from "react-icons/md";
 import { getApiUrl } from "../../../../utils/apiUtils";
 import { getSourceVoucherKind, normalizeSourceVoucher } from "../utils/sourceVoucher";
+import { useSourceVoucherPdf } from "../hooks/useSourceVoucherPdf";
 import "./styles/SourceVoucherPreviewModal.scss";
 
 const proxyUrl = (url: string) => {
@@ -14,6 +15,7 @@ const SourceVoucherPreviewModal = ({ isOpen, onClose, voucher }: any) => {
   const media = useMemo(() => normalizeSourceVoucher(voucher), [voucher]);
   const kind = useMemo(() => getSourceVoucherKind(media), [media]);
   const previewUrl = media ? proxyUrl(media.url) : "";
+  const pdf = useSourceVoucherPdf(Boolean(isOpen && kind === "pdf"), previewUrl);
   if (!isOpen) return null;
 
   return (
@@ -26,7 +28,9 @@ const SourceVoucherPreviewModal = ({ isOpen, onClose, voucher }: any) => {
           ) : kind === "image" ? (
             <img src={previewUrl} alt={media.originalName || "Archivo del voucher"} />
           ) : kind === "pdf" ? (
-            <iframe title={media.originalName || "Archivo del voucher"} src={previewUrl} />
+            pdf.url ? <iframe title={media.originalName || "Archivo del voucher"} src={pdf.url} />
+            : pdf.error ? <div className="source-voucher-preview__document" role="alert"><MdDescription /><strong>No se pudo abrir el PDF</strong><span>{pdf.error}</span><button type="button" onClick={pdf.retry}>Reintentar</button></div>
+            : <div className="source-voucher-preview__empty" role="status">Cargando documento…</div>
           ) : (
             <div className="source-voucher-preview__document">
               <MdDescription />

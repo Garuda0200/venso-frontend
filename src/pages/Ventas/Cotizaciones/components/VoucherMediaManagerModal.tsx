@@ -10,12 +10,12 @@ import {
 import { useFileUpload } from "../../../../hooks/useFileUpload";
 import cotizacionService from "../hooks/cotizacionService";
 import {
-  buildSourceVoucherMedia,
   normalizeSourceVoucher,
   resolveVoucherMediaForFile,
   validateSourceVoucherFile,
   type SourceVoucherMedia,
 } from "../utils/sourceVoucher";
+import { uploadAndLinkVoucherMedia } from "../utils/voucherMediaSave";
 import SourceVoucherPreviewModal from "./SourceVoucherPreviewModal";
 import "./styles/VoucherMediaManagerModal.scss";
 
@@ -120,35 +120,26 @@ const VoucherMediaManagerModal = ({
       return;
     }
 
-    let uploaded: SourceVoucherMedia | null = null;
     setSaving(true);
     setError("");
     try {
-      const result = await uploadFile(selectedFile as File, "voucher-media");
-      uploaded = buildSourceVoucherMedia(
-        result,
+      const saved = await uploadAndLinkVoucherMedia(selectedFile as File, {
+        quotationId: cotizacionId,
         uploadedBy,
-        "cotizacion_voucher_media",
-      );
-      if (!uploaded) throw new Error("Tigris no devolvió una referencia válida del archivo.");
-
-      const response = await cotizacionService.upsertVoucherMedia(cotizacionId, uploaded);
-      const saved = normalizeSourceVoucher(
-        response?.voucherMedia || response?.voucher_media || uploaded,
-      );
+        uploadFile,
+        upsertVoucherMedia: cotizacionService.upsertVoucherMedia,
+        deleteFile,
+      });
       setMedia(saved);
       setCanonicalLinked(Boolean(saved));
       setSelectedFile(null);
       if (inputRef.current) inputRef.current.value = "";
-      await onChanged?.(saved);
-    } catch (saveError: any) {
-      if (uploaded?.url) {
-        try {
-          await deleteFile(uploaded.url);
-        } catch {
-          // Limpieza best-effort: el vínculo no se persistió.
-        }
+      try {
+        await onChanged?.(saved);
+      } catch {
+        setError("El archivo se guardó. Actualiza la lista para ver el cambio.");
       }
+    } catch (saveError: any) {
       setError(saveError?.message || "No se pudo vincular el archivo al voucher.");
     } finally {
       setSaving(false);

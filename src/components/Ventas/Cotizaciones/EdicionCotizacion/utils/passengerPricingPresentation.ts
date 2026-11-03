@@ -13,6 +13,7 @@ import {
   getServicePricingSnapshot,
 } from "./servicePricingRuntime";
 import { childServiceTotalMatchesCanonical } from "./childServicePricingReconciliation";
+import { isChildPassengerId } from "./passengerBeneficiaryIdentity";
 
 const round2 = (value) =>
   Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100;
@@ -681,7 +682,7 @@ const getAuthoritativeHotelChildEntries = (service = {}) => {
   adultEntries.forEach((entry) => {
     const id = String(entry?.id || entry?.passengerId || entry?.passenger_id || "");
     const childId = String(entry?.child_origin || entry?.childOrigin || "");
-    const authoritativeChildId = childId || (id.startsWith("child:") ? id : "");
+    const authoritativeChildId = childId || (isChildPassengerId(id) ? id : "");
     if (!authoritativeChildId) return;
     rows.push({ childId: authoritativeChildId, asAdult: true });
   });
@@ -689,7 +690,7 @@ const getAuthoritativeHotelChildEntries = (service = {}) => {
     const childId = String(
       entry?.id || entry?.passengerId || entry?.passenger_id || "",
     );
-    if (!childId.startsWith("child:")) return;
+    if (!isChildPassengerId(childId)) return;
     rows.push({
       childId,
       asAdult: Boolean(

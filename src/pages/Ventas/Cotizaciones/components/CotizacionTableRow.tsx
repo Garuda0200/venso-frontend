@@ -28,6 +28,7 @@ import ExpandableActions, {
 import { buildSummaryContentPerPersonParts } from "../../../../components/Ventas/Cotizaciones/EdicionCotizacion/utils/summaryContentPricingParts";
 import { resolveCotizacionPassengerCounts } from "../utils/cotizacionPassengerCounts";
 import { resolveCotizacionIgvInfo } from "../utils/cotizacionIgv";
+import { reservationFileTitle } from "../utils/reservationFileCreation";
 import {
   canCancelRequest,
   canRequestPostSaleEdit,
@@ -402,7 +403,7 @@ const CotizacionTableRow = ({
                 #{cotizacion.id}
               </span>
             )}
-            <ExpandableTitle title={cotizacion.titulo} maxLength={45} />
+            <ExpandableTitle title={reservationFileTitle(cotizacion)} maxLength={45} />
             {isInactive && (
               <span className="inactive-badge" title="Duplicada - Inactiva">
                 ⊘ INACTIVA

@@ -18,6 +18,7 @@ import {
   syncQuotedBeneficiariesFromRuntime,
 } from "./passengerPricingState";
 import { applyServicePricingRuntime } from "./servicePricingRuntime";
+import { isAdultPassengerId, isChildPassengerId } from "./passengerBeneficiaryIdentity";
 import {
   buildTicketProcedenciaPassengerSelection as buildTicketProcedenciaPassengerSelectionShared,
   expandTicketServiceForPersistence,
@@ -415,7 +416,7 @@ const extractSelectionInfo = (selectionArg, peopleDetails) => {
     return null;
   };
 
-  const isChildId = (id) => String(id).startsWith("child:");
+  const isChildId = isChildPassengerId;
 
   const toArray = (v) => {
     if (Array.isArray(v)) return v;
@@ -968,7 +969,7 @@ export const updateSingleServicePricesForPassengerChange = (
   // 1.c DIVISOR REAL (adultos + niños SIN precio explícito)
   // =========================
   const shouldExcludeChild = (id) => {
-    if (!String(id).startsWith("child:")) return false;
+    if (!isChildPassengerId(id)) return false;
     if (convertedChildIdSet.has(id)) return false;
     if (treatChildrenAsAdults) return false;
     if (pricingMode === "percentage") return true;
@@ -979,7 +980,7 @@ export const updateSingleServicePricesForPassengerChange = (
     // Caso normal: tenemos IDs
     if (assignedPassengerIds.length > 0) {
       const idsSinPrecioExplicito = assignedPassengerIds.filter((id) => {
-        if (!String(id).startsWith("child:")) return true;
+        if (!isChildPassengerId(id)) return true;
         return !shouldExcludeChild(id);
       });
       // Si todos tienen precio explícito (caso raro) igual aseguramos mínimo 1,
@@ -1044,7 +1045,7 @@ export const updateSingleServicePricesForPassengerChange = (
     const childExtrasTotal =
       !treatChildrenAsAdults && pricingMode === "percentage"
         ? assignedPassengerIds.reduce((sum, id) => {
-            if (!String(id).startsWith("child:")) return sum;
+            if (!isChildPassengerId(id)) return sum;
             if (convertedChildIdSet.has(id)) return sum;
             const percentValue = parseFloat(
               childPercentageMap[id] || uniformPercentage || 0,
@@ -1074,7 +1075,7 @@ export const updateSingleServicePricesForPassengerChange = (
     const childExtrasTotal =
       !treatChildrenAsAdults && pricingMode === "percentage"
       ? assignedPassengerIds.reduce((sum, id) => {
-          if (!String(id).startsWith("child:")) return sum;
+          if (!isChildPassengerId(id)) return sum;
           if (convertedChildIdSet.has(id)) return sum;
           const percentValue = parseFloat(
               childPercentageMap[id] || uniformPercentage || 0,
@@ -1329,11 +1330,22 @@ export const getPassengerIdsByType = (peopleDetails = {}, passengers = []) => {
   };
 };
 
-const buildCurrentPassengerIdMap = (adultIds = [], childIds = []) =>
-  [...adultIds, ...childIds].reduce((result, id) => {
+const buildCurrentPassengerIdMap = (adultIds = [], childIds = [], peopleDetails = {}) => {
+  const result = [...adultIds, ...childIds].reduce((result, id) => {
     result[getPassengerSlotKey(id)] = id;
     return result;
   }, {});
+  // A legacy key is resolved by its exact roster entry, never by guessing
+  // whether adult-1 means the first or second passenger.
+  for (const [people, ids] of [[peopleDetails.adults, adultIds], [peopleDetails.children, childIds]]) {
+    (people || []).forEach((person, index) => {
+      for (const raw of [person.passenger_key, person.passengerKey]) {
+        if (/^(adult|child)-\d+$/.test(String(raw || "")) && ids[index]) result[raw] = ids[index];
+      }
+    });
+  }
+  return result;
+};
 
 const canonicalizePassengerIdForCurrentPeople = (
   id,
@@ -1362,9 +1374,9 @@ const normalizeConvertedChildMapForCurrentPeople = (
 
   return Object.entries(convertedMap).reduce((result, [key, rawValue]) => {
     let childId = null;
-    if (String(key).startsWith("child:") && rawValue) {
+    if (isChildPassengerId(key) && rawValue) {
       childId = String(key);
-    } else if (typeof rawValue === "string" && rawValue.startsWith("child:")) {
+    } else if (isChildPassengerId(rawValue)) {
       childId = rawValue;
     }
 
@@ -1417,7 +1429,7 @@ export const updateServicePricesForPassengerChange = (
   const { adultIds, childIds, allPassengerIds } =
     getPassengerIdsByType(peopleDetails);
   const validIdSet = new Set(allPassengerIds);
-  const currentPassengerIdMap = buildCurrentPassengerIdMap(adultIds, childIds);
+  const currentPassengerIdMap = buildCurrentPassengerIdMap(adultIds, childIds, peopleDetails);
   const servicesForUpdate = prepareTicketServicesForRuntime(services);
 
   return servicesForUpdate.map((service) => {
@@ -1506,7 +1518,7 @@ export const updateServicePricesForPassengerChange = (
         : [];
     assignedPassengerIds = assignedPassengerIds.map((id) => {
       const mappedLegacyChild = rawConvertedMap?.[id];
-      if (mappedLegacyChild && String(mappedLegacyChild).startsWith("child:")) {
+      if (isChildPassengerId(mappedLegacyChild)) {
         return canonicalizePassengerIdForCurrentPeople(
           mappedLegacyChild,
           currentPassengerIdMap,
@@ -1538,7 +1550,7 @@ export const updateServicePricesForPassengerChange = (
     if (noChildrenExist) {
       // Remover IDs de niños
       assignedPassengerIds = assignedPassengerIds.filter((id) => {
-        if (id.startsWith("child:")) return false;
+        if (isChildPassengerId(id)) return false;
         return true;
       });
     }
@@ -1556,10 +1568,10 @@ export const updateServicePricesForPassengerChange = (
     assignedPassengerIds = limitIdsToCapacity(assignedPassengerIds, tourCapacity);
 
     const hadAdultSelected = assignedPassengerIds.some((id) =>
-      id.startsWith("adult:"),
+      isAdultPassengerId(id),
     );
     const hadChildSelected = assignedPassengerIds.some((id) =>
-      id.startsWith("child:"),
+      isChildPassengerId(id),
     );
 
     // Mapa de precios explícitos de niños puede venir desde:
@@ -1757,7 +1769,7 @@ export const updateServicePricesForPassengerChange = (
       } else if (hasChildExplicitPrices || pricingMode === "percentage") {
         const idsSinPrecioExplicito = assignedPassengerIds.filter((id) => {
           // Siempre incluir adultos
-          if (!id.startsWith("child:")) return true;
+          if (!isChildPassengerId(id)) return true;
           // Usar la función shouldExcludeChild para determinar si excluir
           return !shouldExcludeChild(id);
         });

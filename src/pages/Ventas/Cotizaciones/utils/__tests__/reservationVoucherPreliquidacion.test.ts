@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { normalizeTigrisUploadResponse } from "../../../../../utils/tigrisUploadResponse";
 import {
   SOURCE_VOUCHER_MAX_BYTES,
   buildSourceVoucherMedia,
@@ -38,6 +39,7 @@ assert.match(validateSourceVoucherFile({ name: "voucher.pdf", size: 0 } as File)
 const uploaded = buildSourceVoucherMedia(
   {
     tigrisUrl: "reservation-source-vouchers/uploaded.png",
+    mediaAssetId: "5c6ec195-f762-40f4-9ebc-c7cc0c0f86ce",
     metadata: {
       originalName: "captura.png",
       contentType: "image/png",
@@ -50,6 +52,20 @@ const uploaded = buildSourceVoucherMedia(
 assert.equal(uploaded?.origin, "reservas");
 assert.equal(uploaded?.uploadedBy, "SARELA");
 assert.equal(uploaded?.sizeBytes, 4567);
+assert.equal(uploaded?.mediaAssetId, "5c6ec195-f762-40f4-9ebc-c7cc0c0f86ce");
+
+const registeredUpload = normalizeTigrisUploadResponse({
+  success: true,
+  url: "https://venso-reservas-assets.fly.storage.tigris.dev/voucher-media/registered.pdf",
+  media_asset_id: "5c6ec195-f762-40f4-9ebc-c7cc0c0f86ce",
+  metadata: { original_name: "voucher.pdf", content_type: "application/pdf", size_bytes: 123 },
+});
+const registeredVoucher = buildSourceVoucherMedia(registeredUpload, "reservas-user");
+assert.equal(registeredVoucher?.mediaAssetId, "5c6ec195-f762-40f4-9ebc-c7cc0c0f86ce");
+assert.equal(registeredVoucher?.originalName, "voucher.pdf");
+assert.equal(registeredVoucher?.sizeBytes, 123);
+assert.throws(() => normalizeTigrisUploadResponse({ success: false, url: "voucher.pdf" }));
+assert.equal(normalizeTigrisUploadResponse({ success: true, url: "legacy.pdf" }).mediaAssetId, undefined);
 
 const defaults = defaultPreLiquidacion();
 assert.equal(defaults.paymentTerms.bankName, "BCP");

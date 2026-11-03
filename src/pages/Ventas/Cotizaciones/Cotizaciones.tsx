@@ -60,6 +60,8 @@ import pasajeroService from "../../../services/pasajeroService";
 import { getAgencyById } from "../../../services/agencyService";
 import AgencyPaymentReportModal from "../../../components/Contabilidad/AgencyPaymentReportModal";
 import VoucherMediaManagerModal from "./components/VoucherMediaManagerModal";
+import ReservationFileModal from "./components/ReservationFileModal";
+import { canCreateReservationFile } from "./utils/reservationFileCreation";
 import PreLiquidacionModal from "./components/PreLiquidacionModal";
 
 // Importar directamente la versión final del componente
@@ -459,7 +461,7 @@ const Cotizaciones = () => {
   const showAuditColumn = canViewAllCotizaciones(user);
   const allowInternalIdSearch = canSearchCotizacionById(user);
   const currentSellerDni = getCurrentSellerDni(user);
-  const isReservasQuotationFlow = Number(userRole) === 3 || location.pathname.startsWith("/reservas/cotizaciones");
+  const isReservasQuotationFlow = canCreateReservationFile(userRole, location.pathname);
   const [sellerScope, setSellerScope] = useState("mine");
   const [quotationStatus, setQuotationStatus] = useState("open");
   const notificationHistoryTargetId =
@@ -522,6 +524,7 @@ const Cotizaciones = () => {
 
   // Dynamic agency selector for every new quotation.
   const [showBusinessTypeModal, setShowBusinessTypeModal] = useState(false);
+  const [showReservationFileModal, setShowReservationFileModal] = useState(false);
   const [pendingQuotationClientData, setPendingQuotationClientData] =
     useState(null);
 
@@ -645,10 +648,11 @@ const Cotizaciones = () => {
   // Cada cotización debe elegir una agencia comercial. La plataforma de sesión
   // se conserva para permisos/auditoría, pero ya no define la cartera de tarifas.
   const handleCreateCotizacion = (clientData = null) => {
+    if (isReservasQuotationFlow) {
+      setShowReservationFileModal(true);
+      return;
+    }
     setPendingQuotationClientData(clientData);
-    // Reservas puede iniciar la cotización sin archivo de origen. El PDF/imagen
-    // se asociará posteriormente desde la propia cotización cuando el storage
-    // de VENSO esté configurado.
     setShowBusinessTypeModal(true);
   };
 
@@ -2716,7 +2720,7 @@ const Cotizaciones = () => {
             <h1>Centro de cotizaciones</h1>
             <p>
               {isReservasQuotationFlow
-                ? "Elabora cotizaciones operativas desde su documento de origen y conserva la trazabilidad hacia Reservas."
+                ? "Registra el file y su voucher; completa su operación desde la Biblia de actividades."
                 : "Diseña propuestas, controla su avance comercial y convierte cada oportunidad en una experiencia lista para operar."}
             </p>
             {user && (
@@ -2741,7 +2745,7 @@ const Cotizaciones = () => {
               className="btn-create-cotizacion"
               onClick={() => handleCreateCotizacion()}
             >
-              <MdAdd /> Nueva cotización
+              <MdAdd /> {isReservasQuotationFlow ? "Nuevo file" : "Nueva cotización"}
             </button>
           </div>
         </div>
@@ -2902,6 +2906,27 @@ const Cotizaciones = () => {
           cotizacionId={agencyPaymentCotizacion.id}
           voucherCode={agencyPaymentCotizacion.voucher_codes?.[0] || agencyPaymentCotizacion.voucher_code}
           initialCotizacion={agencyPaymentCotizacion}
+        />
+      )}
+
+      {showReservationFileModal && isReservasQuotationFlow && (
+        <ReservationFileModal
+          isOpen
+          uploadedBy={currentSellerDni}
+          onClose={() => setShowReservationFileModal(false)}
+          onCreated={async ({ quotation, reused, attachmentPending }) => {
+            setCotizaciones(current => [quotation, ...current.filter(item => String(item.id) !== String(quotation.id))]);
+            clearFilters();
+            setQuotationStatus(quotation.tiene_voucher === true ? "sold" : "open");
+            const next = new URLSearchParams(searchParams);
+            next.set(QUOTATION_FOCUS_PARAM, String(quotation.id));
+            setSearchParams(next, { replace: true });
+            showSnackbar(reused
+              ? `El file ${quotation.voucher_code} ya está registrado.${attachmentPending ? " Revisa su voucher desde Archivo." : ""}`
+              : `File ${quotation.voucher_code} creado.${attachmentPending ? " Puedes adjuntar su voucher desde Archivo." : ""}`, "success");
+            try { await fetchCotizaciones(); }
+            catch { /* El alta persistida sigue visible aunque falle el refresco. */ }
+          }}
         />
       )}
 

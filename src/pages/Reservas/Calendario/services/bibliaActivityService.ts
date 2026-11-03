@@ -73,6 +73,7 @@ export const bibliaActivityService = {
       cotizacion_id: cotizacionId || null,
       actividad,
     });
+    if (response?.data?.data?.cotizacion_id) invalidateCotizacionGraphCache();
     return response?.data?.data ?? response?.data;
   },
 
@@ -91,7 +92,7 @@ export const bibliaActivityService = {
       cotizacion_id: cotizacionId || null,
       actividad,
     });
-    if (response?.data?.data?.service_count != null) invalidateCotizacionGraphCache();
+    if (response?.data?.data?.service_count != null || response?.data?.data?.cotizacion_id) invalidateCotizacionGraphCache();
     return response?.data?.data ?? response?.data;
   },
 

@@ -17,6 +17,11 @@
     ]
   },
   "include": [
+    "src/pages/Ventas/Cotizaciones/utils/__tests__/sourceVoucherPreview.test.tsx",
+    "src/utils/__tests__/tigrisVoucherUpload.test.ts",
+    "src/pages/Ventas/Cotizaciones/utils/__tests__/reservationFileCreation.test.tsx",
+    "src/pages/Reservas/Calendario/utils/__tests__/bibliaReservationFileLink.test.ts",
+    "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/legacyQuotationSave.test.ts",
     "src/pages/Reservas/Servicios/utils/__tests__/tariffAgencyCloneFlow.test.tsx",
     "src/components/Contabilidad/__tests__/agencyPaymentReportFlow.test.tsx",
     "src/pages/Reservas/Calendario/utils/__tests__/bibliaTransferReadOnly.test.tsx",

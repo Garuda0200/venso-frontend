@@ -12,6 +12,7 @@ import {
 } from "./servicePricingRuntime";
 import { getRoomCapacity, getTourCapacity } from "./unifiedServiceManager";
 import { expandTicketServiceForPersistence } from "./ticketBeneficiaries";
+import { isAdultPassengerId, isChildPassengerId } from "./passengerBeneficiaryIdentity";
 import {
   getHotelIgvAmount,
   getHotelRuntimePriceWithIgv,
@@ -358,8 +359,8 @@ const buildFlatPricingFields = (tariff, pricingState, service = {}) => {
   // HotelModal: { "child:1": true } (key is the child ID)
   const convertedChildIdSet = new Set();
   for (const [key, value] of Object.entries(convertedMap)) {
-    if (key.startsWith("child:") && value) convertedChildIdSet.add(key);
-    if (typeof value === "string" && value.startsWith("child:"))
+    if (isChildPassengerId(key) && value) convertedChildIdSet.add(key);
+    if (isChildPassengerId(value))
       convertedChildIdSet.add(value);
   }
   const convertedChildSlotSet = new Set(
@@ -377,7 +378,7 @@ const buildFlatPricingFields = (tariff, pricingState, service = {}) => {
   };
 
   let beneficiariosAdultos = selectedIds
-    .filter((id) => id.startsWith("adult:"))
+    .filter(isAdultPassengerId)
     .map((id) => {
       const entry = { id };
       const childOrigin = convertedMap[id];
@@ -389,7 +390,7 @@ const buildFlatPricingFields = (tariff, pricingState, service = {}) => {
   selectedIds
     .filter(
       (id) =>
-        id.startsWith("child:") &&
+        isChildPassengerId(id) &&
         (convertedChildIdSet.has(id) ||
           convertedChildSlotSet.has(getPassengerSlotKey(id))),
     )
@@ -403,7 +404,7 @@ const buildFlatPricingFields = (tariff, pricingState, service = {}) => {
   let beneficiariosNinos = selectedIds
     .filter(
       (id) =>
-        id.startsWith("child:") &&
+        isChildPassengerId(id) &&
         !convertedChildIdSet.has(id) &&
         !convertedChildSlotSet.has(getPassengerSlotKey(id)),
     )
@@ -853,16 +854,16 @@ export const cleanServiceForDB = (service) => {
     const assignedChildPrices = aps.preciosNinos || {};
     const assignedConvertedChildIds = new Set();
     Object.entries(assignedConvertedMap).forEach(([key, value]) => {
-      if (String(key).startsWith("child:") && value) {
+      if (isChildPassengerId(key) && value) {
         assignedConvertedChildIds.add(String(key));
       }
-      if (typeof value === "string" && value.startsWith("child:")) {
+      if (isChildPassengerId(value)) {
         assignedConvertedChildIds.add(value);
       }
     });
 
     cleaned.assignedBeneficiariosAdultos = assignedSelectedIds
-      .filter((id) => id.startsWith("adult:"))
+      .filter(isAdultPassengerId)
       .map((id) => {
         const entry = { id };
         const childOrigin = assignedConvertedMap[id];
@@ -870,7 +871,7 @@ export const cleanServiceForDB = (service) => {
         return entry;
       });
     assignedSelectedIds
-      .filter((id) => id.startsWith("child:") && assignedConvertedChildIds.has(id))
+      .filter((id) => isChildPassengerId(id) && assignedConvertedChildIds.has(id))
       .forEach((childId) => {
         if (
           !cleaned.assignedBeneficiariosAdultos.some((entry) => entry.id === childId)
@@ -883,7 +884,7 @@ export const cleanServiceForDB = (service) => {
       });
 
     cleaned.assignedBeneficiariosNinos = assignedSelectedIds
-      .filter((id) => id.startsWith("child:") && !assignedConvertedChildIds.has(id))
+      .filter((id) => isChildPassengerId(id) && !assignedConvertedChildIds.has(id))
       .map((id) => ({
         id,
         precio: parseFloat(assignedChildPrices[id] || 0),

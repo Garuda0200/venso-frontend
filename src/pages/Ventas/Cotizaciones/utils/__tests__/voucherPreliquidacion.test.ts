@@ -147,7 +147,7 @@ const quotationService = source("src/pages/Ventas/Cotizaciones/hooks/cotizacionS
 
 assert.doesNotMatch(quotesPage, /SourceVoucherUploadModal/);
 assert.match(quotesPage, /isReservasQuotationFlow/);
-assert.match(quotesPage, /Reservas puede iniciar la cotización sin archivo de origen/);
+assert.match(quotesPage, /ReservationFileModal/);
 assert.match(quoteEditor, /Archivo del voucher/);
 assert.match(quoteEditor, /PreLiquidacionModal/);
 assert.match(quoteEditor, /source_voucher: effectiveSourceVoucher/);

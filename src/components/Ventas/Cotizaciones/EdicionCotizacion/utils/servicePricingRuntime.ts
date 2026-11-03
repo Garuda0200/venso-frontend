@@ -1,6 +1,7 @@
 import { sharedPriceFlag, normalizePricingType } from "../../../../../utils/servicePricingType";
 import { detectServiceType } from "../components/DaysEditor/utils/serviceTypeMapper";
 import { getServicePassengerPricingState } from "./passengerPricingState";
+import { isAdultPassengerId, isChildPassengerId } from "./passengerBeneficiaryIdentity";
 
 const round2 = (value) => {
   const num = Number(value);
@@ -47,12 +48,6 @@ const ensureNumber = (value) => {
 
 const isPlainObject = (value) =>
   value != null && typeof value === "object" && !Array.isArray(value);
-
-const isChildPassengerId = (value) =>
-  typeof value === "string" && value.startsWith("child:");
-
-const isAdultPassengerId = (value) =>
-  typeof value === "string" && value.startsWith("adult:");
 
 const removeDiacritics = (value = "") =>
   String(value ?? "")

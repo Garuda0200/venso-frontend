@@ -63,6 +63,7 @@ import { participantNationalityLabel } from "./utils/bibliaNationality";
 import { bibliaParticipantPlanError } from "./utils/bibliaParticipantEditor";
 import { useBibliaRowDrafts } from "./hooks/useBibliaRowDrafts";
 import { buildBibliaEditRecord, getBibliaLinkRecommendations, getBibliaLinkUnavailableReason, getBibliaLinkDateNotice, quotationSyncCommandRecords } from "./utils/bibliaQuotationLinking";
+import { savedStandaloneBibliaRecord } from "./utils/bibliaStandalonePersistence";
 import { bibliaCatalogService, isBibliaCatalogField } from "./services/bibliaCatalogService";
 import {
   BIBLIA_EMPTY_VALUE,
@@ -554,6 +555,7 @@ const Calendario = () => {
     record: Record<string, any>,
     quotationId?: string | null,
   ) => {
+    if (readOnly) throw new Error("La Biblia está en modo de solo lectura.");
     const standaloneId = activity.standaloneRecordId;
     if (!standaloneId) throw new Error("No se encontró el registro para guardar. Actualiza la Biblia e inténtalo nuevamente.");
     const previous = standaloneRecords;
@@ -565,9 +567,10 @@ const Calendario = () => {
     setError("");
     try {
       const result = await bibliaActivityService.updateStandaloneActivity(standaloneId, nextQuotationId, record);
+      const saved = savedStandaloneBibliaRecord(currentOuter, result, record, nextQuotationId);
       setStandaloneRecords((current) => current.map((item) => String(item.id) === standaloneId
-        ? { ...item, cotizacion_id: nextQuotationId, actividad: result?.actividad || record } : item));
-      if (nextQuotationId || currentOuter.cotizacion_id) await loadActivities(true);
+        ? { ...item, ...saved } : item));
+      if (saved.cotizacion_id || currentOuter.cotizacion_id) await loadActivities(true);
     } catch (saveError) {
       setStandaloneRecords(previous);
       setError(getBibliaSaveError(saveError, "No se pudo guardar la actividad independiente. Se restauró el valor anterior."));
@@ -575,7 +578,7 @@ const Calendario = () => {
     } finally {
       setSaving(false);
     }
-  }, [standaloneRecords, loadActivities]);
+  }, [standaloneRecords, loadActivities, readOnly]);
 
   const commitActivityChanges = useCallback(async (activity: BibliaActivity, changes: Partial<BibliaActivity>) => {
     if (readOnly) throw new Error("La Biblia está en modo de solo lectura.");
@@ -872,6 +875,7 @@ const Calendario = () => {
   }, [isSuperAdmin, pendingDelete, draftStore]);
 
   const addQuickBibliaRecord = useCallback(async () => {
+    if (readOnly) return;
     const dateKey = toBibliaDateKey(currentDate);
     const sameDateOrders = activities.filter((item) => item.dateKey === dateKey).map((item) => item.order);
     const nextOrder = (sameDateOrders.length ? Math.max(...sameDateOrders) : 0) + 1;
@@ -883,6 +887,7 @@ const Calendario = () => {
     try {
       const created = await bibliaActivityService.createStandaloneActivity(null, record);
       setStandaloneRecords((current) => [...current, created]);
+      if (created.cotizacion_id) await loadActivities(true);
       setViewMode("day");
       setSelectedActivityId(`standalone:${created.id}`);
       closeQuotationLinkPopover();
@@ -892,7 +897,7 @@ const Calendario = () => {
     } finally {
       setSaving(false);
     }
-  }, [activities, closeQuotationLinkPopover, currentDate]);
+  }, [activities, closeQuotationLinkPopover, currentDate, readOnly, loadActivities]);
 
   const linkStandaloneActivity = useCallback(async (activity: BibliaActivity, quotationId: string) => {
     if (activity.sourceType !== "standalone" || mutationInFlight.current) return;

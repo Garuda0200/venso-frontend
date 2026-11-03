@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import axiosInstance from "../utils/axiosInstance";
+import { normalizeTigrisUploadResponse } from "../utils/tigrisUploadResponse";
 
 const getUploadErrorMessage = (error, fallback) => {
   const payload = error?.response?.data;
@@ -63,22 +64,12 @@ export const useFileUpload = () => {
         },
       });
 
-      if (!response.data?.success || !response.data?.url) {
-        throw new Error("Tigris no devolvió la URL del archivo subido");
-      }
+      const uploaded = normalizeTigrisUploadResponse(response.data);
 
       setIsUploading(false);
       setUploadProgress(100);
 
-      return {
-        tigrisUrl: response.data.url,
-        metadata: {
-          originalName: response.data.metadata.original_name,
-          contentType: response.data.metadata.content_type,
-          sizeBytes: response.data.metadata.size_bytes,
-          uploadedAt: response.data.metadata.uploaded_at,
-        },
-      };
+      return uploaded;
     } catch (error) {
       setIsUploading(false);
       setUploadProgress(0);

@@ -1,6 +1,7 @@
 import { passengerIdMatchesSet } from "./igvUtils";
 import { getPassengerPresentation } from "./passengerPricingPresentation";
 import { getServiceBeneficiarySnapshot } from "./passengerPricingState";
+import { isAdultPassengerId } from "./passengerBeneficiaryIdentity";
 import { childServiceCapacity } from "./childServiceBeneficiaries";
 
 const entries = (value) => Array.isArray(value) ? value : [];
@@ -36,7 +37,7 @@ export const setAdultServiceBeneficiary = (service = {}, row, included) => {
     ...(service.convertedChildToAdultMap || {}),
   };
   snapshot.convertedEntries.forEach(({ childId, revertKey }) => {
-    if (String(revertKey).startsWith("adult:")) {
+    if (isAdultPassengerId(revertKey)) {
       convertedChildToAdultMap[revertKey] = childId;
     } else {
       convertedChildToAdultMap[childId] = true;

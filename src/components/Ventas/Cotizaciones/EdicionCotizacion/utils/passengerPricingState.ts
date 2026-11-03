@@ -1,4 +1,5 @@
 import { sharedPriceFlag } from "../../../../../utils/servicePricingType";
+import { isAdultPassengerId, isChildPassengerId } from "./passengerBeneficiaryIdentity";
 
 const isPlainObject = (value) =>
   value != null && typeof value === "object" && !Array.isArray(value);
@@ -14,12 +15,6 @@ const toFiniteNumber = (value) => {
   const numberValue = Number(value);
   return Number.isFinite(numberValue) ? numberValue : undefined;
 };
-
-const isAdultPassengerId = (value) =>
-  typeof value === "string" && value.startsWith("adult:");
-
-const isChildPassengerId = (value) =>
-  typeof value === "string" && value.startsWith("child:");
 
 const getServiceType = (service = {}) =>
   (

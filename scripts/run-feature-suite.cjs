@@ -6,6 +6,12 @@ const root = path.resolve(__dirname, "..");
 const tmpDir = path.join(root, ".tmp-feature-tests");
 
 const testSuites = [
+  { name: "files de Reservas, vínculo Biblia y media", tests: [
+    "src/pages/Ventas/Cotizaciones/utils/__tests__/reservationFileCreation.test.js",
+    "src/pages/Reservas/Calendario/utils/__tests__/bibliaReservationFileLink.test.js",
+    "src/utils/__tests__/tigrisVoucherUpload.test.js",
+    "src/pages/Ventas/Cotizaciones/utils/__tests__/sourceVoucherPreview.test.js",
+  ] },
   { name: "tarifas por agencia y espacio de servicios", tests: ["src/pages/Reservas/Servicios/utils/__tests__/agencyTariffWorkspace.test.js", "src/pages/Reservas/Servicios/utils/__tests__/tariffCurrencyForm.test.js", "src/pages/Reservas/Servicios/utils/__tests__/tariffAgencyCloneFlow.test.js", "src/pages/Reservas/Servicios/utils/__tests__/providerNavigation.test.js"] },
   { name: "preparación de paquetes", tests: ["src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/packageImportPreparation.test.js"] },
   { name: "reservas nativas e identidad", tests: [
@@ -24,6 +30,7 @@ const testSuites = [
       "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/zeroAdultChildPricing.test.js",
       "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/editedTicketPrice.test.js",
       "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/ticketPriceEditorSaveFlow.test.js",
+      "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/legacyQuotationSave.test.js",
       "src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/ticketPackageRoundtrip.test.js",
     ],
   },

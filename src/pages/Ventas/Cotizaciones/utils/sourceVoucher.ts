@@ -78,6 +78,7 @@ export const buildSourceVoucherMedia = (
   const metadata = upload?.metadata || {};
   return normalizeSourceVoucher({
     version: 1,
+    mediaAssetId: upload?.mediaAssetId || upload?.media_asset_id,
     url,
     tigrisUrl: url,
     originalName: metadata.originalName || metadata.original_name,

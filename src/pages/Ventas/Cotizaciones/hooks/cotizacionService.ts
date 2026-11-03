@@ -4,11 +4,21 @@ import { resolveQuotationSavePricing, normalizeQuotationSaveCosts } from "../../
 import SecureStorage from "../../../../utils/secureStorage";
 import { invalidateCotizacionGraphCache } from "../../../../utils/cacheInvalidation";
 import { resolveCotizacionIgvInfo } from "../utils/cotizacionIgv";
+import { buildReservationFileInput, type ReservationFileInput } from "../utils/reservationFileCreation";
 
 // Crear una instancia API para todos los servicios de cotizaciones
 // Usamos la función mejorada para crear una instancia con el token actual
 const getApiInstance = () => createApiInstance(true);
 const BASE_URL = "/turismo/cotizaciones";
+
+export const createReservationFile = async (input: ReservationFileInput) => {
+  const response = await getApiInstance().post(`${BASE_URL}/reservas-file`, buildReservationFileInput(input));
+  invalidateCotizacionGraphCache();
+  return {
+    quotation: response.data?.data,
+    reused: response.data?.reused === true || response.data?.data?.reused === true,
+  };
+};
 
 const logUnlessCanceled = (message, error) => {
   if (!isRequestCanceled(error)) {
@@ -391,6 +401,7 @@ const cotizacionService = {
   getCotizacionById,
   getCotizacionesByCreator,
   createCotizacion,
+  createReservationFile,
   updateCotizacion,
   deleteCotizacion,
   getArchivedVersions,

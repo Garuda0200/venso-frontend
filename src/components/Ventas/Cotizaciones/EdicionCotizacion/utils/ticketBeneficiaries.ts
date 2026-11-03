@@ -1,5 +1,6 @@
 import { sharedPriceFlag } from "../../../../../utils/servicePricingType";
 import { getServiceBeneficiarySnapshot } from "./passengerPricingState";
+import { isAdultPassengerId, isChildPassengerId } from "./passengerBeneficiaryIdentity";
 
 /**
  * Utilidades compartidas para tickets.
@@ -463,7 +464,7 @@ export const buildTicketProcedenciaPassengerSelection = ({
         : adultRows;
 
   const selectedIds = rows.map(({ id }) => id);
-  const selectedChildIds = selectedIds.filter((id) => String(id).startsWith("child:"));
+  const selectedChildIds = selectedIds.filter(isChildPassengerId);
   const isStudentTarget = targetGroup === "child";
   const forcedPaxForDivision =
     isStudentTarget
@@ -501,7 +502,7 @@ export const buildTicketProcedenciaPassengerSelection = ({
     : Object.entries(mergedChildPriceMap).reduce(
         (result, [id, value]) => {
           if (!selectedIdSet.has(id)) return result;
-          if (!String(id).startsWith("child:")) return result;
+          if (!isChildPassengerId(id)) return result;
           const price = Number(value);
           result[id] = Number.isFinite(price) ? round2(price) : 0;
           return result;
@@ -683,8 +684,8 @@ const getConvertedChildIdsFromService = (service = {}) => {
   const childIds = new Set();
 
   Object.entries(converted).forEach(([key, value]) => {
-    if (String(key).startsWith("child:") && value) childIds.add(String(key));
-    if (typeof value === "string" && value.startsWith("child:")) {
+    if (isChildPassengerId(key) && value) childIds.add(String(key));
+    if (isChildPassengerId(value)) {
       childIds.add(value);
     }
   });
@@ -767,8 +768,8 @@ const buildTicketServiceCloneForTarget = ({
   procedencia = "",
 }) => {
   const normalizedTarget = targetGroup === "child" ? "child" : targetGroup === "all" ? "all" : "adult";
-  const childIds = normalizeSelectedIds(selectedIds).filter((id) => String(id).startsWith("child:"));
-  const adultIds = normalizeSelectedIds(selectedIds).filter((id) => String(id).startsWith("adult:"));
+  const childIds = normalizeSelectedIds(selectedIds).filter(isChildPassengerId);
+  const adultIds = normalizeSelectedIds(selectedIds).filter(isAdultPassengerId);
   const ids = normalizedTarget === "child" ? childIds : normalizedTarget === "adult" ? adultIds : normalizeSelectedIds(selectedIds);
   const explicitChildMap = normalizedTarget === "all"
     ? childIds.reduce((acc, childId) => {
@@ -872,8 +873,8 @@ export const splitTicketServiceByUserTypeForRuntime = (service = {}) => {
   if (targetGroup === "adult" || targetGroup === "child") return [service];
 
   const selectedIds = getServiceSelectedIds(service);
-  const adultIds = selectedIds.filter((id) => String(id).startsWith("adult:"));
-  const childIds = selectedIds.filter((id) => String(id).startsWith("child:"));
+  const adultIds = selectedIds.filter(isAdultPassengerId);
+  const childIds = selectedIds.filter(isChildPassengerId);
   const adultRate = getTicketAdultRate(service) || service.childService || service;
   const childRate = getTicketChildRate(service);
   const hasStudentTariff = hasTicketStudentTariff(service);
@@ -926,8 +927,8 @@ export const expandTicketServiceForPersistence = (service = {}) => {
   if (!procedencia) return [service];
 
   const selectedIds = getServiceSelectedIds(service);
-  const adultIds = selectedIds.filter((id) => String(id).startsWith("adult:"));
-  const childIds = selectedIds.filter((id) => String(id).startsWith("child:"));
+  const adultIds = selectedIds.filter(isAdultPassengerId);
+  const childIds = selectedIds.filter(isChildPassengerId);
   const childPriceMapForService = getServiceChildPriceMap(service);
   const convertedChildIds = new Set(getConvertedChildIdsFromService(service));
   const ticketChildPricingMode =
@@ -1289,7 +1290,7 @@ export const consolidateTicketServicesByEntradaProcedencia = (
       (sum, value) => sum + Number(value || 0),
       0,
     );
-    const adultIds = selectedIds.filter((id) => String(id).startsWith("adult:"));
+    const adultIds = selectedIds.filter(isAdultPassengerId);
     const passengerSelection = {
       ...(getPassengerSelectionFromService(adultService) || {}),
       selectedIds,
