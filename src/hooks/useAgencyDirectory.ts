@@ -5,7 +5,7 @@ import { getAgencies } from "../services/agencyService";
 export function useAgencyDirectory() {
   return useQuery({
     queryKey: ["turismo", "agencias", "directory"],
-    queryFn: () => getAgencies(true),
+    queryFn: ({ signal }) => getAgencies(true, { signal }),
     staleTime: 5 * 60 * 1000,
   });
 }

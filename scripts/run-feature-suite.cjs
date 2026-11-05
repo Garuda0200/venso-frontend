@@ -14,6 +14,7 @@ const testSuites = [
     "src/utils/__tests__/tigrisVoucherUpload.test.js",
     "src/pages/Ventas/Cotizaciones/utils/__tests__/sourceVoucherPreview.test.js",
   ] },
+  { name: "CRUD y caché de agencias", tests: ["src/services/__tests__/agencyService.test.js", "src/pages/Reservas/Servicios/components/agency/__tests__/AgencyManager.test.js"] },
   { name: "tarifas por agencia y espacio de servicios", tests: ["src/pages/Reservas/Servicios/utils/__tests__/agencyTariffWorkspace.test.js", "src/pages/Reservas/Servicios/utils/__tests__/tariffCurrencyForm.test.js", "src/pages/Reservas/Servicios/utils/__tests__/tariffAgencyCloneFlow.test.js", "src/pages/Reservas/Servicios/utils/__tests__/providerNavigation.test.js"] },
   { name: "preparaciÃ³n de paquetes", tests: ["src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/packageImportPreparation.test.js"] },
   { name: "reservas nativas e identidad", tests: [
@@ -126,6 +127,7 @@ const testSuites = [
       "src/pages/Reservas/VouchersReserva/components/ReservaServiceEditor/utils/__tests__/validationState.test.js",
       "src/pages/Reservas/VouchersReserva/components/ServiceAssignmentModal/utils/__tests__/assignmentSaveQueue.test.js",
       "src/pages/Reservas/VouchersReserva/utils/__tests__/reservationVoucherRender.test.js",
+      "src/pages/Reservas/VouchersReserva/utils/__tests__/reservationVoucherManagement.test.js",
       "src/pages/Reservas/VouchersReserva/utils/__tests__/specializedPaymentGroups.test.js",
       "src/pages/Reservas/VouchersReserva/utils/__tests__/reservationPaymentManagement.test.js",
       "src/pages/Reservas/VouchersReserva/utils/__tests__/directTrainPayment.test.js",

@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { AGENCIES_CHANGED_EVENT } from "../../../../services/agencyEvents";
 import { Dialog } from "primereact/dialog";
 import {
   Agency,
@@ -38,6 +39,7 @@ const BusinessTypeModal = ({
   const [showCreateAgency, setShowCreateAgency] = useState(false);
   const [creatingAgency, setCreatingAgency] = useState(false);
   const [agencyName, setAgencyName] = useState("");
+  const loadController = useRef<AbortController | null>(null);
 
   const selectedAgency = useMemo(
     () => agencies.find((agency) => agency.id === selectedAgencyId) || null,
@@ -45,23 +47,28 @@ const BusinessTypeModal = ({
   );
 
   const loadAgencies = async () => {
+    loadController.current?.abort();
+    const controller = new AbortController();
+    loadController.current = controller;
     setLoading(true);
     setError(null);
     try {
-      const rows = await getAgencies(false);
+      const rows = await getAgencies(false, { signal: controller.signal });
+      if (controller.signal.aborted) return;
       setAgencies(rows);
       setSelectedAgencyId((current) => {
         if (current && rows.some((agency) => agency.id === current)) return current;
         return rows.find((agency) => agency.is_primary)?.id || rows[0]?.id || null;
       });
     } catch (requestError: any) {
+      if (controller.signal.aborted) return;
       setError(
         requestError?.response?.data?.message ||
           requestError?.message ||
           "No fue posible cargar las agencias.",
       );
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) setLoading(false);
     }
   };
 
@@ -69,6 +76,12 @@ const BusinessTypeModal = ({
     if (!visible) return;
     setSelectedTariffType("externa");
     void loadAgencies();
+    const refresh = () => { void loadAgencies(); };
+    window.addEventListener(AGENCIES_CHANGED_EVENT, refresh);
+    return () => {
+      loadController.current?.abort();
+      window.removeEventListener(AGENCIES_CHANGED_EVENT, refresh);
+    };
   }, [visible]);
 
   const handleConfirm = () => {
@@ -101,7 +114,8 @@ const BusinessTypeModal = ({
     try {
       const created = await createAgency({ name, active: true, is_primary: false });
       setAgencies((current) =>
-        [...current, created].sort((a, b) => a.name.localeCompare(b.name)),
+        [...current.filter(agency => agency.id !== created.id), created]
+          .sort((a, b) => a.name.localeCompare(b.name)),
       );
       setSelectedAgencyId(created.id);
       setAgencyName("");

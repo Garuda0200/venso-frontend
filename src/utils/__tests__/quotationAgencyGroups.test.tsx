@@ -83,6 +83,6 @@ test("los tres listados consumen la misma agrupación y las mutaciones actualiza
   assert.match(source("pages/Ventas/Cotizaciones/components/CotizacionesTable.tsx"), /paginateQuotationAgencyGroups\(visibleCotizaciones, agencies, page, pageSize\)/);
   const biblia = source("pages/Reservas/Calendario/services/bibliaActivityService.ts");
   assert.match(biblia, /async createQuotationFromStandaloneActivity[\s\S]*?invalidateAgenciesCache\(\);[\s\S]*?invalidateCotizacionGraphCache\(\)/);
-  assert.match(source("services/agencyService.ts"), /api\(\)\.post\("\/turismo\/agencias", input\);\s*invalidateAgenciesCache\(\)/);
-  assert.match(source("hooks/useAgencyDirectory.ts"), /getAgencies\(true\)/);
+  assert.match(source("services/agencyService.ts"), /api\(\)\.post\("\/turismo\/agencias", input\);\s*await invalidateAgenciesCache\(\)/);
+  assert.match(source("hooks/useAgencyDirectory.ts"), /getAgencies\(true, \{ signal \}\)/);
 });

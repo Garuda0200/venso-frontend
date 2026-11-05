@@ -19,6 +19,8 @@ const VoucherReservaCard = ({
   onVoucherMedia,
   onAgencyPayment,
   onManagePayments,
+  onManageQuotationPayments,
+  onEditPassengers,
   onManageDocuments,
   onPreviewPDF,
   userRole = 1,
@@ -130,6 +132,8 @@ const VoucherReservaCard = ({
           onViewServicesSummary={onViewServicesSummary}
           onUnlinkServices={onUnlinkServices}
           onManagePayments={onManagePayments}
+          onManageQuotationPayments={onManageQuotationPayments}
+          onEditPassengers={onEditPassengers}
           onManageDocuments={onManageDocuments}
           userRole={userRole}
           paymentCompleted={paymentCompleted}

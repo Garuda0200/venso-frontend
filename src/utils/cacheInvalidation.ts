@@ -4,6 +4,8 @@
 
 import { queryClient, queryKeys } from "../config/queryClient";
 import { invalidateGetCache } from "./axiosInstance";
+import { invalidateCache, TURISMO_ENTITY_TYPES } from "../hooks/useTurismoCache";
+import { AGENCIES_CHANGED_EVENT } from "../services/agencyEvents";
 
 const normalizeVoucherId = (value) =>
   value === undefined || value === null ? "" : String(value);
@@ -132,9 +134,29 @@ export const invalidateCotizacionesCache = ({ refetchType = "active" } = {}) => 
   queryClient.invalidateQueries({ queryKey: queryKeys.cotizaciones.all, refetchType });
 };
 
-export const invalidateAgenciesCache = () => {
-  invalidateGetCache("/turismo/agencias");
-  queryClient.invalidateQueries({ queryKey: ["turismo", "agencias"] });
+export const invalidateAgenciesCache = async () => {
+  [
+    "/agencias", "/tarifas", "/hoteles", "/habitaciones", "/trenes", "/vagones",
+    "/transportes", "/movilidades", "/endoses", "/tours", "/vuelos", "/tipos-vuelo",
+    "/guias", "/rutas", "/tickets", "/restaurantes", "/servicios-extras", "/paquetes-turisticos",
+  ].forEach(invalidateGetCache);
+
+  // Cancelar primero evita que una lectura anterior vuelva a poblar el directorio.
+  await queryClient.cancelQueries({
+    predicate: query => ["turismo", "agencies", "cotizaciones", "vouchers-venta", "vouchers-reserva", "paquetes", "payment-requests"]
+      .includes(String(query.queryKey[0])),
+  });
+  [
+    TURISMO_ENTITY_TYPES.HOTEL, TURISMO_ENTITY_TYPES.TREN, TURISMO_ENTITY_TYPES.TRANSPORTE,
+    TURISMO_ENTITY_TYPES.ENDOSE, TURISMO_ENTITY_TYPES.VUELOS, TURISMO_ENTITY_TYPES.GUIA,
+    TURISMO_ENTITY_TYPES.TARIFA,
+  ].forEach(invalidateCache);
+  invalidateCotizacionGraphCache();
+  queryClient.invalidateQueries({ queryKey: ["agencies"] });
+  queryClient.invalidateQueries({ queryKey: queryKeys.paquetes.all });
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(AGENCIES_CHANGED_EVENT));
+  }
 };
 
 /**

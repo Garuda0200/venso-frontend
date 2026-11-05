@@ -1534,7 +1534,7 @@ export function EdicionCotizacion({
   );
   const agenciesQuery = useQuery<Agency[]>({
     queryKey: ["agencies", "quotation-editor"],
-    queryFn: () => getAgencies(false),
+    queryFn: ({ signal }) => getAgencies(false, { signal }),
     staleTime: 1000 * 60 * 10,
     gcTime: 1000 * 60 * 30,
     refetchOnWindowFocus: false,

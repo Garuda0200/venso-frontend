@@ -37,7 +37,7 @@ import PaymentManagementModal from "./components/PaymentManagementModal/PaymentM
 import PredecesoresExpander from "../../Ventas/Cotizaciones/components/PredecesoresExpander";
 import { buildClosedSaleQuotation } from "./components/QuotationVersionHistory/QuotationVersionHistory";
 import VentasSummaryPDFModal from "../../Ventas/VouchersVenta/components/VentasSummaryPDFModal/VentasSummaryPDFModal";
-import DocumentsManagerModal from "../../../components/Contabilidad/DocumentsManagerModal/DocumentsManagerModal";
+import VoucherModal from "../../Ventas/VouchersVenta/components/VoucherModal/VoucherModal";
 import VoucherMediaManagerModal from "../../Ventas/Cotizaciones/components/VoucherMediaManagerModal";
 import {
   invalidateReservaAssignmentGraphCache,
@@ -112,10 +112,10 @@ const VouchersReserva = () => {
   const [selectedVoucherForPayments, setSelectedVoucherForPayments] =
     useState(null);
 
-  // State for documents management modal
-  const [showDocumentsModal, setShowDocumentsModal] = useState(false);
-  const [selectedVoucherForDocuments, setSelectedVoucherForDocuments] =
-    useState(null);
+  const [voucherManagement, setVoucherManagement] = useState<{
+    voucher: any;
+    mode: "passengers" | "payments" | "documents";
+  } | null>(null);
 
   const [voucherMediaVoucher, setVoucherMediaVoucher] = useState(null);
 
@@ -141,7 +141,7 @@ const VouchersReserva = () => {
     setShowServicesEditor(false);
     setShowServicesSummary(false);
     setShowPaymentManagement(false);
-    setShowDocumentsModal(false);
+    setVoucherManagement(null);
     setVoucherMediaVoucher(null);
 
     // Reset selected data
@@ -149,7 +149,6 @@ const VouchersReserva = () => {
     setReservationVoucher(null);
     setSelectedVoucherForModal(null);
     setSelectedVoucherForPayments(null);
-    setSelectedVoucherForDocuments(null);
     setShowVoucherPreview(false);
     setEditingServices(false);
 
@@ -696,27 +695,25 @@ const VouchersReserva = () => {
     setVoucherMediaVoucher(voucher);
   };
 
-  // Manage documents for voucher de venta asociado
-  const handleManageDocuments = (voucher) => {
-    // El voucher tiene acceso al voucher_venta asociado a través de su estructura
-    // Necesitamos pasar el id del voucher de venta y su código
-    console.log(
-      " Abriendo gestor de documentos para voucher:",
-      voucher.voucher_code,
-    );
-    setSelectedVoucherForDocuments({
-      voucherId: voucher.id, // ID del voucher de venta
-      voucherCode: voucher.voucher_code, // Código del voucher de venta
-    });
-    setShowDocumentsModal(true);
+  const openVoucherManagement = (
+    voucher,
+    mode: "passengers" | "payments" | "documents",
+  ) => {
+    if (!voucher?.id) {
+      setSnackbar({ show: true, message: "No se pudo identificar el voucher de venta asociado.", type: "warning" });
+      return;
+    }
+    setVoucherManagement({ voucher, mode });
     document.body.style.overflow = "hidden";
   };
 
-  // Close documents modal
-  const handleCloseDocumentsModal = () => {
-    setShowDocumentsModal(false);
-    setSelectedVoucherForDocuments(null);
-    document.body.style.overflow = "auto";
+  const handleManageDocuments = voucher => openVoucherManagement(voucher, "documents");
+  const handleManageQuotationPayments = voucher => openVoucherManagement(voucher, "payments");
+  const handleEditPassengers = voucher => openVoucherManagement(voucher, "passengers");
+
+  const closeVoucherManagement = () => {
+    setVoucherManagement(null);
+    document.body.style.overflow = "";
   };
 
   // Delete the reservation voucher after confirmation from the card popover.
@@ -1296,6 +1293,8 @@ const VouchersReserva = () => {
                                       handleViewServicesSummary
                                     }
                                     onManagePayments={handleManagePayments}
+                                    onManageQuotationPayments={handleManageQuotationPayments}
+                                    onEditPassengers={handleEditPassengers}
                                     onManageDocuments={handleManageDocuments}
                                     onPreviewPDF={() =>
                                       handlePreviewVoucherPDF(voucher)
@@ -1398,13 +1397,18 @@ const VouchersReserva = () => {
         />
       )}
 
-      {/* Documents Manager Modal */}
-      {showDocumentsModal && selectedVoucherForDocuments && (
-        <DocumentsManagerModal
-          isOpen={showDocumentsModal}
-          onClose={handleCloseDocumentsModal}
-          voucherId={selectedVoucherForDocuments.voucherId}
-          voucherCode={selectedVoucherForDocuments.voucherCode}
+      {voucherManagement && (
+        <VoucherModal
+          key={`${voucherManagement.voucher.id}:${voucherManagement.mode}`}
+          isOpen
+          onClose={closeVoucherManagement}
+          onSave={forceCompleteRefreshRaw}
+          onPassengerInfoSaved={forceCompleteRefreshRaw}
+          voucherData={voucherManagement.voucher}
+          cotizacionData={getVoucherCotizacionData(voucherManagement.voucher)}
+          isEditMode
+          isPaymentManagementMode={voucherManagement.mode === "payments"}
+          isDocumentManagementMode={voucherManagement.mode === "documents"}
         />
       )}
 

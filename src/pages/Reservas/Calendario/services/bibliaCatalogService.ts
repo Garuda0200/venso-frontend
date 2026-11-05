@@ -1,4 +1,5 @@
 import { createApiInstance } from "../../../../utils/apiUtils";
+import { AGENCIES_CHANGED_EVENT } from "../../../../services/agencyEvents";
 import type { BibliaActivity } from "../utils/bibliaActivityMapper";
 import { buildBibliaTrainOptions } from "../utils/bibliaTrainCatalog";
 import { buildBibliaTransportOptions } from "../utils/bibliaTransportCatalog";
@@ -183,3 +184,7 @@ export const bibliaCatalogService = {
     transportCatalogRequest = null;
   },
 };
+
+if (typeof window !== "undefined") {
+  window.addEventListener(AGENCIES_CHANGED_EVENT, () => bibliaCatalogService.clear());
+}

@@ -11,6 +11,7 @@ import {
   MdPermMedia,
   MdAssessment,
   MdPictureAsPdf,
+  MdPeople,
 } from "react-icons/md";
 import ExpandableActions, {
   ExpandableActionItem,
@@ -28,6 +29,8 @@ const VoucherActions = ({
   onViewServicesSummary,
   onUnlinkServices,
   onManagePayments,
+  onManageQuotationPayments,
+  onEditPassengers,
   onManageDocuments,
   userRole,
   paymentCompleted,
@@ -96,10 +99,28 @@ const VoucherActions = ({
     if (onManagePayments && servicesAssigned) {
       items.push({
         key: "payments",
-        label: paymentCompleted ? "Historial de pagos" : "Gestionar pagos",
+        label: paymentCompleted ? "Historial de pagos de servicios" : "Pagos de servicios",
         icon: <MdPayment />,
         onClick: () => onManagePayments(voucher),
         tone: paymentCompleted ? "primary" : "warning",
+      });
+    }
+    if (onManageQuotationPayments) {
+      items.push({
+        key: "quotation-payments",
+        label: "Pagos de la cotización",
+        icon: <MdPayment />,
+        onClick: () => onManageQuotationPayments(voucher),
+        tone: "warning",
+      });
+    }
+    if (onEditPassengers) {
+      items.push({
+        key: "passengers",
+        label: "Información de pasajeros",
+        icon: <MdPeople />,
+        onClick: () => onEditPassengers(voucher),
+        tone: "primary",
       });
     }
     if (onAgencyPayment) {
@@ -168,6 +189,8 @@ const VoucherActions = ({
     onAssignServices,
     onManageDocuments,
     onManagePayments,
+    onManageQuotationPayments,
+    onEditPassengers,
     onPreviewPDF,
     onVoucherMedia,
     onUnlinkServices,

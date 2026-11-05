@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FaBuilding, FaCheck, FaChevronDown, FaGlobeAmericas, FaTimes } from "react-icons/fa";
 import { Agency, getAgencies } from "../../../services/agencyService";
+import { AGENCIES_CHANGED_EVENT } from "../../../services/agencyEvents";
 import "./TariffAgencyCombobox.scss";
 
 type Props = {
@@ -42,15 +43,20 @@ const TariffAgencyCombobox = ({
       setAgencies(providedAgencies.filter((agency) => agency.active));
       return;
     }
-    let mounted = true;
-    getAgencies(false)
-      .then((rows) => {
-        if (!mounted) return;
-        setAgencies((rows || []).filter((agency) => agency.active));
-      })
-      .catch(() => mounted && setAgencies([]));
+    let controller: AbortController;
+    const refresh = () => {
+      controller?.abort();
+      controller = new AbortController();
+      const signal = controller.signal;
+      getAgencies(false, { signal })
+        .then(rows => { if (!signal.aborted) setAgencies((rows || []).filter(agency => agency.active)); })
+        .catch(() => { if (!signal.aborted) setAgencies([]); });
+    };
+    refresh();
+    window.addEventListener(AGENCIES_CHANGED_EVENT, refresh);
     return () => {
-      mounted = false;
+      controller?.abort();
+      window.removeEventListener(AGENCIES_CHANGED_EVENT, refresh);
     };
   }, [providedAgencies]);
 

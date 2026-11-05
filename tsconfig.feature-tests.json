@@ -17,6 +17,9 @@
     ]
   },
   "include": [
+    "src/pages/Reservas/VouchersReserva/utils/__tests__/reservationVoucherManagement.test.tsx",
+    "src/pages/Reservas/Servicios/components/agency/__tests__/AgencyManager.test.tsx",
+    "src/services/__tests__/agencyService.test.ts",
     "src/pages/Ventas/Cotizaciones/utils/__tests__/sourceVoucherPreview.test.tsx",
     "src/utils/__tests__/tigrisVoucherUpload.test.ts",
     "src/pages/Ventas/Cotizaciones/utils/__tests__/reservationFileCreation.test.tsx",

@@ -99,7 +99,7 @@ export const bibliaActivityService = {
       `${BASE_URL}/biblia-actividades/independientes/${encodeURIComponent(id)}/cotizacion`,
       payload,
     );
-    invalidateAgenciesCache();
+    await invalidateAgenciesCache();
     invalidateCotizacionGraphCache();
     return response?.data?.data ?? response?.data;
   },

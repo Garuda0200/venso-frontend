@@ -11,6 +11,7 @@ import RestauranteList from "./components/restaurante/RestauranteList";
 import ServicioExtraList from "./components/servicio_extra/ServicioExtraList";
 import AgencyManager from "./components/agency/AgencyManager";
 import { Agency, getAgencies, getPrimaryAgency } from "../../../services/agencyService";
+import { AGENCIES_CHANGED_EVENT } from "../../../services/agencyEvents";
 import { setServiciosAgencyScope } from "./services/api";
 import { ServiciosAgencyContext } from "./context/ServiciosAgencyContext";
 import ServiciosCategoryTabs from "./components/common/ServiciosCategoryTabs";
@@ -55,20 +56,21 @@ const Servicios = () => {
     [agencies, selectedAgencyId],
   );
 
-  const loadAgencies = async () => {
+  const loadAgencies = async (signal?: AbortSignal) => {
     setAgencyLoading(true);
     setAgencyError("");
     try {
-      const rows = await getAgencies(false);
+      const rows = await getAgencies(false, { signal });
       let primary = rows.find((agency) => agency.is_primary) || null;
       if (!primary) {
         try {
-          primary = await getPrimaryAgency();
+          primary = await getPrimaryAgency(signal);
         } catch {
           primary = rows[0] || null;
         }
       }
 
+      if (signal?.aborted) return;
       const storedAgencyId = Number(localStorage.getItem(STORAGE_KEY));
       const storedAgency = rows.find((agency) => agency.id === storedAgencyId && agency.active);
       const initialAgency = storedAgency || primary || rows[0] || null;
@@ -77,15 +79,27 @@ const Servicios = () => {
       setSelectedAgencyId(localStorage.getItem(STORAGE_KEY) === "0" ? 0 : initialAgency?.id || null);
       if (initialAgency?.id && localStorage.getItem(STORAGE_KEY) !== "0") localStorage.setItem(STORAGE_KEY, String(initialAgency.id));
     } catch (error) {
+      if (signal?.aborted) return;
       console.error("No se pudieron cargar las agencias de servicios", error);
       setAgencyError("No fue posible cargar las agencias. Verifica la conexión con el backend.");
     } finally {
-      setAgencyLoading(false);
+      if (!signal?.aborted) setAgencyLoading(false);
     }
   };
 
   useEffect(() => {
-    void loadAgencies();
+    let controller: AbortController;
+    const refresh = () => {
+      controller?.abort();
+      controller = new AbortController();
+      void loadAgencies(controller.signal);
+    };
+    refresh();
+    window.addEventListener(AGENCIES_CHANGED_EVENT, refresh);
+    return () => {
+      controller?.abort();
+      window.removeEventListener(AGENCIES_CHANGED_EVENT, refresh);
+    };
   }, []);
 
   setServiciosAgencyScope(selectedAgencyId);
@@ -269,7 +283,7 @@ const Servicios = () => {
       {agencyError && <div className="services-agency-error">{agencyError}</div>}
 
       <ServiciosWorkspace key={activeView || "home"} category={activeView}>
-          {agencyLoading ? (
+          {agencyLoading && agencies.length === 0 ? (
             <div className="services-agency-loading">Preparando catálogos por agencia…</div>
           ) : selectedAgencyId === null ? (
             <AgencyManager

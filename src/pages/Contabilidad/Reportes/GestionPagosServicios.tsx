@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { AGENCIES_CHANGED_EVENT } from "../../../services/agencyEvents";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import {
@@ -91,7 +92,9 @@ export function GestionPagosServicios() {
 
   useEffect(() => {
     let active = true;
+    let generation = 0;
     const load = async () => {
+      const requestGeneration = ++generation;
       setLoading(true);
       try {
         const [quoteRows, requestsResponse, movementsResponse, agencyRows, primary] =
@@ -99,25 +102,28 @@ export function GestionPagosServicios() {
             cotizacionService.getAllCotizaciones({ skipCache: true }),
             axiosInstance.get("/turismo/vouchers-reserva/payment-requests/all"),
             contabilidadService.getMovimientos().catch(() => ({ data: [] })),
-            getAgencies(false),
+            getAgencies(true),
             getPrimaryAgency(),
           ]);
-        if (!active) return;
+        if (!active || requestGeneration !== generation) return;
         setQuotes(Array.isArray(quoteRows) ? quoteRows : []);
         setRequests(requestsResponse?.data?.data || []);
         setMovements(extractArrayResponse(movementsResponse));
         setAgencies(Array.isArray(agencyRows) ? agencyRows : []);
         setPrimaryAgency(primary || null);
       } catch (error) {
+        if (!active || requestGeneration !== generation) return;
         console.error("Error cargando reporte de proveedores:", error);
         toast.error("No se pudo cargar el reporte de pagos de proveedores");
       } finally {
-        if (active) setLoading(false);
+        if (active && requestGeneration === generation) setLoading(false);
       }
     };
     load();
+    window.addEventListener(AGENCIES_CHANGED_EVENT, load);
     return () => {
       active = false;
+      window.removeEventListener(AGENCIES_CHANGED_EVENT, load);
     };
   }, []);
 

@@ -41,15 +41,17 @@ const unwrap = <T>(response: { data?: { data?: T } | T }): T => {
 
 export const getAgencies = async (
   includeInactive = false,
+  options: { signal?: AbortSignal } = {},
 ): Promise<Agency[]> => {
   const response = await api().get("/turismo/agencias", {
     params: { include_inactive: includeInactive },
+    signal: options.signal,
   });
   return unwrap<Agency[]>(response) || [];
 };
 
-export const getPrimaryAgency = async (): Promise<Agency> => {
-  const response = await api().get("/turismo/agencias/primary");
+export const getPrimaryAgency = async (signal?: AbortSignal): Promise<Agency> => {
+  const response = await api().get("/turismo/agencias/primary", { signal });
   return unwrap<Agency>(response);
 };
 
@@ -62,7 +64,7 @@ export const createAgency = async (
   input: CreateAgencyInput,
 ): Promise<Agency> => {
   const response = await api().post("/turismo/agencias", input);
-  invalidateAgenciesCache();
+  await invalidateAgenciesCache();
   return unwrap<Agency>(response);
 };
 
@@ -71,6 +73,12 @@ export const updateAgency = async (
   input: Partial<CreateAgencyInput>,
 ): Promise<Agency> => {
   const response = await api().put(`/turismo/agencias/${id}`, input);
-  invalidateAgenciesCache();
+  await invalidateAgenciesCache();
+  return unwrap<Agency>(response);
+};
+
+export const deleteAgency = async (id: number): Promise<Agency> => {
+  const response = await api().delete(`/turismo/agencias/${id}`);
+  await invalidateAgenciesCache();
   return unwrap<Agency>(response);
 };
