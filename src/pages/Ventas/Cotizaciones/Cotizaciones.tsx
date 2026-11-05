@@ -61,6 +61,7 @@ import { getAgencyById } from "../../../services/agencyService";
 import AgencyPaymentReportModal from "../../../components/Contabilidad/AgencyPaymentReportModal";
 import VoucherMediaManagerModal from "./components/VoucherMediaManagerModal";
 import ReservationFileModal from "./components/ReservationFileModal";
+import { bibliaActivityService } from "../../Reservas/Calendario/services/bibliaActivityService";
 import { canCreateReservationFile } from "./utils/reservationFileCreation";
 import PreLiquidacionModal from "./components/PreLiquidacionModal";
 
@@ -2843,6 +2844,11 @@ const Cotizaciones = () => {
           onToggleActions={toggleActionButtons}
           onTogglePdf={togglePdfButtons}
           onEdit={handleEditCotizacionModal}
+          onBibliaVisibility={isReservasQuotationFlow ? async (quotation, visible) => {
+            const saved = await bibliaActivityService.setQuotationVisibility(String(quotation.id), visible);
+            setCotizaciones(current => current.map(item => String(item.id) === String(quotation.id) ? { ...item, ...saved } : item));
+            showSnackbar(visible ? "File visible en la Biblia de actividades" : "Registros ocultos de la Biblia", "success");
+          } : undefined}
           onRequestPostSaleEdit={handleRequestPostSaleEdit}
           onCancelPostSaleRequest={handleCancelPostSaleRequest}
           postSaleRequestsByCotizacion={postSaleRequestsByCotizacion}

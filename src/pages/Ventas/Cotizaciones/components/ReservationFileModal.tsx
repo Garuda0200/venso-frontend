@@ -10,6 +10,7 @@ import {
   type SourceVoucherMedia,
 } from "../utils/sourceVoucher";
 import "./styles/ReservationFileModal.scss";
+import BibliaVisibilitySwitch from "./BibliaVisibilitySwitch";
 
 export interface ReservationFileResult {
   quotation: Record<string, any>;
@@ -34,6 +35,7 @@ const ReservationFileModal = ({ isOpen, uploadedBy, onClose, onCreated }: Props)
   const completed = useRef(false);
   const [code, setCode] = useState("");
   const [title, setTitle] = useState("");
+  const [bibliaVisible, setBibliaVisible] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [created, setCreated] = useState<ReservationFileResult | null>(null);
   const [uploaded, setUploaded] = useState<SourceVoucherMedia | null>(null);
@@ -83,7 +85,7 @@ const ReservationFileModal = ({ isOpen, uploadedBy, onClose, onCreated }: Props)
     event.preventDefault();
     if (inFlight.current || completed.current) return;
     let input;
-    try { input = buildReservationFileInput({ voucher_code: code, titulo: title }); }
+    try { input = buildReservationFileInput({ voucher_code: code, titulo: title, biblia_visible: bibliaVisible }); }
     catch (validation: any) { setError(validation.message); codeInput.current?.focus(); return; }
     inFlight.current = true;
     setSaving(true);
@@ -130,7 +132,7 @@ const ReservationFileModal = ({ isOpen, uploadedBy, onClose, onCreated }: Props)
           <div><span className="reservation-file__eyebrow">Reservas</span><h2 id="reservation-file-title">Nuevo file</h2></div>
           <button type="button" className="reservation-file__close" onClick={close} disabled={saving} aria-label="Cerrar nuevo file"><MdClose /></button>
         </header>
-        <p id="reservation-file-help">Registra su código. Podrás completar los pasajeros y servicios desde la Biblia de actividades.</p>
+        <p id="reservation-file-help">Registra su código. Podrás completar los pasajeros y los servicios de cada día desde la cotización.</p>
         <form onSubmit={submit} noValidate aria-busy={saving}>
           <label className="reservation-file__field" htmlFor="reservation-file-code">Código de file <span>*</span>
             <input ref={codeInput} id="reservation-file-code" name="voucher_code" autoComplete="off" autoFocus maxLength={50} value={code} readOnly={Boolean(created)} required onChange={event => { setCode(event.target.value); setError(""); }} placeholder="Ej. DK0802" />
@@ -145,6 +147,7 @@ const ReservationFileModal = ({ isOpen, uploadedBy, onClose, onCreated }: Props)
             {file && !saving && <button type="button" className="reservation-file__remove" aria-label="Quitar adjunto" onClick={() => { setFile(null); setUploaded(null); setError(""); if (fileInput.current) fileInput.current.value = ""; }}><MdClose /></button>}
             <input ref={fileInput} hidden type="file" aria-label="Archivo de voucher" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.zip" onChange={event => selectFile(event.target.files?.[0] || null)} />
           </div>
+          <BibliaVisibilitySwitch checked={bibliaVisible} fileCode={code.trim()} creating disabled={saving || Boolean(created)} onConfirm={setBibliaVisible} />
           {created && <div className="reservation-file__saved" role="status"><MdCheckCircle /><span>File {created.quotation.voucher_code || code.trim()} guardado</span></div>}
           {isUploading && <div className="reservation-file__progress" role="progressbar" aria-label="Subiendo voucher" aria-valuemin={0} aria-valuemax={100} aria-valuenow={uploadProgress}><span style={{ width: `${uploadProgress}%` }} /></div>}
           {error && <div className="reservation-file__error" role="alert">{error}</div>}

@@ -23,6 +23,7 @@ export interface ReservationFileInput {
   titulo?: string;
   agency_id?: number;
   media_asset_id?: string;
+  biblia_visible?: boolean;
 }
 
 export const buildReservationFileInput = (input: ReservationFileInput): ReservationFileInput => {
@@ -33,5 +34,6 @@ export const buildReservationFileInput = (input: ReservationFileInput): Reservat
     ...(input.titulo?.trim() ? { titulo: input.titulo.trim() } : {}),
     ...(input.agency_id ? { agency_id: input.agency_id } : {}),
     ...(input.media_asset_id ? { media_asset_id: input.media_asset_id } : {}),
+    ...(typeof input.biblia_visible === "boolean" ? { biblia_visible: input.biblia_visible } : {}),
   };
 };

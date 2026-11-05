@@ -129,6 +129,8 @@
     "src/pages/Reservas/VouchersReserva/utils/__tests__/reservationSummaryDate.test.ts",
     "src/utils/__tests__/reservationHotelModalRuntime.test.ts",
     "src/components/Contabilidad/__tests__/movementCurrencyCorrection.test.ts",
-    "src/pages/Reservas/Calendario/utils/__tests__/bibliaFileAndTicketSelection.test.tsx"
+    "src/pages/Reservas/Calendario/utils/__tests__/bibliaFileAndTicketSelection.test.tsx",
+    "src/pages/Reservas/Calendario/utils/__tests__/bibliaPublication.test.ts",
+    "src/pages/Ventas/Cotizaciones/components/__tests__/bibliaVisibilitySwitch.test.tsx"
   ]
 }

@@ -68,6 +68,8 @@ test("untitled files list and search by their code while named quotations retain
     };
     Object.assign(globalThis, { window, document, HTMLElement: window.HTMLElement, IS_REACT_ACT_ENVIRONMENT: true, __reservationFileHarness: harness });
     if (!window.HTMLElement.prototype.focus) window.HTMLElement.prototype.focus = function () {};
+    window.HTMLElement.prototype.showModal = function () { this.open=true; };
+    window.HTMLElement.prototype.close = function () { this.open=false; };
     const root = createRoot(document.getElementById("root"));
     const results: any[] = [];
     let closes = 0;
@@ -94,10 +96,23 @@ test("untitled files list and search by their code while named quotations retain
       await submit(); assert.equal(calls.create.length, 0);
       assert.match(document.querySelector('[role="alert"]').textContent, /código de file/);
       await change('[name="voucher_code"]', " DK0802 "); await submit();
-      assert.deepEqual(calls.create, [{ voucher_code: "DK0802" }]);
+      assert.deepEqual(calls.create, [{ voucher_code: "DK0802", biblia_visible: false }]);
       assert.equal(calls.upload.length, 0); assert.equal(calls.upsert.length, 0);
       assert.equal(results.length, 1); assert.equal(results[0].quotation.cantidadpersonas, 0);
       assert.deepEqual(results[0].quotation.itinerario, []); assert.equal(results[0].reused, false);
+    });
+  });
+
+  test("Reservas opts into Biblia only after confirming the creation switch", async () => {
+    await withForm(async ({ document, calls, change, click, submit }) => {
+      await change('[name="voucher_code"]', "QA-BIBLIA");
+      await click("Biblia Oculto");
+      assert.equal(calls.create.length,0);
+      await click("Cancelar");
+      assert.equal(document.querySelector('[role="switch"]').getAttribute('aria-checked'),'false');
+      await click("Biblia Oculto");await click("Mostrar en Biblia");
+      await submit();
+      assert.equal(calls.create[0].biblia_visible,true);
     });
   });
 
@@ -106,7 +121,7 @@ test("untitled files list and search by their code while named quotations retain
       await change('[name="voucher_code"]', "DK0802"); await change('[name="titulo"]', " Carmen ");
       await choose(); await submit();
       assert.deepEqual(calls.order, ["create", "upload", "upsert"]);
-      assert.deepEqual(calls.create[0], { voucher_code: "DK0802", titulo: "Carmen" });
+      assert.deepEqual(calls.create[0], { voucher_code: "DK0802", titulo: "Carmen", biblia_visible: false });
       assert.equal(calls.upload[0][1], "voucher-media");
       assert.equal(calls.upsert[0][0], emptyFile.id);
       assert.equal(calls.upsert[0][1].mediaAssetId, "487ff8dd-d2a6-4618-8679-e0725ee0ef9c");

@@ -19,6 +19,7 @@ const CotizacionesTable = ({
   onToggleActions,
   onTogglePdf,
   onEdit,
+  onBibliaVisibility,
   onRequestPostSaleEdit,
   onCancelPostSaleRequest,
   postSaleRequestsByCotizacion = {},
@@ -140,6 +141,7 @@ const CotizacionesTable = ({
               onToggleActions={(e) => onToggleActions(cotizacion.id, e)}
               onTogglePdf={(e) => onTogglePdf(cotizacion.id, e)}
               onEdit={() => onEdit(cotizacion)}
+              onBibliaVisibility={onBibliaVisibility}
               postSaleEditRequest={
                 postSaleRequestsByCotizacion[String(cotizacion.id)] || null
               }

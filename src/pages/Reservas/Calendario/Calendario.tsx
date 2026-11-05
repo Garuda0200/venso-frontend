@@ -507,7 +507,7 @@ const Calendario = () => {
       const rawQuotes = operationalData.quotations;
       const batch: Array<{ id: string; biblia_actividades: Array<Record<string, any>> }> = [];
       const preparedQuotes = rawQuotes.map((quote) => {
-        if (isQuotationBibliaMaterialized(quote)) return quote;
+        if (quote.biblia_visible === false || isQuotationBibliaMaterialized(quote)) return quote;
         const records = quotationSyncCommandRecords(materializeQuotationBibliaRecords(quote, [], operationalData.standalone));
         if (!bibliaRecordsEqual(asArray(quote.biblia_actividades), records)) {
           batch.push({ id: String(quote.id), biblia_actividades: records });

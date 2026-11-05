@@ -36,6 +36,7 @@ import {
   getRequestUiState,
 } from "../utils/postSaleEditState";
 import "./styles/CotizacionTableRow.scss";
+import BibliaVisibilitySwitch from "./BibliaVisibilitySwitch";
 
 const hashPricingPayload = (value) => {
   let serialized = "";
@@ -63,6 +64,7 @@ const CotizacionTableRow = ({
   showAuditColumn = false,
   onRowClick,
   onEdit,
+  onBibliaVisibility,
   postSaleEditRequest = null,
   onRequestPostSaleEdit,
   onCancelPostSaleRequest,
@@ -434,6 +436,10 @@ const CotizacionTableRow = ({
             <span>{cotizacion.agency_name || cotizacion.agency?.name || "Venso Tours"}</span>
             <span>{formatDate(cotizacion.created_at || cotizacion.fecha)}</span>
           </div>
+          {onBibliaVisibility && !isInactive && <BibliaVisibilitySwitch
+            checked={cotizacion.biblia_visible !== false}
+            fileCode={cotizacion.voucher_code || cotizacion.id}
+            onConfirm={visible => onBibliaVisibility(cotizacion, visible)} />}
         </td>
 
         {/* Detalles: Pasajeros + Tipo + Total unified */}

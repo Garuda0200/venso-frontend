@@ -743,6 +743,7 @@ export const buildBibliaActivitiesFromSnapshots = (
   const result: BibliaActivity[] = [];
   const quotationMap = new Map(quotations.map((quotation) => [String(quotation.id || ""), quotation]));
   quotations.forEach((quotation) => {
+    if (quotation.biblia_visible === false) return;
     asArray<Record<string, any>>(quotation.biblia_actividades || quotation.bibliaActividades).forEach((record) => {
       const activity = recordToActivity(record, quotation);
       if (activity && !activity.isDeleted && !isLinkedItineraryMirror(record, quotation, standaloneRows)) result.push(activity);
@@ -751,6 +752,7 @@ export const buildBibliaActivitiesFromSnapshots = (
   standaloneRows.forEach((outer) => {
     const linkedQuotationId = String(outer.cotizacion_id || "");
     const linkedQuotation = quotationMap.get(linkedQuotationId) || {};
+    if (linkedQuotation.biblia_visible === false) return;
     const activity = recordToActivity(outer.actividad || outer.activity || {}, linkedQuotation, String(outer.id || ""));
     if (activity && !activity.isDeleted && outer.is_active !== false) {
       activity.sourceQuotationId = linkedQuotationId || activity.sourceQuotationId;

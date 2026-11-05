@@ -8,6 +8,8 @@ const tmpDir = path.join(root, ".tmp-feature-tests");
 const testSuites = [
   { name: "files de Reservas, vÃ­nculo Biblia y media", tests: [
     "src/pages/Ventas/Cotizaciones/utils/__tests__/reservationFileCreation.test.js",
+    "src/pages/Ventas/Cotizaciones/components/__tests__/bibliaVisibilitySwitch.test.js",
+    "src/pages/Reservas/Calendario/utils/__tests__/bibliaPublication.test.js",
     "src/pages/Reservas/Calendario/utils/__tests__/bibliaReservationFileLink.test.js",
     "src/utils/__tests__/tigrisVoucherUpload.test.js",
     "src/pages/Ventas/Cotizaciones/utils/__tests__/sourceVoucherPreview.test.js",

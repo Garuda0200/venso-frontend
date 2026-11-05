@@ -1,13 +1,15 @@
 import { createApiInstance } from "../../../../utils/apiUtils";
 import { invalidateAgenciesCache, invalidateCotizacionGraphCache } from "../../../../utils/cacheInvalidation";
+import { buildBibliaPublicationRecords } from "../utils/bibliaPublication";
 
 const BASE_URL = "/turismo/cotizaciones";
 const getApi = () => createApiInstance(true);
 
 export const bibliaActivityService = {
-  async getOperationalData() {
+  async getOperationalData(quotationId?: string) {
     const response = await getApi().get(`${BASE_URL}/biblia-actividades`, {
       _skipDedup: true,
+      ...(quotationId ? { params: { quote_id: quotationId } } : {}),
     });
     const data = response?.data?.data ?? {};
     if (Array.isArray(data)) {
@@ -17,6 +19,21 @@ export const bibliaActivityService = {
       quotations: Array.isArray(data?.quotations) ? data.quotations : [],
       standalone: Array.isArray(data?.standalone) ? data.standalone : [],
     };
+  },
+
+  async setQuotationVisibility(id: string, visible: boolean) {
+    let payload: Record<string, any> = { visible };
+    if (visible) {
+      const data = await this.getOperationalData(id);
+      const quote = data.quotations.find(item => String(item.id) === id);
+      if (!quote) throw new Error("No se encontró el file. Actualiza el listado e inténtalo nuevamente.");
+      payload = { visible, expected_version: quote.current_version,
+        expected_records: quote.biblia_actividades,
+        records: buildBibliaPublicationRecords(quote, data.standalone) };
+    }
+    const response = await getApi().patch(`${BASE_URL}/${encodeURIComponent(id)}/biblia-visibilidad`, payload);
+    invalidateCotizacionGraphCache();
+    return response?.data?.data;
   },
 
   // Compatibilidad transitoria para aplicar 017 antes de 018 sin romper la

@@ -64,7 +64,8 @@
     "test:voucher-preliquidacion": "tsc -p tsconfig.feature-tests.json && node .tmp-feature-tests/src/pages/Ventas/Cotizaciones/utils/__tests__/voucherPreliquidacion.test.js",
     "test:voucher-financials": "tsc -p tsconfig.feature-tests.json && node .tmp-feature-tests/src/pages/Ventas/VouchersVenta/utils/__tests__/voucherFinancials.test.js",
     "test:session-csrf": "tsc -p tsconfig.feature-tests.json && node .tmp-feature-tests/src/utils/__tests__/csrfToken.test.js",
-    "test:quotation-contracts": "node --test scripts/testing/quotation-contracts.test.cjs"
+    "test:quotation-contracts": "node --test scripts/testing/quotation-contracts.test.cjs",
+    "test:biblia-publication": "tsc -p tsconfig.feature-tests.json && node --test .tmp-feature-tests/src/pages/Reservas/Calendario/utils/__tests__/bibliaPublication.test.js .tmp-feature-tests/src/pages/Ventas/Cotizaciones/components/__tests__/bibliaVisibilitySwitch.test.js .tmp-feature-tests/src/pages/Ventas/Cotizaciones/utils/__tests__/reservationFileCreation.test.js .tmp-feature-tests/src/pages/Reservas/Calendario/utils/__tests__/bibliaActivityMapper.test.js"
   },
   "devDependencies": {
     "@types/crypto-js": "^4.2.2",
