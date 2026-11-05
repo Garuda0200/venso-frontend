@@ -31,6 +31,8 @@ export default function PassengerIdentityModal(props) {
       // The document preview owns Escape while it is open. Otherwise consume it
       // before VoucherModal's listener can close the underlying commercial form.
       if (event.key !== "Escape" || previewRef.current) return;
+      // The open passenger combobox consumes Escape before this dialog closes.
+      if (event.target?.closest?.('.identity-passenger-select')?.querySelector('[aria-expanded="true"]')) return;
       event.preventDefault();
       event.stopImmediatePropagation();
       setOpen(false);
@@ -49,7 +51,7 @@ export default function PassengerIdentityModal(props) {
     <div className="identity-launcher">
       <div className="identity-launcher__description">
         <span className="identity-launcher__icon"><MdAutoAwesome aria-hidden="true" /></span>
-        <div><strong>Lectura asistida de documentos</strong><p>Extrae los datos pendientes y revisa a qué pasajero pertenece cada documento.</p></div>
+        <div><strong>Lectura de documentos</strong><p>Completa sólo los datos pendientes.</p></div>
       </div>
       <button type="button" aria-haspopup="dialog" aria-controls={`${id}-dialog`} aria-expanded={open}
         onClick={() => { setVisited(true); setOpen(true); }}>
@@ -62,16 +64,16 @@ export default function PassengerIdentityModal(props) {
         onCancel={(event) => { event.preventDefault(); event.stopPropagation(); if (previewRef.current) setPreview(null); else close(); }}
         onClick={(event) => { event.stopPropagation(); }}>
         <header className="identity-modal__header" {...inert}>
-          <div><span>DOCUMENTOS DE PASAJEROS</span><h2 id={`${id}-title`}>Completar datos desde documentos</h2></div>
+          <div><span>DOCUMENTOS DE PASAJEROS</span><h2 id={`${id}-title`}>Completar datos</h2></div>
           <button ref={closeRef} type="button" aria-label="Cerrar lectura asistida" onClick={close}><MdClose aria-hidden="true" /></button>
         </header>
         <div className="identity-modal__body" {...inert}>
-          <p id={`${id}-help`} className="identity-modal__help">Usa documentos ya guardados o carga un lote sin asignar. La extracción empieza sólo al pulsar Procesar; los datos se guardan después de tu revisión.</p>
-          <PassengerIdentityBatch {...props} onPreviewDocument={setPreview} />
-          <p className="identity-modal__pdf-note">Para evitar lecturas innecesarias, selecciona sólo documentos de identidad. Un PDF de varias páginas requiere analizar cada página; no repitas el lote para consultar sus resultados.</p>
+          <p id={`${id}-help`} className="identity-modal__help">Selecciona documentos y revisa los datos antes de guardarlos.</p>
+          <PassengerIdentityBatch {...props} isOpen={open} onPreviewDocument={setPreview} />
+          <details className="identity-modal__tips"><summary>Sobre la lectura de PDFs</summary><p>Se analiza cada página del PDF. Consulta el estado del lote para ver sus resultados sin volver a procesarlo.</p></details>
         </div>
         <footer className="identity-modal__footer" {...inert}>
-          <p>Cerrar esta ventana no cancela el lote. Puedes volver a revisar sus resultados mientras este paso siga abierto.</p>
+          <p>Cerrar conserva el lote mientras sigas en Documentos.</p>
           <button type="button" onClick={close}>Volver a documentos</button>
         </footer>
         {preview && <ImagePreviewModal isOpen onClose={() => setPreview(null)} portalTarget={dialogRef.current}

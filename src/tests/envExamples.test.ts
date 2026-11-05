@@ -28,6 +28,12 @@ test("los valores sensibles de las plantillas backend son marcadores, nunca cred
     for (const line of readFileSync(resolve(root, file), "utf8").split(/\r?\n/)) {
       const match = line.match(/^([A-Z][A-Z0-9_]*)=(.*)$/);
       if (!match || !/SECRET|PASSWORD|TOKEN|KEY|PEPPER/.test(match[1])) continue;
+      // These two fields count provider tokens; they are public numeric limits,
+      // not authentication tokens. All credential checks below stay in force.
+      if (/^DOCUMENT_AI_PROVIDER_(DAILY|MONTHLY)_TOKENS$/.test(match[1])) {
+        assert.equal(/^[1-9]\d*$/.test(match[2]), true, `${file}: ${match[1]} debe ser un límite numérico`);
+        continue;
+      }
       const isPlaceholder = /REPLACE|YOUR_|CHANGE|TU_|<|^$|^""$/.test(match[2]);
       // Assert a boolean so a failing test never echoes a sensitive value.
       assert.equal(isPlaceholder, true, `${file}: ${match[1]} debe ser un marcador`);

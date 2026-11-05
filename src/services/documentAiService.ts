@@ -1,11 +1,14 @@
 // Session/CSRF protected backend only. The browser never knows the Gemini key,
 // Tigris credentials or n8n URL. Files go only to the authenticated backend;
 // extraction requests contain saved document IDs, never browser-supplied URLs.
+import { normalizeIdentityDocumentFile } from './identityDocumentFile';
+
 export function createDocumentAiService(client) {
   const base = '/turismo/document-ai';
   const data = promise => promise.then(response => response.data);
   return {
-    uploadAsset: ({ quote, voucher, passenger, category, file }, signal) => {
+    uploadAsset: async ({ quote, voucher, passenger, category, file }, signal) => {
+      file = await normalizeIdentityDocumentFile(file);
       const body = new FormData();
       body.append('cotizacion_id', quote); body.append('voucher_id', String(voucher));
       if (passenger != null) body.append('passenger_id', String(passenger));

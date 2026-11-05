@@ -155,6 +155,26 @@ async function add(document, name = 'synthetic.png', type = 'image/png') {
   await act(async () => input.dispatchEvent(new window.Event('change', { bubbles: true })));
 }
 
+test('una imagen JFIF se autoguarda para un pasajero y permite seguir con el resto sin documentos', async () => {
+  const f = fixture();
+  await mounted(f, wizardEntry, wizardProps(f), async document => {
+    await start(document);
+    const input = document.querySelector('input[type="file"]');
+    assert.match(input.getAttribute('accept'), /\.jfif/);
+    const file = new File([new Uint8Array([255,216,255,224,0,16,74,70,73,70])], 'synthetic.jfif', { type: '' });
+    Object.defineProperty(input, 'files', { configurable: true, value: [file] });
+    await act(async () => input.dispatchEvent(new window.Event('change', { bubbles: true })));
+    assert.equal(f.records.length, 1);
+    assert.equal(f.records[0].fileType, 'image/jpeg');
+    assert.equal(f.records[0].passengerId, 42);
+    await click(next(document));
+    await click(previous(document));
+    assert.equal(f.records.length, 1);
+    assert.equal(f.uploads, 1);
+    assert.equal(f.syncs.length, 1);
+  });
+});
+
 test('new file with blank passengers retains all category previews when Payments returns to Documents, without reuploads', async () => {
   const f = fixture();
   await mounted(f, wizardEntry, wizardProps(f), async document => {
@@ -437,6 +457,21 @@ test('reviewed identity reload updates the passenger and owner without losing do
     await click(next(document)); await click(previous(document));
     assert.equal(document.querySelectorAll('.document-card').length, 1);
     assert.match(document.querySelector('.passenger-name').textContent, /SYNTHETIC REVIEWED/);
+    assert.equal(f.uploads, 1);
+  });
+});
+
+test('reviewed identity reload retains quote passengers without a voucher FK', async () => {
+  const f = fixture();
+  await mounted(f, wizardEntry, wizardProps(f), async document => {
+    await start(document); await add(document);
+    f.rows[0] = { ...f.rows[0], nombres: 'SYNTHETIC', apellidos: 'REVIEWED' };
+    f.loadRows = () => [];
+    await act(async () => f.identityProps.onIdentityApplied());
+    assert.match(document.querySelector('.passenger-name').textContent, /SYNTHETIC REVIEWED/);
+    assert.deepEqual(f.identityProps.passengerData.adults.map(row => row.id_pasajero), [42, 51]);
+    assert.deepEqual(f.identityProps.passengerData.children.map(row => row.id_pasajero), [75]);
+    assert.equal(document.querySelectorAll('.document-card').length, 1);
     assert.equal(f.uploads, 1);
   });
 });

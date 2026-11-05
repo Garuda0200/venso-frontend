@@ -29,13 +29,7 @@ import DocumentDeletePopover from "./DocumentDeletePopover";
 import { canDeletePassengerDocument } from "./documentPermissions";
 import PassengerIdentityModal from "./PassengerIdentityModal";
 import { isDocumentAiUiEnabled } from "./documentAiUi";
-
-const ACCEPTED_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/jpg",
-  "application/pdf",
-];
+import { normalizeIdentityDocumentFile } from "../../../../../../services/identityDocumentFile";
 
 const PassengerDocuments = ({
   passengerData,
@@ -233,7 +227,7 @@ const PassengerDocuments = ({
 
       try {
         for (let i = 0; i < fileArray.length; i++) {
-          const file = fileArray[i];
+          let file = fileArray[i];
 
           // Simular progreso durante el upload
           const progressInterval = setInterval(() => {
@@ -248,9 +242,7 @@ const PassengerDocuments = ({
           }, 200);
 
           try {
-            if (!ACCEPTED_TYPES.includes(file.type)) {
-              throw new Error(`Tipo de archivo no permitido: ${file.name}`);
-            }
+            file = await normalizeIdentityDocumentFile(file);
 
             // Prepare a local preview once; the parent persists the batch below.
             const reader = new FileReader();
@@ -639,7 +631,7 @@ const PassengerDocuments = ({
                   files={[]}
                   onRawFilesAdded={handleFileUpload}
                   disabled={deletingDocument}
-                  accept=".jpg,.jpeg,.png,.pdf"
+                  accept=".jpg,.jpeg,.jpe,.jfif,.png,.pdf"
                   label={`Arrastra archivos de ${getCategoryDisplayName(activeCategory)} aquí`}
                   hint="Formatos permitidos: JPG, PNG, PDF"
                   inputId={`doc-upload-${activeCategory}`}

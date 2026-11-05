@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   MdPerson,
   MdChildCare,
@@ -6,11 +6,12 @@ import {
   MdCheck,
   MdEdit,
 } from "react-icons/md";
-import { v4 as uuidv4 } from "uuid";
 import { getCountryNames } from "../../../../../../utils/countries";
-import pasajeroService from "../../../../../../services/pasajeroService";
-import { normalizePassengerForDraft } from "../../passengerDraft";
+import {
+  normalizePassengerInput,
+} from "../../passengerDraft";
 import "./PassengerStep.scss";
+import { ageFromBirthDate, procedenciaFromCountry } from '../../passengerIdentityDerived';
 
 // Lista de países obtenida del archivo de utilidades
 const COUNTRIES = getCountryNames();
@@ -21,466 +22,55 @@ const DOCUMENT_OPTIONS = {
   adults: ["Pasaporte", "DNI", "CE", "Otro"],
   children: ["Pasaporte", "DNI", "Partida de Nacimiento", "Otro"],
 };
+const DOCUMENT_LABELS = { passport: "Pasaporte", national_id: "DNI", foreign_resident: "CE", birth_certificate: "Partida de Nacimiento", other: "Otro" };
 
 const joinNames = (...parts) => parts.filter(Boolean).join(" ").trim();
-
-const calculateAgeFromBirthDate = (value) => {
-  if (!value) return "";
-  const birthDate = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(birthDate.getTime())) return "";
-
-  const today = new Date();
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
-  if (
-    monthDiff < 0 ||
-    (monthDiff === 0 && today.getDate() < birthDate.getDate())
-  ) {
-    age -= 1;
-  }
-
-  return String(Math.max(age, 0));
-};
-
-const splitLastNames = (value = "") => {
-  const parts = String(value || "")
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-  return {
-    apellido_paterno: parts[0] || "",
-    apellido_materno: parts.slice(1).join(" "),
-  };
-};
-
-const normalizePassengerForForm = (p = {}, type = "adult") => {
-  const canonical=normalizePassengerForDraft(p,type);
-  const split=splitLastNames(canonical.apellidos);
-  return {...canonical,id:p.id_pasajero || p.id || uuidv4(),
-    apellido_paterno:p.apellido_paterno ?? p.apellidoPaterno ?? split.apellido_paterno,
-    apellido_materno:p.apellido_materno ?? p.apellidoMaterno ?? split.apellido_materno,
-    pais:canonical.nacionalidad,sexo:canonical.sexo};
-};
-
-const createBlankPassenger = (type = "adult", seed = {}) =>
-  normalizePassengerForForm(
-    {
-      nombres: seed.nombres || "",
-      apellidos: seed.apellidos || "",
-      fecha_nacimiento: seed.fecha_nacimiento || "",
-      edad: type === "child" ? "10" : "30",
-      pais: seed.pais || seed.nacionalidad || "Perú",
-      nacionalidad: seed.nacionalidad || seed.pais || "Perú",
-      tipo_documento: seed.tipoDocumento || seed.tipo_documento || "DNI",
-      numero_documento:
-        seed.numeroDocumento || seed.numero_documento || "",
-      correo: seed.correo || "",
-      telefono: seed.telefono || "",
-    },
-    type,
-  );
 
 const PassengerStep = ({
   passengerData,
   onPassengerDataChange,
-  cotizacionData,
-  isEditMode = false,
-  voucherId = null,
-  voucherCode = null,
-  isPassengerInfoOnlyMode = false,
   disabled = false,
-}) => {
+}: any) => {
   // Memoize initial data to avoid unnecessary recalculations
-  const initialData = useMemo(() => {
-    return {
-      adults: passengerData?.adults?.length
-        ? passengerData.adults.map((p) => normalizePassengerForForm(p, "adult"))
-        : [],
-      children: passengerData?.children?.length
-        ? passengerData.children.map((p) => normalizePassengerForForm(p, "child"))
-        : [],
-    };
-  }, [passengerData]);
+  const initialData = useMemo(() => normalizePassengerInput(passengerData), [passengerData]);
 
   // Use memoized state to avoid renders from parent state changes
   const [localPassengerData, setLocalPassengerData] = useState(initialData);
   const [peopleCount, setPeopleCount] = useState({
-    adults: initialData.adults.length || 1,
-    children: initialData.children.length || 0,
+    adults: initialData.adults.length,
+    children: initialData.children.length,
   });
   const [errors, setErrors] = useState({});
-  const [dataInitialized, setDataInitialized] = useState(false);
-  const [inputDebounceTimers, setInputDebounceTimers] = useState({});
+  const localPassengerDataRef = useRef(initialData);
 
   // Estado para pasajero seleccionado
   const [selectedPassenger, setSelectedPassenger] = useState(null);
 
-  // Synchronize local state with props when they change
+  // VoucherModal is the single owner that loads the draft. This step only
+  // renders and edits the data it receives; it must never fetch or synthesize
+  // passengers from quote counters because that can overwrite foreign data.
   useEffect(() => {
-    if (
-      passengerData?.adults?.length > 0 ||
-      passengerData?.children?.length > 0
-    ) {
-      setLocalPassengerData({
-        adults: passengerData.adults.map((p) => normalizePassengerForForm(p, "adult")),
-        children: (passengerData.children || []).map((p) =>
-          normalizePassengerForForm(p, "child"),
-        ),
-      });
-      setPeopleCount({
-        adults: passengerData.adults.length,
-        children: passengerData.children?.length || 0,
-      });
-    }
+    const normalized = normalizePassengerInput(passengerData);
+    localPassengerDataRef.current = normalized;
+    setLocalPassengerData(normalized);
+    setPeopleCount({
+      adults: normalized.adults.length,
+      children: normalized.children.length,
+    });
+    setSelectedPassenger((current) => current && normalized[current.type][current.index]
+      ? { ...current, data: normalized[current.type][current.index] }
+      : null);
   }, [passengerData]);
-
-  // Efecto mejorado para inicializar datos cuando se está editando
-  useEffect(() => {
-    // Inicialización prioritaria para modo edición
-    if (isEditMode && passengerData?.adults?.length) {
-      if (isPassengerInfoOnlyMode) {setDataInitialized(true); return;}
-      // En modo edición, usar datos del voucher como base, pero reconciliar
-      // con los pasajeros actuales de la cotización para detectar nuevos
-      const voucherAdults = [...passengerData.adults];
-      const voucherChildren = [...(passengerData.children || [])];
-
-      const reconcileWithCotizacion = async () => {
-        if (!cotizacionData?.id) return;
-        try {
-          const cotPassengers = await pasajeroService.getPassengersByCotizacion(
-            cotizacionData.id,
-          );
-          if (!cotPassengers || cotPassengers.length === 0) return;
-
-          // Build set of existing voucher passenger keys for fast lookup
-          const existingKeys = new Set();
-          voucherAdults.forEach((p) => {
-            if (p.id_pasajero) existingKeys.add(String(p.id_pasajero));
-            if (p.passenger_key) existingKeys.add(p.passenger_key);
-          });
-          voucherChildren.forEach((p) => {
-            if (p.id_pasajero) existingKeys.add(String(p.id_pasajero));
-            if (p.passenger_key) existingKeys.add(p.passenger_key);
-          });
-
-          let added = false;
-          cotPassengers.forEach((p) => {
-            const pId = String(p.id_pasajero || "");
-            const pKey = p.passenger_key || "";
-            // Skip if already in voucher data
-            if (
-              (pId && existingKeys.has(pId)) ||
-              (pKey && existingKeys.has(pKey))
-            )
-              return;
-
-            const entry = normalizePassengerForForm(
-              p,
-              p.tipo_pasajero === "child" ? "child" : "adult",
-            );
-            if (p.tipo_pasajero === "child") {
-              voucherChildren.push(entry);
-            } else {
-              voucherAdults.push(entry);
-            }
-            added = true;
-          });
-
-          if (added) {
-            const merged = {
-              adults: voucherAdults,
-              children: voucherChildren,
-            };
-            setLocalPassengerData(merged);
-            setPeopleCount({
-              adults: merged.adults.length,
-              children: merged.children.length,
-            });
-            onPassengerDataChange(merged);
-          }
-        } catch (err) {
-          console.log("No se pudo reconciliar pasajeros con cotización:", err);
-        }
-      };
-
-      setLocalPassengerData({
-        adults: voucherAdults,
-        children: voucherChildren,
-      });
-      setPeopleCount({
-        adults: voucherAdults.length,
-        children: voucherChildren.length,
-      });
-      setDataInitialized(true);
-
-      // Async reconciliation after initial render
-      reconcileWithCotizacion();
-      return;
-    }
-
-    // La inicialización normal si no es modo edición
-    if (!dataInitialized && cotizacionData) {
-      // If we already have data from props, don't reinitialize
-      if (localPassengerData.adults.length > 0) {
-        setDataInitialized(true);
-        return;
-      }
-
-      const newPassengerData = {
-        adults: [],
-        children: [],
-      };
-
-      // PASO 1: Fetch passengers from pasajero API (migrated from peopledetails)
-      // This is async, so we use an IIFE
-      const fetchAndInit = async () => {
-        let fetched = false;
-        if (cotizacionData.id) {
-          try {
-            const passengers = await pasajeroService.getPassengersByCotizacion(
-              cotizacionData.id,
-            );
-            if (passengers && passengers.length > 0) {
-              passengers.forEach((p) => {
-                const entry = normalizePassengerForForm(
-                  p,
-                  p.tipo_pasajero === "child" ? "child" : "adult",
-                );
-                if (p.tipo_pasajero === "child") {
-                  newPassengerData.children.push(entry);
-                } else {
-                  newPassengerData.adults.push(entry);
-                }
-              });
-              fetched = true;
-            }
-          } catch (err) {
-            console.log(
-              "No passengers found via API, falling back to counts:",
-              err,
-            );
-          }
-        }
-        return fetched;
-      };
-
-      fetchAndInit().then((fetched) => {
-        if (fetched && newPassengerData.adults.length > 0) {
-          setPeopleCount({
-            adults: newPassengerData.adults.length,
-            children: newPassengerData.children.length,
-          });
-          setLocalPassengerData(newPassengerData);
-          onPassengerDataChange(newPassengerData);
-          setDataInitialized(true);
-          return;
-        }
-
-        // Fallback: build from counts if no passengers found in API
-        if (cotizacionData.numAdultos || cotizacionData.numNinos) {
-          const numAdults = parseInt(cotizacionData.numAdultos || 0, 10);
-          const numChildren = parseInt(cotizacionData.numNinos || 0, 10);
-
-          // Crear adultos
-          for (let i = 0; i < numAdults; i++) {
-            newPassengerData.adults.push({
-              id: uuidv4(),
-              nombres:
-                i === 0 && cotizacionData.client
-                  ? cotizacionData.client.nombres || ""
-                  : "",
-              apellidos:
-                i === 0 && cotizacionData.client
-                  ? cotizacionData.client.apellidos || ""
-                  : "",
-              edad: "30",
-              nacionalidad: "Perú",
-              correo:
-                i === 0 && cotizacionData.client
-                  ? cotizacionData.client.correo || ""
-                  : "",
-              telefono:
-                i === 0 && cotizacionData.client
-                  ? cotizacionData.client.telefono || ""
-                  : "",
-              tipoDocumento: "DNI",
-              numeroDocumento:
-                i === 0 && cotizacionData.client
-                  ? cotizacionData.client.numeroDocumento || ""
-                  : "",
-            });
-          }
-
-          // Crear niños
-          for (let i = 0; i < numChildren; i++) {
-            newPassengerData.children.push({
-              id: uuidv4(),
-              nombres: "",
-              apellidos: "",
-              edad: "10",
-              nacionalidad: "Perú",
-              tipoDocumento: "DNI",
-              numeroDocumento: "",
-            });
-          }
-        }
-        // PASO 3: INTENTAR DATOS DE cantidadAdultos/cantidadNinos
-        else if (
-          cotizacionData.cantidadAdultos !== undefined ||
-          cotizacionData.cantidadNinos !== undefined
-        ) {
-          const numAdults = parseInt(cotizacionData.cantidadAdultos || 0, 10);
-          const numChildren = parseInt(cotizacionData.cantidadNinos || 0, 10);
-
-          // Crear adultos básicos
-          for (let i = 0; i < numAdults; i++) {
-            newPassengerData.adults.push({
-              id: uuidv4(),
-              nombres:
-                i === 0 && cotizacionData.client
-                  ? cotizacionData.client.nombres || ""
-                  : "",
-              apellidos:
-                i === 0 && cotizacionData.client
-                  ? cotizacionData.client.apellidos || ""
-                  : "",
-              edad: "30",
-              nacionalidad: "Perú",
-              correo:
-                i === 0 && cotizacionData.client
-                  ? cotizacionData.client.correo || ""
-                  : "",
-              telefono:
-                i === 0 && cotizacionData.client
-                  ? cotizacionData.client.telefono || ""
-                  : "",
-              tipoDocumento: "DNI",
-              numeroDocumento:
-                i === 0 && cotizacionData.client
-                  ? cotizacionData.client.numeroDocumento || ""
-                  : "",
-            });
-          }
-
-          // Crear niños básicos
-          for (let i = 0; i < numChildren; i++) {
-            newPassengerData.children.push({
-              id: uuidv4(),
-              nombres: "",
-              apellidos: "",
-              edad: "10",
-              nacionalidad: "Perú",
-              tipoDocumento: "DNI",
-              numeroDocumento: "",
-            });
-          }
-        }
-        // PASO 4: ÚLTIMO INTENTO CON CANTIDADPERSONAS
-        else if (cotizacionData.cantidadpersonas) {
-          const numPersons = parseInt(cotizacionData.cantidadpersonas || 0, 10);
-
-          // Si hay al menos una persona, crear un adulto
-          if (numPersons > 0) {
-            // Primer adulto con datos del cliente si está disponible
-            newPassengerData.adults.push({
-              id: uuidv4(),
-              nombres: cotizacionData.client
-                ? cotizacionData.client.nombres || ""
-                : "",
-              apellidos: cotizacionData.client
-                ? cotizacionData.client.apellidos || ""
-                : "",
-              edad: "30",
-              nacionalidad: "Perú",
-              correo: cotizacionData.client
-                ? cotizacionData.client.correo || ""
-                : "",
-              telefono: cotizacionData.client
-                ? cotizacionData.client.telefono || ""
-                : "",
-              tipoDocumento: "DNI",
-              numeroDocumento: cotizacionData.client
-                ? cotizacionData.client.numeroDocumento || ""
-                : "",
-            });
-
-            // Si hay más personas, agregar adultos adicionales
-            for (let i = 1; i < numPersons; i++) {
-              newPassengerData.adults.push({
-                id: uuidv4(),
-                nombres: "",
-                apellidos: "",
-                edad: "30",
-                nacionalidad: "Perú",
-                correo: "",
-                telefono: "",
-                tipoDocumento: "DNI",
-                numeroDocumento: "",
-              });
-            }
-          }
-        }
-
-        // Verificación final: asegurar que haya al menos un adulto
-        if (newPassengerData.adults.length === 0) {
-          newPassengerData.adults.push({
-            id: uuidv4(),
-            nombres: cotizacionData.client
-              ? cotizacionData.client.nombres || ""
-              : "",
-            apellidos: cotizacionData.client
-              ? cotizacionData.client.apellidos || ""
-              : "",
-            edad: "30",
-            nacionalidad: "Perú",
-            correo: cotizacionData.client
-              ? cotizacionData.client.correo || ""
-              : "",
-            telefono: cotizacionData.client
-              ? cotizacionData.client.telefono || ""
-              : "",
-            tipoDocumento: "DNI",
-            numeroDocumento: cotizacionData.client
-              ? cotizacionData.client.numeroDocumento || ""
-              : "",
-          });
-        }
-
-        // Update counters
-        setPeopleCount({
-          adults: newPassengerData.adults.length,
-          children: newPassengerData.children.length,
-        });
-
-        // Update both local state and parent state
-        setLocalPassengerData(newPassengerData);
-        onPassengerDataChange(newPassengerData);
-        setDataInitialized(true);
-      }); // end fetchAndInit().then()
-    }
-  }, [
-    cotizacionData,
-    isEditMode,
-    passengerData,
-    onPassengerDataChange,
-    dataInitialized,
-    localPassengerData.adults.length,
-  ]);
-
-  // Debounced propagation of changes to parent
-  const propagateChanges = useCallback(
-    (newData) => {
-      onPassengerDataChange(newData);
-    },
-    [onPassengerDataChange],
-  );
 
   // Handle person data changes
   const handlePersonChange = useCallback(
     (type, index, field, value) => {
-      if (disabled) return;
-      setLocalPassengerData((prev) => {
-        const newData = { ...prev };
+      {
+        const previous = localPassengerDataRef.current;
+        const newData = {
+          adults: [...(previous.adults || [])],
+          children: [...(previous.children || [])],
+        };
         const nextPassenger = {
           ...newData[type][index],
           [field]: value,
@@ -489,6 +79,7 @@ const PassengerStep = ({
         if (field === "pais" || field === "nacionalidad") {
           nextPassenger.pais = value;
           nextPassenger.nacionalidad = value;
+          nextPassenger.procedencia = procedenciaFromCountry(value);
         }
 
         if (field === "apellido_paterno" || field === "apellido_materno") {
@@ -503,8 +94,7 @@ const PassengerStep = ({
         }
 
         if (field === "fecha_nacimiento") {
-          const calculatedAge = calculateAgeFromBirthDate(value);
-          nextPassenger.edad = calculatedAge;
+          nextPassenger.edad = ageFromBirthDate(value);
         }
 
         newData[type][index] = {
@@ -528,11 +118,6 @@ const PassengerStep = ({
           const age = parseInt(value, 10);
           const errorKey = `${type}_${index}_edad`;
 
-          // Clear previous debounce timer for this field
-          if (inputDebounceTimers[errorKey]) {
-            clearTimeout(inputDebounceTimers[errorKey]);
-          }
-
           // Validate age range
           if (type === "adults" && (age < 18 || age > 120)) {
             setErrors((prevErrors) => ({
@@ -555,11 +140,11 @@ const PassengerStep = ({
         }
 
         // Validate email format
-        if (field === "correo" && value) {
+        if (field === "correo") {
           const errorKey = `${type}_${index}_correo`;
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-          if (!emailRegex.test(value)) {
+          if (value && !emailRegex.test(value)) {
             setErrors((prevErrors) => ({
               ...prevErrors,
               [errorKey]: "Formato de correo inválido",
@@ -573,20 +158,18 @@ const PassengerStep = ({
           }
         }
 
-        // Clear debounce timer and set new one
-        const timerId = setTimeout(() => {
-          propagateChanges(newData);
-        }, 300);
-
-        setInputDebounceTimers((prev) => ({
-          ...prev,
-          [`${type}_${index}_${field}`]: timerId,
-        }));
-
-        return newData;
-      });
+        localPassengerDataRef.current = newData;
+        setLocalPassengerData(newData);
+        setPeopleCount({
+          adults: newData.adults.length,
+          children: newData.children.length,
+        });
+        // Propagate the same event synchronously. Navigation can therefore not
+        // observe a stale 300 ms-debounced draft.
+        onPassengerDataChange(newData);
+      }
     },
-    [propagateChanges, inputDebounceTimers, selectedPassenger],
+    [onPassengerDataChange, selectedPassenger],
   );
 
   // Compute render passenger data (handle empty arrays)
@@ -653,7 +236,7 @@ const PassengerStep = ({
   );
 
   return (
-    <fieldset className="passenger-step" disabled={disabled}>
+    <div className="passenger-step">
       <div className="passenger-panels">
         {/* Panel izquierdo: Lista de pasajeros */}
         <div className="passengers-list-panel">
@@ -818,9 +401,9 @@ const PassengerStep = ({
               <div className="passenger-form compact">
                 <div className="form-row form-row--grid-3">
                   <div className="form-group">
-                    <label>Procedencia *</label>
-                    <select
-                      value={selectedPassenger.data.procedencia || "Extranjero"}
+                    <label>Procedencia</label>
+                    <select disabled={disabled}
+                      value={selectedPassenger.data.procedencia || ""}
                       onChange={(e) =>
                         handlePersonChange(
                           selectedPassenger.type,
@@ -830,6 +413,10 @@ const PassengerStep = ({
                         )
                       }
                     >
+                      <option value="">Seleccione procedencia</option>
+                      {selectedPassenger.data.procedencia && !PROCEDENCIA_OPTIONS.includes(selectedPassenger.data.procedencia) && (
+                        <option value={selectedPassenger.data.procedencia}>{selectedPassenger.data.procedencia}</option>
+                      )}
                       {PROCEDENCIA_OPTIONS.map((option) => (
                         <option key={option} value={option}>
                           {option}
@@ -838,13 +425,9 @@ const PassengerStep = ({
                     </select>
                   </div>
                   <div className="form-group">
-                    <label>País *</label>
-                    <select
-                      value={
-                        selectedPassenger.data.pais ||
-                        selectedPassenger.data.nacionalidad ||
-                        "Perú"
-                      }
+                    <label>País</label>
+                    <select disabled={disabled}
+                      value={selectedPassenger.data.nacionalidad || ""}
                       onChange={(e) =>
                         handlePersonChange(
                           selectedPassenger.type,
@@ -856,6 +439,9 @@ const PassengerStep = ({
                       className="country-select"
                     >
                       <option value="">Seleccione país</option>
+                      {selectedPassenger.data.nacionalidad && !COUNTRIES.includes(selectedPassenger.data.nacionalidad) && (
+                        <option value={selectedPassenger.data.nacionalidad}>{selectedPassenger.data.nacionalidad}</option>
+                      )}
                       {COUNTRIES.map((country) => (
                         <option key={country} value={country}>
                           {country}
@@ -866,12 +452,12 @@ const PassengerStep = ({
                   <div className="form-group">
                     <label>Sexo</label>
                     <div className="radio-group">
-                      {["Masculino", "Femenino"].map((option) => (
+                      {["", "Masculino", "Femenino"].map((option) => (
                         <label className="radio-option" key={option}>
-                          <input
+                          <input disabled={disabled}
                             type="radio"
                             name={`sexo-${selectedPassenger.type}-${selectedPassenger.index}`}
-                            checked={selectedPassenger.data.sexo === option}
+                            checked={(selectedPassenger.data.sexo || "") === option}
                             onChange={() =>
                               handlePersonChange(
                                 selectedPassenger.type,
@@ -881,7 +467,7 @@ const PassengerStep = ({
                               )
                             }
                           />
-                          <span>{option}</span>
+                          <span>{option || "Sin especificar"}</span>
                         </label>
                       ))}
                     </div>
@@ -890,9 +476,9 @@ const PassengerStep = ({
                 {/* Documento primero (más importante) */}
                 <div className="form-row">
                   <div className="form-group">
-                    <label>Tipo de documento *</label>
-                    <select
-                      value={selectedPassenger.data.tipoDocumento || "DNI"}
+                    <label>Tipo de documento</label>
+                    <select disabled={disabled}
+                      value={selectedPassenger.data.tipoDocumento || ""}
                       onChange={(e) =>
                         handlePersonChange(
                           selectedPassenger.type,
@@ -902,6 +488,12 @@ const PassengerStep = ({
                         )
                       }
                     >
+                      <option value="">Seleccione tipo de documento</option>
+                      {selectedPassenger.data.tipoDocumento && !DOCUMENT_OPTIONS[selectedPassenger.type].includes(selectedPassenger.data.tipoDocumento) && (
+                        <option value={selectedPassenger.data.tipoDocumento}>
+                          {DOCUMENT_LABELS[selectedPassenger.data.tipoDocumento] || selectedPassenger.data.tipoDocumento}
+                        </option>
+                      )}
                       {DOCUMENT_OPTIONS[selectedPassenger.type].map((option) => (
                         <option key={option} value={option}>
                           {option}
@@ -910,8 +502,8 @@ const PassengerStep = ({
                     </select>
                   </div>
                   <div className="form-group">
-                    <label>Número de documento *</label>
-                    <input
+                    <label>Número de documento</label>
+                    <input disabled={disabled}
                       type="text"
                       value={selectedPassenger.data.numeroDocumento || ""}
                       onChange={(e) =>
@@ -927,11 +519,10 @@ const PassengerStep = ({
                   </div>
                   <div className="form-group">
                     <label>Fecha de nacimiento</label>
-                    <input
+                    <input disabled={disabled}
                       type="date"
                       value={
                         selectedPassenger.data.fecha_nacimiento ||
-                        selectedPassenger.data.birthDate ||
                         ""
                       }
                       onChange={(e) =>
@@ -946,16 +537,26 @@ const PassengerStep = ({
                   </div>
                 </div>
 
-                  <div className="form-group">
-                    <label>Caducidad del documento</label>
-                    <input type="date" value={selectedPassenger.data.fecha_caducidad || ""}
-                      onChange={e => handlePersonChange(selectedPassenger.type, selectedPassenger.index, "fecha_caducidad", e.target.value)} />
-                  </div>
-                  {/* Nombres y apellidos */}
                 <div className="form-row">
                   <div className="form-group">
-                    <label>Nombres *</label>
-                    <input
+                    <label htmlFor="passenger-document-expiry">Fecha de caducidad del documento <small>(opcional)</small></label>
+                    <input disabled={disabled}
+                      id="passenger-document-expiry"
+                      type="date"
+                      value={selectedPassenger.data.fecha_caducidad || ""}
+                      onChange={(event) => handlePersonChange(
+                        selectedPassenger.type, selectedPassenger.index,
+                        "fecha_caducidad", event.target.value,
+                      )}
+                    />
+                  </div>
+                </div>
+
+                {/* Nombres y apellidos */}
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Nombres</label>
+                    <input disabled={disabled}
                       type="text"
                       value={selectedPassenger.data.nombres || ""}
                       onChange={(e) =>
@@ -967,12 +568,11 @@ const PassengerStep = ({
                         )
                       }
                       placeholder="Nombres"
-                      required
                     />
                   </div>
                   <div className="form-group">
-                    <label>Apellido paterno *</label>
-                    <input
+                    <label>Apellido paterno</label>
+                    <input disabled={disabled}
                       type="text"
                       value={selectedPassenger.data.apellido_paterno || ""}
                       onChange={(e) =>
@@ -984,12 +584,11 @@ const PassengerStep = ({
                         )
                       }
                       placeholder="Apellido paterno"
-                      required
                     />
                   </div>
                   <div className="form-group">
                     <label>Apellido materno</label>
-                    <input
+                    <input disabled={disabled}
                       type="text"
                       value={selectedPassenger.data.apellido_materno || ""}
                       onChange={(e) =>
@@ -1008,12 +607,14 @@ const PassengerStep = ({
                 {/* Edad y teléfonos */}
                 <div className="form-row">
                   <div className="form-group small">
-                    <label>Edad *</label>
-                    <input
+                    <label>Edad</label>
+                    <input disabled={disabled}
                       type="number"
                       min={selectedPassenger.type === "adults" ? "18" : "0"}
                       max={selectedPassenger.type === "adults" ? "120" : "17"}
                       value={selectedPassenger.data.edad || ""}
+                      readOnly={!!selectedPassenger.data.fecha_nacimiento}
+                      title={selectedPassenger.data.fecha_nacimiento ? 'Calculada desde la fecha de nacimiento' : undefined}
                       onChange={(e) =>
                         handlePersonChange(
                           selectedPassenger.type,
@@ -1025,7 +626,6 @@ const PassengerStep = ({
                       placeholder="Edad"
                       onWheel={preventWheelChange}
                       onKeyDown={preventArrowChange}
-                      required
                       className={
                         errors[
                           `${selectedPassenger.type}_${selectedPassenger.index}_edad`
@@ -1048,7 +648,7 @@ const PassengerStep = ({
                   </div>
                   <div className="form-group">
                     <label>Teléfono de emergencia</label>
-                    <input
+                    <input disabled={disabled}
                       type="tel"
                       value={selectedPassenger.data.telefono || ""}
                       onChange={(e) =>
@@ -1069,7 +669,7 @@ const PassengerStep = ({
                   <div className="form-row">
                     <div className="form-group">
                       <label>Correo</label>
-                      <input
+                      <input disabled={disabled}
                         type="email"
                         value={selectedPassenger.data.correo || ""}
                         onChange={(e) =>
@@ -1108,7 +708,7 @@ const PassengerStep = ({
                 <div className="form-row">
                   <div className="form-group">
                     <label>Observaciones</label>
-                    <textarea
+                    <textarea disabled={disabled}
                       value={selectedPassenger.data.observaciones || ""}
                       onChange={(e) =>
                         handlePersonChange(
@@ -1144,7 +744,7 @@ const PassengerStep = ({
           </p>
         </div>
       )}
-    </fieldset>
+    </div>
   );
 };
 

@@ -633,15 +633,20 @@ const VoucherModal = ({
     if (expected !== passengerPersistedFingerprintRef.current) throw new Error("Guarda primero los cambios pendientes de pasajeros");
     const id = voucherIdRef.current || createdVoucherId || voucherData?.id;
     if (!id) throw new Error("Voucher no disponible");
+    const scope = documentScopeRef.current;
+    const quoteId = editedVoucherData.cotizacionId || cotizacionData?.id;
     const rows = await pasajeroService.getPassengersByVoucherVenta(id, { _skipDedup: true });
-    if (passengerDraftFingerprint(passengerDraftRef.current) !== expected || (voucherIdRef.current || createdVoucherId || voucherData?.id) !== id)
+    // The initial load also includes quote passengers that have no voucher FK.
+    // Reload that same roster after a review, rather than hiding those people.
+    const quotedRows = quoteId ? await pasajeroService.getPassengersByCotizacion(quoteId, { _skipDedup: true }) : [];
+    if (documentScopeRef.current !== scope || passengerDraftFingerprint(passengerDraftRef.current) !== expected || (voucherIdRef.current || createdVoucherId || voucherData?.id) !== id)
       throw new Error("La ficha cambió durante la lectura; se conserva su borrador");
-    const canonical = passengerRowsToDraft(rows);
+    const canonical = mergeNominalRoster(quotedRows, passengerRowsToDraft(rows));
     passengerDraftRef.current = canonical;
     passengerPersistedFingerprintRef.current = passengerDraftFingerprint(canonical);
     setEditedVoucherData(prev => ({ ...prev, passengerData: canonical }));
     await onPassengerInfoSaved?.();
-  }, [createdVoucherId, voucherData?.id, onPassengerInfoSaved]);
+  }, [createdVoucherId, voucherData?.id, editedVoucherData.cotizacionId, cotizacionData?.id, onPassengerInfoSaved]);
 
   const handleDocumentDataChange = useCallback((newDocumentData) => {
     documentDraftRef.current=newDocumentData;
@@ -1010,6 +1015,9 @@ const VoucherModal = ({
     saveVoucherDocuments,
     createInitialVoucher,
     savePassengers,
+    documentsPreparing,
+    documentsSaving,
+    isDedicatedManagement,
   ]);
 
   const handlePrevStep = useCallback(async () => {
@@ -1059,6 +1067,9 @@ const VoucherModal = ({
     voucherData,
     editedVoucherData,
     saveVoucherDocuments,
+    documentsPreparing,
+    documentsSaving,
+    isDedicatedManagement,
   ]);
 
   const handleClose=useCallback(()=>{
@@ -1500,7 +1511,7 @@ const VoucherModal = ({
               </div>
             )}
 
-            <button className="close-button" onClick={() => handleClose()} disabled={isSubmitting || documentsPreparing || documentsSaving}>
+            <button className="close-button" aria-label="Cerrar voucher" onClick={() => handleClose()} disabled={isSubmitting || documentsPreparing || documentsSaving}>
               <MdClose />
             </button>
           </div>

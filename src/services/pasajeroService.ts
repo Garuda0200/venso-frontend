@@ -57,10 +57,11 @@ export const pasajeroService = {
    * @param {string} cotizacionId - The ID of the cotización
    * @returns {Promise<Array>} List of passengers
    */
-  async getPassengersByCotizacion(cotizacionId) {
+  async getPassengersByCotizacion(cotizacionId, options = {}) {
     try {
       const response = await axiosInstance.get(
         `/turismo/pasajeros/by-cotizacion/${cotizacionId}`,
+        options,
       );
       return response.data.data || [];
     } catch (error) {

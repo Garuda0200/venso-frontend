@@ -1,3 +1,5 @@
+import { identityDocumentMime } from '../../../../../../services/identityDocumentFile';
+
 export const IDENTITY_FIELDS = [
   { key: 'nombres', label: 'Nombres', aliases: ['nombres', 'firstName'] },
   { key: 'apellidos', label: 'Apellidos', aliases: ['apellidos', 'lastName'] },
@@ -36,8 +38,7 @@ export function identityBatchRows(passengerData, documentMap, { privateOnly = fa
     const savedDocuments = ['passports', 'idCards'].flatMap(category => documents?.[category] || []).filter(doc => {
       const documentId = id(doc.dbId) || (doc.isFromDatabase ? id(doc.id) : null);
       const owner = id(doc.passengerId ?? doc.passenger_id ?? doc.ownerId);
-      const mime = doc.file_type || doc.fileType || doc.type || doc.mime_type;
-      if (!documentId || seen.has(documentId) || owner && owner !== passengerId || privateOnly && ((!doc.documentAssetId && !allowHistorical) || owner !== passengerId) || !['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'].includes(mime)) return false;
+      if (!documentId || seen.has(documentId) || owner && owner !== passengerId || privateOnly && ((!doc.documentAssetId && !allowHistorical) || owner !== passengerId) || !identityDocumentMime(doc)) return false;
       seen.add(documentId); return true;
     }).map(doc => id(doc.dbId) || id(doc.id));
     const missing = missingFields(passenger);
@@ -53,7 +54,7 @@ export function identityBatchRows(passengerData, documentMap, { privateOnly = fa
     const documentId = id(doc.dbId) || id(doc.id);
     if (!documentId || seen.has(documentId) || id(doc.passengerId ?? doc.ownerId) ||
       !['passport', 'idcard'].includes(doc.documentoTipo) || !doc.documentAssetId && !allowHistorical ||
-      !['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'].includes(doc.type || doc.fileType)) return false;
+      !identityDocumentMime(doc)) return false;
     seen.add(documentId); return true;
   });
   return [...passengers, ...(privateOnly ? documents.map(doc => ({ key: `unassigned-${id(doc.dbId) || id(doc.id)}`, type: 'unassigned', passengerId: null,

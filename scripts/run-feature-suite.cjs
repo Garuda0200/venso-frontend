@@ -6,14 +6,14 @@ const root = path.resolve(__dirname, "..");
 const tmpDir = path.join(root, ".tmp-feature-tests");
 
 const testSuites = [
-  { name: "files de Reservas, vínculo Biblia y media", tests: [
+  { name: "files de Reservas, vÃ­nculo Biblia y media", tests: [
     "src/pages/Ventas/Cotizaciones/utils/__tests__/reservationFileCreation.test.js",
     "src/pages/Reservas/Calendario/utils/__tests__/bibliaReservationFileLink.test.js",
     "src/utils/__tests__/tigrisVoucherUpload.test.js",
     "src/pages/Ventas/Cotizaciones/utils/__tests__/sourceVoucherPreview.test.js",
   ] },
   { name: "tarifas por agencia y espacio de servicios", tests: ["src/pages/Reservas/Servicios/utils/__tests__/agencyTariffWorkspace.test.js", "src/pages/Reservas/Servicios/utils/__tests__/tariffCurrencyForm.test.js", "src/pages/Reservas/Servicios/utils/__tests__/tariffAgencyCloneFlow.test.js", "src/pages/Reservas/Servicios/utils/__tests__/providerNavigation.test.js"] },
-  { name: "preparación de paquetes", tests: ["src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/packageImportPreparation.test.js"] },
+  { name: "preparaciÃ³n de paquetes", tests: ["src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/packageImportPreparation.test.js"] },
   { name: "reservas nativas e identidad", tests: [
     "src/pages/Reservas/VouchersReserva/components/ReservaServiceEditor/utils/__tests__/nativeReservationCurrency.test.js",
     "src/pages/Reservas/VouchersReserva/components/ReservaServiceEditor/utils/__tests__/quotedServiceMatch.test.js",
@@ -21,7 +21,15 @@ const testSuites = [
   {
     name: "documentos e identidad",
     tests: [
+      "src/pages/Ventas/VouchersVenta/components/Steps/PassengerDocuments/__tests__/documentPermissions.test.js",
+      "src/pages/Ventas/VouchersVenta/components/Steps/PassengerDocuments/__tests__/documentListing.test.js",
+      "src/pages/Ventas/VouchersVenta/components/Steps/PassengerDocuments/__tests__/documentAutosave.test.js",
+      "src/pages/Ventas/VouchersVenta/components/Steps/PassengerDocuments/__tests__/PassengerIdentityBatch.test.js",
+      "src/pages/Ventas/VouchersVenta/components/Steps/PassengerDocuments/__tests__/PassengerIdentityModal.test.js",
       "src/pages/Ventas/VouchersVenta/components/Steps/PassengerDocuments/__tests__/identityBatch.test.js",
+      "src/pages/Ventas/VouchersVenta/components/Steps/PassengerDocuments/__tests__/identityDocumentFile.test.js",
+      "src/pages/Ventas/VouchersVenta/components/Steps/PassengerDocuments/__tests__/nominalRoster.test.js",
+      "src/pages/Ventas/VouchersVenta/components/Steps/PassengerDocuments/__tests__/voucherPassengerNameInput.test.js",
       "src/pages/Ventas/VouchersVenta/components/Steps/PassengerDocuments/__tests__/documentAiUi.test.js",
       "src/pages/Ventas/VouchersVenta/components/Steps/PassengerDocuments/__tests__/documentPrivacy.test.js",
       "src/pages/Ventas/VouchersVenta/components/Steps/PassengerDocuments/__tests__/voucherDocumentNavigation.test.js",
@@ -123,7 +131,7 @@ const testSuites = [
     ],
   },
   {
-    name: "contabilidad e integraciÃ³n",
+    name: "contabilidad e integraciÃƒÂ³n",
     tests: [
       "src/services/__tests__/pendingPaymentService.test.js",
       "src/services/__tests__/paymentDetailRead.test.js",
@@ -158,7 +166,7 @@ const run = (command, args, label) => {
   });
   if (result.error) throw result.error;
   if (result.status !== 0) {
-    throw new Error(`${label || command} terminÃ³ con cÃ³digo ${result.status}`);
+    throw new Error(`${label || command} terminÃƒÂ³ con cÃƒÂ³digo ${result.status}`);
   }
 };
 
@@ -171,8 +179,8 @@ try {
   );
 
   // Node 22 interpreta un CommonJS emitido que conserva `import.meta` como ESM.
-  // Solo ajustamos el artefacto temporal de tests: el cÃ³digo fuente/Vite conserva
-  // import.meta.env y su comportamiento de producciÃ³n sin cambios.
+  // Solo ajustamos el artefacto temporal de tests: el cÃƒÂ³digo fuente/Vite conserva
+  // import.meta.env y su comportamiento de producciÃƒÂ³n sin cambios.
   const constantsPath = path.join(tmpDir, "src", "utils", "constants.js");
   if (fs.existsSync(constantsPath)) {
     const envLiteral = process.env.VITE_EXCHANGE_RATE
