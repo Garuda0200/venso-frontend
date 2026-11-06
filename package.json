@@ -32,6 +32,7 @@
     "xlsx": "file:vendor/xlsx-0.20.3.tgz"
   },
   "scripts": {
+    "test:voucher-media-history": "tsc -p tsconfig.feature-tests.json && node --test .tmp-feature-tests/src/pages/Ventas/Cotizaciones/utils/__tests__/voucherMediaHistory.test.js .tmp-feature-tests/src/utils/__tests__/tigrisVoucherUpload.test.js .tmp-feature-tests/src/pages/Ventas/Cotizaciones/utils/__tests__/sourceVoucherPreview.test.js .tmp-feature-tests/src/pages/Ventas/Cotizaciones/utils/__tests__/reservationFileCreation.test.js .tmp-feature-tests/src/pages/Reservas/Calendario/utils/__tests__/bibliaActivityMapper.test.js .tmp-feature-tests/src/pages/Reservas/Calendario/utils/__tests__/bibliaReservationFileLink.test.js",
     "dev": "vite",
     "start": "vite preview",
     "typecheck": "tsc --noEmit",
@@ -49,6 +50,7 @@
     "test:passenger-pricing": "tsc -p tsconfig.feature-tests.json && node .tmp-feature-tests/src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/passengerPricingPresentation.test.js",
     "test": "npm run test:assignment-protection && npm run test:feature-suite",
     "test:feature-suite": "node scripts/run-feature-suite.cjs",
+    "test:biblia-loading": "tsc -p tsconfig.feature-tests.json && node --test .tmp-feature-tests/src/pages/Reservas/Calendario/utils/__tests__/bibliaLoadingCache.test.js",
     "test:biblia-activities": "tsc -p tsconfig.feature-tests.json && node .tmp-feature-tests/src/pages/Reservas/Calendario/utils/__tests__/bibliaActivityMapper.test.js",
     "test:pricing-core": "tsc -p tsconfig.feature-tests.json && node .tmp-feature-tests/src/components/Ventas/Cotizaciones/EdicionCotizacion/utils/__tests__/externalChildPricing.test.js",
     "test:servicepicker-tariffs": "tsc -p tsconfig.feature-tests.json && node .tmp-feature-tests/src/components/Ventas/Cotizaciones/EdicionCotizacion/components/ServicePicker/utils/__tests__/tariffContext.test.js",

@@ -56,9 +56,27 @@ const columnName = (column: number) => {
   return name;
 };
 
-const estimateRowHeight = (activity: BibliaActivity) => {
-  const longestCell = BIBLIA_SHEET_COLUMNS.reduce((longest, [field]) => Math.max(longest, String(activity[field] ?? "").length), 0);
-  return Math.max(24, Math.min(72, 18 + Math.ceil(longestCell / 42) * 14));
+const estimateRowHeight = (row: ExcelJS.Row) => {
+  let height = 24;
+  row.eachCell((cell) => {
+    const richText = typeof cell.value === "object" && cell.value && "richText" in cell.value
+      ? cell.value.richText : [];
+    const fontSize = Math.max(10, cell.font?.size || 10, ...richText.map(run => run.font?.size || 10));
+    const charactersPerLine = Math.max(1, Math.floor(((cell.worksheet.getColumn(cell.col).width || 22) * 7 - 14) / (fontSize * 0.56)));
+    let lineCount = 0;
+    for (const paragraph of cell.text.split(/\r\n|\r|\n/)) {
+      let used = 0;
+      lineCount += 1;
+      for (const word of paragraph.split(/\s+/).filter(Boolean)) {
+        const needed = word.length + (used ? 1 : 0);
+        if (used && used + needed > charactersPerLine) { lineCount += 1; used = 0; }
+        lineCount += Math.floor((word.length - 1) / charactersPerLine);
+        used = used ? used + needed : ((word.length - 1) % charactersPerLine) + 1;
+      }
+    }
+    height = Math.max(height, lineCount * fontSize * 1.4 + 8);
+  });
+  return Math.min(409, height);
 };
 
 export const buildBibliaDayExcelFilename = (dateKey: string) =>
@@ -141,13 +159,12 @@ const addBibliaDayExcelWorksheet = ({
 
   activities.forEach((activity, activityIndex) => {
     const row = worksheet.addRow(matrix.rows[activityIndex]);
-    row.height = estimateRowHeight(activity);
     row.eachCell((cell, columnIndex) => {
       const [field] = BIBLIA_SHEET_COLUMNS[columnIndex - 1];
       const cellColor = getBibliaExcelCellColor(activity, field);
       // Un texto enriquecido importado no debe reemplazar la selección actual
       // ni publicar las cantidades privadas de nacionalidad.
-      const richText = (field === "nationality" || field === "tickets") ? null : getBibliaExcelRichText(activity, field);
+      const richText = (field === "nationality" || field === "tickets" || field === "transport") ? null : getBibliaExcelRichText(activity, field);
       cell.font = { name: "Arial", size: 10, color: { argb: getReadableTextArgb(cellColor) } };
       cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: toArgb(cellColor) } };
       cell.alignment = { horizontal: "left", vertical: "top", wrapText: true };
@@ -169,6 +186,7 @@ const addBibliaDayExcelWorksheet = ({
         };
       }
     });
+    row.height = estimateRowHeight(row);
     row.getCell(4).alignment = { horizontal: "center", vertical: "top", wrapText: true };
   });
 

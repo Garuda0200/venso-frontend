@@ -1,6 +1,7 @@
 import { normalizeBibliaServiceLinkModes, type BibliaServiceLinkModes } from "./bibliaServiceLinkModes";
 import { compactBibliaTrainText } from "./bibliaTrainCatalog";
 import { participantNationalityLabel } from "./bibliaNationality";
+import { compactBibliaTransportText } from "./bibliaTransportDisplay";
 
 export type BibliaActivityCategory =
   | "machupicchu"
@@ -72,6 +73,7 @@ export interface BibliaActivity {
   restaurant: string;
   endorse: string;
   transport: string;
+  transportDisplayName?: string;
   guide: string;
   trainOutbound: string;
   trainReturn: string;
@@ -350,10 +352,14 @@ const normalizeVoucherMedia = (value: any): Record<string, any> | null => {
 };
 
 export const resolveBibliaVoucherTarget = (quotation: Record<string, any> = {}) => {
-  const reservationMedia = normalizeVoucherMedia(quotation.voucher_reserva_media || quotation.voucherReservaMedia);
-  if (reservationMedia) return { kind: "reservation" as const, media: reservationMedia, voucherId: null };
-  const sourceMedia = normalizeVoucherMedia(quotation.source_voucher || quotation.sourceVoucher);
-  if (sourceMedia) return { kind: "source" as const, media: sourceMedia, voucherId: null };
+  const canonical = quotation.source_voucher || quotation.sourceVoucher;
+  const sourceMedia = normalizeVoucherMedia(canonical);
+  if (sourceMedia?.documentVersionId) return { kind: "source" as const, media: sourceMedia, voucherId: null };
+  if (canonical?.documentDetached !== true) {
+    const reservationMedia = normalizeVoucherMedia(quotation.voucher_reserva_media || quotation.voucherReservaMedia);
+    if (reservationMedia) return { kind: "reservation" as const, media: reservationMedia, voucherId: null };
+    if (sourceMedia) return { kind: "source" as const, media: sourceMedia, voucherId: null };
+  }
   const voucherId = Number(quotation.source_sales_voucher_id ?? quotation.sourceSalesVoucherId);
   if (Number.isFinite(voucherId) && voucherId > 0) return { kind: "sales" as const, media: null, voucherId };
   return { kind: null, media: null, voucherId: null };
@@ -701,7 +707,17 @@ const recordToActivity = (
   const sourceType: BibliaSourceType = standaloneRecordId ? "standalone" : "day";
   const excursion = firstText(record.excursion, record.activity, record.actividad, `Día ${record.dayNumber || ""}`) || "Actividad";
   const voucherTarget = resolveBibliaVoucherTarget(quotation);
+  const canonicalDocument = quotation.source_voucher || quotation.sourceVoucher;
+  const hasFileDocumentState = Boolean(canonicalDocument?.documentVersionId || canonicalDocument?.documentDetached);
   const sourceQuotationId = String(record.sourceQuotationId || record.quotationId || quotation.id || "");
+  const transport = firstText(record.transport) || EMPTY;
+  const day = mergeDays(quotation).find(candidate => candidate.number === Number(record.dayNumber));
+  const transports = [...(day?.base || []), ...(day?.external || [])]
+    .map(resolveQuotedService).filter(service => getBibliaServiceType(service) === "transportes");
+  const transportNames = transports.map(service => firstText(service.parentService?.nombre_transporte, service.parentService?.nombre));
+  const transportDisplayName = transportNames.every(Boolean) && normalize(transport) === normalize(uniqueText(transports.map(serviceDescription)))
+    ? uniqueText(transportNames) || compactBibliaTransportText(transport)
+    : compactBibliaTransportText(transport);
   return {
     id: standaloneRecordId ? `standalone:${standaloneRecordId}` : String(record.id || `${sourceQuotationId}-day-${record.dayNumber || record.order || 1}`),
     dateKey: toBibliaDateKey(date), date,
@@ -719,7 +735,7 @@ const recordToActivity = (
     hotelCusco: firstText(record.hotelCusco) || EMPTY, tickets: firstText(record.tickets) || EMPTY,
     hotelValle: firstText(record.hotelValle) || EMPTY, hotelMapi: firstText(record.hotelMapi) || EMPTY,
     restaurant: firstText(record.restaurant) || EMPTY, endorse: firstText(record.endorse) || EMPTY,
-    transport: firstText(record.transport) || EMPTY, guide: firstText(record.guide) || EMPTY,
+    transport, transportDisplayName, guide: firstText(record.guide) || EMPTY,
     trainOutbound: firstText(record.trainOutbound) || EMPTY, trainReturn: firstText(record.trainReturn) || EMPTY,
     observations: firstText(record.observations) || EMPTY, incidents: firstText(record.incidents) || EMPTY,
     counter: firstText(record.counter) || EMPTY, agency: firstText(record.agency, quotation.agency_name) || EMPTY,
@@ -727,7 +743,7 @@ const recordToActivity = (
     order: Number(record.order || record.dayNumber || 0), sourceType,
     sourceQuotationId, sourceServiceId: "", sourceDayId: String(record.sourceDayId || record.dayNumber || ""),
     sourceItinerary: standaloneRecordId ? "standalone" : (record.sourceItinerary === "manual" ? "manual" : "base"),
-    sourceVoucherMedia: normalizeVoucherMedia(record.sourceVoucherMedia) || voucherTarget.media,
+    sourceVoucherMedia: hasFileDocumentState ? voucherTarget.media : normalizeVoucherMedia(record.sourceVoucherMedia) || voucherTarget.media,
     sourceSalesVoucherId: Number(record.sourceSalesVoucherId || voucherTarget.voucherId || 0) || null,
     standaloneRecordId, service: record.service || {}, overrideRecord: record,
     dayNumber: Number(record.dayNumber || 0), quotationOrigin: firstText(record.quotationOrigin) || "quotation",
@@ -827,6 +843,7 @@ export const materializeBibliaOverride = (
   if ("agency" in changes) record.agencyId = null;
   if ("participantPlan" in changes || merged.participantPlan) record.participantPlan = merged.participantPlan ?? null;
   if (merged.sourceExcel) record.sourceExcel = merged.sourceExcel;
+  delete record.transportDisplayName;
   return record;
 };
 

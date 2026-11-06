@@ -1,4 +1,5 @@
 import axios from "axios";
+import { notifyBibliaMutation } from "./bibliaCacheEvents";
 import { getApiUrl, normalizeApiRequestUrl, isRequestCanceled } from "./apiUtils";
 import {
   clearCsrfToken,
@@ -146,6 +147,7 @@ const setupInterceptors = () => {
   axiosInstance.interceptors.response.use(
     async (response) => {
       reportBackendAvailable("http");
+      notifyBibliaMutation(response);
 
       const method = response.config?.method?.toLowerCase();
       if (method && method !== "get") {
@@ -202,7 +204,10 @@ export const createAxiosInstance = () => {
 
   instance.interceptors.request.use((config) => applySessionCsrf(config));
   instance.interceptors.response.use(
-    (response) => response,
+    (response) => {
+      notifyBibliaMutation(response);
+      return response;
+    },
     async (error) => {
       const csrfRetry = await recoverCsrfAndRetry(instance, error);
       if (csrfRetry) return csrfRetry;

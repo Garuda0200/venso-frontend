@@ -5,6 +5,8 @@ import SecureStorage from "../../../../utils/secureStorage";
 import { invalidateCotizacionGraphCache } from "../../../../utils/cacheInvalidation";
 import { resolveCotizacionIgvInfo } from "../utils/cotizacionIgv";
 import { buildReservationFileInput, type ReservationFileInput } from "../utils/reservationFileCreation";
+import { mediaMutationId } from "../utils/voucherMediaHistory";
+import { voucherMediaService } from "./voucherMediaService";
 
 // Crear una instancia API para todos los servicios de cotizaciones
 // Usamos la función mejorada para crear una instancia con el token actual
@@ -325,7 +327,7 @@ export const duplicarCotizacionModelo = async (duplicateData) => {
 };
 
 
-export const upsertVoucherMedia = async (id, media) => {
+export const upsertVoucherMedia = async (id, media, options?: { expectedRevision?: number; operationId?: string }) => {
   if (!id) throw new Error("ID de cotización requerido");
   const payload = media?.mediaAssetId
     ? { mediaAssetId: media.mediaAssetId }
@@ -336,18 +338,20 @@ export const upsertVoucherMedia = async (id, media) => {
         sizeBytes: media?.sizeBytes,
         title: media?.title,
       };
+  Object.assign(payload, {
+    expectedRevision: options?.expectedRevision ?? media?.mediaRevision ?? 0,
+    operationId: options?.operationId || mediaMutationId(),
+  });
   const api = getApiInstance();
   const response = await api.put(`${BASE_URL}/${id}/voucher-media`, payload);
   invalidateCotizacionGraphCache();
   return response.data;
 };
 
-export const clearVoucherMedia = async (id) => {
+export const clearVoucherMedia = async (id, options?: { expectedRevision: number; operationId: string }) => {
   if (!id) throw new Error("ID de cotización requerido");
-  const api = getApiInstance();
-  const response = await api.delete(`${BASE_URL}/${id}/voucher-media`);
-  invalidateCotizacionGraphCache();
-  return response.data;
+  if (!options) throw new Error("Actualiza el archivo vigente antes de desvincularlo.");
+  return voucherMediaService.detach(id, options);
 };
 
 // Process cotizacion: save info_pdf and mark as processed

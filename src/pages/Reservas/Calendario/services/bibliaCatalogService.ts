@@ -1,3 +1,4 @@
+import { BIBLIA_CHANGED_EVENT } from "../../../../utils/bibliaCacheEvents";
 import { createApiInstance } from "../../../../utils/apiUtils";
 import { AGENCIES_CHANGED_EVENT } from "../../../../services/agencyEvents";
 import type { BibliaActivity } from "../utils/bibliaActivityMapper";
@@ -186,5 +187,7 @@ export const bibliaCatalogService = {
 };
 
 if (typeof window !== "undefined") {
-  window.addEventListener(AGENCIES_CHANGED_EVENT, () => bibliaCatalogService.clear());
+  [AGENCIES_CHANGED_EVENT, BIBLIA_CHANGED_EVENT, "auth:login", "auth:logout"].forEach(event => {
+    window.addEventListener(event, () => bibliaCatalogService.clear());
+  });
 }

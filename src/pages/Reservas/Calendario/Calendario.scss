@@ -607,8 +607,9 @@
     border-bottom: 1px solid #e7ecea;
     overflow: hidden;
     text-align: left;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    text-overflow: clip;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
 
   th {
@@ -1337,9 +1338,10 @@
   font-size: .75rem;
   font-weight: 650;
   line-height: 1.25;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  overflow: visible;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
 }
 
 .biblia-edit-value {
@@ -1348,7 +1350,7 @@
   border: 1px solid transparent;
   border-radius: 5px;
   display: block;
-  overflow: hidden;
+  overflow: visible;
   padding: 4px 5px;
   background: transparent;
   color: inherit;
@@ -1357,8 +1359,9 @@
   font-weight: 650;
   line-height: 1.25;
   text-align: inherit;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  text-overflow: clip;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
   cursor: text;
 
   &:hover,
@@ -2710,6 +2713,20 @@
 
   .biblia-sheet-table tbody tr { max-width: none; overflow: visible; }
 
+  // En pantallas estrechas las columnas fijas no deben cubrir el resto de celdas.
+  .biblia-sheet-table {
+    th:nth-child(1),
+    th:nth-child(2) { left: auto; box-shadow: none; }
+
+    td:nth-child(1),
+    td:nth-child(2),
+    .biblia-sheet-table__actions {
+      position: static !important;
+      left: auto;
+      right: auto;
+      box-shadow: none;
+    }
+  }
   .biblia-sheet-table__actions {
     overflow: visible !important;
     min-width: 310px !important;

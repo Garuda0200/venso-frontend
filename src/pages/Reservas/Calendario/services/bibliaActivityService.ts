@@ -1,3 +1,5 @@
+import { BIBLIA_CHANGED_EVENT } from "../../../../utils/bibliaCacheEvents";
+import { BibliaReadCache, type BibliaOperationalData } from "../utils/bibliaReadCache";
 import { createApiInstance } from "../../../../utils/apiUtils";
 import { invalidateAgenciesCache, invalidateCotizacionGraphCache } from "../../../../utils/cacheInvalidation";
 import { buildBibliaPublicationRecords } from "../utils/bibliaPublication";
@@ -5,20 +7,43 @@ import { buildBibliaPublicationRecords } from "../utils/bibliaPublication";
 const BASE_URL = "/turismo/cotizaciones";
 const getApi = () => createApiInstance(true);
 
+const readCache = new BibliaReadCache<BibliaOperationalData>();
+if (typeof window !== "undefined") {
+  [BIBLIA_CHANGED_EVENT, "auth:logout", "auth:login", "auth:unauthorized"].forEach(event => {
+    window.addEventListener(event, () => readCache.clear());
+  });
+}
+
+export type BibliaReadOptions = {
+  startDate?: string;
+  endDate?: string;
+  fileCode?: string;
+  cacheScope?: string;
+  forceRefresh?: boolean;
+};
+
 export const bibliaActivityService = {
-  async getOperationalData(quotationId?: string) {
-    const response = await getApi().get(`${BASE_URL}/biblia-actividades`, {
-      _skipDedup: true,
-      ...(quotationId ? { params: { quote_id: quotationId } } : {}),
-    });
-    const data = response?.data?.data ?? {};
-    if (Array.isArray(data)) {
-      return { quotations: data, standalone: [] };
-    }
-    return {
-      quotations: Array.isArray(data?.quotations) ? data.quotations : [],
-      standalone: Array.isArray(data?.standalone) ? data.standalone : [],
+  async getOperationalData(quotationId?: string, options: BibliaReadOptions = {}): Promise<BibliaOperationalData> {
+    const params = {
+      ...(quotationId ? { quote_id: quotationId } : {}),
+      ...(options.startDate ? { start_date: options.startDate, end_date: options.endDate } : {}),
+      ...(options.fileCode ? { file_code: options.fileCode } : {}),
+      ...(options.forceRefresh ? { force_refresh: true } : {}),
     };
+    const load = async () => {
+      const response = await getApi().get(`${BASE_URL}/biblia-actividades`, { params });
+      const data = response?.data?.data ?? {};
+      return {
+        quotations: Array.isArray(data) ? data : Array.isArray(data.quotations) ? data.quotations : [],
+        standalone: Array.isArray(data.standalone) ? data.standalone : [],
+      };
+    };
+    if (options.forceRefresh) readCache.clear();
+    if (!options.cacheScope) return load();
+    const key = JSON.stringify([
+      options.cacheScope, quotationId, options.startDate, options.endDate, options.fileCode,
+    ]);
+    return readCache.get(key, load);
   },
 
   async setQuotationVisibility(id: string, visible: boolean) {

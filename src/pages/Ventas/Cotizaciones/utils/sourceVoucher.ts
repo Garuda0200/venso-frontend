@@ -11,6 +11,10 @@ export interface SourceVoucherMedia {
   uploadedAt?: string;
   uploadedBy?: string;
   origin?: string;
+  cotizacionId?: string;
+  documentVersionId?: string;
+  versionNumber?: number;
+  mediaRevision?: number;
 }
 
 export const SOURCE_VOUCHER_MAX_BYTES = 25 * 1024 * 1024;
@@ -32,12 +36,19 @@ export const normalizeSourceVoucher = (value: any): SourceVoucherMedia | null =>
     uploadedAt: clean(value.uploadedAt || value.uploaded_at) || undefined,
     uploadedBy: clean(value.uploadedBy || value.uploaded_by) || undefined,
     origin: clean(value.origin) || undefined,
+    cotizacionId: clean(value.cotizacionId || value.cotizacion_id) || undefined,
+    documentVersionId: clean(value.documentVersionId) || undefined,
+    versionNumber: Number(value.versionNumber) || undefined,
+    mediaRevision: Number.isInteger(value.mediaRevision) ? value.mediaRevision : undefined,
   };
 };
 
 export const isValidSourceVoucher = (value: unknown) => Boolean(normalizeSourceVoucher(value));
 
 export const resolveVoucherMediaForFile = (canonicalValue: any, legacyValue: any) => {
+  if (canonicalValue?.documentDetached === true) {
+    return { media: null, canonicalLinked: true };
+  }
   const canonical = normalizeSourceVoucher(canonicalValue);
   if (canonical) {
     return { media: canonical, canonicalLinked: true };
@@ -63,6 +74,8 @@ export const getSourceVoucherKind = (value: unknown): SourceVoucherKind => {
 export const validateSourceVoucherFile = (file: Pick<File, "name" | "size"> | null | undefined) => {
   if (!file) return "Selecciona el voucher o documento de origen.";
   if (!clean(file.name)) return "El archivo debe tener un nombre válido.";
+  if (/[\\/\r\n\0]/.test(file.name) || file.name.length > 255) return "El nombre del archivo contiene caracteres inválidos.";
+  if (!/\.(pdf|docx?|xlsx?|txt|csv|zip|png|jpe?g|gif|webp|bmp)$/i.test(file.name)) return "Selecciona PDF, Word, Excel, una imagen compatible, TXT, CSV o ZIP.";
   if (Number(file.size || 0) <= 0) return "El archivo seleccionado está vacío.";
   if (Number(file.size || 0) > SOURCE_VOUCHER_MAX_BYTES) return "El archivo supera el límite de 25 MB.";
   return "";

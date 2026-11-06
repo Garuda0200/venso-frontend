@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import SmartComboBox from "../../../../components/common/SmartComboBox/SmartComboBox";
 import { addBibliaTicket, compactBibliaTickets, joinBibliaTickets, splitBibliaTickets } from "../utils/bibliaTicketSelection";
-export default function BibliaTicketPicker({ value, onChange, options, loading = false, disabled = false }: {
-  value: string; onChange: (value: string) => void; options: string[]; loading?: boolean; disabled?: boolean;
+export default function BibliaTicketPicker({ value, onChange, options, loading = false, disabled = false, portalDropdown = true }: {
+  value: string; onChange: (value: string) => void; options: string[]; loading?: boolean; disabled?: boolean; portalDropdown?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const opened = useRef(false);
@@ -19,6 +19,6 @@ export default function BibliaTicketPicker({ value, onChange, options, loading =
     </div>
     {disabled ? <input disabled value={value} aria-label="Entradas guardándose" /> : <SmartComboBox
       value={query} onChange={setQuery} onCommit={add} options={available} loading={loading}
-      placeholder="Agregar entrada..." autoFocus={!opened.current} portalDropdown maxVisibleOptions={80} />}
+      placeholder="Agregar entrada..." autoFocus={!opened.current} portalDropdown={portalDropdown} maxVisibleOptions={80} />}
   </div>;
 }

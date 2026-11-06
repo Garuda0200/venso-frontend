@@ -3,6 +3,7 @@ import type { BibliaActivity } from "./bibliaActivityMapper";
 import { BIBLIA_EMPTY_VALUE, getBibliaExcelCellColor, normalizeBibliaColor } from "./bibliaActivityMapper";
 import { compactBibliaTrainText } from "./bibliaTrainCatalog";
 import { participantNationalityLabel } from "./bibliaNationality";
+import { compactBibliaTransportText } from "./bibliaTransportDisplay";
 
 export const BIBLIA_SHEET_COLUMNS: Array<[keyof BibliaActivity, string]> = [
   ["dateKey", "FECHA"], ["file", "FILE"], ["reservationName", "NOMBRE DE LA RESERVA"],
@@ -44,6 +45,7 @@ const COLUMN_WIDTHS: Partial<Record<keyof BibliaActivity, number>> = {
 const valueForExport = (value: unknown, field?: keyof BibliaActivity, activity?: BibliaActivity) => {
   if (field === "tickets") return compactBibliaTickets(value);
   if (field === "nationality") return participantNationalityLabel(activity?.participantPlan, value);
+  if (field === "transport") return compactBibliaTransportText(value, activity);
   const normalized = String(value ?? "").trim();
   if (!normalized || normalized === BIBLIA_EMPTY_VALUE) return "—";
   return field === "trainOutbound" || field === "trainReturn"

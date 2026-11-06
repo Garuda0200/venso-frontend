@@ -3,6 +3,7 @@ import { MdAttachFile, MdCheckCircle, MdClose, MdOutlineConfirmationNumber } fro
 import { useFileUpload } from "../../../../hooks/useFileUpload";
 import cotizacionService from "../hooks/cotizacionService";
 import { buildReservationFileInput } from "../utils/reservationFileCreation";
+import { mediaMutationId } from "../utils/voucherMediaHistory";
 import {
   buildSourceVoucherMedia,
   normalizeSourceVoucher,
@@ -33,6 +34,7 @@ const ReservationFileModal = ({ isOpen, uploadedBy, onClose, onCreated }: Props)
   const fileInput = useRef<HTMLInputElement>(null);
   const inFlight = useRef(false);
   const completed = useRef(false);
+  const attachmentOperation = useRef<string | null>(null);
   const [code, setCode] = useState("");
   const [title, setTitle] = useState("");
   const [bibliaVisible, setBibliaVisible] = useState(false);
@@ -79,6 +81,7 @@ const ReservationFileModal = ({ isOpen, uploadedBy, onClose, onCreated }: Props)
     if (validation) return;
     setFile(candidate);
     setUploaded(null);
+    attachmentOperation.current = null;
   };
 
   const submit = async (event: React.FormEvent) => {
@@ -108,7 +111,10 @@ const ReservationFileModal = ({ isOpen, uploadedBy, onClose, onCreated }: Props)
         if (!media?.mediaAssetId) throw new Error("No se recibió el identificador del archivo subido. Puedes adjuntarlo después desde el file.");
         setUploaded(media);
       }
-      const response = await cotizacionService.upsertVoucherMedia(result.quotation.id, media);
+      attachmentOperation.current ??= mediaMutationId();
+      const response = await cotizacionService.upsertVoucherMedia(result.quotation.id, media, {
+        expectedRevision: 0, operationId: attachmentOperation.current,
+      });
       const savedMedia = normalizeSourceVoucher(response?.voucherMedia || response?.voucher_media || media);
       const saved = { ...result, quotation: { ...result.quotation, source_voucher: savedMedia } };
       setCreated(saved);

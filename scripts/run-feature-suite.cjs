@@ -109,6 +109,7 @@ const testSuites = [
       "src/pages/Reservas/Servicios/utils/__tests__/cataloguePresentation.test.js",
       "src/pages/Reservas/Calendario/utils/__tests__/bibliaFileAndTicketSelection.test.js",
       "src/pages/Reservas/Calendario/utils/__tests__/bibliaActivityMapper.test.js",
+      "src/pages/Reservas/Calendario/utils/__tests__/bibliaLoadingCache.test.js",
       "src/pages/Reservas/Calendario/utils/__tests__/bibliaTransferReadOnly.test.js",
       "src/pages/Reservas/Calendario/utils/__tests__/bibliaTransportCatalog.test.js",
       "src/pages/Reservas/Calendario/utils/__tests__/bibliaEditableValueSource.test.js",

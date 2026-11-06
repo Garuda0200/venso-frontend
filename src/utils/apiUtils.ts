@@ -1,4 +1,5 @@
 import axios from "axios";
+import { notifyBibliaMutation } from "./bibliaCacheEvents";
 import {
   clearCsrfToken,
   ensureCsrfToken,
@@ -179,6 +180,7 @@ export const createApiInstance = (withCredentials = true) => {
   instance.interceptors.response.use(
     (response) => {
       reportBackendAvailable("http");
+      notifyBibliaMutation(response);
       return response;
     },
     async (error) => {

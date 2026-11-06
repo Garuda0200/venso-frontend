@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 /** El PDF se incrusta desde un Blob local: la API conserva X-Frame-Options: DENY. */
-export const useSourceVoucherPdf = (enabled: boolean, sourceUrl: string) => {
+export const useSourceVoucherPdf = (enabled: boolean, sourceUrl: string, authenticated = false) => {
   const [attempt, setAttempt] = useState(0);
   const [state, setState] = useState({ source: "", url: "", error: "" });
   useEffect(() => {
@@ -11,9 +11,7 @@ export const useSourceVoucherPdf = (enabled: boolean, sourceUrl: string) => {
     setState({ source: sourceUrl, url: "", error: "" });
     void (async () => {
       try {
-        // El proxy de media es público; omitir cookies también permite su CORS
-        // cuando frontend y API usan dominios distintos.
-        const response = await fetch(sourceUrl, { signal: controller.signal, credentials: "omit" });
+        const response = await fetch(sourceUrl, { signal: controller.signal, credentials: authenticated ? "include" : "omit" });
         if (!response.ok) throw new Error("No se pudo cargar el archivo del voucher.");
         const blob = await response.blob();
         if (!(await blob.slice(0, 1024).text()).includes("%PDF-"))
@@ -30,7 +28,7 @@ export const useSourceVoucherPdf = (enabled: boolean, sourceUrl: string) => {
       controller.abort();
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [enabled, sourceUrl, attempt]);
+  }, [enabled, sourceUrl, authenticated, attempt]);
   return {
     url: enabled && state.source === sourceUrl ? state.url : "",
     error: enabled && state.source === sourceUrl ? state.error : "",

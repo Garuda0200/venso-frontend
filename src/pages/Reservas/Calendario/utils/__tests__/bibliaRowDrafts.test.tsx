@@ -168,7 +168,7 @@ test("los editores usan Guardar explícito, esperan al servidor y no se pierden 
   const editor = source.slice(source.indexOf("const EditableValue ="), source.indexOf("const SortableBibliaRow ="));
   assert.match(editor, /if \(await onCommit\(activity\)\) setEditing\(false\)/);
   assert.doesNotMatch(editor, /onBlur=/);
-  assert.match(editor, /biblia-inline-editor__save/);
+  assert.match(editor, /<BibliaCellEditorModal/);
   assert.match(source, /<BibliaRowSave/); assert.match(source, /draftStore\.save\(activity, commitActivityChanges\)/);
   assert.match(source, /onDraftChange=\{draftStore.stage\}/);
   const quoteSave = source.slice(source.indexOf("const persistQuotationRecords ="), source.indexOf("const persistStandaloneRecord ="));

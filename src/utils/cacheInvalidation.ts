@@ -5,6 +5,7 @@
 import { queryClient, queryKeys } from "../config/queryClient";
 import { invalidateGetCache } from "./axiosInstance";
 import { invalidateCache, TURISMO_ENTITY_TYPES } from "../hooks/useTurismoCache";
+import { BIBLIA_CHANGED_EVENT } from "./bibliaCacheEvents";
 import { AGENCIES_CHANGED_EVENT } from "../services/agencyEvents";
 
 const normalizeVoucherId = (value) =>
@@ -166,6 +167,7 @@ export const invalidateCotizacionGraphCache = ({
   refetchType = "active",
   includeVouchers = true,
 } = {}) => {
+  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent(BIBLIA_CHANGED_EVENT));
   [
     "/turismo/cotizaciones",
     "/turismo/vouchers-venta",
@@ -210,6 +212,7 @@ export const invalidateAllVouchersCache = () => {
  * entrada, los contadores pueden mostrarse obsoletos.
  */
 export const invalidateReservaAssignmentGraphCache = () => {
+  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent(BIBLIA_CHANGED_EVENT));
   [
     "/turismo/vouchers-reserva",
     "/turismo/vouchers-reserva/with-relations",

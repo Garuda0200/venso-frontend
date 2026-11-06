@@ -1,8 +1,9 @@
-import React, { useMemo } from "react";
-import { MdClose, MdDescription, MdOpenInNew } from "react-icons/md";
+import React, { useEffect, useMemo, useRef } from "react";
+import { MdClose, MdDescription, MdDownload, MdOpenInNew } from "react-icons/md";
 import { getApiUrl } from "../../../../utils/apiUtils";
 import { getSourceVoucherKind, normalizeSourceVoucher } from "../utils/sourceVoucher";
 import { useSourceVoucherPdf } from "../hooks/useSourceVoucherPdf";
+import { isWordVoucher, voucherMediaDownloadPath } from "../utils/voucherMediaHistory";
 import "./styles/SourceVoucherPreviewModal.scss";
 
 const proxyUrl = (url: string) => {
@@ -12,16 +13,22 @@ const proxyUrl = (url: string) => {
 };
 
 const SourceVoucherPreviewModal = ({ isOpen, onClose, voucher }: any) => {
+  const dialog = useRef<HTMLDialogElement>(null);
   const media = useMemo(() => normalizeSourceVoucher(voucher), [voucher]);
   const kind = useMemo(() => getSourceVoucherKind(media), [media]);
-  const previewUrl = media ? proxyUrl(media.url) : "";
-  const pdf = useSourceVoucherPdf(Boolean(isOpen && kind === "pdf"), previewUrl);
+  const downloadPath = voucherMediaDownloadPath(media);
+  const previewUrl = downloadPath ? `${getApiUrl().replace(/\/+$/, "")}${downloadPath}` : media ? proxyUrl(media.url) : "";
+  const pdf = useSourceVoucherPdf(Boolean(isOpen && kind === "pdf"), previewUrl, Boolean(downloadPath));
+  useEffect(() => {
+    if (isOpen && dialog.current && !dialog.current.open) dialog.current.showModal();
+    if (!isOpen) dialog.current?.close();
+  }, [isOpen]);
   if (!isOpen) return null;
 
   return (
-    <div className="source-voucher-preview__overlay" onMouseDown={(event) => event.target === event.currentTarget && onClose?.()}>
-      <div className="source-voucher-preview__modal" role="dialog" aria-modal="true">
-        <header><div><strong>Archivo del voucher</strong><span>{media?.originalName || "Documento asociado"}</span></div><div className="source-voucher-preview__header-actions">{previewUrl && <a href={previewUrl} target="_blank" rel="noreferrer"><MdOpenInNew /> Abrir</a>}<button onClick={onClose}><MdClose /></button></div></header>
+      <dialog ref={dialog} className="source-voucher-preview__modal" aria-label="Vista previa del archivo"
+        onCancel={event => { event.preventDefault(); event.stopPropagation(); onClose?.(); }}>
+        <header><div><strong>Archivo del voucher</strong><span>{media?.originalName || "Documento asociado"}</span></div><div className="source-voucher-preview__header-actions">{previewUrl && <a href={previewUrl} target="_blank" rel="noreferrer"><MdDownload /> Descargar</a>}<button type="button" aria-label="Cerrar vista previa" onClick={onClose}><MdClose /></button></div></header>
         <main>
           {!media ? (
             <div className="source-voucher-preview__empty">No hay un archivo asociado al voucher.</div>
@@ -35,13 +42,12 @@ const SourceVoucherPreviewModal = ({ isOpen, onClose, voucher }: any) => {
             <div className="source-voucher-preview__document">
               <MdDescription />
               <strong>{media.originalName || "Documento asociado"}</strong>
-              <span>Este tipo de documento no tiene previsualización embebida segura en el navegador.</span>
-              {previewUrl && <a href={previewUrl} target="_blank" rel="noreferrer"><MdOpenInNew /> Abrir documento</a>}
+              <span>{isWordVoucher(media) ? "Descarga el Word para trabajar en tu editor. Puedes subir el archivo editado como una nueva versión." : "Descarga el archivo para abrirlo en una aplicación compatible."}</span>
+              {previewUrl && <a href={previewUrl} target="_blank" rel="noreferrer"><MdDownload /> Descargar documento</a>}
             </div>
           )}
         </main>
-      </div>
-    </div>
+      </dialog>
   );
 };
 

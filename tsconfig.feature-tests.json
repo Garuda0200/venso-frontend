@@ -17,6 +17,8 @@
     ]
   },
   "include": [
+    "src/pages/Reservas/Calendario/utils/__tests__/bibliaLoadingCache.test.ts",
+    "src/pages/Ventas/Cotizaciones/utils/__tests__/voucherMediaHistory.test.tsx",
     "src/pages/Reservas/VouchersReserva/utils/__tests__/reservationVoucherManagement.test.tsx",
     "src/pages/Reservas/Servicios/components/agency/__tests__/AgencyManager.test.tsx",
     "src/services/__tests__/agencyService.test.ts",
@@ -56,6 +58,10 @@
     "src/utils/__tests__/servicePricingType.test.ts",
     "src/pages/Reservas/Calendario/utils/__tests__/bibliaParticipantEditor.test.tsx",
     "src/pages/Reservas/Calendario/utils/__tests__/bibliaRowDrafts.test.tsx",
+    "src/pages/Reservas/Calendario/utils/__tests__/bibliaTimeEditor.test.tsx",
+    "src/pages/Reservas/Calendario/utils/__tests__/bibliaTimeRange.test.tsx",
+    "src/pages/Reservas/Calendario/utils/__tests__/bibliaCellModal.test.tsx",
+    "src/pages/Reservas/Calendario/utils/__tests__/bibliaTransportDisplay.test.ts",
     "src/pages/Reservas/Calendario/utils/__tests__/bibliaServiceLinkModes.test.tsx",
     "src/pages/Reservas/Calendario/utils/__tests__/bibliaQuotationLinking.test.tsx",
     "src/pages/Contabilidad/Files/domain/__tests__/movementFiles.test.tsx",
