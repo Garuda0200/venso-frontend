@@ -1,3 +1,4 @@
+import { prepareBibliaLinkActivity } from "./utils/bibliaLinkDefaults";
 import { BIBLIA_CHANGED_EVENT } from "../../../utils/bibliaCacheEvents";
 import { getBibliaCalendarPeriod } from "./utils/bibliaReadCache";
 import BibliaFileHistorySuggestions from "./components/BibliaFileHistorySuggestions";
@@ -82,7 +83,6 @@ import {
   getBibliaExcelCellColor,
   getBibliaExcelRichText,
   getBibliaQuotationLinkLabel,
-  getBibliaQuotationVoucherCode,
   getBibliaReservationOptions,
   getBibliaTrainProviderOptions,
   getBibliaTransportOptions,
@@ -934,21 +934,15 @@ const Calendario = () => {
   const linkStandaloneActivity = useCallback(async (activity: BibliaActivity, quotationId: string) => {
     if (activity.sourceType !== "standalone" || mutationInFlight.current) return;
     const quotation = quotations.find((quote) => String(quote.id) === quotationId);
-    if (!quotation) return;
-    const reason = getBibliaLinkUnavailableReason(activity, quotation);
+    if (!quotation) { setError("No se encontró la cotización. Actualiza el listado e intenta nuevamente."); return; }
+    const prepared = prepareBibliaLinkActivity(activity, quotation);
+    const reason = getBibliaLinkUnavailableReason(prepared, quotation);
     if (reason) { setError(reason); return; }
-    const template = quotation ? asArray<Record<string, any>>(quotation.biblia_actividades).find((row) => !row.isDeleted) || {} : {};
-    const baseRecord = { ...(activity.overrideRecord || {}) };
-    const record = materializeBibliaOverride(activity, { sourceQuotationId: quotationId } as Partial<BibliaActivity>);
+    const record = materializeBibliaOverride(prepared, { sourceQuotationId: quotationId } as Partial<BibliaActivity>);
     record.sourceQuotationId = quotationId;
     record.quotationId = quotationId;
     record.quotationOrigin = "linked";
     record.syncQuotation = true;
-    ["reservationName", "nationality", "language", "serviceMode", "counter", "agency"].forEach((field) => {
-      if (quotation && isEmptyBibliaValue(baseRecord[field]) && !isEmptyBibliaValue(template[field])) record[field] = template[field];
-    });
-    record.file = getBibliaQuotationVoucherCode(quotation) || quotationId;
-    if (quotation && Number(baseRecord.pax || 0) === 0 && Number(template.pax || 0) > 0) record.pax = Number(template.pax);
     mutationInFlight.current = true;
     try {
       await persistStandaloneRecord(activity, record, quotationId);
@@ -1034,6 +1028,7 @@ const Calendario = () => {
             anchor={linkPopoverAnchor}
             className="biblia-link-popover"
             ariaLabel="Vincular registro a cotización o voucher"
+            initialFocusSelector="input"
             onRequestClose={closeQuotationLinkPopover}
           >
             <div className="biblia-link-popover__header">

@@ -6,12 +6,14 @@ const FloatingBibliaPopover = ({
   anchor,
   className,
   ariaLabel,
+  initialFocusSelector,
   onRequestClose,
   children,
 }: {
   anchor: HTMLElement | null;
   className: string;
   ariaLabel: string;
+  initialFocusSelector?: string;
   onRequestClose: () => void;
   children: React.ReactNode;
 }) => {
@@ -62,6 +64,17 @@ const FloatingBibliaPopover = ({
       window.removeEventListener("scroll", updatePosition, true);
     };
   }, [anchor, updatePosition]);
+
+  // React autoFocus se ejecuta al montar, cuando el panel todavía está oculto.
+  // Espera a tener posición para que el navegador pueda enfocar el buscador.
+  useEffect(() => {
+    const panel = panelRef.current;
+    if (!position.ready || !initialFocusSelector || !panel || !anchor) return;
+    const active = document.activeElement;
+    if (active === anchor || active === document.body || panel.contains(active)) {
+      panel.querySelector<HTMLElement>(initialFocusSelector)?.focus();
+    }
+  }, [anchor, initialFocusSelector, position.ready]);
 
   useEffect(() => {
     if (!anchor) return undefined;

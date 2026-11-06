@@ -1,3 +1,4 @@
+import { prepareBibliaLinkActivity } from "./bibliaLinkDefaults";
 import { bibliaQuotationFieldValue, isBibliaHotelField } from "./bibliaServiceLinkModes";
 import { BIBLIA_EMPTY_VALUE, BibliaActivity, materializeBibliaOverride } from "./bibliaActivityMapper";
 import { bibliaParticipantPlanError } from "./bibliaParticipantEditor";
@@ -84,7 +85,7 @@ export function getBibliaLinkUnavailableReason(activity: BibliaActivity, quotati
   if (isEmptyReservationFile(quotation)) return Number(activity.pax) === 0 ? "" : bibliaParticipantPlanError(activity);
   if (!Number.isFinite(window.start)) return "Completa la fecha de inicio de la cotización";
   if (window.days > 120) return "El vínculo superaría el máximo de 120 días del itinerario";
-  return bibliaParticipantPlanError(activity, quotation);
+  return bibliaParticipantPlanError(prepareBibliaLinkActivity(activity, quotation), quotation);
 }
 
 const comparable = (value: unknown) => typeof value === "string"
